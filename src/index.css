@@ -1,0 +1,230 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+/* Custom global styles to satisfy the GodotXR specifications */
+
+/* Dynamic style tuning depending on active portal */
+
+/* ==========================================
+   ADMIN PORTAL STANDARDIZATION (Sleek, Professional, Compact)
+   ========================================== */
+.admin-portal {
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+}
+
+/* 1. Page Headers in Admin: Non-italic, sharp display tracking-tight */
+.admin-portal h1 {
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif !important;
+  font-style: normal !important;
+  font-weight: 800 !important;
+  font-size: 1.75rem !important;
+  letter-spacing: -0.03em !important;
+  color: #0f172a !important; /* text-slate-900 */
+}
+
+.admin-portal h3, 
+.admin-portal h4 {
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif !important;
+  font-style: normal !important;
+  font-weight: 700 !important;
+  color: #1e293b !important; /* text-slate-800 */
+}
+
+/* 2. Compact container card spacing to make it less bulky */
+.admin-portal .rounded-\[40px\] {
+  border-radius: 16px !important;
+}
+
+.admin-portal .rounded-3xl {
+  border-radius: 12px !important;
+}
+
+.admin-portal .p-8,
+.admin-portal .p-10 {
+  padding: 1.5rem !important;
+}
+
+.admin-portal .pt-10 {
+  padding-top: 1.5rem !important;
+}
+
+/* 3. Input & Select sanitization */
+.admin-portal select,
+.admin-portal input[type="text"],
+.admin-portal input[type="email"],
+.admin-portal input[type="password"],
+.admin-portal input[type="date"],
+.admin-portal textarea {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  color: #334155 !important;
+  padding: 0.625rem 1rem !important;
+  box-shadow: none !important;
+  outline: none !important;
+  transition: all 0.2s ease !important;
+}
+
+.admin-portal select:focus,
+.admin-portal input:focus,
+.admin-portal textarea:focus {
+  border-color: #4EACAF !important;
+  box-shadow: 0 0 0 2px rgba(78, 172, 175, 0.15) !important;
+}
+
+/* Simplify search controls container font & style */
+.admin-portal select {
+  font-style: normal !important;
+  font-weight: 600 !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  color: #475569 !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+  background-position: right 0.75rem center !important;
+  background-repeat: no-repeat !important;
+  background-size: 1.25em 1.25em !important;
+  padding-right: 2.25rem !important;
+}
+
+/* 4. Table elements standardization (High-legibility rows) */
+.admin-portal table {
+  width: 100% !important;
+  font-size: 0.8125rem !important;
+  border-collapse: collapse !important;
+}
+
+.admin-portal table thead th {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  font-weight: 700 !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  padding: 0.875rem 1rem !important;
+  border-bottom: 2px solid #edf2f7 !important;
+}
+
+.admin-portal table tbody tr {
+  border-bottom: 1px solid #f1f5f9 !important;
+  transition: background-color 0.15s ease-in-out !important;
+}
+
+.admin-portal table tbody tr:hover {
+  background-color: #f1f5f9 / 70 !important;
+}
+
+.admin-portal table td {
+  padding: 0.75rem 1rem !important;
+  vertical-align: middle !important;
+}
+
+/* Button & badges simplification */
+.admin-portal .rounded-2xl {
+  border-radius: 12px !important;
+}
+
+.admin-portal button:not(.cursor-pointer) {
+  cursor: pointer;
+}
+
+.admin-portal .shadow-lg,
+.admin-portal .shadow-xl {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Badge states */
+.active-badge {
+  background-color: rgba(16, 185, 129, 0.08) !important;
+  color: #059669 !important;
+  border: 1px solid rgba(16, 185, 129, 0.2) !important;
+}
+
+.inactive-badge {
+  background-color: rgba(100, 116, 139, 0.08) !important;
+  color: #64748b !important;
+  border: 1px solid rgba(100, 116, 139, 0.2) !important;
+}
+
+/* Modals */
+.admin-portal .fixed.inset-0.bg-black\/30 {
+  backdrop-filter: blur(4px) !important;
+  background-color: rgba(15, 23, 42, 0.45) !important;
+}
+
+
+/* ==========================================
+   TEACHER PORTAL STANDARDIZATION (Clear, Clinical, structured)
+   ========================================== */
+.teacher-portal {
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+}
+
+.teacher-portal h1 {
+  font-family: "Space Grotesk", sans-serif !important;
+  font-style: normal !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+}
+
+.teacher-portal .rounded-\[40px\] {
+  border-radius: 20px !important;
+}
+
+.teacher-portal .rounded-3xl {
+  border-radius: 16px !important;
+}
+
+.teacher-portal .p-10 {
+  padding: 2rem !important;
+}
+
+.teacher-portal table thead th {
+  background-color: #f1f5f9 !important;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-weight: 700 !important;
+}
+
+.teacher-portal table tbody tr:hover {
+  background-color: rgba(78, 172, 175, 0.04) !important;
+}
+
+
+/* ==========================================
+   PARENT PORTAL STANDARDIZATION (Warm, friendly)
+   ========================================== */
+.parent-portal {
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+}
+
+/* Keep the bubbly roundings and gorgeous soft shadow cards */
+.parent-portal .rounded-\[40px\] {
+  border-radius: 40px !important;
+}
+
+
+/* Custom elegant scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

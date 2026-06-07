@@ -1,0 +1,8 @@
+{
+  "name": "GodotXR - Hỗ trợ ngôn ngữ VR",
+  "description": "Ứng dụng hỗ trợ học ngôn ngữ và trị liệu âm ngữ thông qua thực tế ảo (VR) dành cho trẻ em.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
