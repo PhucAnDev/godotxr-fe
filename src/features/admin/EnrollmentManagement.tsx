@@ -30,7 +30,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import Pagination from '../common/Pagination';
+import Pagination from '../../components/common/Pagination';
 
 // DB Interfaces
 interface Child {

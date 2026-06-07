@@ -19,7 +19,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Logo } from './HomeView';
+import { Logo } from '../public/HomeView';
 import { cn } from '../../lib/utils';
 
 interface RegisterParentViewProps {

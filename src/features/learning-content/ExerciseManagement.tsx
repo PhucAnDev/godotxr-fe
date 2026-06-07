@@ -38,7 +38,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import Pagination from '../common/Pagination';
+import Pagination from '../../components/common/Pagination';
 
 // DB Interfaces according to schema
 interface Lesson {

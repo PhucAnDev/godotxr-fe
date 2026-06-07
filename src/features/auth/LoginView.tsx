@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, ChevronDown, Sparkles, Star, Cloud, Users, GraduationCap, Shield, AlertCircle, ArrowLeft, Home } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Logo } from './HomeView';
+import { Logo } from '../public/HomeView';
 import { mockLogin } from '../../lib/authMock';
 
 export default function LoginView({ 

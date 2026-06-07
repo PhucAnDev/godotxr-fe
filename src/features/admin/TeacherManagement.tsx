@@ -27,7 +27,7 @@ import {
   Compass
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import Pagination from '../common/Pagination';
+import Pagination from '../../components/common/Pagination';
 
 // Teacher & User Interface matching the requested DB schemas
 interface User {

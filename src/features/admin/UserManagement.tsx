@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getStoredUsers, saveStoredUsers } from '../../lib/authMock';
-import Pagination from '../common/Pagination';
+import Pagination from '../../components/common/Pagination';
 
 // Roles Interface
 interface Role {

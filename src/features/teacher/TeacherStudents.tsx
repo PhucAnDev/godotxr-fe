@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../../lib/utils';
-import Pagination from '../common/Pagination';
+import Pagination from '../../components/common/Pagination';
 
 // Shared interfaces
 export interface Child {

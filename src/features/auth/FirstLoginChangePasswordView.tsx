@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Shield, KeyRound, LogOut, CheckCircle2, Cloud, Star, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Logo } from './HomeView';
+import { Logo } from '../public/HomeView';
 import { getCurrentUser, updateCurrentUserPassword, mockLogout } from '../../lib/authMock';
 
 interface FirstLoginChangePasswordViewProps {
