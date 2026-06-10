@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Eye, EyeOff, ChevronDown, Sparkles, Star, Cloud, Users, GraduationCap, Shield, AlertCircle, ArrowLeft, Home } from 'lucide-react';
+import React, { useState } from 'react';
+import { Eye, EyeOff, Sparkles, Star, Cloud, Users, Shield, AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Logo } from '../public/HomeView';
-import { mockLogin } from '../../lib/authMock';
+import { useLogin } from '../../hooks/useLogin';
+import type { LoginUserRole } from '../../hooks/useLogin';
 
 export default function LoginView({ 
   onLogin, 
@@ -13,49 +14,12 @@ export default function LoginView({
   onForgotPasswordClick?: () => void;
   onBackToHome?: () => void;
 }) {
-  const [email, setEmail] = useState('parent@godotxr.com');
-  const [password, setPassword] = useState('parent123');
-  const [role, setRole] = useState<'PARENT' | 'TEACHER' | 'ADMIN'>('PARENT');
+  const { email, password, isLoading, error, setEmail, setPassword, handleSubmit } = useLogin();
+
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // Sync default credentials when selecting role of demo for supreme ease of evaluation
-  const handleRoleSelect = (selectedRole: 'PARENT' | 'TEACHER' | 'ADMIN') => {
-    setRole(selectedRole);
-    setError(null);
-    if (selectedRole === 'PARENT') {
-      setEmail('parent@godotxr.com');
-      setPassword('parent123');
-    } else if (selectedRole === 'TEACHER') {
-      setEmail('teacher@godotxr.com');
-      setPassword('teacher123');
-    } else if (selectedRole === 'ADMIN') {
-      setEmail('admin@godotxr.com');
-      setPassword('admin12345');
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    let formattedEmail = email.trim();
-    if (!formattedEmail) {
-      setError('Vui lòng nhập Email hoặc tên tài khoản của bạn.');
-      return;
-    }
-
-    // Automatically append domain if it's a simple username/word
-    if (!formattedEmail.includes('@')) {
-      formattedEmail = `${formattedEmail.toLowerCase()}@godotxr.com`;
-    }
-
-    const result = mockLogin(formattedEmail, password, role);
-    if (result.success && result.user) {
-      onLogin(result.user.Role);
-    } else {
-      setError(result.message || 'Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.');
-    }
+  const onSubmit = (e: React.FormEvent) => {
+    handleSubmit(e, (role: LoginUserRole) => onLogin(role));
   };
 
   return (
@@ -174,7 +138,7 @@ export default function LoginView({
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
+              <form onSubmit={onSubmit} className="space-y-4 relative z-10">
                 {error && (
                   <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-700 text-xs font-black flex items-start gap-2 leading-snug">
                     <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
@@ -227,49 +191,24 @@ export default function LoginView({
                   </div>
                 </div>
 
-                {/* Compact Accounts selectors */}
-                <div className="space-y-2.5 pt-1">
-                  <div>
-                    <label className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-[#4EACAF] ml-1">
-                      Tài khoản demo nhanh
-                    </label>
-                    <p className="text-[10.5px] text-gray-400 font-bold ml-1 mt-0.5 leading-tight">
-                      Chọn loại tài khoản để tự điền thông tin demo. Quyền truy cập thực tế vẫn được xác định theo tài khoản đăng nhập.
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { id: 'PARENT', label: 'Phụ huynh', icon: Users },
-                      { id: 'TEACHER', label: 'Giáo viên', icon: GraduationCap },
-                      { id: 'ADMIN', label: 'Admin', icon: Shield },
-                    ].map((item) => (
-                      <motion.button
-                        key={item.id}
-                        type="button"
-                        whileHover={{ y: -2 }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => handleRoleSelect(item.id as any)}
-                        className={`relative py-2.5 px-3 rounded-2xl border-4 transition-all flex flex-col items-center gap-1 active:translate-y-0.5 ${
-                          role === item.id 
-                            ? 'bg-[#4EACAF] border-[#4EACAF] text-white shadow-md shadow-[#4EACAF]/10 border-b-4 border-b-[#3d8a8c]' 
-                            : 'bg-gray-50 border-gray-50 text-gray-450 hover:border-gray-100 hover:bg-gray-100 border-b-gray-200 border-b-4'
-                        }`}
-                      >
-                        <item.icon className={`w-4 h-4 ${role === item.id ? 'text-white' : 'text-gray-400'}`} />
-                        <span className="text-[10px] font-black uppercase tracking-tight">{item.label}</span>
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
+
 
                 <div className="pt-3">
                   <motion.button
                     whileHover={{ y: -2 }}
                     whileTap={{ scale: 0.98 }}
                     type="submit"
-                    className="w-full py-3.5 bg-[#4EACAF] hover:bg-[#398d90] text-white text-lg font-black rounded-2xl shadow-lg shadow-[#4EACAF]/10 transition-all italic tracking-tight border-b-4 border-b-[#3d8a8c] active:border-b-2 active:translate-y-0.5 cursor-pointer"
+                    disabled={isLoading}
+                    className="w-full py-3.5 bg-[#4EACAF] hover:bg-[#398d90] text-white text-lg font-black rounded-2xl shadow-lg shadow-[#4EACAF]/10 transition-all italic tracking-tight border-b-4 border-b-[#3d8a8c] active:border-b-2 active:translate-y-0.5 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    Đăng nhập ngay
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Đang đăng nhập...</span>
+                      </>
+                    ) : (
+                      'Đăng nhập ngay'
+                    )}
                   </motion.button>
                 </div>
               </form>

@@ -18,164 +18,36 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { Logo } from '../public/HomeView';
 import { cn } from '../../lib/utils';
-import { getStoredUsers, saveStoredUsers } from '../../lib/authMock';
+import { useForgotPassword } from '../../hooks/useForgotPassword';
 
 interface ForgotPasswordViewProps {
   onBackToLogin: () => void;
   onBackToHome?: () => void;
 }
 
-type ForgotStep = 'EMAIL' | 'OTP' | 'RESET_PASSWORD' | 'SUCCESS';
-
 export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: ForgotPasswordViewProps) {
-  const [step, setStep] = useState<ForgotStep>('EMAIL');
-  const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const [demoOtp, setDemoOtp] = useState('123456');
+  // ─── UI-only state (không liên quan đến business logic) ──────────────────
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
-  const handleSendOtp = (e: React.FormEvent) => {
-    e.preventDefault();
-    setValidationError(null);
-    setInfoMessage(null);
-
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail) {
-      setValidationError('Vui lòng nhập email tài khoản.');
-      return;
-    }
-
-    if (!trimmedEmail.includes('@')) {
-      setValidationError('Email không hợp lệ.');
-      return;
-    }
-
-    setIsLoading(true);
-
-    setTimeout(() => {
-      setIsLoading(false);
-      setDemoOtp('123456');
-      setStep('OTP');
-      setInfoMessage('Mã OTP đã được giả lập gửi đến Email của bạn.');
-    }, 1000);
-  };
-
-  const handleVerifyOtp = (e: React.FormEvent) => {
-    e.preventDefault();
-    setValidationError(null);
-    setInfoMessage(null);
-
-    const trimmedOtp = otp.trim();
-    if (!trimmedOtp) {
-      setValidationError('Vui lòng nhập mã OTP.');
-      return;
-    }
-
-    if (trimmedOtp.length !== 6) {
-      setValidationError('Mã OTP phải gồm 6 chữ số.');
-      return;
-    }
-
-    if (trimmedOtp !== demoOtp) {
-      setValidationError('Mã OTP không chính xác. Vui lòng kiểm tra lại.');
-      return;
-    }
-
-    setStep('RESET_PASSWORD');
-  };
-
-  const handleResendOtp = () => {
-    setValidationError(null);
-    setDemoOtp('123456');
-    setOtp('');
-    setInfoMessage('Mã OTP mới đã được gửi lại. Mã demo: 123456');
-  };
-
-  const handleChangeEmail = () => {
-    setValidationError(null);
-    setInfoMessage(null);
-    setOtp('');
-    setStep('EMAIL');
-  };
-
-  const handleResetPassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    setValidationError(null);
-    setInfoMessage(null);
-
-    const trimmedNewPass = newPassword;
-    const trimmedConfirmPass = confirmPassword;
-
-    if (!trimmedNewPass || !trimmedConfirmPass) {
-      setValidationError('Vui lòng nhập đầy đủ mật khẩu mới và xác nhận mật khẩu.');
-      return;
-    }
-
-    if (trimmedNewPass.length < 8) {
-      setValidationError('Mật khẩu mới phải có ít nhất 8 ký tự.');
-      return;
-    }
-
-    if (trimmedNewPass !== trimmedConfirmPass) {
-      setValidationError('Mật khẩu xác nhận không khớp.');
-      return;
-    }
-
-    setIsLoading(true);
-
-    setTimeout(() => {
-      setIsLoading(false);
-      
-      // Update local storage mock user safely
-      try {
-        const users = getStoredUsers();
-        const updatedUsers = users.map(u => {
-          if (u.Email.toLowerCase() === email.trim().toLowerCase()) {
-            return {
-              ...u,
-              Password: trimmedNewPass,
-              MustChangePassword: false,
-              UpdatedAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
-            };
-          }
-          return u;
-        });
-        saveStoredUsers(updatedUsers);
-      } catch (err) {
-        console.error('Error updating mock database password:', err);
-      }
-
-      setStep('SUCCESS');
-    }, 1000);
-  };
-
-  const handleBack = () => {
-    setValidationError(null);
-    setInfoMessage(null);
-
-    if (step === 'EMAIL') {
-      onBackToLogin();
-      return;
-    }
-
-    if (step === 'OTP') {
-      setStep('EMAIL');
-      return;
-    }
-
-    if (step === 'RESET_PASSWORD') {
-      setStep('OTP');
-      return;
-    }
-
-    onBackToLogin();
-  };
+  // ─── Toàn bộ logic & state từ hook ───────────────────────────────────────
+  const {
+    step,
+    email, setEmail,
+    otp, setOtp,
+    newPassword, setNewPassword,
+    confirmPassword, setConfirmPassword,
+    isLoading,
+    validationError,
+    infoMessage,
+    clearValidationError,
+    handleSendOtp,
+    handleVerifyOtp,
+    handleResetPassword,
+    handleResendOtp,
+    handleChangeEmail,
+    handleBack,
+  } = useForgotPassword();
 
   return (
     <div className="flex min-h-screen lg:h-screen lg:overflow-hidden bg-[#FFFDF5] selection:bg-[#FF8E8E]/30 relative text-left" id="forgot-password-view-container">
@@ -285,7 +157,7 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
               
               {/* Back button at top-left of the card */}
               <button 
-                onClick={handleBack}
+                onClick={() => handleBack(onBackToLogin)}
                 className="absolute left-6 top-6 w-9 h-9 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center transition-all cursor-pointer border border-slate-100 z-20"
                 title="Quay lại"
               >
@@ -359,6 +231,7 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
               )}
 
               <AnimatePresence mode="wait">
+                {/* ── BƯỚC 1: Nhập email ──────────────────────────────────── */}
                 {step === 'EMAIL' && (
                   <motion.form 
                     key="email-step"
@@ -369,7 +242,6 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                     exit={{ opacity: 0, scale: 0.98 }}
                     transition={{ duration: 0.2 }}
                   >
-                    {/* Error validations */}
                     {validationError && (
                       <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-700 text-xs font-black flex items-start gap-2 leading-snug">
                         <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 animate-bounce" />
@@ -377,7 +249,6 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                       </div>
                     )}
 
-                    {/* Email Input Field */}
                     <div className="space-y-1.5">
                       <label className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-[#FFC0C0] md:text-gray-400 ml-1">
                         Email tài khoản
@@ -392,7 +263,7 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                           value={email}
                           onChange={(e) => {
                             setEmail(e.target.value);
-                            setValidationError(null);
+                            clearValidationError();
                           }}
                           className="w-full pl-12 pr-6 py-3 rounded-2xl bg-gray-50/50 border-4 border-gray-50 focus:border-[#FF8E8E] focus:bg-white focus:ring-4 focus:ring-[#FF8E8E]/5 transition-all outline-none font-bold text-sm text-gray-900 placeholder:text-gray-300"
                         />
@@ -423,6 +294,7 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                   </motion.form>
                 )}
 
+                {/* ── BƯỚC 2: Nhập OTP ────────────────────────────────────── */}
                 {step === 'OTP' && (
                   <motion.form 
                     key="otp-step"
@@ -433,7 +305,6 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                     exit={{ opacity: 0, scale: 0.98 }}
                     transition={{ duration: 0.2 }}
                   >
-                    {/* Error validations */}
                     {validationError && (
                       <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-700 text-xs font-black flex items-start gap-2 leading-snug">
                         <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 animate-bounce" />
@@ -441,7 +312,6 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                       </div>
                     )}
 
-                    {/* Info messages */}
                     {infoMessage && (
                       <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-700 text-xs font-bold flex items-start gap-2 leading-snug">
                         <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 animate-pulse" />
@@ -449,7 +319,6 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                       </div>
                     )}
 
-                    {/* OTP Input Field */}
                     <div className="space-y-1.5">
                       <label className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-[#FFC0C0] md:text-gray-400 ml-1">
                         Mã OTP
@@ -466,7 +335,7 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                           onChange={(e) => {
                             const val = e.target.value.replace(/[^0-9]/g, '');
                             setOtp(val);
-                            setValidationError(null);
+                            clearValidationError();
                           }}
                           className="w-full pl-12 pr-6 py-3 rounded-2xl bg-gray-50/50 border-4 border-gray-50 focus:border-[#FF8E8E] focus:bg-white focus:ring-4 focus:ring-[#FF8E8E]/5 transition-all outline-none font-black text-center text-lg tracking-[0.25em] text-gray-905 placeholder:tracking-normal placeholder:font-bold placeholder:text-gray-300 placeholder:text-sm"
                         />
@@ -484,9 +353,14 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                       <button 
                         type="button" 
                         onClick={handleResendOtp}
-                        className="flex items-center gap-1 text-[#FF8E8E] hover:underline cursor-pointer"
+                        disabled={isLoading}
+                        className="flex items-center gap-1 text-[#FF8E8E] hover:underline cursor-pointer disabled:opacity-50"
                       >
-                        <RefreshCcw className="w-3.5 h-3.5" /> Gửi lại mã
+                        {isLoading
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : <RefreshCcw className="w-3.5 h-3.5" />
+                        }
+                        Gửi lại mã
                       </button>
                     </div>
 
@@ -501,15 +375,10 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                         <Send className="w-4 h-4" />
                       </motion.button>
                     </div>
-
-                    {/* Developer Demo Info Badge */}
-                    <div className="p-3 bg-amber-50 rounded-2xl border border-amber-100/80 flex items-center justify-between text-xs text-amber-800">
-                      <span className="font-bold">Mã OTP demo của bạn:</span>
-                      <span className="font-mono bg-amber-100 px-2.5 py-0.5 rounded-lg border border-amber-200 font-extrabold text-sm">{demoOtp}</span>
-                    </div>
                   </motion.form>
                 )}
 
+                {/* ── BƯỚC 3: Đặt mật khẩu mới ───────────────────────────── */}
                 {step === 'RESET_PASSWORD' && (
                   <motion.form 
                     key="reset-password-step"
@@ -520,7 +389,6 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                     exit={{ opacity: 0, scale: 0.98 }}
                     transition={{ duration: 0.2 }}
                   >
-                    {/* Error validations */}
                     {validationError && (
                       <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-700 text-xs font-black flex items-start gap-2 leading-snug">
                         <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 animate-bounce" />
@@ -543,7 +411,7 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                           value={newPassword}
                           onChange={(e) => {
                             setNewPassword(e.target.value);
-                            setValidationError(null);
+                            clearValidationError();
                           }}
                           className="w-full pl-12 pr-12 py-3 rounded-2xl bg-gray-50/50 border-4 border-gray-50 focus:border-[#FF8E8E] focus:bg-white focus:ring-4 focus:ring-[#FF8E8E]/5 transition-all outline-none font-bold text-sm text-gray-900 placeholder:text-gray-300"
                         />
@@ -572,7 +440,7 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                           value={confirmPassword}
                           onChange={(e) => {
                             setConfirmPassword(e.target.value);
-                            setValidationError(null);
+                            clearValidationError();
                           }}
                           className="w-full pl-12 pr-12 py-3 rounded-2xl bg-gray-50/50 border-4 border-gray-50 focus:border-[#FF8E8E] focus:bg-white focus:ring-4 focus:ring-[#FF8E8E]/5 transition-all outline-none font-bold text-sm text-gray-900 placeholder:text-gray-300"
                         />
@@ -610,6 +478,7 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                   </motion.form>
                 )}
 
+                {/* ── BƯỚC 4: Thành công ──────────────────────────────────── */}
                 {step === 'SUCCESS' && (
                   <motion.div 
                     key="success-state"
@@ -666,4 +535,3 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
     </div>
   );
 }
-
