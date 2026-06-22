@@ -11,6 +11,8 @@ export interface UserResponse {
   phone: string;
   roleName: string; // "Admin" | "Teacher" | "Parent" | "Child"
   isActive: boolean;
+  gender: string;
+  specialty: string;
   createdAt: string;
   updatedAt: string | null;
 }
@@ -44,6 +46,8 @@ export interface UpdateUserPayload {
   phone?: string;
   roleName?: UserRoleEnum;
   isActive?: boolean;
+  gender?: string;
+  specialty?: string;
 }
 
 // ─── Kết quả trả về chuẩn hóa cho component ──────────────────────────────────
@@ -84,7 +88,7 @@ export async function getUsers(
 ): Promise<UserServiceResult<PagedResponse<UserResponse>>> {
   try {
     const res = await apiRequest<PagedResponse<UserResponse>>(
-      `/api/user?pageNumber=${pageNumber}&pageSize=${pageSize}`
+      `/api/users?pageNumber=${pageNumber}&pageSize=${pageSize}`
     );
     return {
       success: res.success,
@@ -105,7 +109,7 @@ export async function getUserById(
   id: number
 ): Promise<UserServiceResult<UserResponse>> {
   try {
-    const res = await apiRequest<UserResponse>(`/api/user/${id}`);
+    const res = await apiRequest<UserResponse>(`/api/users/${id}`);
     return {
       success: res.success,
       message: res.message,
@@ -126,7 +130,7 @@ export async function createUser(
   payload: CreateUserPayload
 ): Promise<UserServiceResult<UserResponse>> {
   try {
-    const res = await apiRequest<UserResponse>('/api/user', {
+    const res = await apiRequest<UserResponse>('/api/users', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
@@ -151,7 +155,7 @@ export async function updateUser(
   payload: UpdateUserPayload
 ): Promise<UserServiceResult<UserResponse>> {
   try {
-    const res = await apiRequest<UserResponse>(`/api/user/${id}`, {
+    const res = await apiRequest<UserResponse>(`/api/users/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
     });
@@ -174,7 +178,7 @@ export async function deleteUser(
   id: number
 ): Promise<UserServiceResult<boolean>> {
   try {
-    const res = await apiRequest<boolean>(`/api/user/${id}`, {
+    const res = await apiRequest<boolean>(`/api/users/${id}`, {
       method: 'DELETE',
     });
     return {

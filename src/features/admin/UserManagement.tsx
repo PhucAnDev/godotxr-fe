@@ -24,8 +24,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
-import { useUserManagement } from '../../hooks/useUserManagement';
-import type { UserResponse } from '../../services/userService';
+import { useUserManagement, type UserResponse } from '../../hooks/useUserManagement';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

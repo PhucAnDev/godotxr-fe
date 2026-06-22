@@ -22,6 +22,13 @@ interface ResetPasswordPayload {
   confirmPassword: string;
 }
 
+interface ChangePasswordPayload {
+  email: string;
+  password: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 // ─── Response types (khớp với BE TokenModel) ─────────────────────────────────
 
 export interface UserAuthInfo {
@@ -161,6 +168,24 @@ export async function resetPassword(
       message: res.message,
       errors: res.errors ?? [],
     };
+  } catch (err) {
+    return handleError(err);
+  }
+}
+
+export async function changePassword(
+  email: string,
+  password: string,
+  newPassword: string,
+  confirmPassword: string
+): Promise<AuthServiceResult> {
+  try {
+    const payload: ChangePasswordPayload = { email, password, newPassword, confirmPassword };
+    const res = await apiRequest<void>('/api/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return { success: res.success, message: res.message, errors: res.errors ?? [] };
   } catch (err) {
     return handleError(err);
   }

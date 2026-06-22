@@ -127,7 +127,7 @@ export function updateCurrentUserPassword(newPassword: string): boolean {
   });
 
   saveStoredUsers(updatedUsers);
-  
+
   // Update current user cached copy
   const updatedMe = updatedUsers.find(u => u.UserId === currentUser.UserId);
   if (updatedMe) {
@@ -140,12 +140,12 @@ export function mockLogin(email: string, password: string, fallbackRole?: 'PAREN
   const users = getStoredUsers();
   const trimmedEmail = email.trim();
   let user = users.find(u => u.Email.toLowerCase() === trimmedEmail.toLowerCase());
-  
+
   if (!user) {
     // Dynamically create a user on-the-fly to allow anyone to log in
     const role = fallbackRole || 'PARENT';
     const roleId = role === 'ADMIN' ? 'ROL-001' : (role === 'TEACHER' ? 'ROL-002' : 'ROL-003');
-    
+
     // Create a beautiful name
     const emailName = trimmedEmail.split('@')[0];
     const capitalizedName = emailName.charAt(0).toUpperCase() + emailName.slice(1);

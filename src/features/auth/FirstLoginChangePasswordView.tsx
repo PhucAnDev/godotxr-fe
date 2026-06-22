@@ -8,6 +8,7 @@ import { Eye, EyeOff, Shield, KeyRound, LogOut, CheckCircle2, Cloud, Star, Spark
 import { motion } from 'motion/react';
 import { Logo } from '../public/HomeView';
 import { getCurrentUser, updateCurrentUserPassword, mockLogout } from '../../lib/authMock';
+import { useChangePassword } from '../../hooks/useChangePassword';
 
 interface FirstLoginChangePasswordViewProps {
   onSuccess: () => void;
@@ -15,6 +16,7 @@ interface FirstLoginChangePasswordViewProps {
 }
 
 export default function FirstLoginChangePasswordView({ onSuccess, onLogout }: FirstLoginChangePasswordViewProps) {
+  const { changePassword, isChangingPassword } = useChangePassword();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -28,7 +30,7 @@ export default function FirstLoginChangePasswordView({ onSuccess, onLogout }: Fi
 
   const currentUser = getCurrentUser();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -39,11 +41,6 @@ export default function FirstLoginChangePasswordView({ onSuccess, onLogout }: Fi
 
     if (!currentPassword || !newPassword || !confirmPassword) {
       setError('Vui lòng nhập đầy đủ các trường thông tin.');
-      return;
-    }
-
-    if (currentPassword !== currentUser.Password) {
-      setError('Mật khẩu tạm thời hiện tại không chính xác.');
       return;
     }
 
@@ -62,15 +59,15 @@ export default function FirstLoginChangePasswordView({ onSuccess, onLogout }: Fi
       return;
     }
 
-    // Attempt update
-    const result = updateCurrentUserPassword(newPassword);
-    if (result) {
+    const result = await changePassword(currentUser.Email, currentPassword, newPassword, confirmPassword);
+    if (result.success) {
+      updateCurrentUserPassword(newPassword);
       setIsSuccess(true);
       setTimeout(() => {
         onSuccess();
       }, 1500);
     } else {
-      setError('Có lỗi xảy ra khi cập nhật mật khẩu. Vui lòng thử lại.');
+      setError(result.errors.join(' ') || result.message);
     }
   };
 

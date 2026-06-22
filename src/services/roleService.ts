@@ -78,7 +78,7 @@ export async function getRoles(
 ): Promise<RoleServiceResult<PagedResponse<RoleResponse>>> {
   try {
     const res = await apiRequest<PagedResponse<RoleResponse>>(
-      `/api/role?pageNumber=${pageNumber}&pageSize=${pageSize}`
+      `/api/roles?pageNumber=${pageNumber}&pageSize=${pageSize}`
     );
     return {
       success: res.success,
@@ -99,7 +99,7 @@ export async function getRoleById(
   id: number
 ): Promise<RoleServiceResult<RoleResponse>> {
   try {
-    const res = await apiRequest<RoleResponse>(`/api/role/${id}`);
+    const res = await apiRequest<RoleResponse>(`/api/roles/${id}`);
     return {
       success: res.success,
       message: res.message,
@@ -120,7 +120,7 @@ export async function createRole(
   payload: CreateRolePayload
 ): Promise<RoleServiceResult<RoleResponse>> {
   try {
-    const res = await apiRequest<RoleResponse>('/api/role', {
+    const res = await apiRequest<RoleResponse>('/api/roles', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
@@ -145,7 +145,7 @@ export async function updateRole(
   payload: UpdateRolePayload
 ): Promise<RoleServiceResult<RoleResponse>> {
   try {
-    const res = await apiRequest<RoleResponse>(`/api/role/${id}`, {
+    const res = await apiRequest<RoleResponse>(`/api/roles/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
     });
@@ -168,7 +168,7 @@ export async function deleteRole(
   id: number
 ): Promise<RoleServiceResult<boolean>> {
   try {
-    const res = await apiRequest<boolean>(`/api/role/${id}`, {
+    const res = await apiRequest<boolean>(`/api/roles/${id}`, {
       method: 'DELETE',
     });
     return {

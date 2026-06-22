@@ -23,7 +23,8 @@ export interface ApiResponse<T = void> {
 
 export async function apiRequest<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  retryOnUnauthorized = true
 ): Promise<ApiResponse<T>> {
   // Tự động đính kèm Bearer token nếu có trong localStorage
   const token = localStorage.getItem('auth_token');
@@ -31,7 +32,7 @@ export async function apiRequest<T>(
     ? { Authorization: `Bearer ${token}` }
     : {};
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  let response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -39,6 +40,35 @@ export async function apiRequest<T>(
       ...(options.headers || {}),
     },
   });
+
+  if (response.status === 401 && retryOnUnauthorized) {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (refreshToken) {
+      const refreshResponse = await fetch(`${API_BASE_URL}/api/auth/refresh-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+      if (refreshResponse.ok) {
+        const refreshBody = await refreshResponse.json() as ApiResponse<{ accessToken: string; refreshToken: string }>;
+        if (refreshBody.data) {
+          localStorage.setItem('auth_token', refreshBody.data.accessToken);
+          localStorage.setItem('refresh_token', refreshBody.data.refreshToken);
+          response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            ...options,
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${refreshBody.data.accessToken}`,
+              ...(options.headers || {}),
+            },
+          });
+        }
+      } else {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('refresh_token');
+      }
+    }
+  }
 
   // Luôn parse JSON để lấy message từ BE
   let body: ApiResponse<T>;

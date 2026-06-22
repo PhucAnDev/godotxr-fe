@@ -22,8 +22,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { useRoleManagement } from '../../hooks/useRoleManagement';
-import type { RoleResponse, UserRoleEnum } from '../../services/roleService';
+import { useRoleManagement, type RoleResponse, type UserRoleEnum } from '../../hooks/useRoleManagement';
 
 // Các giá trị enum được phép gửi lên BE
 const ROLE_NAME_OPTIONS: { value: UserRoleEnum; label: string }[] = [
@@ -180,14 +179,15 @@ export default function RoleManagement() {
             </div>
           ) : (
             filteredRoles.map((role) => (
-              <RoleCard
-                key={role.id}
-                role={role}
-                onDetail={() => handleOpenDetail(role)}
-                onEdit={() => handleOpenEdit(role)}
-                onToggleActive={() => handleToggleActive(role)}
-                onDelete={() => handleDelete(role)}
-              />
+              <div key={role.id}>
+                <RoleCard
+                  role={role}
+                  onDetail={() => handleOpenDetail(role)}
+                  onEdit={() => handleOpenEdit(role)}
+                  onToggleActive={() => handleToggleActive(role)}
+                  onDelete={() => handleDelete(role)}
+                />
+              </div>
             ))
           )}
         </div>

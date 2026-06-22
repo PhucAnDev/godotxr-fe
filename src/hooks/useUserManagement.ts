@@ -9,6 +9,8 @@ import {
 } from '../services/userService';
 import { getRoles, type RoleResponse } from '../services/roleService';
 
+export type { UserResponse } from '../services/userService';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type ModalType = 'add' | 'edit' | 'detail' | null;

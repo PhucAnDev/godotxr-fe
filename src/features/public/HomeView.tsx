@@ -623,8 +623,8 @@ const floatAnimation = (delay = 0) => ({
   transition: {
     duration: 4,
     repeat: Infinity,
-    ease: "easeInOut",
-    delay: delay,
+    ease: "easeInOut" as const,
+    delay,
   }
 });
 

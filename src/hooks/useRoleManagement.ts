@@ -9,6 +9,8 @@ import {
   type UserRoleEnum,
 } from '../services/roleService';
 
+export type { RoleResponse, UserRoleEnum } from '../services/roleService';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type ModalType = 'add' | 'edit' | 'detail' | null;

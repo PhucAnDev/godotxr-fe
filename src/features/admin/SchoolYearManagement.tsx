@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Plus, 
@@ -22,6 +22,7 @@ import {
   Info
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useSchoolYearManagementApi, type SchoolYearResponse } from '../../hooks/useSchoolYearManagementApi';
 
 // DB Interface according to database architecture
 interface SchoolYear {
@@ -33,6 +34,16 @@ interface SchoolYear {
   CreatedAt: string;
   UpdatedAt: string;
 }
+
+const mapSchoolYear = (year: SchoolYearResponse): SchoolYear => ({
+  SchoolYearId: String(year.id),
+  SchoolYearName: year.yearName,
+  StartDate: year.startDate.slice(0, 10),
+  EndDate: year.endDate.slice(0, 10),
+  Status: year.status,
+  CreatedAt: year.createdAt,
+  UpdatedAt: year.updatedAt ?? year.createdAt,
+});
 
 // Initial Mock data for SCHOOL_YEAR table
 const INITIAL_SCHOOL_YEARS: SchoolYear[] = [
@@ -66,7 +77,8 @@ const INITIAL_SCHOOL_YEARS: SchoolYear[] = [
 ];
 
 export default function SchoolYearManagement() {
-  const [schoolYears, setSchoolYears] = useState<SchoolYear[]>(INITIAL_SCHOOL_YEARS);
+  const { getSchoolYears, createSchoolYear, updateSchoolYear, deleteSchoolYear, setActiveSchoolYear } = useSchoolYearManagementApi();
+  const [schoolYears, setSchoolYears] = useState<SchoolYear[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
@@ -76,6 +88,13 @@ export default function SchoolYearManagement() {
     setAlertConfig({ message, type });
     setTimeout(() => setAlertConfig(null), 3500);
   };
+
+  useEffect(() => {
+    void getSchoolYears().then(result => {
+      if (result.success && result.data) setSchoolYears(result.data.items.map(mapSchoolYear));
+      else triggerToast(result.errors.join(' ') || result.message, 'warning');
+    });
+  }, []);
 
   // Modal controls
   const [isOpenFormModal, setIsOpenFormModal] = useState(false);
@@ -94,51 +113,30 @@ export default function SchoolYearManagement() {
   const completedCount = schoolYears.filter(y => y.Status === 'Completed').length;
 
   // Actions
-  const handleSetCurrent = (yearId: string) => {
+  const handleSetCurrent = async (yearId: string) => {
     const targetYr = schoolYears.find(y => y.SchoolYearId === yearId);
     if (!targetYr) return;
 
-    // To respect realism, marking one active typically marks others as completed or upcoming
-    const updated = schoolYears.map(y => {
-      const sysDate = new Date().toISOString().slice(0, 16).replace('T', ' ');
-      if (y.SchoolYearId === yearId) {
-        return {
-          ...y,
-          Status: 'Active' as const,
-          UpdatedAt: sysDate
-        };
-      } else if (y.Status === 'Active') {
-        // Automatically close the former active year
-        return {
-          ...y,
-          Status: 'Completed' as const,
-          UpdatedAt: sysDate
-        };
-      }
-      return y;
-    });
-
-    setSchoolYears(updated);
-    triggerToast(`Đã chuyển đổi năm học "${targetYr.SchoolYearName}" thành năm học hiện tại chủ quản!`);
+    const result = await setActiveSchoolYear(Number(yearId));
+    if (result.success) {
+      const refreshed = await getSchoolYears();
+      if (refreshed.data) setSchoolYears(refreshed.data.items.map(mapSchoolYear));
+      triggerToast(result.message);
+    } else triggerToast(result.errors.join(' ') || result.message, 'warning');
   };
 
-  const handleCloseYear = (yearId: string) => {
+  const handleCloseYear = async (yearId: string) => {
     const targetYr = schoolYears.find(y => y.SchoolYearId === yearId);
     if (!targetYr) return;
 
-    const updated = schoolYears.map(y => {
-      if (y.SchoolYearId === yearId) {
-        return {
-          ...y,
-          Status: 'Completed' as const,
-          UpdatedAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
-        };
-      }
-      return y;
+    const result = await updateSchoolYear(Number(yearId), {
+      yearName: targetYr.SchoolYearName, startDate: targetYr.StartDate,
+      endDate: targetYr.EndDate, status: 'Completed',
     });
-
-    setSchoolYears(updated);
-    triggerToast(`Đã đóng khóa hoạt động năm học "${targetYr.SchoolYearName}" thành công.`);
+    if (result.success && result.data) {
+      setSchoolYears(current => current.map(y => y.SchoolYearId === yearId ? mapSchoolYear(result.data!) : y));
+      triggerToast(result.message);
+    } else triggerToast(result.errors.join(' ') || result.message, 'warning');
   };
 
   const handleOpenAdd = () => {
@@ -161,7 +159,7 @@ export default function SchoolYearManagement() {
     setIsOpenFormModal(true);
   };
 
-  const handleSaveSubmit = (e: React.FormEvent) => {
+  const handleSaveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formName.trim()) {
@@ -180,6 +178,18 @@ export default function SchoolYearManagement() {
       triggerToast('Ngày bắt đầu phải trước ngày kết thúc!', 'warning');
       return;
     }
+
+    const payload = { yearName: formName.trim(), startDate: formStartDate, endDate: formEndDate, status: formStatus };
+    const apiResult = modalMode === 'add'
+      ? await createSchoolYear(payload)
+      : selectedYear ? await updateSchoolYear(Number(selectedYear.SchoolYearId), payload) : null;
+    if (apiResult?.success && apiResult.data) {
+      const mapped = mapSchoolYear(apiResult.data);
+      setSchoolYears(current => modalMode === 'add' ? [mapped, ...current] : current.map(y => y.SchoolYearId === mapped.SchoolYearId ? mapped : y));
+      triggerToast(apiResult.message);
+      setIsOpenFormModal(false);
+    } else if (apiResult) triggerToast(apiResult.errors.join(' ') || apiResult.message, 'warning');
+    return;
 
     const sysDate = new Date().toISOString().slice(0, 16).replace('T', ' ');
 
@@ -244,10 +254,13 @@ export default function SchoolYearManagement() {
     setIsOpenFormModal(false);
   };
 
-  const handleDelete = (yearId: string) => {
+  const handleDelete = async (yearId: string) => {
     if (window.confirm(`Bạn có chắc chắn muốn phát động gỡ bỏ năm học ${yearId}? Hành động này có thể ảnh hưởng liên đới đến các kỳ thi và học sinh.`)) {
-      setSchoolYears(schoolYears.filter(y => y.SchoolYearId !== yearId));
-      triggerToast(`Đã gỡ bỏ dữ liệu năm học "${yearId}" khỏi hệ thống thành viên.`, 'warning');
+      const result = await deleteSchoolYear(Number(yearId));
+      if (result.success) {
+        setSchoolYears(current => current.filter(y => y.SchoolYearId !== yearId));
+        triggerToast(result.message, 'warning');
+      } else triggerToast(result.errors.join(' ') || result.message, 'warning');
     }
   };
 
