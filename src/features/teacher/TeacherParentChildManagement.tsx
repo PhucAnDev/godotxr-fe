@@ -638,7 +638,7 @@ export default function TeacherParentChildManagement() {
                     <div className="p-3 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-2 text-amber-700 font-bold text-[11px] leading-relaxed">
                       <Info className="w-4 h-4 shrink-0 mt-0.5" />
                       <p>
-                        <strong>Lưu ý:</strong> Tài khoản Phụ huynh này đã được thiết lập cờ <code className="bg-amber-150 px-1 rounded font-mono font-bold">MustChangePassword: true</code>. Lần đầu tiên phụ huynh dùng Email này đăng nhập, họ sẽ bị bắt buộc phải đổi sang mật mã mới riêng tư trước khi xem dashboard của bé.
+                        <strong>Lưu ý:</strong> Ở lần đăng nhập đầu tiên, phụ huynh sẽ được yêu cầu đổi sang mật khẩu mới riêng tư trước khi sử dụng đầy đủ hệ thống.
                       </p>
                     </div>
                   </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { AuthenticatedLayout } from '../components/layout/AuthenticatedLayout';
@@ -6,6 +6,7 @@ import { getCurrentUser } from '../lib/authMock';
 import HomeView from '../features/public/HomeView';
 import LoginView from '../features/auth/LoginView';
 import ForgotPasswordView from '../features/auth/ForgotPasswordView';
+import VerifyEmailView from '../features/auth/VerifyEmailView';
 import AccountSettings from '../features/auth/AccountSettings';
 import AdminDashboard from '../features/admin/AdminDashboard';
 import UserManagement from '../features/admin/UserManagement';
@@ -45,6 +46,7 @@ import {
   teacherSidebarItems,
   type UserRole,
 } from './navigation';
+import { subscribeAuthExpired } from '../services/apiClient';
 
 export function AppRoutes() {
   const navigate = useNavigate();
@@ -70,6 +72,13 @@ export function AppRoutes() {
     navigate('/');
   };
 
+  useEffect(() => {
+    return subscribeAuthExpired(() => {
+      setUserRole(null);
+      navigate('/login');
+    });
+  }, [navigate]);
+
   return (
     <div className="min-h-screen bg-[#FDFCF5] text-[#1D1D1D] font-sans selection:bg-[#4EACAF]/30">
       <AnimatePresence mode="wait">
@@ -89,6 +98,7 @@ export function AppRoutes() {
               <ForgotPasswordView onBackToLogin={() => navigate('/login')} onBackToHome={() => navigate('/')} />
             </motion.div>
           } />
+          <Route path="/verify-email" element={<VerifyEmailView />} />
           <Route path="/register" element={<RegisterRedirect />} />
           <Route path="/change-password" element={
             <motion.div key="change_password" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

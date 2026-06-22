@@ -1,6 +1,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
-/** Lỗi trả về từ BE, mang theo message và danh sách errors chi tiết */
+const AUTH_EXPIRED_EVENT = 'godotxr-auth-expired';
+
 export class ApiError extends Error {
   public readonly status: number;
   public readonly errors: string[];
@@ -13,7 +14,6 @@ export class ApiError extends Error {
   }
 }
 
-/** Shape chuẩn của mọi response từ BE (ApiResponse<T>) */
 export interface ApiResponse<T = void> {
   success: boolean;
   message: string;
@@ -21,12 +21,65 @@ export interface ApiResponse<T = void> {
   errors?: string[];
 }
 
+type RefreshTokenResponse = ApiResponse<{
+  accessToken: string;
+  refreshToken: string;
+}>;
+
+function clearAuthSession() {
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('current_user');
+  localStorage.removeItem('user_role');
+}
+
+function notifyAuthExpired() {
+  clearAuthSession();
+  window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+}
+
+export function subscribeAuthExpired(listener: () => void) {
+  window.addEventListener(AUTH_EXPIRED_EVENT, listener);
+  return () => window.removeEventListener(AUTH_EXPIRED_EVENT, listener);
+}
+
+async function tryRefreshAccessToken() {
+  const accessToken = localStorage.getItem('auth_token');
+  const refreshToken = localStorage.getItem('refresh_token');
+
+  if (!accessToken || !refreshToken) {
+    return null;
+  }
+
+  const refreshResponse = await fetch(`${API_BASE_URL}/api/auth/refresh-token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      accessToken,
+      refreshToken,
+    }),
+  });
+
+  if (!refreshResponse.ok) {
+    return null;
+  }
+
+  const refreshBody = (await refreshResponse.json()) as RefreshTokenResponse;
+  if (!refreshBody.data) {
+    return null;
+  }
+
+  localStorage.setItem('auth_token', refreshBody.data.accessToken);
+  localStorage.setItem('refresh_token', refreshBody.data.refreshToken);
+
+  return refreshBody.data.accessToken;
+}
+
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
   retryOnUnauthorized = true
 ): Promise<ApiResponse<T>> {
-  // Tự động đính kèm Bearer token nếu có trong localStorage
   const token = localStorage.getItem('auth_token');
   const authHeader: Record<string, string> = token
     ? { Authorization: `Bearer ${token}` }
@@ -42,38 +95,25 @@ export async function apiRequest<T>(
   });
 
   if (response.status === 401 && retryOnUnauthorized) {
-    const refreshToken = localStorage.getItem('refresh_token');
-    if (refreshToken) {
-      const refreshResponse = await fetch(`${API_BASE_URL}/api/auth/refresh-token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken }),
+    const newAccessToken = await tryRefreshAccessToken();
+
+    if (newAccessToken) {
+      response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${newAccessToken}`,
+          ...(options.headers || {}),
+        },
       });
-      if (refreshResponse.ok) {
-        const refreshBody = await refreshResponse.json() as ApiResponse<{ accessToken: string; refreshToken: string }>;
-        if (refreshBody.data) {
-          localStorage.setItem('auth_token', refreshBody.data.accessToken);
-          localStorage.setItem('refresh_token', refreshBody.data.refreshToken);
-          response = await fetch(`${API_BASE_URL}${endpoint}`, {
-            ...options,
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${refreshBody.data.accessToken}`,
-              ...(options.headers || {}),
-            },
-          });
-        }
-      } else {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('refresh_token');
-      }
+    } else {
+      notifyAuthExpired();
     }
   }
 
-  // Luôn parse JSON để lấy message từ BE
   let body: ApiResponse<T>;
   try {
-    body = await response.json();
+    body = (await response.json()) as ApiResponse<T>;
   } catch {
     throw new ApiError(response.status, `HTTP ${response.status}`);
   }

@@ -1,15 +1,12 @@
-import { apiRequest, ApiError } from './apiClient';
+import { ApiError, apiRequest } from './apiClient';
 
-// ─── Types khớp với BE DTOs ───────────────────────────────────────────────────
-
-/** Khớp với BE UserResponse */
 export interface UserResponse {
   id: number;
   username: string;
   fullName: string;
   email: string;
   phone: string;
-  roleName: string; // "Admin" | "Teacher" | "Parent" | "Child"
+  roleName: string;
   isActive: boolean;
   gender: string;
   specialty: string;
@@ -17,7 +14,6 @@ export interface UserResponse {
   updatedAt: string | null;
 }
 
-/** Khớp với BE PagedResponse<T> */
 export interface PagedResponse<T> {
   pageNumber: number;
   pageSize: number;
@@ -26,11 +22,9 @@ export interface PagedResponse<T> {
   items: T[];
 }
 
-/** Enum khớp với BE UserRole enum */
 export type UserRoleEnum = 'Admin' | 'Teacher' | 'Parent' | 'Child';
 export type UserGender = 'Male' | 'Female' | 'Other';
 
-/** Khớp với BE CreateUserRequest */
 export interface CreateUserPayload {
   username: string;
   password: string;
@@ -42,7 +36,6 @@ export interface CreateUserPayload {
   roleName: UserRoleEnum;
 }
 
-/** Khớp với BE CreateAccountRequest */
 export interface CreateAccountPayload {
   username: string;
   fullName: string;
@@ -53,7 +46,6 @@ export interface CreateAccountPayload {
   roleName: UserRoleEnum;
 }
 
-/** Khớp với BE CreateAccountResponse */
 export interface CreateAccountResponse {
   userId: number;
   username: string;
@@ -63,7 +55,6 @@ export interface CreateAccountResponse {
   message: string;
 }
 
-/** Khớp với BE UpdateUserRequest (tất cả optional) */
 export interface UpdateUserPayload {
   fullName?: string;
   email?: string;
@@ -74,8 +65,6 @@ export interface UpdateUserPayload {
   specialty?: string;
 }
 
-// ─── Kết quả trả về chuẩn hóa cho component ──────────────────────────────────
-
 export interface UserServiceResult<T = void> {
   success: boolean;
   message: string;
@@ -83,16 +72,15 @@ export interface UserServiceResult<T = void> {
   data?: T;
 }
 
-// ─── Helper xử lý lỗi ────────────────────────────────────────────────────────
-
-function handleError<T>(err: unknown): UserServiceResult<T> {
-  if (err instanceof ApiError) {
+function handleError<T>(error: unknown): UserServiceResult<T> {
+  if (error instanceof ApiError) {
     return {
       success: false,
-      message: err.message,
-      errors: err.errors,
+      message: error.message,
+      errors: error.errors,
     };
   }
+
   return {
     success: false,
     message: 'Đã xảy ra lỗi không xác định. Vui lòng thử lại.',
@@ -100,142 +88,122 @@ function handleError<T>(err: unknown): UserServiceResult<T> {
   };
 }
 
-// ─── API functions ────────────────────────────────────────────────────────────
-
-/**
- * Lấy danh sách user (có phân trang).
- * GET /api/user?pageNumber=1&pageSize=10
- */
 export async function getUsers(
   pageNumber = 1,
   pageSize = 10
 ): Promise<UserServiceResult<PagedResponse<UserResponse>>> {
   try {
-    const res = await apiRequest<PagedResponse<UserResponse>>(
+    const response = await apiRequest<PagedResponse<UserResponse>>(
       `/api/users?pageNumber=${pageNumber}&pageSize=${pageSize}`
     );
+
     return {
-      success: res.success,
-      message: res.message,
-      errors: res.errors ?? [],
-      data: res.data,
+      success: response.success,
+      message: response.message,
+      errors: response.errors ?? [],
+      data: response.data,
     };
-  } catch (err) {
-    return handleError(err);
+  } catch (error) {
+    return handleError(error);
   }
 }
 
-/**
- * Lấy chi tiết 1 user.
- * GET /api/user/{id}
- */
 export async function getUserById(
   id: number
 ): Promise<UserServiceResult<UserResponse>> {
   try {
-    const res = await apiRequest<UserResponse>(`/api/users/${id}`);
+    const response = await apiRequest<UserResponse>(`/api/users/${id}`);
+
     return {
-      success: res.success,
-      message: res.message,
-      errors: res.errors ?? [],
-      data: res.data,
+      success: response.success,
+      message: response.message,
+      errors: response.errors ?? [],
+      data: response.data,
     };
-  } catch (err) {
-    return handleError(err);
+  } catch (error) {
+    return handleError(error);
   }
 }
 
-/**
- * Tạo user mới.
- * POST /api/users
- * Body: { username, password, fullName, email, phone?, gender, specialty, roleName }
- */
 export async function createUser(
   payload: CreateUserPayload
 ): Promise<UserServiceResult<UserResponse>> {
   try {
-    const res = await apiRequest<UserResponse>('/api/users', {
+    const response = await apiRequest<UserResponse>('/api/users', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+
     return {
-      success: res.success,
-      message: res.message,
-      errors: res.errors ?? [],
-      data: res.data,
+      success: response.success,
+      message: response.message,
+      errors: response.errors ?? [],
+      data: response.data,
     };
-  } catch (err) {
-    return handleError(err);
+  } catch (error) {
+    return handleError(error);
   }
 }
 
-/**
- * Tạo tài khoản có gửi email xác minh.
- * POST /api/users/create-account
- * Body: { username, fullName, email, phone?, gender, specialty, roleName }
- */
 export async function createAccount(
   payload: CreateAccountPayload
 ): Promise<UserServiceResult<CreateAccountResponse>> {
   try {
-    const res = await apiRequest<CreateAccountResponse>('/api/users/create-account', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+    const response = await apiRequest<CreateAccountResponse>(
+      '/api/users/create-account',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }
+    );
+
     return {
-      success: res.success,
-      message: res.message,
-      errors: res.errors ?? [],
-      data: res.data,
+      success: response.success,
+      message: response.message,
+      errors: response.errors ?? [],
+      data: response.data,
     };
-  } catch (err) {
-    return handleError(err);
+  } catch (error) {
+    return handleError(error);
   }
 }
 
-/**
- * Cập nhật user.
- * PUT /api/users/{id}
- * Body: { fullName?, email?, phone?, roleName?, isActive?, gender?, specialty? }
- */
 export async function updateUser(
   id: number,
   payload: UpdateUserPayload
 ): Promise<UserServiceResult<UserResponse>> {
   try {
-    const res = await apiRequest<UserResponse>(`/api/users/${id}`, {
+    const response = await apiRequest<UserResponse>(`/api/users/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
     });
+
     return {
-      success: res.success,
-      message: res.message,
-      errors: res.errors ?? [],
-      data: res.data,
+      success: response.success,
+      message: response.message,
+      errors: response.errors ?? [],
+      data: response.data,
     };
-  } catch (err) {
-    return handleError(err);
+  } catch (error) {
+    return handleError(error);
   }
 }
 
-/**
- * Xóa user.
- * DELETE /api/user/{id}
- */
 export async function deleteUser(
   id: number
 ): Promise<UserServiceResult<boolean>> {
   try {
-    const res = await apiRequest<boolean>(`/api/users/${id}`, {
+    const response = await apiRequest<boolean>(`/api/users/${id}`, {
       method: 'DELETE',
     });
+
     return {
-      success: res.success,
-      message: res.message,
-      errors: res.errors ?? [],
-      data: res.data,
+      success: response.success,
+      message: response.message,
+      errors: response.errors ?? [],
+      data: response.data,
     };
-  } catch (err) {
-    return handleError(err);
+  } catch (error) {
+    return handleError(error);
   }
 }
