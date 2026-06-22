@@ -28,6 +28,7 @@ export interface PagedResponse<T> {
 
 /** Enum khớp với BE UserRole enum */
 export type UserRoleEnum = 'Admin' | 'Teacher' | 'Parent' | 'Child';
+export type UserGender = 'Male' | 'Female' | 'Other';
 
 /** Khớp với BE CreateUserRequest */
 export interface CreateUserPayload {
@@ -36,7 +37,30 @@ export interface CreateUserPayload {
   fullName: string;
   email: string;
   phone?: string;
+  gender: UserGender;
+  specialty: string;
   roleName: UserRoleEnum;
+}
+
+/** Khớp với BE CreateAccountRequest */
+export interface CreateAccountPayload {
+  username: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  gender: UserGender;
+  specialty: string;
+  roleName: UserRoleEnum;
+}
+
+/** Khớp với BE CreateAccountResponse */
+export interface CreateAccountResponse {
+  userId: number;
+  username: string;
+  fullName: string;
+  email: string;
+  roleName: string;
+  message: string;
 }
 
 /** Khớp với BE UpdateUserRequest (tất cả optional) */
@@ -46,7 +70,7 @@ export interface UpdateUserPayload {
   phone?: string;
   roleName?: UserRoleEnum;
   isActive?: boolean;
-  gender?: string;
+  gender?: UserGender;
   specialty?: string;
 }
 
@@ -123,8 +147,8 @@ export async function getUserById(
 
 /**
  * Tạo user mới.
- * POST /api/user
- * Body: { username, password, fullName, email, phone?, roleName }
+ * POST /api/users
+ * Body: { username, password, fullName, email, phone?, gender, specialty, roleName }
  */
 export async function createUser(
   payload: CreateUserPayload
@@ -146,9 +170,33 @@ export async function createUser(
 }
 
 /**
+ * Tạo tài khoản có gửi email xác minh.
+ * POST /api/users/create-account
+ * Body: { username, fullName, email, phone?, gender, specialty, roleName }
+ */
+export async function createAccount(
+  payload: CreateAccountPayload
+): Promise<UserServiceResult<CreateAccountResponse>> {
+  try {
+    const res = await apiRequest<CreateAccountResponse>('/api/users/create-account', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return {
+      success: res.success,
+      message: res.message,
+      errors: res.errors ?? [],
+      data: res.data,
+    };
+  } catch (err) {
+    return handleError(err);
+  }
+}
+
+/**
  * Cập nhật user.
- * PUT /api/user/{id}
- * Body: { fullName?, email?, phone?, roleName?, isActive? }
+ * PUT /api/users/{id}
+ * Body: { fullName?, email?, phone?, roleName?, isActive?, gender?, specialty? }
  */
 export async function updateUser(
   id: number,

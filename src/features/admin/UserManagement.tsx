@@ -93,6 +93,10 @@ export default function UserManagement() {
     setFormUsername,
     formPassword,
     setFormPassword,
+    formGender,
+    setFormGender,
+    formSpecialty,
+    setFormSpecialty,
     formRoleName,
     setFormRoleName,
     formIsActive,
@@ -105,6 +109,27 @@ export default function UserManagement() {
     alertConfig,
     setAlertConfig,
   } = useUserManagement();
+
+  const isCreateMode = modalType === 'add';
+  const isAccountInviteFlow = isCreateMode && formRoleName !== 'Admin';
+  const roleOptions =
+    roles.length > 0
+      ? roles.filter((role) =>
+          ['Admin', 'Teacher', 'Parent'].includes(role.roleName)
+        )
+      : [];
+  const specialtyLabel =
+    formRoleName === 'Teacher'
+      ? 'Chuyen mon'
+      : formRoleName === 'Parent'
+        ? 'Thong tin bo sung'
+        : 'Bo phan / ghi chu';
+  const specialtyPlaceholder =
+    formRoleName === 'Teacher'
+      ? 'Vi du: Tri lieu ngon ngu'
+      : formRoleName === 'Parent'
+        ? 'Vi du: Phu huynh chinh'
+        : 'Vi du: Quan tri he thong';
 
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative">
@@ -557,8 +582,8 @@ export default function UserManagement() {
                           onChange={(e) => setFormRoleName(e.target.value as any)}
                           className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 outline-none cursor-pointer appearance-none focus:border-[#4EACAF]"
                         >
-                          {roles.length > 0 ? (
-                            roles.map((role) => (
+                          {roleOptions.length > 0 ? (
+                            roleOptions.map((role) => (
                               <option key={role.id} value={role.roleName}>
                                 {role.roleName} — {role.description.slice(0, 40)}...
                               </option>
@@ -576,6 +601,38 @@ export default function UserManagement() {
                     </div>
 
                     {/* Username — chỉ hiện khi Add */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
+                        Gioi tinh <span className="text-[#FF8E8E]">*</span>
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={formGender}
+                          onChange={(e) => setFormGender(e.target.value as 'Male' | 'Female' | 'Other')}
+                          className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none cursor-pointer appearance-none focus:border-[#4EACAF]"
+                        >
+                          <option value="Female">Nu</option>
+                          <option value="Male">Nam</option>
+                          <option value="Other">Khac</option>
+                        </select>
+                        <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
+                        {specialtyLabel} <span className="text-[#FF8E8E]">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder={specialtyPlaceholder}
+                        value={formSpecialty}
+                        onChange={(e) => setFormSpecialty(e.target.value)}
+                        className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold outline-none focus:border-[#4EACAF] focus:bg-white transition-all text-gray-700"
+                      />
+                    </div>
+
                     {modalType === 'add' && (
                       <div className="space-y-2">
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
@@ -611,6 +668,17 @@ export default function UserManagement() {
                     )}
 
                     {/* Trạng thái — chỉ hiện khi Edit */}
+                    {isAccountInviteFlow && (
+                      <div className="md:col-span-2 rounded-2xl border border-[#4EACAF]/15 bg-[#4EACAF]/5 px-5 py-4 text-sm text-slate-600">
+                        <p className="font-bold text-[#356f70]">
+                          Teacher vĂ  Parent sáº½ Ä‘Æ°á»£c táº¡o qua flow `create-account`.
+                        </p>
+                        <p className="mt-1 text-xs font-medium">
+                          Há»‡ thá»‘ng sáº½ táº¡o máº­t kháº©u táº¡m, gá»­i email xĂ¡c minh, vĂ  yĂªu cáº§u ngÆ°á»i dĂ¹ng Ä‘á»•i máº­t kháº©u á»Ÿ láº§n Ä‘Äƒng nháº­p Ä‘áº§u tiĂªn.
+                        </p>
+                      </div>
+                    )}
+
                     {modalType === 'edit' && (
                       <div className="space-y-2 md:col-span-2">
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
