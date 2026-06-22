@@ -819,13 +819,13 @@ export default function RoleUserManagementPage({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/20 p-4 backdrop-blur-sm"
+            className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/20 p-4 backdrop-blur-sm"
           >
             <motion.div
               initial={{ opacity: 0, y: 20, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.96 }}
-              className="w-full max-w-2xl overflow-hidden rounded-[32px] border border-slate-100 bg-white shadow-2xl"
+              className="app-modal-panel w-full max-w-2xl overflow-hidden rounded-[32px] border border-slate-100 bg-white shadow-2xl"
             >
               <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
                 <div>
@@ -848,7 +848,7 @@ export default function RoleUserManagementPage({
               </div>
 
               {modalMode === 'detail' ? (
-                <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
+                <div className="app-modal-body grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
                   <DetailField label="Mã người dùng" value={formatUserCode(selectedUser.id)} />
                   <DetailField label="Họ và tên" value={selectedUser.fullName} />
                   <DetailField label="Tên đăng nhập" value={selectedUser.username} />
@@ -879,8 +879,8 @@ export default function RoleUserManagementPage({
                   />
                 </div>
               ) : (
-                <form onSubmit={handleSave} className="space-y-5 p-6">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <form onSubmit={handleSave} className="app-modal-body space-y-5 p-6">
+                  <div className="app-modal-form-grid grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <FormField label="Họ và tên">
                       <input
                         type="text"

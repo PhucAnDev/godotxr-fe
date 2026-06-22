@@ -887,13 +887,13 @@ export default function LearningResultManagement() {
       {/* 5. Detailed Learning Result Interactive Modal Overlay */}
       <AnimatePresence>
         {isDetailModalOpen && selectedResult && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/15 animate-in fade-in duration-300 overflow-y-auto w-full h-full" id="result-modal-backdrop">
+          <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/15 animate-in fade-in duration-300 overflow-y-auto w-full h-full" id="result-modal-backdrop">
             
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="bg-white rounded-[40px] shadow-2xl w-full max-w-4xl overflow-hidden border border-gray-100 relative z-30 flex flex-col my-8"
+              className="app-modal-panel app-modal-panel--wide bg-white rounded-[40px] shadow-2xl w-full max-w-4xl overflow-hidden border border-gray-100 relative z-30 flex flex-col my-8"
               id="result-modal-box"
             >
               
@@ -920,7 +920,7 @@ export default function LearningResultManagement() {
               </div>
 
               {/* Modal Body Scroll view divided into grid columns */}
-              <div className="p-8 space-y-6 overflow-y-auto max-h-[70vh]">
+              <div className="app-modal-body p-8 space-y-6 overflow-y-auto max-h-[70vh]">
                 
                 {/* Section A: Child & Exercise Header card Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

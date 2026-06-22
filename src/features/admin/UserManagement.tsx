@@ -520,12 +520,12 @@ export default function UserManagement() {
       {/* 5. Modals */}
       <AnimatePresence>
         {modalType && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/10 animate-in fade-in duration-300 overflow-y-auto">
+          <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/10 animate-in fade-in duration-300 overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 relative z-30"
+              className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 relative z-30"
             >
               {/* Modal Header */}
               <div className={cn(
@@ -570,7 +570,7 @@ export default function UserManagement() {
                   onResetPassword={handleResetPassword}
                 />
               ) : isChoosingCreateRole ? (
-                <div className="p-8 md:p-10 space-y-6">
+                <div className="app-modal-body p-8 md:p-10 space-y-6">
                   <div className="space-y-2">
                     <p className="text-sm font-bold text-slate-700">
                       Admin hãy chọn đối tượng cần tạo tài khoản.
@@ -581,7 +581,7 @@ export default function UserManagement() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="app-modal-choice-grid grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[
                       {
                         role: 'Parent' as CreateAccountRole,
@@ -600,7 +600,7 @@ export default function UserManagement() {
                         key={option.role}
                         type="button"
                         onClick={() => handleChooseCreateRole(option.role)}
-                        className="text-left rounded-3xl border border-slate-200 p-6 hover:border-[#4EACAF] hover:bg-[#4EACAF]/5 transition-all"
+                        className="app-modal-choice-card text-left rounded-3xl border border-slate-200 p-6 hover:border-[#4EACAF] hover:bg-[#4EACAF]/5 transition-all"
                       >
                         <div className="w-12 h-12 rounded-2xl bg-[#4EACAF]/10 flex items-center justify-center mb-4">
                           <UserPlus className="w-5 h-5 text-[#4EACAF]" />
@@ -615,7 +615,7 @@ export default function UserManagement() {
                     ))}
                   </div>
 
-                  <div className="pt-4 border-t border-gray-100 flex gap-4">
+                  <div className="app-modal-actions pt-4 border-t border-gray-100 flex gap-4">
                     <button
                       type="button"
                       onClick={handleCloseUserModal}
@@ -627,8 +627,8 @@ export default function UserManagement() {
                 </div>
               ) : (
                 /* Modal Body — Add / Edit Form */
-                <form onSubmit={handleSaveUser} className="p-8 md:p-10 space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <form onSubmit={handleSaveUser} className="app-modal-body p-8 md:p-10 space-y-6">
+                  <div className="app-modal-form-grid grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Họ và tên */}
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
@@ -830,7 +830,7 @@ export default function UserManagement() {
                   </div>
 
                   {/* Form Actions */}
-                  <div className="pt-6 border-t border-gray-100 flex gap-4">
+                  <div className="app-modal-actions pt-6 border-t border-gray-100 flex gap-4">
                     <button
                       type="button"
                       onClick={handleCloseUserModal}
@@ -870,7 +870,7 @@ function DetailModalBody({
   onResetPassword: (user: UserResponse) => Promise<void>;
 }) {
   return (
-    <div className="p-8 md:p-10 space-y-8">
+    <div className="app-modal-body p-8 md:p-10 space-y-8">
       {/* Avatar + tên */}
       <div className="flex flex-col md:flex-row gap-8 items-start pb-6 border-b border-gray-50">
         <div className="w-24 h-24 rounded-3xl bg-purple-50 border border-purple-100 flex items-center justify-center p-3 shrink-0 mx-auto md:mx-0">

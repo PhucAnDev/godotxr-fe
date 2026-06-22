@@ -823,12 +823,12 @@ export default function PronunciationDetailPage() {
       {/* Interactive Overlay Replay Simulation modal */}
       <AnimatePresence>
         {activeReplay && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 backdrop-blur-xl bg-gray-900/15 animate-in fade-in duration-300 overflow-y-auto w-full h-full">
+          <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 backdrop-blur-xl bg-gray-900/15 animate-in fade-in duration-300 overflow-y-auto w-full h-full">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 flex flex-col"
+              className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 flex flex-col"
             >
               <div className="bg-[#E2F2F3] px-8 py-6 flex items-center justify-between border-b border-[#C5E1E3] text-gray-900">
                 <div className="space-y-1">
@@ -847,7 +847,7 @@ export default function PronunciationDetailPage() {
                 </button>
               </div>
 
-              <div className="p-8 space-y-6">
+              <div className="app-modal-body p-8 space-y-6">
                 
                 {/* Simulated Mouth 3D positioning mesh frame */}
                 <div className="h-56 bg-slate-900 rounded-[28px] relative overflow-hidden border-2 border-[#4EACAF]/20 shadow-inner flex flex-col justify-between p-5">
@@ -961,12 +961,12 @@ export default function PronunciationDetailPage() {
       {/* Interactive Feedback dialog modal */}
       <AnimatePresence>
         {activeFeedback && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 backdrop-blur-xl bg-gray-900/15 animate-in fade-in duration-300 overflow-y-auto w-full h-full">
+          <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 backdrop-blur-xl bg-gray-900/15 animate-in fade-in duration-300 overflow-y-auto w-full h-full">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="bg-white rounded-[40px] shadow-2xl w-full max-w-xl overflow-hidden border border-gray-100 flex flex-col"
+              className="app-modal-panel app-modal-panel--compact bg-white rounded-[40px] shadow-2xl w-full max-w-xl overflow-hidden border border-gray-100 flex flex-col"
             >
               <div className="bg-[#FFFDF5] px-8 py-6 flex items-center justify-between border-b border-yellow-105 text-gray-900">
                 <div className="space-y-1">
@@ -985,7 +985,7 @@ export default function PronunciationDetailPage() {
                 </button>
               </div>
 
-              <div className="p-8 space-y-4">
+              <div className="app-modal-body p-8 space-y-4">
                 
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-red-50 rounded-2xl text-[#FF8E8E]">

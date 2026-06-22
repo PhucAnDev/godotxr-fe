@@ -204,12 +204,12 @@ export default function RoleManagement() {
       {/* Modals */}
       <AnimatePresence>
         {modalType && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/10 animate-in fade-in duration-300 overflow-y-auto">
+          <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/10 animate-in fade-in duration-300 overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 relative z-30"
+              className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 relative z-30"
             >
               {/* Modal Header */}
               <div className={cn(
@@ -241,7 +241,7 @@ export default function RoleManagement() {
               {modalType === 'detail' && selectedRole ? (
                 <DetailView role={selectedRole} onClose={handleCloseModal} />
               ) : (
-                <form onSubmit={handleSaveRole} className="p-8 md:p-10 space-y-6">
+                <form onSubmit={handleSaveRole} className="app-modal-body p-8 md:p-10 space-y-6">
                   <div className="space-y-6">
                     {/* RoleName — dropdown enum */}
                     <div className="space-y-2">
@@ -325,7 +325,7 @@ export default function RoleManagement() {
                     )}
                   </div>
 
-                  <div className="pt-6 border-t border-gray-100 flex gap-4">
+                  <div className="app-modal-actions pt-6 border-t border-gray-100 flex gap-4">
                     <button
                       type="button"
                       onClick={handleCloseModal}
@@ -443,7 +443,7 @@ function RoleCard({
 
 function DetailView({ role, onClose }: { role: RoleResponse; onClose: () => void }) {
   return (
-    <div className="p-8 md:p-10 space-y-8">
+    <div className="app-modal-body p-8 md:p-10 space-y-8">
       <div className="flex flex-col md:flex-row gap-8 items-start pb-6 border-b border-gray-50">
         <div className="w-24 h-24 rounded-3xl bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0 mx-auto md:mx-0">
           <Shield className="w-12 h-12 text-purple-500" />

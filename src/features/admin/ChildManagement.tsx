@@ -716,12 +716,12 @@ export default function ChildManagement() {
       {/* 5. Modals Overlays */}
       <AnimatePresence>
         {modalType && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/10 animate-in fade-in duration-300 overflow-y-auto w-full h-full">
+          <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/10 animate-in fade-in duration-300 overflow-y-auto w-full h-full">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 relative z-30"
+              className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 relative z-30"
             >
               {/* Modal Header */}
               <div className={cn(
@@ -758,7 +758,7 @@ export default function ChildManagement() {
 
               {/* Modal Body: Detail area */}
               {modalType === 'detail' && selectedChild ? (
-                <div className="p-8 md:p-10 space-y-8">
+                <div className="app-modal-body p-8 md:p-10 space-y-8">
                   <div className="flex flex-col md:flex-row gap-8 items-start pb-6 border-b border-gray-50 font-bold">
                      <div className="w-24 h-24 rounded-3xl bg-purple-50 border border-purple-100 flex items-center justify-center p-3 shrink-0 mx-auto md:mx-0">
                         <img 
@@ -838,7 +838,7 @@ export default function ChildManagement() {
                 </div>
               ) : modalType === 'progress' && selectedChild ? (
                 /* Modal Body: Progress History tracking */
-                <div className="p-8 md:p-10 space-y-6 max-h-[80vh] overflow-y-auto">
+                <div className="app-modal-body p-8 md:p-10 space-y-6 max-h-[80vh] overflow-y-auto">
                    <div className="flex items-center gap-4 bg-orange-50 p-5 rounded-3xl border border-orange-100">
                       <TrendingUp className="w-10 h-10 text-orange-500 shrink-0" />
                       <div>
@@ -887,8 +887,8 @@ export default function ChildManagement() {
                 </div>
               ) : (
                 /* Modal Body: Add/Edit Form */
-                <form onSubmit={handleSaveChild} className="p-8 md:p-10 space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <form onSubmit={handleSaveChild} className="app-modal-body p-8 md:p-10 space-y-6">
+                  <div className="app-modal-form-grid grid grid-cols-1 md:grid-cols-2 gap-6">
 
                     <div className="space-y-2 col-span-1 md:col-span-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
@@ -1007,7 +1007,7 @@ export default function ChildManagement() {
                     </div>
                   </div>
 
-                  <div className="pt-6 border-t border-gray-100 flex gap-4">
+                  <div className="app-modal-actions pt-6 border-t border-gray-100 flex gap-4">
                      <button 
                        type="button"
                        onClick={handleCloseModal}

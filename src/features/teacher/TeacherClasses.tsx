@@ -691,13 +691,13 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
       {/* 5. PORTFOLIO OF ACTION INTERACTIVE OVERLAY MODALS */}
       <AnimatePresence>
         {selectedClass && modalType && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/15 animate-in fade-in duration-300 overflow-y-auto w-full h-full">
+          <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/15 animate-in fade-in duration-300 overflow-y-auto w-full h-full">
             
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 flex flex-col my-8"
+              className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 flex flex-col my-8"
               id="classes-action-modal"
             >
               
@@ -729,7 +729,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
               
               {/* Case 1: Broad details description */}
               {modalType === 'DETAILS' && (
-                <div className="p-8 space-y-6 text-left">
+                <div className="app-modal-body p-8 space-y-6 text-left">
                   
                   <div className="space-y-2">
                     <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">Mô tả mục tiêu trị âm:</h4>
@@ -770,7 +770,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
 
               {/* Case 2: List of Students */}
               {modalType === 'STUDENTS' && (
-                <div className="p-8 space-y-4 max-h-[50vh] overflow-y-auto">
+                <div className="app-modal-body p-8 space-y-4 max-h-[50vh] overflow-y-auto">
                   
                   <div className="flex items-center justify-between border-b pb-3 text-xs font-black text-gray-400 uppercase">
                     <span>Học viên rèn luyện</span>
@@ -807,7 +807,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
 
               {/* Case 3: Performance Results */}
               {modalType === 'PERFORMANCE' && (
-                <div className="p-8 space-y-6 text-left max-h-[50vh] overflow-y-auto">
+                <div className="app-modal-body p-8 space-y-6 text-left max-h-[50vh] overflow-y-auto">
                   
                   <div className="space-y-4">
                     {getEnrolledChildrenInClass(selectedClass.ClassId).map((kid) => {
@@ -849,7 +849,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
 
               {/* Case 4: Class Analysis Report download simulator */}
               {modalType === 'REPORT' && (
-                <div className="p-8 space-y-6 text-center">
+                <div className="app-modal-body p-8 space-y-6 text-center">
                   
                   <div className="w-16 h-16 bg-[#FFF2F2] rounded-full flex items-center justify-center mx-auto text-[#FF8E8E] border-2 border-dashed border-[#FF8E8E]/40">
                     <FileSpreadsheet className="w-8 h-8" />

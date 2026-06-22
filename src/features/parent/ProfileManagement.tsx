@@ -63,8 +63,8 @@ export default function ProfileManagement() {
 
       {/* Edit Modal Simulation */}
       {editingChild && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 backdrop-blur-xl bg-blue-900/10 animate-in fade-in duration-300">
-           <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-6 backdrop-blur-xl bg-blue-900/10 animate-in fade-in duration-300">
+           <div className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-300">
               <div className="bg-sky-100 px-10 py-6 flex items-center justify-between">
                  <h2 className="text-2xl font-black text-gray-900 italic">Chỉnh sửa hồ sơ: {editingChild.name}</h2>
                  <button onClick={() => setEditingChild(null)} className="p-2 hover:bg-white/50 rounded-full transition-colors">
@@ -72,7 +72,7 @@ export default function ProfileManagement() {
                  </button>
               </div>
 
-              <div className="p-10 flex flex-col md:flex-row gap-10">
+              <div className="app-modal-body p-10 flex flex-col md:flex-row gap-10">
                  <div className="space-y-8 flex-1">
                     <div className="space-y-2">
                        <label className="text-sm font-bold text-gray-400 uppercase tracking-widest ml-1">Tên của bé</label>
