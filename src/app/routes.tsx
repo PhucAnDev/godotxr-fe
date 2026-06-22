@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { AuthenticatedLayout } from '../components/layout/AuthenticatedLayout';
-import { getCurrentUser, mockLogout } from '../lib/authMock';
+import { getCurrentUser } from '../lib/authMock';
 import HomeView from '../features/public/HomeView';
 import LoginView from '../features/auth/LoginView';
 import ForgotPasswordView from '../features/auth/ForgotPasswordView';
@@ -61,9 +61,12 @@ export function AppRoutes() {
   };
 
   const handleLogout = () => {
-    mockLogout();
-    setUserRole(null);
+    // Xóa toàn bộ dữ liệu phiên đăng nhập khỏi localStorage
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('current_user');
     localStorage.removeItem('user_role');
+    setUserRole(null);
     navigate('/');
   };
 

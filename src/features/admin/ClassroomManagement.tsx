@@ -34,12 +34,14 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
+import { useClassroomManagementApi, type ClassroomResponse } from '../../hooks/useClassroomManagementApi';
 
 // DB Interfaces
 interface Classroom {
   ClassId: string;
   TeacherId: string;
   ProgramId: string;
+  SemesterId?: string;
   ClassName: string;
   Description: string;
   StartDate: string;
@@ -48,6 +50,13 @@ interface Classroom {
   CreatedAt: string;
   UpdatedAt: string;
 }
+
+const mapClassroom = (classroom: ClassroomResponse): Classroom => ({
+  ClassId: String(classroom.id), TeacherId: String(classroom.userId), ProgramId: String(classroom.programId), SemesterId: String(classroom.semesterId),
+  ClassName: classroom.className, Description: classroom.description ?? '',
+  StartDate: classroom.startDate.slice(0, 10), EndDate: classroom.endDate.slice(0, 10),
+  Status: classroom.status as Classroom['Status'], CreatedAt: classroom.createdAt, UpdatedAt: classroom.updatedAt ?? classroom.createdAt,
+});
 
 interface Teacher {
   TeacherId: string;
@@ -220,7 +229,11 @@ const MOCK_CHILDREN_IN_CLASS: Record<string, EnrolledStudent[]> = {
 };
 
 export default function ClassroomManagement() {
-  const [classrooms, setClassrooms] = useState<Classroom[]>(INITIAL_CLASSROOMS);
+  const { getClassrooms, getPrograms, getSemesters, getUsers, createClassroom, updateClassroom } = useClassroomManagementApi();
+  const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [defaultSemesterId, setDefaultSemesterId] = useState('');
   
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -258,6 +271,16 @@ export default function ClassroomManagement() {
     }, 4000);
   };
 
+  useEffect(() => {
+    void Promise.all([getClassrooms(), getUsers(1, 100), getPrograms(), getSemesters()]).then(([classResult, userResult, programResult, semesterResult]) => {
+      if (classResult.success && classResult.data) setClassrooms(classResult.data.items.map(mapClassroom));
+      else triggerNotification(classResult.errors.join(' ') || classResult.message, 'warning');
+      if (userResult.data) setTeachers(userResult.data.items.filter(u => u.roleName === 'Teacher').map(u => ({ TeacherId: String(u.id), FullName: u.fullName, Specialty: u.specialty, Email: u.email, AvatarSeed: u.username })));
+      if (programResult.data) setPrograms(programResult.data.items.map(p => ({ ProgramId: String(p.id), ProgramName: p.programName, Language: p.language, TargetAgeFrom: p.targetAgeFrom, TargetAgeTo: p.targetAgeTo })));
+      if (semesterResult.data) setDefaultSemesterId(String(semesterResult.data.items[0]?.id ?? ''));
+    });
+  }, []);
+
   // KPI calculations
   const totalClasses = classrooms.length;
   const activeClasses = classrooms.filter(c => c.Status === 'Active').length;
@@ -270,13 +293,13 @@ export default function ClassroomManagement() {
     return endDateObj <= triggerDateObj;
   }).length;
 
-  const totalTeachersAllocated = MOCK_TEACHERS.length;
+  const totalTeachersAllocated = teachers.length;
 
   // Actions
   const handleOpenAdd = () => {
     setFormClassName('');
-    setFormTeacherId(MOCK_TEACHERS[0]?.TeacherId || '');
-    setFormProgramId(MOCK_PROGRAMS[0]?.ProgramId || '');
+    setFormTeacherId(teachers[0]?.TeacherId || '');
+    setFormProgramId(programs[0]?.ProgramId || '');
     setFormDescription('');
     setFormStartDate('2026-06-01');
     setFormEndDate('2026-09-01');
@@ -313,7 +336,7 @@ export default function ClassroomManagement() {
   };
 
   // Save classroom changes
-  const handleSaveClassroom = (e: React.FormEvent) => {
+  const handleSaveClassroom = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formClassName.trim()) {
@@ -330,6 +353,16 @@ export default function ClassroomManagement() {
       triggerNotification('Ngày bắt đầu phải trước ngày kết thúc học phần!', 'warning');
       return;
     }
+
+    const payload = { userId: Number(formTeacherId), programId: Number(formProgramId), semesterId: Number(selectedClass?.SemesterId || defaultSemesterId), className: formClassName.trim(), description: formDescription.trim(), startDate: formStartDate, endDate: formEndDate, status: formStatus };
+    const apiResult = modalType === 'add' ? await createClassroom(payload) : selectedClass ? await updateClassroom(Number(selectedClass.ClassId), payload) : null;
+    if (apiResult?.success && apiResult.data) {
+      const mapped = mapClassroom(apiResult.data);
+      setClassrooms(current => modalType === 'add' ? [mapped, ...current] : current.map(c => c.ClassId === mapped.ClassId ? mapped : c));
+      triggerNotification(apiResult.message);
+      handleCloseModal();
+    } else if (apiResult) triggerNotification(apiResult.errors.join(' ') || apiResult.message, 'warning');
+    return;
 
     if (modalType === 'add') {
       const newClass: Classroom = {
@@ -367,13 +400,11 @@ export default function ClassroomManagement() {
   };
 
   // Close or Reopen classroom quick toggle
-  const handleToggleClassState = (cls: Classroom) => {
+  const handleToggleClassState = async (cls: Classroom) => {
     const nextStatus: Classroom['Status'] = cls.Status === 'Closed' ? 'Active' : 'Closed';
-    setClassrooms(classrooms.map(c => c.ClassId === cls.ClassId ? {
-      ...c,
-      Status: nextStatus,
-      UpdatedAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
-    } : c));
+    const result = await updateClassroom(Number(cls.ClassId), { userId: Number(cls.TeacherId), programId: Number(cls.ProgramId), semesterId: Number(cls.SemesterId || defaultSemesterId), className: cls.ClassName, description: cls.Description, startDate: cls.StartDate, endDate: cls.EndDate, status: nextStatus });
+    if (!result.success || !result.data) { triggerNotification(result.errors.join(' ') || result.message, 'warning'); return; }
+    setClassrooms(current => current.map(c => c.ClassId === cls.ClassId ? mapClassroom(result.data!) : c));
 
     triggerNotification(
       nextStatus === 'Active' 
@@ -385,8 +416,8 @@ export default function ClassroomManagement() {
 
   // Filters logic
   const filteredClassrooms = classrooms.filter(item => {
-    const teacher = MOCK_TEACHERS.find(t => t.TeacherId === item.TeacherId);
-    const program = MOCK_PROGRAMS.find(p => p.ProgramId === item.ProgramId);
+    const teacher = teachers.find(t => t.TeacherId === item.TeacherId);
+    const program = programs.find(p => p.ProgramId === item.ProgramId);
     
     const matchesSearch = 
       item.ClassName.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -559,7 +590,7 @@ export default function ClassroomManagement() {
               className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/45 px-4 py-2.5 rounded-xl font-bold text-gray-750 outline-none cursor-pointer pr-10 text-xs"
             >
               <option value="ALL">Mọi chương trình học</option>
-              {MOCK_PROGRAMS.map(prog => (
+              {programs.map(prog => (
                 <option key={prog.ProgramId} value={prog.ProgramId}>
                   {prog.ProgramName.slice(0, 32)}...
                 </option>
@@ -575,7 +606,7 @@ export default function ClassroomManagement() {
               className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/45 px-4 py-2.5 rounded-xl font-bold text-gray-750 outline-none cursor-pointer pr-10 text-xs"
             >
               <option value="ALL">Mọi Giáo viên phụ trách</option>
-              {MOCK_TEACHERS.map(tch => (
+              {teachers.map(tch => (
                 <option key={tch.TeacherId} value={tch.TeacherId}>
                   {tch.FullName}
                 </option>
@@ -634,8 +665,8 @@ export default function ClassroomManagement() {
                 </thead>
                 <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
                   {paginatedClassrooms.map((cls) => {
-                    const teacher = MOCK_TEACHERS.find(t => t.TeacherId === cls.TeacherId);
-                    const program = MOCK_PROGRAMS.find(p => p.ProgramId === cls.ProgramId);
+                    const teacher = teachers.find(t => t.TeacherId === cls.TeacherId);
+                    const program = programs.find(p => p.ProgramId === cls.ProgramId);
                     const studentCount = (MOCK_CHILDREN_IN_CLASS[cls.ClassId] || []).length;
                     return (
                       <tr 
@@ -862,7 +893,7 @@ export default function ClassroomManagement() {
                              </span>
                           </div>
                           <p className="text-gray-400 text-xs uppercase tracking-wider mt-1 font-black">
-                            Chương trình: {MOCK_PROGRAMS.find(p => p.ProgramId === selectedClass.ProgramId)?.ProgramName || 'Chưa định nghĩa'}
+                            Chương trình: {programs.find(p => p.ProgramId === selectedClass.ProgramId)?.ProgramName || 'Chưa định nghĩa'}
                           </p>
                         </div>
                         
@@ -885,23 +916,23 @@ export default function ClassroomManagement() {
                      />
                      <DetailRow 
                        label="Mã định danh chương trình (ProgramId)" 
-                       value={`${MOCK_PROGRAMS.find(p => p.ProgramId === selectedClass.ProgramId)?.ProgramName || 'Không rõ'} (${selectedClass.ProgramId})`} 
+                       value={`${programs.find(p => p.ProgramId === selectedClass.ProgramId)?.ProgramName || 'Không rõ'} (${selectedClass.ProgramId})`}
                      />
                      <DetailRow 
                        label="Nhóm tuổi tương thích học phần" 
-                       value={`Từ ${MOCK_PROGRAMS.find(p => p.ProgramId === selectedClass.ProgramId)?.TargetAgeFrom || 3} tuổi tới ${MOCK_PROGRAMS.find(p => p.ProgramId === selectedClass.ProgramId)?.TargetAgeTo || 10} tuổi`} 
+                       value={`Từ ${programs.find(p => p.ProgramId === selectedClass.ProgramId)?.TargetAgeFrom || 3} tuổi tới ${programs.find(p => p.ProgramId === selectedClass.ProgramId)?.TargetAgeTo || 10} tuổi`}
                      />
                      <DetailRow 
                        label="Ngôn ngữ chính luyện tập" 
-                       value={MOCK_PROGRAMS.find(p => p.ProgramId === selectedClass.ProgramId)?.Language || 'Tiếng Việt'} 
+                       value={programs.find(p => p.ProgramId === selectedClass.ProgramId)?.Language || 'Tiếng Việt'}
                      />
                      <DetailRow 
                        label="Chuyên viên phụ trách (Teacher)" 
-                       value={`${MOCK_TEACHERS.find(t => t.TeacherId === selectedClass.TeacherId)?.FullName || 'Không rỏ'} (${selectedClass.TeacherId})`} 
+                       value={`${teachers.find(t => t.TeacherId === selectedClass.TeacherId)?.FullName || 'Không rỏ'} (${selectedClass.TeacherId})`}
                      />
                      <DetailRow 
                        label="Chuyên môn giáo dục đồng hành" 
-                       value={MOCK_TEACHERS.find(t => t.TeacherId === selectedClass.TeacherId)?.Specialty || 'Chưa thiết lập'} 
+                       value={teachers.find(t => t.TeacherId === selectedClass.TeacherId)?.Specialty || 'Chưa thiết lập'}
                      />
                      <DetailRow 
                        label="Thời biểu nộp hồ sơ khóa học" 
@@ -1014,7 +1045,7 @@ export default function ClassroomManagement() {
                           onChange={(e) => setFormTeacherId(e.target.value)}
                           className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 outline-none cursor-pointer appearance-none focus:border-[#4EACAF] text-sm"
                         >
-                          {MOCK_TEACHERS.map(t => (
+                          {teachers.map(t => (
                              <option key={t.TeacherId} value={t.TeacherId}>
                                {t.FullName} ({t.Specialty.slice(0, 30)}...)
                              </option>
@@ -1034,7 +1065,7 @@ export default function ClassroomManagement() {
                           onChange={(e) => setFormProgramId(e.target.value)}
                           className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 outline-none cursor-pointer appearance-none focus:border-[#4EACAF] text-sm"
                         >
-                          {MOCK_PROGRAMS.map(p => (
+                          {programs.map(p => (
                              <option key={p.ProgramId} value={p.ProgramId}>
                                {p.ProgramName}
                              </option>

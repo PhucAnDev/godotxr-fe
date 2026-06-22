@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
+import { useEnrollmentManagementApi, type EnrollmentResponse } from '../../hooks/useEnrollmentManagementApi';
 
 // DB Interfaces
 interface Child {
@@ -61,6 +62,12 @@ interface Enrollment {
   CreatedAt: string;
   UpdatedAt: string;
 }
+
+const mapEnrollment = (enrollment: EnrollmentResponse): Enrollment => ({
+  EnrollmentId: String(enrollment.id), ChildId: String(enrollment.childId), ClassId: String(enrollment.classId),
+  EnrollmentDate: enrollment.enrollmentDate.slice(0, 10), Status: enrollment.status as Enrollment['Status'],
+  CreatedAt: enrollment.createdAt, UpdatedAt: enrollment.updatedAt,
+});
 
 // Mock Data
 const MOCK_CHILDREN: Child[] = [
@@ -177,9 +184,10 @@ const INITIAL_ENROLLMENTS: Enrollment[] = [
 ];
 
 export default function EnrollmentManagement() {
-  const [enrollments, setEnrollments] = useState<Enrollment[]>(INITIAL_ENROLLMENTS);
-  const [children] = useState<Child[]>(MOCK_CHILDREN);
-  const [classrooms] = useState<Classroom[]>(MOCK_CLASSROOMS);
+  const { getEnrollments, getChildProfiles, getClassrooms, createEnrollment, updateEnrollment, transferEnrollment, approveEnrollment } = useEnrollmentManagementApi();
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [children, setChildren] = useState<Child[]>([]);
+  const [classrooms, setClassrooms] = useState<Classroom[]>([]);
 
   // Filter States
   const [searchQuery, setSearchQuery] = useState('');
@@ -214,6 +222,15 @@ export default function EnrollmentManagement() {
       setAlertConfig(null);
     }, 4000);
   };
+
+  useEffect(() => {
+    void Promise.all([getEnrollments(), getChildProfiles(), getClassrooms()]).then(([enrollmentResult, childResult, classResult]) => {
+      if (enrollmentResult.success && enrollmentResult.data) setEnrollments(enrollmentResult.data.items.map(mapEnrollment));
+      else triggerNotification(enrollmentResult.errors.join(' ') || enrollmentResult.message, 'warning');
+      if (childResult.data) setChildren(childResult.data.items.map(c => ({ ChildId: String(c.id), FullName: c.fullName, Age: c.age, Gender: c.gender, LearningLevel: c.learningLevel, Status: c.status })));
+      if (classResult.data) setClassrooms(classResult.data.items.map(c => ({ ClassId: String(c.id), ClassName: c.className, TeacherId: String(c.userId), TeacherName: c.teacherName, ProgramId: String(c.programId), ProgramName: c.programName, Status: c.status as Classroom['Status'] })));
+    });
+  }, []);
 
   // Stats Counters
   const totalEnrollments = enrollments.length;
@@ -261,7 +278,7 @@ export default function EnrollmentManagement() {
   };
 
   // Form submit handler with validation UI
-  const handleSaveEnrollment = (e: React.FormEvent) => {
+  const handleSaveEnrollment = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formChildId) {
@@ -291,6 +308,16 @@ export default function EnrollmentManagement() {
       triggerNotification('Mã lớp học không tồn tại!', 'warning');
       return;
     }
+
+    const payload = { childId: Number(formChildId), classId: Number(formClassId), enrollmentDate: formEnrollmentDate, status: formStatus };
+    const apiResult = modalType === 'add' ? await createEnrollment(payload) : selectedEnrollment ? await updateEnrollment(Number(selectedEnrollment.EnrollmentId), payload) : null;
+    if (apiResult?.success && apiResult.data) {
+      const mapped = mapEnrollment(apiResult.data);
+      setEnrollments(current => modalType === 'add' ? [mapped, ...current] : current.map(e => e.EnrollmentId === mapped.EnrollmentId ? mapped : e));
+      triggerNotification(apiResult.message);
+      handleCloseModal();
+    } else if (apiResult) triggerNotification(apiResult.errors.join(' ') || apiResult.message, 'warning');
+    return;
 
     if (modalType === 'add') {
       // Check if duplicate active enrollment exists
@@ -333,7 +360,7 @@ export default function EnrollmentManagement() {
   };
 
   // Transfer class submit action
-  const handleTransferClassSubmit = (e: React.FormEvent) => {
+  const handleTransferClassSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!selectedEnrollment) return;
@@ -351,38 +378,32 @@ export default function EnrollmentManagement() {
       return;
     }
 
-    setEnrollments(enrollments.map(e => e.EnrollmentId === selectedEnrollment.EnrollmentId ? {
-      ...e,
-      ClassId: formClassId,
-      UpdatedAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
-    } : e));
-
-    triggerNotification(`Đã chuyển bé "${childObj.FullName}" sang học lớp mới "${nextClass.ClassName}" thành công!`);
-    handleCloseModal();
+    const result = await transferEnrollment(Number(selectedEnrollment.EnrollmentId), Number(formClassId));
+    if (result.success && result.data) {
+      setEnrollments(current => current.map(e => e.EnrollmentId === selectedEnrollment.EnrollmentId ? mapEnrollment(result.data!) : e));
+      triggerNotification(result.message);
+      handleCloseModal();
+    } else triggerNotification(result.errors.join(' ') || result.message, 'warning');
   };
 
   // Set to cancelled quick action
-  const handleCancelEnrollment = (enrollment: Enrollment) => {
+  const handleCancelEnrollment = async (enrollment: Enrollment) => {
     const childObj = children.find(c => c.ChildId === enrollment.ChildId);
-    setEnrollments(enrollments.map(e => e.EnrollmentId === enrollment.EnrollmentId ? {
-      ...e,
-      Status: 'Cancelled',
-      UpdatedAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
-    } : e));
-
-    triggerNotification(`Đã hủy học trình ghi danh của em bé "${childObj?.FullName || 'học viên'}"!`, 'warning');
+    const result = await updateEnrollment(Number(enrollment.EnrollmentId), { childId: Number(enrollment.ChildId), classId: Number(enrollment.ClassId), enrollmentDate: enrollment.EnrollmentDate, status: 'Cancelled' });
+    if (result.success && result.data) {
+      setEnrollments(current => current.map(e => e.EnrollmentId === enrollment.EnrollmentId ? mapEnrollment(result.data!) : e));
+      triggerNotification(result.message, 'warning');
+    } else triggerNotification(result.errors.join(' ') || result.message, 'warning');
   };
 
   // Approve pending approval enrollment helper
-  const handleApproveEnrollment = (enrollment: Enrollment) => {
+  const handleApproveEnrollment = async (enrollment: Enrollment) => {
     const childObj = children.find(c => c.ChildId === enrollment.ChildId);
-    setEnrollments(enrollments.map(e => e.EnrollmentId === enrollment.EnrollmentId ? {
-      ...e,
-      Status: 'Active',
-      UpdatedAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
-    } : e));
-
-    triggerNotification(`Đã phê duyệt chính thức cho bé "${childObj?.FullName || 'học sinh'}" nhập học!`);
+    const result = await approveEnrollment(Number(enrollment.EnrollmentId));
+    if (result.success && result.data) {
+      setEnrollments(current => current.map(e => e.EnrollmentId === enrollment.EnrollmentId ? mapEnrollment(result.data!) : e));
+      triggerNotification(result.message);
+    } else triggerNotification(result.errors.join(' ') || result.message, 'warning');
   };
 
   // Filter & Search computation chain

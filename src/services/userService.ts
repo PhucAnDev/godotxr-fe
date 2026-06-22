@@ -1,1 +1,241 @@
-export {};
+import { apiRequest, ApiError } from './apiClient';
+
+// ─── Types khớp với BE DTOs ───────────────────────────────────────────────────
+
+/** Khớp với BE UserResponse */
+export interface UserResponse {
+  id: number;
+  username: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  roleName: string; // "Admin" | "Teacher" | "Parent" | "Child"
+  isActive: boolean;
+  gender: string;
+  specialty: string;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+/** Khớp với BE PagedResponse<T> */
+export interface PagedResponse<T> {
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  items: T[];
+}
+
+/** Enum khớp với BE UserRole enum */
+export type UserRoleEnum = 'Admin' | 'Teacher' | 'Parent' | 'Child';
+export type UserGender = 'Male' | 'Female' | 'Other';
+
+/** Khớp với BE CreateUserRequest */
+export interface CreateUserPayload {
+  username: string;
+  password: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  gender: UserGender;
+  specialty: string;
+  roleName: UserRoleEnum;
+}
+
+/** Khớp với BE CreateAccountRequest */
+export interface CreateAccountPayload {
+  username: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  gender: UserGender;
+  specialty: string;
+  roleName: UserRoleEnum;
+}
+
+/** Khớp với BE CreateAccountResponse */
+export interface CreateAccountResponse {
+  userId: number;
+  username: string;
+  fullName: string;
+  email: string;
+  roleName: string;
+  message: string;
+}
+
+/** Khớp với BE UpdateUserRequest (tất cả optional) */
+export interface UpdateUserPayload {
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  roleName?: UserRoleEnum;
+  isActive?: boolean;
+  gender?: UserGender;
+  specialty?: string;
+}
+
+// ─── Kết quả trả về chuẩn hóa cho component ──────────────────────────────────
+
+export interface UserServiceResult<T = void> {
+  success: boolean;
+  message: string;
+  errors: string[];
+  data?: T;
+}
+
+// ─── Helper xử lý lỗi ────────────────────────────────────────────────────────
+
+function handleError<T>(err: unknown): UserServiceResult<T> {
+  if (err instanceof ApiError) {
+    return {
+      success: false,
+      message: err.message,
+      errors: err.errors,
+    };
+  }
+  return {
+    success: false,
+    message: 'Đã xảy ra lỗi không xác định. Vui lòng thử lại.',
+    errors: [],
+  };
+}
+
+// ─── API functions ────────────────────────────────────────────────────────────
+
+/**
+ * Lấy danh sách user (có phân trang).
+ * GET /api/user?pageNumber=1&pageSize=10
+ */
+export async function getUsers(
+  pageNumber = 1,
+  pageSize = 10
+): Promise<UserServiceResult<PagedResponse<UserResponse>>> {
+  try {
+    const res = await apiRequest<PagedResponse<UserResponse>>(
+      `/api/users?pageNumber=${pageNumber}&pageSize=${pageSize}`
+    );
+    return {
+      success: res.success,
+      message: res.message,
+      errors: res.errors ?? [],
+      data: res.data,
+    };
+  } catch (err) {
+    return handleError(err);
+  }
+}
+
+/**
+ * Lấy chi tiết 1 user.
+ * GET /api/user/{id}
+ */
+export async function getUserById(
+  id: number
+): Promise<UserServiceResult<UserResponse>> {
+  try {
+    const res = await apiRequest<UserResponse>(`/api/users/${id}`);
+    return {
+      success: res.success,
+      message: res.message,
+      errors: res.errors ?? [],
+      data: res.data,
+    };
+  } catch (err) {
+    return handleError(err);
+  }
+}
+
+/**
+ * Tạo user mới.
+ * POST /api/users
+ * Body: { username, password, fullName, email, phone?, gender, specialty, roleName }
+ */
+export async function createUser(
+  payload: CreateUserPayload
+): Promise<UserServiceResult<UserResponse>> {
+  try {
+    const res = await apiRequest<UserResponse>('/api/users', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return {
+      success: res.success,
+      message: res.message,
+      errors: res.errors ?? [],
+      data: res.data,
+    };
+  } catch (err) {
+    return handleError(err);
+  }
+}
+
+/**
+ * Tạo tài khoản có gửi email xác minh.
+ * POST /api/users/create-account
+ * Body: { username, fullName, email, phone?, gender, specialty, roleName }
+ */
+export async function createAccount(
+  payload: CreateAccountPayload
+): Promise<UserServiceResult<CreateAccountResponse>> {
+  try {
+    const res = await apiRequest<CreateAccountResponse>('/api/users/create-account', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return {
+      success: res.success,
+      message: res.message,
+      errors: res.errors ?? [],
+      data: res.data,
+    };
+  } catch (err) {
+    return handleError(err);
+  }
+}
+
+/**
+ * Cập nhật user.
+ * PUT /api/users/{id}
+ * Body: { fullName?, email?, phone?, roleName?, isActive?, gender?, specialty? }
+ */
+export async function updateUser(
+  id: number,
+  payload: UpdateUserPayload
+): Promise<UserServiceResult<UserResponse>> {
+  try {
+    const res = await apiRequest<UserResponse>(`/api/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+    return {
+      success: res.success,
+      message: res.message,
+      errors: res.errors ?? [],
+      data: res.data,
+    };
+  } catch (err) {
+    return handleError(err);
+  }
+}
+
+/**
+ * Xóa user.
+ * DELETE /api/user/{id}
+ */
+export async function deleteUser(
+  id: number
+): Promise<UserServiceResult<boolean>> {
+  try {
+    const res = await apiRequest<boolean>(`/api/users/${id}`, {
+      method: 'DELETE',
+    });
+    return {
+      success: res.success,
+      message: res.message,
+      errors: res.errors ?? [],
+      data: res.data,
+    };
+  } catch (err) {
+    return handleError(err);
+  }
+}

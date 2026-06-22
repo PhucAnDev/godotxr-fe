@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
+import { useProgramManagementApi, type ProgramResponse } from '../../hooks/useProgramManagementApi';
 
 // DB Interfaces
 interface Program {
@@ -48,6 +49,18 @@ interface Lesson {
   DurationMinutes: number;
   VrInteractiveMode: string;
 }
+
+const mapProgram = (program: ProgramResponse): Program => ({
+  ProgramId: String(program.id),
+  ProgramName: program.programName,
+  Description: program.description ?? '',
+  TargetAgeFrom: program.targetAgeFrom,
+  TargetAgeTo: program.targetAgeTo,
+  Language: program.language,
+  Status: program.status,
+  CreatedAt: program.createdAt,
+  UpdatedAt: program.updatedAt ?? program.createdAt,
+});
 
 // Mock Programs
 const INITIAL_PROGRAMS: Program[] = [
@@ -134,7 +147,8 @@ const MOCK_LESSONS_BY_PROGRAM: Record<string, Lesson[]> = {
 };
 
 export default function ProgramManagement() {
-  const [programs, setPrograms] = useState<Program[]>(INITIAL_PROGRAMS);
+  const { getPrograms, createProgram, updateProgram } = useProgramManagementApi();
+  const [programs, setPrograms] = useState<Program[]>([]);
   
   // Filtering and searching states
   const [searchQuery, setSearchQuery] = useState('');
@@ -170,6 +184,13 @@ export default function ProgramManagement() {
     setTimeout(() => setAlertConfig(null), 3500);
   };
 
+  useEffect(() => {
+    void getPrograms().then((result) => {
+      if (result.success && result.data) setPrograms(result.data.items.map(mapProgram));
+      else triggerToast(result.errors.join(' ') || result.message, 'warning');
+    });
+  }, []);
+
   // Quick stats
   const totalCount = programs.length;
   const activeCount = programs.filter(p => p.Status === 'Active').length;
@@ -177,20 +198,19 @@ export default function ProgramManagement() {
   const enCount = programs.filter(p => p.Language === 'English').length;
 
   // Actions
-  const handleToggleStatus = (programId: string) => {
-    const updated = programs.map(p => {
-      if (p.ProgramId === programId) {
-        const nextStatus = p.Status === 'Active' ? 'Inactive' : 'Active';
-        triggerToast(`Đã ${nextStatus === 'Active' ? 'Kích hoạt' : 'Tạm dừng'} chương trình ${p.ProgramId} thành công!`);
-        return {
-          ...p,
-          Status: nextStatus as 'Active' | 'Inactive',
-          UpdatedAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
-        };
-      }
-      return p;
+  const handleToggleStatus = async (programId: string) => {
+    const program = programs.find(p => p.ProgramId === programId);
+    if (!program) return;
+    const result = await updateProgram(Number(programId), {
+      programName: program.ProgramName, description: program.Description,
+      targetAgeFrom: program.TargetAgeFrom, targetAgeTo: program.TargetAgeTo,
+      language: program.Language,
+      status: program.Status === 'Active' ? 'Inactive' : 'Active',
     });
-    setPrograms(updated);
+    if (result.success && result.data) {
+      setPrograms(current => current.map(p => p.ProgramId === programId ? mapProgram(result.data!) : p));
+      triggerToast(result.message);
+    } else triggerToast(result.errors.join(' ') || result.message, 'warning');
   };
 
   const handleOpenAdd = () => {
@@ -225,7 +245,7 @@ export default function ProgramManagement() {
     setSelectedProgram(null);
   };
 
-  const handleSaveProgram = (e: React.FormEvent) => {
+  const handleSaveProgram = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formName.trim()) {
@@ -245,36 +265,16 @@ export default function ProgramManagement() {
       return;
     }
 
-    if (modalType === 'add') {
-      const nextId = `PRG-${String(programs.length + 1).padStart(3, '0')}`;
-      const newProg: Program = {
-        ProgramId: nextId,
-        ProgramName: formName,
-        Description: formDesc,
-        TargetAgeFrom: formAgeFrom,
-        TargetAgeTo: formAgeTo,
-        Language: formLang,
-        Status: formStatus,
-        CreatedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
-        UpdatedAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
-      };
-      setPrograms([newProg, ...programs]);
-      triggerToast(`Tạo thành công chương trình "${formName}"!`);
-    } else if (modalType === 'edit' && selectedProgram) {
-      setPrograms(programs.map(p => p.ProgramId === selectedProgram.ProgramId ? {
-        ...p,
-        ProgramName: formName,
-        Description: formDesc,
-        TargetAgeFrom: formAgeFrom,
-        TargetAgeTo: formAgeTo,
-        Language: formLang,
-        Status: formStatus,
-        UpdatedAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
-      } : p));
-      triggerToast(`Đã lưu thay đổi cho chương trình ${selectedProgram.ProgramId}!`);
-    }
-
-    handleCloseModal();
+    const payload = { programName: formName.trim(), description: formDesc.trim(), targetAgeFrom: formAgeFrom, targetAgeTo: formAgeTo, language: formLang, status: formStatus };
+    const result = modalType === 'add'
+      ? await createProgram(payload)
+      : selectedProgram ? await updateProgram(Number(selectedProgram.ProgramId), payload) : null;
+    if (result?.success && result.data) {
+      const mapped = mapProgram(result.data);
+      setPrograms(current => modalType === 'add' ? [mapped, ...current] : current.map(p => p.ProgramId === mapped.ProgramId ? mapped : p));
+      triggerToast(result.message);
+      handleCloseModal();
+    } else if (result) triggerToast(result.errors.join(' ') || result.message, 'warning');
   };
 
   // Filter chain logic

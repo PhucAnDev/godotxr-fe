@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
+import { useLessonManagementApi, type LessonResponse } from '../../hooks/useLessonManagementApi';
 
 // DB Interfaces
 interface Program {
@@ -55,6 +56,14 @@ interface Exercise {
   ExerciseType: 'Speech Recognition' | 'Interactive Card' | 'Pronunciation Guide' | 'Bouncing Match';
   ScoreToPass: number;
 }
+
+const mapLesson = (lesson: LessonResponse): Lesson => ({
+  LessonId: String(lesson.id), ProgramId: String(lesson.programId),
+  LessonName: lesson.lessonName, LessonOrder: lesson.lessonOrder,
+  Description: lesson.description ?? '', TargetSkill: (lesson.targetSkill ?? 'Pronunciation') as Lesson['TargetSkill'],
+  EstimatedDuration: lesson.estimatedDuration, Status: lesson.status,
+  CreatedAt: lesson.createdAt, UpdatedAt: lesson.updatedAt ?? lesson.createdAt,
+});
 
 // Predefined Mock Programs
 const MOCK_PROGRAMS: Program[] = [
@@ -167,8 +176,9 @@ const MOCK_EXERCISES_BY_LESSON: Record<string, Exercise[]> = {
 };
 
 export default function LessonManagement() {
-  const [lessons, setLessons] = useState<Lesson[]>(INITIAL_LESSONS);
-  const [programs] = useState<Program[]>(MOCK_PROGRAMS);
+  const { getLessons, getPrograms, createLesson, updateLesson } = useLessonManagementApi();
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
@@ -204,6 +214,20 @@ export default function LessonManagement() {
     setTimeout(() => setAlertConfig(null), 3500);
   };
 
+  useEffect(() => {
+    void Promise.all([getLessons(), getPrograms()]).then(([lessonResult, programResult]) => {
+      if (lessonResult.success && lessonResult.data) setLessons(lessonResult.data.items.map(mapLesson));
+      else triggerToast(lessonResult.errors.join(' ') || lessonResult.message, 'warning');
+      if (programResult.success && programResult.data) {
+        setPrograms(programResult.data.items.map(p => ({
+          ProgramId: String(p.id),
+          ProgramName: p.programName,
+          Language: p.language,
+        })));
+      }
+    });
+  }, []);
+
   // Statistic Computations
   const totalLessons = lessons.length;
   const activeLessons = lessons.filter(l => l.Status === 'Active').length;
@@ -217,20 +241,12 @@ export default function LessonManagement() {
   const targetSkillsCount = new Set(lessons.map(l => l.TargetSkill)).size;
 
   // Actions
-  const handleToggleStatus = (lessonId: string) => {
-    const updated = lessons.map(l => {
-      if (l.LessonId === lessonId) {
-        const nextStatus = l.Status === 'Active' ? 'Inactive' : 'Active';
-        triggerToast(`Đã ${nextStatus === 'Active' ? 'mở kích hoạt' : 'tạm thời khóa'} bài giảng ${l.LessonId}!`);
-        return {
-          ...l,
-          Status: nextStatus as 'Active' | 'Inactive',
-          UpdatedAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
-        };
-      }
-      return l;
-    });
-    setLessons(updated);
+  const handleToggleStatus = async (lessonId: string) => {
+    const lesson = lessons.find(l => l.LessonId === lessonId);
+    if (!lesson) return;
+    const result = await updateLesson(Number(lessonId), { lessonName: lesson.LessonName, lessonOrder: lesson.LessonOrder, description: lesson.Description, targetSkill: lesson.TargetSkill, estimatedDuration: lesson.EstimatedDuration, status: lesson.Status === 'Active' ? 'Inactive' : 'Active' });
+    if (result.success && result.data) setLessons(current => current.map(l => l.LessonId === lessonId ? mapLesson(result.data!) : l));
+    else triggerToast(result.errors.join(' ') || result.message, 'warning');
   };
 
   const handleOpenAdd = () => {
@@ -267,7 +283,7 @@ export default function LessonManagement() {
     setSelectedLesson(null);
   };
 
-  const handleSaveLesson = (e: React.FormEvent) => {
+  const handleSaveLesson = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formProgramId) {
@@ -291,38 +307,16 @@ export default function LessonManagement() {
       return;
     }
 
-    if (modalType === 'add') {
-      const nextId = `LSN-${String(lessons.length + 1).padStart(3, '0')}`;
-      const newLesson: Lesson = {
-        LessonId: nextId,
-        ProgramId: formProgramId,
-        LessonName: formLessonName,
-        LessonOrder: formLessonOrder,
-        Description: formDesc,
-        TargetSkill: formTargetSkill,
-        EstimatedDuration: formDuration,
-        Status: formStatus,
-        CreatedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
-        UpdatedAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
-      };
-      setLessons([newLesson, ...lessons]);
-      triggerToast(`Thêm thành công bài học "${formLessonName}" vào giáo trình!`);
-    } else if (modalType === 'edit' && selectedLesson) {
-      setLessons(lessons.map(l => l.LessonId === selectedLesson.LessonId ? {
-        ...l,
-        ProgramId: formProgramId,
-        LessonName: formLessonName,
-        LessonOrder: formLessonOrder,
-        Description: formDesc,
-        TargetSkill: formTargetSkill,
-        EstimatedDuration: formDuration,
-        Status: formStatus,
-        UpdatedAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
-      } : l));
-      triggerToast(`Đã cập nhật bài học ${selectedLesson.LessonId}!`);
-    }
-
-    handleCloseModal();
+    const common = { lessonName: formLessonName.trim(), lessonOrder: formLessonOrder, description: formDesc.trim(), targetSkill: formTargetSkill, estimatedDuration: formDuration, status: formStatus };
+    const result = modalType === 'add'
+      ? await createLesson({ ...common, programId: Number(formProgramId) })
+      : selectedLesson ? await updateLesson(Number(selectedLesson.LessonId), common) : null;
+    if (result?.success && result.data) {
+      const mapped = mapLesson(result.data);
+      setLessons(current => modalType === 'add' ? [mapped, ...current] : current.map(l => l.LessonId === mapped.LessonId ? mapped : l));
+      triggerToast(result.message);
+      handleCloseModal();
+    } else if (result) triggerToast(result.errors.join(' ') || result.message, 'warning');
   };
 
   // Filtering Search computation logic

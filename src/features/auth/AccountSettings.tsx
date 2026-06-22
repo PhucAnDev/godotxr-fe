@@ -8,8 +8,10 @@ import { motion } from 'motion/react';
 import { UserCheck, Shield, KeyRound, Check, RefreshCw, AlertTriangle, Mail, Phone, Smile, Briefcase } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getCurrentUser, getStoredUsers, saveStoredUsers, setCurrentUser } from '../../lib/authMock';
+import { useAccountSettingsApi } from '../../hooks/useAccountSettingsApi';
 
 export default function AccountSettings() {
+  const { updateUser, changePassword, isSavingProfile, isChangingPassword } = useAccountSettingsApi();
   const currentUser = getCurrentUser();
   const allUsers = getStoredUsers();
 
@@ -40,13 +42,25 @@ export default function AccountSettings() {
     );
   }
 
-  const handleUpdateProfile = (e: React.FormEvent) => {
+  const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setUError(null);
     setUSuccess(null);
 
     if (!formFullName.trim()) {
       setUError('Họ và tên không được để trống.');
+      return;
+    }
+
+    const userId = Number(currentUser.UserId.replace(/\D/g, ''));
+    const result = await updateUser(userId, {
+      fullName: formFullName.trim(),
+      phone: formPhoneNumber.trim(),
+      gender: formGender,
+      specialty: currentUser.Role === 'TEACHER' ? formSpecialty.trim() : undefined,
+    });
+    if (!result.success || !result.data) {
+      setUError(result.errors.join(' ') || result.message);
       return;
     }
 
@@ -66,27 +80,25 @@ export default function AccountSettings() {
 
     saveStoredUsers(updatedUsers);
     
-    const updatedMe = updatedUsers.find(u => u.UserId === currentUser.UserId);
-    if (updatedMe) {
-      setCurrentUser(updatedMe);
-    }
+    setCurrentUser({
+      ...currentUser,
+      FullName: result.data.fullName,
+      PhoneNumber: result.data.phone,
+      Gender: (result.data.gender || formGender) as 'Male' | 'Female' | 'Other',
+      Specialty: result.data.specialty,
+    });
 
     setUSuccess('Cập nhật thông tin cá nhân thành công!');
     setTimeout(() => setUSuccess(null), 3000);
   };
 
-  const handleUpdatePassword = (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPError(null);
     setPSuccess(null);
 
     if (!currentPassword || !newPassword || !confirmPassword) {
       setPError('Vui lòng điền đủ tất cả các trường mật mã.');
-      return;
-    }
-
-    if (currentPassword !== currentUser.Password) {
-      setPError('Mật khẩu hiện tại không chính xác.');
       return;
     }
 
@@ -102,6 +114,12 @@ export default function AccountSettings() {
 
     if (newPassword !== confirmPassword) {
       setPError('Mật khẩu xác nhận không chính xác.');
+      return;
+    }
+
+    const result = await changePassword(currentUser.Email, currentPassword, newPassword, confirmPassword);
+    if (!result.success) {
+      setPError(result.errors.join(' ') || result.message);
       return;
     }
 

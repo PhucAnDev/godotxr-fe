@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
+import { useSemesterManagementApi, type SemesterResponse } from '../../hooks/useSemesterManagementApi';
 
 // DB Interfaces according to specifications
 interface SchoolYear {
@@ -57,6 +58,14 @@ interface Semester {
   CreatedAt: string;
   UpdatedAt: string;
 }
+
+const mapSemester = (semester: SemesterResponse): Semester => ({
+  SemesterId: String(semester.id), SchoolYearId: String(semester.schoolYearId),
+  TeacherId: String(semester.teacherId), ClassId: '', SemesterName: semester.semesterName,
+  ClassCount: semester.classCount, Description: semester.description ?? '',
+  StartDate: semester.startDate.slice(0, 10), EndDate: semester.endDate.slice(0, 10),
+  Status: semester.status, CreatedAt: semester.createdAt, UpdatedAt: semester.updatedAt ?? semester.createdAt,
+});
 
 // Initial Mock data
 const MOCK_SCHOOL_YEARS: SchoolYear[] = [
@@ -126,7 +135,10 @@ const INITIAL_SEMESTERS: Semester[] = [
 ];
 
 export default function SemesterManagement() {
-  const [semesters, setSemesters] = useState<Semester[]>(INITIAL_SEMESTERS);
+  const { getSemesters, getSchoolYears, getUsers, createSemester, updateSemester, deleteSemester } = useSemesterManagementApi();
+  const [semesters, setSemesters] = useState<Semester[]>([]);
+  const [schoolYears, setSchoolYears] = useState<SchoolYear[]>([]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [filterSchoolYear, setFilterSchoolYear] = useState<string>('ALL');
@@ -147,6 +159,15 @@ export default function SemesterManagement() {
     setTimeout(() => setAlertConfig(null), 3500);
   };
 
+  useEffect(() => {
+    void Promise.all([getSemesters(), getSchoolYears(), getUsers(1, 100)]).then(([semesterResult, yearResult, userResult]) => {
+      if (semesterResult.success && semesterResult.data) setSemesters(semesterResult.data.items.map(mapSemester));
+      else triggerToast(semesterResult.errors.join(' ') || semesterResult.message, 'warning');
+      if (yearResult.data) setSchoolYears(yearResult.data.items.map(y => ({ SchoolYearId: String(y.id), SchoolYearName: y.yearName })));
+      if (userResult.data) setTeachers(userResult.data.items.filter(u => u.roleName === 'Teacher').map(u => ({ TeacherId: String(u.id), FullName: u.fullName })));
+    });
+  }, []);
+
   // Modal controls
   const [isOpenFormModal, setIsOpenFormModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
@@ -165,11 +186,11 @@ export default function SemesterManagement() {
 
   // Helper resolvers
   const getSchoolYearName = (id: string) => {
-    return MOCK_SCHOOL_YEARS.find(s => s.SchoolYearId === id)?.SchoolYearName || id;
+    return schoolYears.find(s => s.SchoolYearId === id)?.SchoolYearName || id;
   };
 
   const getTeacherName = (id: string) => {
-    return MOCK_TEACHERS.find(t => t.TeacherId === id)?.FullName || id;
+    return teachers.find(t => t.TeacherId === id)?.FullName || id;
   };
 
   const getClassName = (id: string) => {
@@ -186,8 +207,8 @@ export default function SemesterManagement() {
   const handleOpenAdd = () => {
     setModalMode('add');
     setSelectedSemester(null);
-    setFormSchoolYearId(MOCK_SCHOOL_YEARS[0]?.SchoolYearId || '');
-    setFormTeacherId(MOCK_TEACHERS[0]?.TeacherId || '');
+    setFormSchoolYearId(schoolYears[0]?.SchoolYearId || '');
+    setFormTeacherId(teachers[0]?.TeacherId || '');
     setFormClassId(MOCK_CLASSROOMS[0]?.ClassId || '');
     setFormSemesterName('');
     setFormClassCount(4);
@@ -213,7 +234,7 @@ export default function SemesterManagement() {
     setIsOpenFormModal(true);
   };
 
-  const handleSaveSubmit = (e: React.FormEvent) => {
+  const handleSaveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formSemesterName.trim()) {
@@ -232,6 +253,16 @@ export default function SemesterManagement() {
       triggerToast('Ngày bắt đầu phải trước ngày kết thúc học kỳ!', 'warning');
       return;
     }
+
+    const payload = { semesterName: formSemesterName.trim(), schoolYearId: Number(formSchoolYearId), teacherId: Number(formTeacherId), classCount: Number(formClassCount), description: formDescription.trim(), startDate: formStartDate, endDate: formEndDate, status: formStatus };
+    const apiResult = modalMode === 'add' ? await createSemester(payload) : selectedSemester ? await updateSemester(Number(selectedSemester.SemesterId), payload) : null;
+    if (apiResult?.success && apiResult.data) {
+      const mapped = mapSemester(apiResult.data);
+      setSemesters(current => modalMode === 'add' ? [mapped, ...current] : current.map(s => s.SemesterId === mapped.SemesterId ? mapped : s));
+      triggerToast(apiResult.message);
+      setIsOpenFormModal(false);
+    } else if (apiResult) triggerToast(apiResult.errors.join(' ') || apiResult.message, 'warning');
+    return;
 
     const sysDate = new Date().toISOString().slice(0, 16).replace('T', ' ');
 
@@ -285,14 +316,27 @@ export default function SemesterManagement() {
     setIsOpenFormModal(false);
   };
 
-  const handleDelete = (semId: string) => {
+  const handleDelete = async (semId: string) => {
     if (window.confirm(`Bạn có chắc chắn muốn xóa học kỳ ${semId}? Tất cả thông tin liên kết lớp và giáo viên có liên quan sẽ bị gián đoạn sinh lý học.`)) {
-      setSemesters(semesters.filter(s => s.SemesterId !== semId));
-      triggerToast(`Đã gỡ bỏ học kỳ "${semId}" khỏi hệ thống điều hành.`, 'warning');
+      const result = await deleteSemester(Number(semId));
+      if (result.success) {
+        setSemesters(current => current.filter(s => s.SemesterId !== semId));
+        triggerToast(result.message, 'warning');
+      } else triggerToast(result.errors.join(' ') || result.message, 'warning');
     }
   };
 
-  const handleUpdateStatus = (semId: string, newStatus: Semester['Status']) => {
+  const handleUpdateStatus = async (semId: string, newStatus: Semester['Status']) => {
+    const semester = semesters.find(s => s.SemesterId === semId);
+    if (!semester) return;
+    const result = await updateSemester(Number(semId), { semesterName: semester.SemesterName, schoolYearId: Number(semester.SchoolYearId), teacherId: Number(semester.TeacherId), classCount: semester.ClassCount, description: semester.Description, startDate: semester.StartDate, endDate: semester.EndDate, status: newStatus });
+    if (!result.success || !result.data) {
+      triggerToast(result.errors.join(' ') || result.message, 'warning');
+      return;
+    }
+    setSemesters(current => current.map(s => s.SemesterId === semId ? mapSemester(result.data!) : s));
+    triggerToast(result.message);
+    return;
     const updated = semesters.map(s => {
       if (s.SemesterId === semId) {
         return {
@@ -498,7 +542,7 @@ export default function SemesterManagement() {
               className="w-full appearance-none bg-[#FDFCF5] border-2 border-transparent hover:border-[#4EACAF]/20 pl-5 pr-10 py-4 rounded-2xl font-black italic text-xs tracking-wide text-gray-700 outline-none cursor-pointer uppercase focus:bg-white focus:border-[#4EACAF]"
             >
               <option value="ALL">Tất cả năm học</option>
-              {MOCK_SCHOOL_YEARS.map(sy => (
+              {schoolYears.map(sy => (
                 <option key={sy.SchoolYearId} value={sy.SchoolYearId}>
                   {sy.SchoolYearName}
                 </option>
@@ -772,7 +816,7 @@ export default function SemesterManagement() {
                           onChange={(e) => setFormSchoolYearId(e.target.value)}
                           className="w-full appearance-none bg-[#FDFCF5] border-2 border-transparent rounded-2xl pl-5 pr-10 py-4 font-black italic text-xs tracking-wide text-gray-700 outline-none cursor-pointer uppercase focus:bg-white focus:border-[#4EACAF]"
                         >
-                          {MOCK_SCHOOL_YEARS.map(sy => (
+                          {schoolYears.map(sy => (
                             <option key={sy.SchoolYearId} value={sy.SchoolYearId}>
                               {sy.SchoolYearName}
                             </option>
@@ -811,7 +855,7 @@ export default function SemesterManagement() {
                           onChange={(e) => setFormTeacherId(e.target.value)}
                           className="w-full appearance-none bg-[#FDFCF5] border-2 border-transparent rounded-2xl pl-5 pr-10 py-4 font-black italic text-[11px] tracking-tight text-gray-700 outline-none cursor-pointer uppercase focus:bg-white focus:border-[#4EACAF]"
                         >
-                          {MOCK_TEACHERS.map(tch => (
+                          {teachers.map(tch => (
                             <option key={tch.TeacherId} value={tch.TeacherId}>
                               {tch.FullName}
                             </option>
