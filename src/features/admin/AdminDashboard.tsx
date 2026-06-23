@@ -5,23 +5,31 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header page component */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gray-200/60">
-        <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Bảng Điều Khiển Hệ Thống</h1>
-          <p className="text-sm text-slate-500 mt-1">Quản lý tài nguyên, người dùng và giám sát chỉ số đồng hành GodotXR</p>
+      <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
+            <Layers className="w-3.5 h-3.5 animate-pulse" />
+            Tổng quan quản trị hệ thống
+          </div>
+          <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
+            Bảng Điều Khiển <span className="text-[#4EACAF]">Hệ Thống</span>
+          </h1>
+          <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed mt-1">
+            Quản lý tài nguyên, người dùng và giám sát chỉ số đồng hành GodotXR
+          </p>
         </div>
-        <div className="flex items-center gap-3 self-end sm:self-auto">
-          <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <div className="flex items-center gap-4 self-stretch sm:self-auto shrink-0">
+          <div className="relative flex-1 sm:flex-initial">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input 
               type="text" 
               placeholder="Tìm kiếm hệ thống..." 
-              className="pl-10 pr-4 py-2 text-sm rounded-xl bg-white border border-slate-200 outline-none w-56 focus:ring-2 focus:ring-[#4EACAF]/20 focus:border-[#4EACAF]" 
+              className="pl-11 pr-4 py-3.5 text-sm rounded-2xl bg-white/60 border border-slate-200 outline-none w-full sm:w-60 focus:bg-white focus:border-[#4EACAF] transition-all font-semibold" 
             />
           </div>
-          <button className="p-2.5 bg-white border border-slate-200 rounded-xl relative hover:bg-slate-50 transition-colors">
+          <button className="p-3.5 bg-white/60 border border-slate-200 rounded-2xl relative hover:bg-white transition-colors cursor-pointer shrink-0">
             <Bell className="w-5 h-5 text-gray-600" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
+            <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-[#FF8E8E] rounded-full ring-2 ring-white animate-pulse" />
           </button>
         </div>
       </div>

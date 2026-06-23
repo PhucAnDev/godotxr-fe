@@ -4,6 +4,7 @@ export interface EnrollmentResponse { id: number; childId: number; childFullName
 export interface EnrollmentPayload { childId: number; classId: number; enrollmentDate: string; status: string; }
 async function request<T>(endpoint: string, options?: RequestInit): Promise<ServiceResult<T>> { try { return fromResponse(await apiRequest<T>(endpoint, options)); } catch (error) { return fromError(error); } }
 export const getEnrollments = (pageNumber = 1, pageSize = 100) => request<PagedResponse<EnrollmentResponse>>(`/api/enrollments?pageNumber=${pageNumber}&pageSize=${pageSize}`);
+export const getEnrollmentById = (id: number) => request<EnrollmentResponse>(`/api/enrollments/${id}`);
 export const createEnrollment = (payload: EnrollmentPayload) => request<EnrollmentResponse>('/api/enrollments', { method: 'POST', body: JSON.stringify(payload) });
 export const updateEnrollment = (id: number, payload: EnrollmentPayload) => request<EnrollmentResponse>(`/api/enrollments/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
 export const deleteEnrollment = (id: number) => request<boolean>(`/api/enrollments/${id}`, { method: 'DELETE' });

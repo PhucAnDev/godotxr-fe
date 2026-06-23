@@ -442,23 +442,23 @@ export default function PronunciationDetailPage() {
       </AnimatePresence>
 
       {/* Styled Dashboard Header with Role Switching Capability */}
-      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#4EACAF]/10 text-[#4EACAF] rounded-md text-[11px] font-bold uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             <Zap className="w-3.5 h-3.5" />
             Giao diện theo dõi phát âm trẻ (7-11 tuổi)
           </div>
-          <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight mt-2 pb-0.5 font-sans">
-            Phân tích Chi tiết Phát âm
+          <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
+            Phân tích Chi tiết <span className="text-[#4EACAF]">Phát âm</span>
           </h1>
-          <p className="text-slate-500 text-sm mt-1">
+          <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed mt-1">
             Giám sát âm kỳ vọng, âm thực tế trẻ phát ra và phân tích các nhược điểm khẩu hình được ghi nhận từ thiết bị kính đeo GodotXR.
           </p>
         </div>
 
         {/* Mini Role switcher matching current codebase style */}
-        <div className="bg-slate-100/80 border border-slate-200 p-1 rounded-xl flex items-center gap-1 shadow-inner shrink-0 self-start md:self-auto">
-          <div className="px-3 py-1.5 font-bold text-[11px] text-slate-500 uppercase tracking-wider hidden sm:block">
+        <div className="bg-[#E2F2F3] border border-[#C5E1E3] p-1.5 rounded-[24px] flex flex-col sm:flex-row items-stretch sm:items-center gap-1 shadow-inner self-start lg:self-center shrink-0">
+          <div className="px-4 py-2 italic font-black text-xs text-[#264E50] uppercase tracking-wider self-center hidden sm:block">
             Tư cách xem:
           </div>
           <div className="flex gap-1">
@@ -474,10 +474,10 @@ export default function PronunciationDetailPage() {
                   showToast(`Đã điều chỉnh sang phân quyền: ${vRole.label}`, 'success');
                 }}
                 className={cn(
-                  "px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all cursor-pointer",
+                  "px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer",
                   currentRoleView === vRole.role 
-                    ? "bg-[#4EACAF] text-white shadow-sm" 
-                    : "text-slate-600 hover:text-slate-800 hover:bg-slate-200"
+                    ? "bg-[#4EACAF] text-white shadow-sm font-extrabold italic scale-105" 
+                    : "text-[#264E50]/60 hover:text-[#264E50] hover:bg-white/40"
                 )}
               >
                 {vRole.label}
