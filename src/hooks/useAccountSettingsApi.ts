@@ -1,10 +1,17 @@
 import { useCallback, useState } from 'react';
 import { changePassword as changePasswordService } from '../services/authService';
-import { updateUser as updateUserService } from '../services/userService';
+import { getUserById as getUserByIdService, updateUser as updateUserService } from '../services/userService';
 
 export function useAccountSettingsApi() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+
+  const getUserById = useCallback(async (...args: Parameters<typeof getUserByIdService>) => {
+    setIsLoadingProfile(true);
+    try { return await getUserByIdService(...args); }
+    finally { setIsLoadingProfile(false); }
+  }, []);
 
   const updateUser = useCallback(async (...args: Parameters<typeof updateUserService>) => {
     setIsSavingProfile(true);
@@ -18,5 +25,5 @@ export function useAccountSettingsApi() {
     finally { setIsChangingPassword(false); }
   }, []);
 
-  return { updateUser, changePassword, isSavingProfile, isChangingPassword };
+  return { getUserById, updateUser, changePassword, isLoadingProfile, isSavingProfile, isChangingPassword };
 }

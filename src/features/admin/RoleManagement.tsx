@@ -89,25 +89,25 @@ export default function RoleManagement() {
       </AnimatePresence>
 
       {/* 1. Header */}
-      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#4EACAF]/10 text-[#4EACAF] rounded-md text-[11px] font-bold uppercase tracking-wider">
+      <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             <KeyRound className="w-3.5 h-3.5" />
             Bảng điều khiển Bảo mật
           </div>
-          <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight mt-2 pb-0.5">
-            Quản lý Vai trò
+          <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
+            Phân Quyền <span className="text-[#4EACAF]">Thành Viên</span>
           </h1>
-          <p className="text-slate-500 text-sm mt-1">
+          <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed mt-1">
             Phân định quyền hạn, cấu hình giới hạn tính năng và quản lý danh sách vai trò cho học tập, can thiệp hoặc quản lý vận hành GodotXR.
           </p>
         </div>
 
         <button
           onClick={handleOpenAdd}
-          className="bg-[#4EACAF] hover:bg-[#3d8c8e] text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all text-sm shrink-0 active:scale-95 cursor-pointer"
+          className="bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black italic tracking-tight py-4 px-8 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[#4EACAF]/20 transition-all hover:scale-105 active:scale-95 shrink-0 cursor-pointer"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-5 h-5" strokeWidth={2.5} />
           Thêm vai trò mới
         </button>
       </div>

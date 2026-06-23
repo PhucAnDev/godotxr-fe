@@ -486,20 +486,28 @@ export default function RoleUserManagementPage({
         onClose={() => setAlertConfig(null)}
       />
 
-      <div className="flex flex-col justify-between gap-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm md:flex-row md:items-center md:p-8">
-        <div>
-          <div className="inline-flex items-center gap-1.5 rounded-md bg-[#4EACAF]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[#4EACAF]">
+      <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             {config.badgeIcon}
             {config.badgeLabel}
           </div>
-          <h1 className="mt-2 pb-0.5 text-2xl font-black tracking-tight text-slate-800 md:text-3xl">
-            {config.title}
+          <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
+            {config.title.includes('giáo viên') || config.title.includes('Giáo viên') ? (
+              <>
+                Quản lý <span className="text-[#4EACAF]">Giáo viên</span>
+              </>
+            ) : (
+              <>
+                Quản lý <span className="text-[#4EACAF]">Phụ huynh</span>
+              </>
+            )}
           </h1>
-          <p className="mt-1 max-w-4xl text-sm text-slate-500">
+          <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed mt-1">
             {config.description}
           </p>
-          <div className="mt-3 inline-flex items-start gap-2 rounded-lg border border-amber-100/60 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="inline-flex items-start gap-2 rounded-xl border border-amber-100/60 bg-amber-50/70 p-3 text-xs font-bold text-amber-850 max-w-2xl mt-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
             <span>{config.note}</span>
           </div>
         </div>
@@ -508,7 +516,7 @@ export default function RoleUserManagementPage({
           <button
             type="button"
             onClick={() => void fetchUsersByRole()}
-            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600 transition-all hover:bg-slate-50"
+            className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 px-6 py-4 text-sm font-bold text-slate-650 transition-all hover:bg-white/40 cursor-pointer active:scale-95 shrink-0"
           >
             <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
             Tải lại
@@ -516,9 +524,9 @@ export default function RoleUserManagementPage({
           <button
             type="button"
             onClick={() => navigate('/admin/users')}
-            className="flex items-center justify-center gap-2 rounded-xl bg-[#4EACAF] px-6 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#3d8c8e]"
+            className="bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black italic tracking-tight py-4 px-8 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[#4EACAF]/20 transition-all hover:scale-105 active:scale-95 shrink-0 cursor-pointer"
           >
-            <Users className="h-4 w-4" />
+            <Users className="h-5 w-5" strokeWidth={2.5} />
             {config.buttonLabel}
           </button>
         </div>

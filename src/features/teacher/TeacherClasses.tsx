@@ -371,28 +371,28 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
       </AnimatePresence>
 
       {/* Styled Dashboard Header emphasizing specialized Early Intervention classes */}
-      <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
-        <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#4EACAF]/10 text-[#4EACAF] rounded-md text-[11px] font-bold uppercase tracking-wider leading-none">
+      <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             <GraduationCap className="w-3.5 h-3.5" />
             Giám sát sư phạm lớp học VR
           </div>
-          <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight font-sans">
-            Lớp Học Của Tôi
+          <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
+            Lớp Học <span className="text-[#4EACAF]">Của Tôi</span>
           </h1>
-          <p className="text-slate-500 text-sm max-w-2xl">
+          <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed mt-1">
             Quản lý kế hoạch bài học, điều phối hoạt động rèn luyện và theo dõi sát kết quả luyện tập của từng lớp học do bạn trực tiếp phụ trách.
           </p>
         </div>
 
         {/* Teacher profile snapshot */}
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex items-center gap-3.5 shadow-sm self-start md:self-center shrink-0">
-          <div className="w-10 h-10 bg-[#FF8E8E]/10 text-[#FF8E8E] rounded-lg flex items-center justify-center shrink-0">
-            <User className="w-5 h-5" />
+        <div className="bg-[#E2F2F3] border border-[#C5E1E3] p-4 rounded-[24px] flex items-center gap-4 shadow-sm self-start lg:self-center shrink-0">
+          <div className="w-12 h-12 bg-white/60 text-[#4EACAF] rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-white/80">
+            <User className="w-6 h-6" />
           </div>
           <div>
-            <h5 className="font-bold text-xs text-slate-705 leading-tight">{activeTeacher.FullName}</h5>
-            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{activeTeacher.Specialty}</p>
+            <h5 className="font-black text-sm text-[#264E50] leading-tight italic">{activeTeacher.FullName}</h5>
+            <p className="text-[10px] text-[#264E50]/60 font-black uppercase tracking-wider mt-1">{activeTeacher.Specialty}</p>
           </div>
         </div>
       </div>

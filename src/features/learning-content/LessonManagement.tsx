@@ -385,26 +385,26 @@ export default function LessonManagement() {
       </AnimatePresence>
 
       {/* 1. Header (GodotXR Premium Kid-friendly Aesthetics) */}
-      <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
-        <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#4EACAF]/10 text-[#4EACAF] rounded-md text-[11px] font-bold uppercase tracking-wider leading-none">
+      <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             <BookOpen className="w-3.5 h-3.5" />
             Học phần tương tác 3D
           </div>
-          <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight font-sans">
-            Quản Lý Bài Học
+          <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
+            Quản Lý <span className="text-[#4EACAF]">Bài Học</span>
           </h1>
-          <p className="text-slate-500 text-sm max-w-2xl">
+          <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed mt-1">
             Sắp xếp bài học theo kế hoạch chương trình can thiệp và gán các kỹ năng mục tiêu như Phát âm, Vốn từ vựng, Vận động môi miệng nhằm cấu hình giáo trình trực quan nhất.
           </p>
         </div>
 
         <button 
           onClick={handleOpenAdd}
-          className="bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-bold py-2.5 px-5 rounded-lg flex items-center justify-center gap-2 shadow-md shadow-[#4EACAF]/10 transition-all active:scale-95 shrink-0 text-xs uppercase cursor-pointer"
+          className="bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black italic tracking-tight py-4 px-8 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[#4EACAF]/20 transition-all hover:scale-105 active:scale-95 shrink-0 cursor-pointer"
           id="add-lesson-btn"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-5 h-5" strokeWidth={2.5} />
           Thêm bài học mới
         </button>
       </div>
