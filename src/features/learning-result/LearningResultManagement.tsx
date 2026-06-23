@@ -31,6 +31,12 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
+import { useLearningResultApi } from '../../hooks/useLearningResultApi';
+import type { ChildProfileResponse } from '../../services/childProfileService';
+import type { EventLogResponse } from '../../services/eventLogService';
+import type { ExerciseResponse } from '../../services/exerciseService';
+import type { ResultResponse } from '../../services/resultService';
+import type { PagedResponse, ServiceResult } from '../../services/serviceTypes';
 
 // DB Interfaces according to specification
 interface Child {
@@ -63,6 +69,124 @@ interface LearningResult {
   InteractionLog: string; // JSON or text representation of interaction sequence
   FeedbackText: string;
   CreatedAt: string;
+}
+
+type RoleView = 'ADMIN' | 'TEACHER' | 'PARENT';
+
+const API_PAGE_SIZE = 100;
+
+function getStoredRoleView(): RoleView {
+  const role = localStorage.getItem('user_role');
+
+  if (role === 'TEACHER') return 'TEACHER';
+  if (role === 'PARENT') return 'PARENT';
+  return 'ADMIN';
+}
+
+function formatDateTime(value: string | null | undefined): string {
+  if (!value) return '';
+  return value.replace('T', ' ').slice(0, 19);
+}
+
+function mapDifficultyLevel(level: string): Exercise['DifficultyLevel'] {
+  const normalized = level.trim().toLowerCase();
+
+  if (normalized === 'hard' || normalized === 'khó') return 'Khó';
+  if (normalized === 'medium' || normalized === 'trung bình') {
+    return 'Trung bình';
+  }
+
+  return 'Dễ';
+}
+
+function mapResultStatus(status: string): LearningResult['CompletionStatus'] {
+  const normalized = status.trim().toLowerCase();
+
+  if (normalized === 'completed') return 'Completed';
+  if (normalized === 'needreview') return 'NeedReview';
+  if (normalized === 'failed') return 'Failed';
+  return 'InProgress';
+}
+
+function mapChildRecord(child: ChildProfileResponse): Child {
+  return {
+    ChildId: String(child.id),
+    FullName: child.fullName,
+    Age: child.age,
+    LearningLevel: child.learningLevel,
+  };
+}
+
+function mapExerciseRecord(exercise: ExerciseResponse): Exercise {
+  return {
+    ExerciseId: String(exercise.id),
+    ExerciseName: exercise.exerciseName,
+    DifficultyLevel: mapDifficultyLevel(exercise.difficultyLevel),
+    TargetSkill: exercise.targetSkill,
+    Language: exercise.language,
+  };
+}
+
+function mapResultRecord(result: ResultResponse): LearningResult {
+  const completedAt = formatDateTime(result.completedAt);
+  const startedAt = formatDateTime(result.startedAt);
+
+  return {
+    ResultId: String(result.id),
+    ChildId: String(result.childId),
+    ExerciseId: String(result.exerciseId),
+    AttemptNumber: result.attemptNumber,
+    CompletionStatus: mapResultStatus(result.completionStatus),
+    Score: Math.round(result.score),
+    StartedAt: startedAt,
+    CompletedAt: completedAt,
+    DurationSeconds: result.durationSeconds,
+    AudioRecordUrl: result.audioRecordUrl ?? '',
+    ReplayDataUrl: result.replayDataUrl ?? '',
+    InteractionLog: result.interactionLog ?? '',
+    FeedbackText: result.feedbackText ?? '',
+    CreatedAt: completedAt || startedAt,
+  };
+}
+
+function formatEventLogs(logs: EventLogResponse[] | undefined): string {
+  if (!logs || logs.length === 0) return '';
+
+  return [...logs]
+    .sort((left, right) => left.eventTime.localeCompare(right.eventTime))
+    .map((log) => {
+      const timeText = formatDateTime(log.eventTime);
+      if (log.description) {
+        return `${timeText} - ${log.eventType}: ${log.description}`;
+      }
+      return `${timeText} - ${log.eventType}`;
+    })
+    .join('\n');
+}
+
+async function loadAllPages<T>(
+  loadPage: (
+    pageNumber?: number,
+    pageSize?: number
+  ) => Promise<ServiceResult<PagedResponse<T>>>
+): Promise<T[]> {
+  const items: T[] = [];
+  let pageNumber = 1;
+  let totalPages = 1;
+
+  while (pageNumber <= totalPages) {
+    const result = await loadPage(pageNumber, API_PAGE_SIZE);
+
+    if (!result.success || !result.data) {
+      throw new Error(result.errors.join(' ') || result.message);
+    }
+
+    items.push(...result.data.items);
+    totalPages = Math.max(result.data.totalPages, 1);
+    pageNumber += 1;
+  }
+
+  return items;
 }
 
 // Initial Mock Data according to architecture DB
@@ -198,9 +322,22 @@ const INITIAL_RESULTS: LearningResult[] = [
 ];
 
 export default function LearningResultManagement() {
-  const [results, setResults] = useState<LearningResult[]>(INITIAL_RESULTS);
-  const [children] = useState<Child[]>(MOCK_CHILDREN);
-  const [exercises] = useState<Exercise[]>(MOCK_EXERCISES);
+  const {
+    getChildProfiles,
+    getCurrentUserWithChildrenProfiles,
+    getExercises,
+    getResultById,
+    getResultsByChild,
+    getEventLogsByResult,
+  } = useLearningResultApi();
+  const [results, setResults] = useState<LearningResult[]>([]);
+  const [children, setChildren] = useState<Child[]>([]);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [isApiLoading, setIsApiLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [eventLogsByResultId, setEventLogsByResultId] = useState<
+    Record<string, EventLogResponse[]>
+  >({});
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -210,7 +347,8 @@ export default function LearningResultManagement() {
   const [filterDateRange, setFilterDateRange] = useState<string>('ALL');
 
   // Role Simulator state
-  const [currentRoleView, setCurrentRoleView] = useState<'ADMIN' | 'TEACHER' | 'PARENT'>('ADMIN');
+  const [currentRoleView, setCurrentRoleView] =
+    useState<RoleView>(getStoredRoleView());
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -242,6 +380,84 @@ export default function LearningResultManagement() {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 3000);
   };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDashboardData() {
+      setIsApiLoading(true);
+      setApiError(null);
+
+      try {
+        const roleView = getStoredRoleView();
+        const [exerciseRecords, childRecords] = await Promise.all([
+          loadAllPages(getExercises),
+          roleView === 'PARENT'
+            ? (async () => {
+                const parentResult =
+                  await getCurrentUserWithChildrenProfiles();
+
+                if (!parentResult.success || !parentResult.data) {
+                  throw new Error(
+                    parentResult.errors.join(' ') || parentResult.message
+                  );
+                }
+
+                return parentResult.data.childProfiles;
+              })()
+            : loadAllPages(getChildProfiles),
+        ]);
+
+        const resultSettled = await Promise.allSettled(
+          childRecords.map((child) => getResultsByChild(child.id))
+        );
+
+        const rawResults = resultSettled.flatMap((settled) => {
+          if (settled.status !== 'fulfilled') return [];
+          if (!settled.value.success || !settled.value.data) return [];
+          return settled.value.data;
+        });
+
+        const uniqueResults = Array.from(
+          new Map(rawResults.map((result) => [result.id, result])).values()
+        ).sort((left, right) => {
+          const rightTime = right.completedAt ?? right.startedAt ?? '';
+          const leftTime = left.completedAt ?? left.startedAt ?? '';
+          return rightTime.localeCompare(leftTime);
+        });
+
+        if (cancelled) return;
+
+        setCurrentRoleView(roleView);
+        setChildren(childRecords.map(mapChildRecord));
+        setExercises(exerciseRecords.map(mapExerciseRecord));
+        setResults(uniqueResults.map(mapResultRecord));
+      } catch (error) {
+        if (cancelled) return;
+
+        setApiError(
+          error instanceof Error
+            ? error.message
+            : 'Khong the tai du lieu ket qua tu API.'
+        );
+      } finally {
+        if (!cancelled) {
+          setIsApiLoading(false);
+        }
+      }
+    }
+
+    void loadDashboardData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    getChildProfiles,
+    getCurrentUserWithChildrenProfiles,
+    getExercises,
+    getResultsByChild,
+  ]);
 
   // Helper getters
   const getChildInfo = (id: string): Child => {
@@ -345,11 +561,38 @@ export default function LearningResultManagement() {
   };
 
   // Actions simulators
-  const handleOpenDetailModal = (res: LearningResult) => {
+  const handleOpenDetailModal = async (res: LearningResult) => {
     setSelectedResult(res);
     setFeedbackInput(res.FeedbackText);
     setIsDetailModalOpen(true);
     setEditFeedbackMode(false);
+
+    const resultId = Number(res.ResultId);
+    if (Number.isNaN(resultId)) return;
+
+    const [resultResponse, eventLogResponse] = await Promise.all([
+      getResultById(resultId),
+      getEventLogsByResult(resultId),
+    ]);
+
+    if (resultResponse.success && resultResponse.data) {
+      const latest = mapResultRecord(resultResponse.data);
+
+      setResults((current) =>
+        current.map((item) =>
+          item.ResultId === latest.ResultId ? latest : item
+        )
+      );
+      setSelectedResult(latest);
+      setFeedbackInput(latest.FeedbackText);
+    }
+
+    if (eventLogResponse.success && eventLogResponse.data) {
+      setEventLogsByResultId((current) => ({
+        ...current,
+        [res.ResultId]: eventLogResponse.data ?? [],
+      }));
+    }
   };
 
   const handleSaveFeedback = () => {
@@ -371,6 +614,16 @@ export default function LearningResultManagement() {
     });
     setEditFeedbackMode(false);
     showToast('Đã lưu ý kiến nhận xét can thiệp thành công!', 'success');
+  };
+
+  const getResultInteractionLog = (result: LearningResult | null): string => {
+    if (!result) return '';
+
+    return (
+      result.InteractionLog ||
+      formatEventLogs(eventLogsByResultId[result.ResultId]) ||
+      ''
+    );
   };
 
   const handleSimulateAudioPlay = (res: LearningResult) => {
@@ -694,11 +947,25 @@ export default function LearningResultManagement() {
             <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-2">Dòng dữ liệu mộc lưu vết VR headset, nỗ lực sửa ngọng của trẻ nhỏ</p>
           </div>
           <span className="text-xs bg-indigo-50 text-indigo-600 px-3.5 py-1.5 rounded-full font-bold uppercase tracking-wider border border-indigo-100/30 self-start sm:self-center">
-            MOCK_DATABASE: RESULT ({displayResults.length} dòng)
+            API_DATABASE: RESULT ({displayResults.length} dòng)
           </span>
         </div>
 
-        {displayResults.length === 0 ? (
+        {apiError ? (
+          <div className="mx-6 mt-6 rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-bold text-amber-700">
+            {apiError}
+          </div>
+        ) : null}
+
+        {isApiLoading ? (
+          <div className="py-24 text-center space-y-4">
+            <div className="w-20 h-20 bg-teal-50 rounded-full flex items-center justify-center mx-auto border-4 border-dashed border-teal-100 italic">
+              <Activity className="w-8 h-8 text-teal-400 animate-pulse" />
+            </div>
+            <p className="text-xl font-black text-gray-700">Đang tải kết quả luyện tập từ API...</p>
+            <p className="text-xs text-gray-400 max-w-md mx-auto">Hệ thống đang ghép hồ sơ trẻ, bài tập và các lượt luyện để hiển thị đúng theo quyền truy cập hiện tại.</p>
+          </div>
+        ) : displayResults.length === 0 ? (
           <div className="py-24 text-center space-y-4">
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto border-4 border-dashed border-gray-100 italic">
               <Award className="w-8 h-8 text-gray-300" />
@@ -1109,7 +1376,7 @@ export default function LearningResultManagement() {
                     Interaction Log (Vết logs tương tác vật lý ghi nhận từ ứng dụng VR)
                   </label>
                   <div className="p-4 bg-gray-900 text-slate-100 rounded-2xl font-mono text-xs whitespace-pre-line leading-relaxed shadow-inner border-2 border-slate-800">
-                    {selectedResult.InteractionLog || "Hệ thống chưa ghi nhận vết log bấm hoặc phát âm ở phiên tập này..."}
+                    {getResultInteractionLog(selectedResult) || "Hệ thống chưa ghi nhận vết log bấm hoặc phát âm ở phiên tập này..."}
                   </div>
                 </div>
 

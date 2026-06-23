@@ -1,810 +1,1305 @@
-import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { 
-  GraduationCap, 
-  Users, 
-  TrendingUp, 
-  Clock, 
-  CheckCircle, 
-  FileSpreadsheet, 
-  Baby, 
-  ChevronRight, 
-  Search, 
-  X, 
-  Award, 
-  Info, 
-  Calendar, 
-  Smile, 
-  ShieldAlert, 
-  BookOpen, 
-  Activity, 
+import React, { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import {
+  Activity,
+  AlertCircle,
   ArrowLeft,
-  Filter,
+  Award,
+  Baby,
+  BookOpen,
+  Calendar,
+  CheckCircle,
+  ClipboardList,
+  Clock,
   Eye,
+  FileSpreadsheet,
+  Filter,
+  GraduationCap,
   History,
-  FileDown,
+  Info,
+  Search,
   Sparkles,
-  ClipboardList
+  TrendingUp,
+  Users,
+  X,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { getCurrentUser } from '../../lib/authMock';
+import {
+  getChildProfiles,
+  type ChildProfileResponse,
+} from '../../services/childProfileService';
+import {
+  getClassrooms,
+  type ClassroomResponse,
+} from '../../services/classroomService';
+import {
+  getEnrollments,
+  type EnrollmentResponse,
+} from '../../services/enrollmentService';
+import {
+  getResultsByChild,
+  type ResultResponse,
+} from '../../services/resultService';
+import type { PagedResponse, ServiceResult } from '../../services/serviceTypes';
 
-// DB Interfaces according to specifications
-export interface Classroom {
-  ClassId: string;
-  TeacherId: string;
-  ProgramId: string;
-  ClassName: string;
-  Description: string;
-  StartDate: string;
-  EndDate: string;
-  Status: 'Active' | 'Inactive' | 'Completed' | 'Upcoming';
-}
+type ClassroomStatus = 'Active' | 'Inactive' | 'Completed' | 'Upcoming';
+type ProgressLevel = 'Improving' | 'Stable' | 'Need Support';
 
-export interface Program {
-  ProgramId: string;
-  ProgramName: string;
-  Description: string;
-  Language: 'Tiếng Việt' | 'Tiếng Anh';
-}
-
-export interface Child {
+type Child = {
   ChildId: string;
+  ParentUserId: string;
   FullName: string;
   Age: number;
   Gender: 'Male' | 'Female' | 'Other';
   LearningLevel: string;
+  Note: string;
   Status: 'Active' | 'Inactive';
-}
+};
 
-export interface Enrollment {
-  EnrollmentId: string;
-  ChildId: string;
-  ClassId: string;
-  EnrollmentDate: string;
-  Status: 'Enrolled' | 'Graduated' | 'Dropped';
-}
-
-export interface Result {
+type Result = {
   ResultId: string;
   ChildId: string;
   ExerciseId: string;
   CompletionStatus: 'Completed' | 'Incomplete' | 'Failed';
   Score: number;
   DurationSeconds: number;
+  AttemptNumber: number;
   CreatedAt: string;
-}
+};
 
-export interface Analysis {
-  AnalysisId: string;
+type Analysis = {
   ChildId: string;
   AverageScore: number;
-  ProgressLevel: 'Improving' | 'Stable' | 'Need Support';
+  CompletionRate: number;
+  TotalPracticeMinutes: number;
+  ProgressLevel: ProgressLevel;
   Recommendation: string;
-}
-
-// Mock Database Tables mapping out schema exactly
-const MOCK_CLASSROOMS: Classroom[] = [
-  {
-    ClassId: 'CLS-801',
-    TeacherId: 'TCH-001',
-    ProgramId: 'PROG-101',
-    ClassName: 'Lớp VR Phát Âm 1 - Sáng Thứ 2 & 4',
-    Description: 'Lớp học rèn luyện về phát âm nguyên âm đơn phối hợp cử chỉ qua kính VR sinh động.',
-    StartDate: '2026-03-01',
-    EndDate: '2026-08-31',
-    Status: 'Active'
-  },
-  {
-    ClassId: 'CLS-802',
-    TeacherId: 'TCH-001',
-    ProgramId: 'PROG-102',
-    ClassName: 'Lớp Chuyên Đề Chữa Ngọng Gió S-X',
-    Description: 'Tập trung làm chủ cơ lưỡi, áp lực hơi từ họng và điều phối lực môi khi phát dải âm gió S.',
-    StartDate: '2026-04-10',
-    EndDate: '2026-07-10',
-    Status: 'Active'
-  }
-];
-
-const MOCK_PROGRAMS: Program[] = [
-  {
-    ProgramId: 'PROG-101',
-    ProgramName: 'Phiêu lưu nông trại vui vẻ',
-    Description: 'Giáo án tương tác nhập vai thực tế ảo 3D giúp học sinh nhận diện và tập bật hơi tự nhiên các phụ âm b, m, n, p phối hợp các nguyên âm đơn giản. Tối ưu nhịp thở và điều phối cơ mặt.',
-    Language: 'Tiếng Việt'
-  },
-  {
-    ProgramId: 'PROG-102',
-    ProgramName: 'Sửa lỗi ngọng âm gió nâng cao',
-    Description: 'Chương trình huấn luyện đặc hiệu rèn khẩu hình lưỡi, ép hơi và tránh nói rít dẹt dải âm. Thích hợp cho trẻ từ 7-11 tuổi để cải thiện phát âm hiệu quả.',
-    Language: 'Tiếng Việt'
-  }
-];
-
-const MOCK_CHILDREN: Child[] = [
-  { ChildId: 'CHD-001', FullName: 'Nguyễn Tiến Minh (Leo)', Age: 8, Gender: 'Male', LearningLevel: 'Bậc 1 - Phát âm đơn VR', Status: 'Active' },
-  { ChildId: 'CHD-002', FullName: 'Trần Thảo Linh (Sophia)', Age: 7, Gender: 'Female', LearningLevel: 'Bậc 2 - Âm đôi ghép từ VR', Status: 'Active' },
-  { ChildId: 'CHD-003', FullName: 'Phạm Minh Khang', Age: 9, Gender: 'Male', LearningLevel: 'Bậc 1 - Sửa ngọng S VR', Status: 'Active' },
-  { ChildId: 'CHD-004', FullName: 'Hoàng Anh Thư', Age: 11, Gender: 'Female', LearningLevel: 'Bậc 2 - Ghép vần VR', Status: 'Active' }
-];
-
-const MOCK_ENROLLMENT: Enrollment[] = [
-  { EnrollmentId: 'ENR-001', ChildId: 'CHD-001', ClassId: 'CLS-801', EnrollmentDate: '2026-02-20', Status: 'Enrolled' },
-  { EnrollmentId: 'ENR-002', ChildId: 'CHD-002', ClassId: 'CLS-801', EnrollmentDate: '2026-02-21', Status: 'Enrolled' },
-  { EnrollmentId: 'ENR-003', ChildId: 'CHD-003', ClassId: 'CLS-801', EnrollmentDate: '2026-02-22', Status: 'Enrolled' },
-  { EnrollmentId: 'ENR-004', ChildId: 'CHD-004', ClassId: 'CLS-801', EnrollmentDate: '2026-02-25', Status: 'Enrolled' }
-];
-
-const MOCK_RESULTS: Result[] = [
-  { ResultId: 'RES-101', ChildId: 'CHD-001', ExerciseId: 'EX-农-01', CompletionStatus: 'Completed', Score: 95, DurationSeconds: 120, CreatedAt: '2026-05-29 08:32' },
-  { ResultId: 'RES-102', ChildId: 'CHD-001', ExerciseId: 'EX-农-02', CompletionStatus: 'Completed', Score: 88, DurationSeconds: 150, CreatedAt: '2026-05-30 09:12' },
-  { ResultId: 'RES-103', ChildId: 'CHD-002', ExerciseId: 'EX-农-01', CompletionStatus: 'Completed', Score: 100, DurationSeconds: 110, CreatedAt: '2026-05-29 14:15' },
-  { ResultId: 'RES-104', ChildId: 'CHD-003', ExerciseId: 'EX-风-01', CompletionStatus: 'Incomplete', Score: 45, DurationSeconds: 90, CreatedAt: '2026-05-28 10:04' },
-  { ResultId: 'RES-105', ChildId: 'CHD-004', ExerciseId: 'EX-农-01', CompletionStatus: 'Completed', Score: 85, DurationSeconds: 135, CreatedAt: '2026-05-31 10:20' }
-];
-
-const MOCK_ANALYSES: Analysis[] = [
-  { AnalysisId: 'ANA-001', ChildId: 'CHD-001', AverageScore: 91.5, ProgressLevel: 'Improving', Recommendation: 'Khuyến nghị tăng tương tác các cụm âm đôi để duy trì phản xạ.' },
-  { AnalysisId: 'ANA-002', ChildId: 'CHD-002', AverageScore: 97.0, ProgressLevel: 'Improving', Recommendation: 'Chúc mừng thành tích tuyệt đối! Sẵn sàng cho dải giáo án bậc 3.' },
-  { AnalysisId: 'ANA-003', ChildId: 'CHD-003', AverageScore: 56.5, ProgressLevel: 'Need Support', Recommendation: 'Cần hạ độ khó dòng game, hỗ trợ cơ hàm uốn chậm lại.' },
-  { AnalysisId: 'ANA-004', ChildId: 'CHD-004', AverageScore: 85.0, ProgressLevel: 'Stable', Recommendation: 'Tập nói lớn hơn trước micro mộc để bù dải sóng yếu hơi.' }
-];
+};
 
 interface TeacherClassDetailProps {
   classId?: string;
   onNavigate?: (screen: string) => void;
 }
 
-export default function TeacherClassDetail({ classId = 'CLS-801', onNavigate }: TeacherClassDetailProps) {
-  // Find current active classroom
-  const [currentClassroomId, setCurrentClassroomId] = useState<string>(classId);
-  const activeClass = useMemo(() => {
-    return MOCK_CLASSROOMS.find(c => c.ClassId === currentClassroomId) || MOCK_CLASSROOMS[0];
-  }, [currentClassroomId]);
+const API_PAGE_SIZE = 100;
 
-  // Find associated program info
-  const programInfo = useMemo(() => {
-    return MOCK_PROGRAMS.find(p => p.ProgramId === activeClass.ProgramId) || MOCK_PROGRAMS[0];
-  }, [activeClass]);
+function formatDate(value: string | null | undefined): string {
+  if (!value) return '--';
+  return value.slice(0, 10);
+}
 
-  // Find enrolled children for the active classes
+function formatDateTime(value: string | null | undefined): string {
+  if (!value) return '';
+  return value.replace('T', ' ').slice(0, 19);
+}
+
+function normalizeClassStatus(status: string): ClassroomStatus {
+  if (status === 'Inactive') return 'Inactive';
+  if (status === 'Completed') return 'Completed';
+  if (status === 'Upcoming') return 'Upcoming';
+  return 'Active';
+}
+
+function normalizeCompletionStatus(
+  result: ResultResponse
+): Result['CompletionStatus'] {
+  if (result.completionStatus === 'Completed') return 'Completed';
+  if (result.score <= 0) return 'Failed';
+  return 'Incomplete';
+}
+
+function mapChildRecord(child: ChildProfileResponse): Child {
+  return {
+    ChildId: String(child.id),
+    ParentUserId: String(child.userId),
+    FullName: child.fullName,
+    Age: child.age,
+    Gender:
+      child.gender === 'Female' || child.gender === 'Other'
+        ? child.gender
+        : 'Male',
+    LearningLevel: child.learningLevel,
+    Note: child.note ?? '',
+    Status: child.status === 'Inactive' ? 'Inactive' : 'Active',
+  };
+}
+
+function mapResultRecord(result: ResultResponse): Result {
+  return {
+    ResultId: String(result.id),
+    ChildId: String(result.childId),
+    ExerciseId: `Exercise #${result.exerciseId}`,
+    CompletionStatus: normalizeCompletionStatus(result),
+    Score: Math.round(result.score),
+    DurationSeconds: result.durationSeconds,
+    AttemptNumber: result.attemptNumber,
+    CreatedAt:
+      formatDateTime(result.completedAt) || formatDateTime(result.startedAt),
+  };
+}
+
+async function loadAllPages<T>(
+  loadPage: (
+    pageNumber?: number,
+    pageSize?: number
+  ) => Promise<ServiceResult<PagedResponse<T>>>
+): Promise<T[]> {
+  const items: T[] = [];
+  let pageNumber = 1;
+  let totalPages = 1;
+
+  while (pageNumber <= totalPages) {
+    const result = await loadPage(pageNumber, API_PAGE_SIZE);
+
+    if (!result.success || !result.data) {
+      throw new Error(result.errors.join(' ') || result.message);
+    }
+
+    items.push(...result.data.items);
+    totalPages = Math.max(result.data.totalPages, 1);
+    pageNumber += 1;
+  }
+
+  return items;
+}
+
+function resolveRequestedClassId(
+  requestedClassId: string | undefined,
+  classrooms: ClassroomResponse[]
+): string {
+  if (classrooms.length === 0) return '';
+  if (!requestedClassId) return String(classrooms[0].id);
+
+  const exactMatch = classrooms.find(
+    (classroom) => String(classroom.id) === requestedClassId
+  );
+  if (exactMatch) return String(exactMatch.id);
+
+  const numericPart = requestedClassId.match(/\d+/)?.[0];
+  if (numericPart) {
+    const normalizedId = String(Number(numericPart));
+    const numericMatch = classrooms.find(
+      (classroom) => String(classroom.id) === normalizedId
+    );
+    if (numericMatch) return String(numericMatch.id);
+  }
+
+  return String(classrooms[0].id);
+}
+
+function buildAnalysis(child: Child, results: Result[]): Analysis {
+  const averageScore =
+    results.length > 0
+      ? Math.round(
+          results.reduce((sum, result) => sum + result.Score, 0) / results.length
+        )
+      : 0;
+  const completedResults = results.filter(
+    (result) => result.CompletionStatus === 'Completed'
+  ).length;
+  const completionRate =
+    results.length > 0
+      ? Math.round((completedResults / results.length) * 100)
+      : 0;
+  const totalPracticeMinutes = Math.round(
+    results.reduce((sum, result) => sum + result.DurationSeconds, 0) / 60
+  );
+
+  let progressLevel: ProgressLevel = 'Stable';
+  let recommendation = `Duy tri nhip luyen deu cho ${child.FullName}.`;
+
+  if (averageScore >= 85 && completionRate >= 80) {
+    progressLevel = 'Improving';
+    recommendation =
+      'Co the day sang bai tap nang hon va tang tan suat luyen phan xa.';
+  } else if (averageScore < 60 || completionRate < 50) {
+    progressLevel = 'Need Support';
+    recommendation =
+      'Nen giam do kho, theo sat tung phien va uu tien bai tap co huong dan ro.';
+  } else {
+    recommendation =
+      'Can giu nhip luyen on dinh va bo sung them bai tap nhac lai co trong tam.';
+  }
+
+  return {
+    ChildId: child.ChildId,
+    AverageScore: averageScore,
+    CompletionRate: completionRate,
+    TotalPracticeMinutes: totalPracticeMinutes,
+    ProgressLevel: progressLevel,
+    Recommendation: recommendation,
+  };
+}
+
+export default function TeacherClassDetail({
+  classId,
+  onNavigate,
+}: TeacherClassDetailProps) {
+  const currentUser = getCurrentUser();
+  const [classrooms, setClassrooms] = useState<ClassroomResponse[]>([]);
+  const [enrollments, setEnrollments] = useState<EnrollmentResponse[]>([]);
+  const [childrenById, setChildrenById] = useState<Record<string, Child>>({});
+  const [resultsByChildId, setResultsByChildId] = useState<
+    Record<string, Result[]>
+  >({});
+  const [currentClassroomId, setCurrentClassroomId] = useState(classId ?? '');
+  const [activeTab, setActiveTab] = useState<
+    'STUDENTS' | 'RESULTS' | 'ANALYSES' | 'PROGRAM'
+  >('STUDENTS');
+  const [studentSearchQuery, setStudentSearchQuery] = useState('');
+  const [selectedProgressFilter, setSelectedProgressFilter] =
+    useState<string>('ALL');
+  const [toastMessage, setToastMessage] = useState<{
+    text: string;
+    type: 'success' | 'info' | 'warn';
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isResultsLoading, setIsResultsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [reloadSeed, setReloadSeed] = useState(0);
+
+  const showToast = (
+    text: string,
+    type: 'success' | 'info' | 'warn' = 'success'
+  ) => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadBaseData = async () => {
+      setIsLoading(true);
+      setErrorMessage('');
+
+      try {
+        const [allClassrooms, allEnrollments, allChildren] = await Promise.all([
+          loadAllPages(getClassrooms),
+          loadAllPages(getEnrollments),
+          loadAllPages(getChildProfiles),
+        ]);
+
+        if (!isMounted) return;
+
+        const teacherId =
+          Number(currentUser?.UserId.replace(/\D/g, '')) || undefined;
+        const teacherName = currentUser?.FullName.trim().toLowerCase() ?? '';
+
+        const teacherClassrooms = allClassrooms.filter((classroom) => {
+          const matchedById = teacherId
+            ? classroom.userId === teacherId
+            : false;
+          const matchedByName = teacherName
+            ? classroom.teacherName.trim().toLowerCase() === teacherName
+            : false;
+          return matchedById || matchedByName;
+        });
+
+        const nextClassrooms =
+          teacherClassrooms.length > 0 ? teacherClassrooms : allClassrooms;
+
+        const childLookup = Object.fromEntries(
+          allChildren.map((child) => {
+            const mapped = mapChildRecord(child);
+            return [mapped.ChildId, mapped];
+          })
+        );
+
+        setClassrooms(nextClassrooms);
+        setEnrollments(allEnrollments);
+        setChildrenById(childLookup);
+        setCurrentClassroomId(resolveRequestedClassId(classId, nextClassrooms));
+      } catch (error) {
+        if (!isMounted) return;
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : 'Khong the tai thong tin lop hoc.'
+        );
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadBaseData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [classId, currentUser?.FullName, currentUser?.UserId, reloadSeed]);
+
+  const activeClass = useMemo(
+    () =>
+      classrooms.find(
+        (classroom) => String(classroom.id) === currentClassroomId
+      ) ?? classrooms[0],
+    [classrooms, currentClassroomId]
+  );
+
+  const classEnrollments = useMemo(() => {
+    if (!activeClass) return [];
+    return enrollments.filter(
+      (enrollment) => enrollment.classId === activeClass.id
+    );
+  }, [activeClass, enrollments]);
+
   const childrenInClass = useMemo(() => {
-    const childIds = MOCK_ENROLLMENT
-      .filter(e => e.ClassId === activeClass.ClassId)
-      .map(e => e.ChildId);
-    return MOCK_CHILDREN.filter(c => childIds.includes(c.ChildId));
-  }, [activeClass]);
+    return classEnrollments
+      .map((enrollment) => {
+        const childId = String(enrollment.childId);
+        return (
+          childrenById[childId] ?? {
+            ChildId: childId,
+            ParentUserId: '',
+            FullName: enrollment.childFullName,
+            Age: 0,
+            Gender: 'Other' as const,
+            LearningLevel: enrollment.childLearningLevel || 'Unknown',
+            Note: '',
+            Status: 'Active' as const,
+          }
+        );
+      })
+      .filter((child, index, array) => {
+        return array.findIndex((item) => item.ChildId === child.ChildId) === index;
+      });
+  }, [childrenById, classEnrollments]);
 
-  // Recent results filtered inside child workspace
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadResults = async () => {
+      if (!activeClass) {
+        setResultsByChildId({});
+        return;
+      }
+
+      if (childrenInClass.length === 0) {
+        setResultsByChildId({});
+        return;
+      }
+
+      setIsResultsLoading(true);
+
+      try {
+        const resultEntries = await Promise.all(
+          childrenInClass.map(async (child) => {
+            const result = await getResultsByChild(Number(child.ChildId));
+
+            if (!result.success || !result.data) {
+              throw new Error(result.errors.join(' ') || result.message);
+            }
+
+            return [
+              child.ChildId,
+              result.data
+                .map(mapResultRecord)
+                .sort((left, right) =>
+                  right.CreatedAt.localeCompare(left.CreatedAt)
+                ),
+            ] as const;
+          })
+        );
+
+        if (!isMounted) return;
+
+        setResultsByChildId(Object.fromEntries(resultEntries));
+      } catch (error) {
+        if (!isMounted) return;
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : 'Khong the tai ket qua hoc tap cua lop.'
+        );
+      } finally {
+        if (isMounted) {
+          setIsResultsLoading(false);
+        }
+      }
+    };
+
+    void loadResults();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeClass, childrenInClass]);
+
   const classResults = useMemo(() => {
-    const childIds = childrenInClass.map(c => c.ChildId);
-    return MOCK_RESULTS.filter(r => childIds.includes(r.ChildId));
-  }, [childrenInClass]);
+    return Object.values(resultsByChildId)
+      .flat()
+      .sort((left, right) => right.CreatedAt.localeCompare(left.CreatedAt));
+  }, [resultsByChildId]);
 
-  // Performance computations for overview cards
+  const analysisByChildId = useMemo(() => {
+    return Object.fromEntries(
+      childrenInClass.map((child) => [
+        child.ChildId,
+        buildAnalysis(child, resultsByChildId[child.ChildId] ?? []),
+      ])
+    );
+  }, [childrenInClass, resultsByChildId]);
+
   const summaryMetrics = useMemo(() => {
     const totalKids = childrenInClass.length;
-    
-    // Average score
-    const scores = classResults.map(r => r.Score);
-    const avgClassScore = scores.length > 0 
-      ? Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length) 
-      : 85;
-
-    // Total practice time in minutes
-    const totalPracticeSeconds = classResults.reduce((sum, r) => sum + r.DurationSeconds, 0);
-    const totalPracticeMinutes = Math.round(totalPracticeSeconds / 60);
-
-    // Completion rate of homework lessons
-    const completedCount = classResults.filter(r => r.CompletionStatus === 'Completed').length;
-    const completionRate = classResults.length > 0 
-      ? Math.round((completedCount / classResults.length) * 100) 
-      : 90;
+    const avgClassScore =
+      classResults.length > 0
+        ? Math.round(
+            classResults.reduce((sum, result) => sum + result.Score, 0) /
+              classResults.length
+          )
+        : 0;
+    const totalPracticeMinutes = Math.round(
+      classResults.reduce((sum, result) => sum + result.DurationSeconds, 0) / 60
+    );
+    const completedCount = classResults.filter(
+      (result) => result.CompletionStatus === 'Completed'
+    ).length;
+    const completionRate =
+      classResults.length > 0
+        ? Math.round((completedCount / classResults.length) * 100)
+        : 0;
 
     return {
       totalKids,
       avgClassScore,
       totalPracticeMinutes,
-      completionRate
+      completionRate,
     };
-  }, [childrenInClass, classResults]);
+  }, [childrenInClass.length, classResults]);
 
-  // Dynamic Tabs control state
-  const [activeTab, setActiveTab] = useState<'STUDENTS' | 'RESULTS' | 'ANALYSES' | 'PROGRAM'>('STUDENTS');
+  const filteredChildren = useMemo(() => {
+    return childrenInClass.filter((child) => {
+      const analysis = analysisByChildId[child.ChildId] ?? buildAnalysis(child, []);
+      const matchesSearch =
+        child.FullName.toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
+        child.ChildId.includes(studentSearchQuery);
+      const matchesProgress =
+        selectedProgressFilter === 'ALL' ||
+        analysis.ProgressLevel === selectedProgressFilter;
 
-  // Interactive filtering variables
-  const [studentSearchQuery, setStudentSearchQuery] = useState('');
-  const [selectedProgressFilter, setSelectedProgressFilter] = useState<string>('ALL');
+      return matchesSearch && matchesProgress;
+    });
+  }, [
+    analysisByChildId,
+    childrenInClass,
+    selectedProgressFilter,
+    studentSearchQuery,
+  ]);
 
-  // Floating notifications state
-  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'warn' } | null>(null);
-
-  const showToast = (text: string, type: 'success' | 'info' | 'warn' = 'success') => {
-    setToastMessage({ text, type });
-    setTimeout(() => setToastMessage(null), 3000);
-  };
-
-  // Safe fetch analysis data based on child
-  const getAnalysisForChild = (childId: string): Analysis => {
-    return MOCK_ANALYSES.find(a => a.ChildId === childId) || {
-      AnalysisId: 'ANA-NEW',
-      ChildId: childId,
-      AverageScore: 80,
-      ProgressLevel: 'Stable',
-      Recommendation: 'Khuyến nghị giữ tốc độ học đều đặn hàng tuần.'
-    };
-  };
-
-  // Helper mappings child details in list queries
-  const getChildInfo = (id: string): Child => {
-    return MOCK_CHILDREN.find(c => c.ChildId === id) || {
-      ChildId: id,
-      FullName: 'Học sinh mầm',
-      Age: 5,
-      Gender: 'Other',
-      LearningLevel: 'Cơ bản',
-      Status: 'Active'
-    };
-  };
-
-  // Class status badge renderer styling
-  const renderStatusBadge = (status: Classroom['Status']) => {
+  const renderStatusBadge = (status: ClassroomStatus) => {
     const mappings = {
-      Active: { bg: 'bg-[#F2FAF4] text-[#34A853] border-emerald-100', dot: 'bg-emerald-500', label: 'Đang mở' },
-      Inactive: { bg: 'bg-gray-100 text-gray-500 border-gray-200', dot: 'bg-gray-400', label: 'Tạm khóa' },
-      Completed: { bg: 'bg-[#F2FAFB] text-[#20D0D4] border-cyan-100', dot: 'bg-[#20D0D4]', label: 'Đã bế mạc' },
-      Upcoming: { bg: 'bg-[#FFF9EE] text-[#FFA800] border-amber-100', dot: 'bg-[#FFA800]', label: 'Sắp tới' },
+      Active: {
+        bg: 'bg-[#F2FAF4] text-[#34A853] border-emerald-100',
+        dot: 'bg-emerald-500',
+        label: 'Dang mo',
+      },
+      Inactive: {
+        bg: 'bg-gray-100 text-gray-500 border-gray-200',
+        dot: 'bg-gray-400',
+        label: 'Tam khoa',
+      },
+      Completed: {
+        bg: 'bg-[#F2FAFB] text-[#20D0D4] border-cyan-100',
+        dot: 'bg-[#20D0D4]',
+        label: 'Da ket thuc',
+      },
+      Upcoming: {
+        bg: 'bg-[#FFF9EE] text-[#FFA800] border-amber-100',
+        dot: 'bg-[#FFA800]',
+        label: 'Sap toi',
+      },
     };
-    const style = mappings[status] || mappings.Active;
+
+    const style = mappings[status];
+
     return (
-      <span className={cn("inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border", style.bg)}>
-        <span className={cn("w-1.5 h-1.5 rounded-full animate-ping", style.dot)} />
+      <span
+        className={cn(
+          'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border',
+          style.bg
+        )}
+      >
+        <span className={cn('w-1.5 h-1.5 rounded-full', style.dot)} />
         {style.label}
       </span>
     );
   };
 
-  const getProgressLevelBadge = (level: Analysis['ProgressLevel']) => {
+  const getProgressLevelBadge = (level: ProgressLevel) => {
     const mapper = {
-      Improving: { bg: 'bg-[#F2FAF4] text-[#34A853] border-emerald-50', label: 'Tiến bộ tốt' },
-      Stable: { bg: 'bg-[#F2FAFB] text-[#20D0D4] border-cyan-50', label: 'Khá ổn định' },
-      'Need Support': { bg: 'bg-[#FFF2F2] text-[#FF8E8E] border-rose-50', label: 'Cần lưu tâm' }
+      Improving: {
+        bg: 'bg-[#F2FAF4] text-[#34A853] border-emerald-50',
+        label: 'Tien bo tot',
+      },
+      Stable: {
+        bg: 'bg-[#F2FAFB] text-[#20D0D4] border-cyan-50',
+        label: 'On dinh',
+      },
+      'Need Support': {
+        bg: 'bg-[#FFF2F2] text-[#FF8E8E] border-rose-50',
+        label: 'Can ho tro',
+      },
     };
-    return mapper[level] || mapper.Stable;
+
+    return mapper[level];
   };
 
-  // Handle mock actions with beautiful educational status toasts
   const triggerSimulation = (action: string, name: string) => {
     if (action === 'REPORT') {
-      showToast(`Đang quét dải âm phổ mộc, kết xuất báo cáo lớp học ${activeClass.ClassName} về máy tính (.PDF)...`, 'info');
-      setTimeout(() => {
-        showToast('Kết xuất báo cáo kiểm định học tập thành công!', 'success');
-      }, 2505);
+      showToast(
+        `Dang tong hop bao cao lop ${activeClass?.className ?? ''} tu du lieu API.`,
+        'info'
+      );
     } else if (action === 'PROFILE') {
-      showToast(`Đang truy xuất thông số dải đo hơi thở của học sinh ${name}...`, 'info');
+      showToast(`Dang mo ho so hoc sinh ${name}.`, 'info');
     } else if (action === 'HISTORY') {
-      showToast(`Mở dải nhật ký 14 phiên học VR gần đây của học viên ${name}...`, 'success');
+      showToast(`Dang tai lich su luyen tap cua ${name}.`, 'success');
     } else if (action === 'REPLAY') {
-      showToast(`Tải mô hình chuyển động khớp lưỡi, tọa độ môi bé ${name} từ kính GodotXR...`, 'info');
+      showToast(`Replay 3D cua ${name} se map tiep o nhom sau.`, 'info');
     } else if (action === 'ANALYZE') {
-      showToast(`Đang chạy thuật toán AI so sánh âm phổ bé ${name} với mẫu chuẩn...`, 'success');
+      showToast(`Dang tong hop phan tich tien do cua ${name}.`, 'success');
     }
   };
 
+  const tabs = [
+    { tab: 'STUDENTS', label: 'Hoc sinh', icon: Users },
+    { tab: 'RESULTS', label: 'Ket qua', icon: ClipboardList },
+    { tab: 'ANALYSES', label: 'Phan tich', icon: TrendingUp },
+    { tab: 'PROGRAM', label: 'Chuong trinh', icon: BookOpen },
+  ] as const;
+
+  if (isLoading && classrooms.length === 0) {
+    return (
+      <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="flex items-center gap-3 text-slate-600">
+          <Activity className="h-5 w-5 animate-pulse text-[#4EACAF]" />
+          <span className="font-semibold">
+            Dang tai teacher class detail tu classrooms, enrollments, child-profile
+            va results...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!activeClass) {
+    return (
+      <div className="rounded-3xl border border-rose-100 bg-white p-8 shadow-sm">
+        <div className="flex items-start gap-3 text-rose-600">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+          <div className="space-y-3">
+            <p className="font-semibold">
+              Khong tim thay lop hoc de hien thi.
+            </p>
+            <button
+              onClick={() => setReloadSeed((value) => value + 1)}
+              className="rounded-xl bg-[#264E50] px-4 py-2 text-xs font-black uppercase tracking-wider text-white transition-colors hover:bg-[#1E3B3D]"
+            >
+              Thu tai lai
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const classStatus = normalizeClassStatus(activeClass.status);
+
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative text-left" id="class-detail-page">
-      
-      {/* Dynamic Feedback Floating Notification */}
+    <div
+      className="relative space-y-10 pb-24 text-left animate-in fade-in slide-in-from-bottom-4 duration-700"
+      id="class-detail-page"
+    >
       <AnimatePresence>
         {toastMessage && (
           <motion.div
             initial={{ opacity: 0, y: -45, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -45, scale: 0.95 }}
-            className="fixed top-12 left-1/2 -translate-x-1/2 z-[300] w-[90%] max-w-lg pointer-events-auto"
-            id="detail-toast-floating"
+            className="fixed left-1/2 top-12 z-[300] w-[90%] max-w-lg -translate-x-1/2 pointer-events-auto"
           >
-            <div className={cn(
-              "px-6 py-4 rounded-3xl shadow-xl flex items-center gap-4.5 border-2 border-white backdrop-blur-md font-bold text-white text-sm tracking-wide leading-snug",
-              toastMessage.type === 'success' ? 'bg-[#4EACAF]/95' : toastMessage.type === 'info' ? 'bg-indigo-600/95' : 'bg-[#FF8E8E]/95'
-            )}>
-              <div className="bg-white/20 p-2 rounded-xl text-white shrink-0">
+            <div
+              className={cn(
+                'flex items-center gap-4 rounded-3xl border-2 border-white px-6 py-4 text-sm font-bold leading-snug text-white shadow-xl backdrop-blur-md',
+                toastMessage.type === 'success'
+                  ? 'bg-[#4EACAF]/95'
+                  : toastMessage.type === 'info'
+                    ? 'bg-indigo-600/95'
+                    : 'bg-[#FF8E8E]/95'
+              )}
+            >
+              <div className="rounded-xl bg-white/20 p-2 text-white shrink-0">
                 {toastMessage.type === 'success' ? (
-                  <CheckCircle className="w-5 h-5" />
+                  <CheckCircle className="h-5 w-5" />
                 ) : toastMessage.type === 'warn' ? (
-                  <ShieldAlert className="w-5 h-5" />
+                  <AlertCircle className="h-5 w-5" />
                 ) : (
-                  <Activity className="w-5 h-5 animate-pulse" />
+                  <Activity className="h-5 w-5 animate-pulse" />
                 )}
               </div>
-              <p className="flex-1 min-w-0 font-extrabold italic">{toastMessage.text}</p>
-              <button onClick={() => setToastMessage(null)} className="p-1 hover:bg-white/10 rounded-full transition-colors text-white">
-                <X className="w-5 h-5" />
+              <p className="min-w-0 flex-1">{toastMessage.text}</p>
+              <button
+                onClick={() => setToastMessage(null)}
+                className="rounded-full p-1 text-white transition-colors hover:bg-white/10"
+              >
+                <X className="h-5 w-5" />
               </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Header Block with Back button and Quick Export Report action */}
-      <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
-        
-        <div className="space-y-3">
-          {/* Interactivity back handler wrapper */}
-          <button
-            onClick={() => {
-              if (onNavigate) {
-                onNavigate('TEACHER_CLASSES');
-              } else {
-                showToast('Chuyển hưởng trang chủ lớp học mầm học của bạn...', 'info');
-              }
-            }}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#4EACAF] uppercase tracking-wider hover:text-[#3e8c8f] transition-all cursor-pointer"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Trở lại danh sách lớp học
-          </button>
- 
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] bg-[#4EACAF]/10 text-[#4EACAF] px-2.5 py-1 rounded font-bold uppercase tracking-wider leading-none">
-                Lớp học: {activeClass.ClassId}
-              </span>
-              {renderStatusBadge(activeClass.Status)}
+      <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm md:p-8">
+        <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                if (onNavigate) onNavigate('TEACHER_CLASSES');
+              }}
+              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#4EACAF] transition-colors hover:text-[#3e8c8f]"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Tro lai danh sach lop hoc
+            </button>
+
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded bg-[#4EACAF]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider leading-none text-[#4EACAF]">
+                  Lop hoc: {activeClass.id}
+                </span>
+                {renderStatusBadge(classStatus)}
+                <span className="rounded bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  API_DATABASE
+                </span>
+              </div>
+
+              <h1 className="text-xl font-black tracking-tight text-slate-800 md:text-2xl">
+                {activeClass.className}
+              </h1>
+
+              <p className="flex flex-wrap items-center gap-2 text-xs leading-relaxed text-slate-500 md:text-sm">
+                <BookOpen className="h-4 w-4 text-[#FF8E8E]" />
+                Chuong trinh:{' '}
+                <strong className="font-bold text-slate-700">
+                  {activeClass.programName}
+                </strong>
+                <span>({activeClass.programLanguage})</span>
+              </p>
+              <p className="text-xs font-semibold text-slate-500">
+                Giao vien phu trach: {activeClass.teacherName}
+              </p>
             </div>
-            
-            <h1 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight font-sans">
-              {activeClass.ClassName}
-            </h1>
- 
-            <p className="text-slate-500 text-xs md:text-sm leading-relaxed flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-[#FF8E8E]" />
-              Giáo trình lớp: <strong className="text-slate-700 font-bold">{programInfo.ProgramName}</strong> ({programInfo.Language})
+          </div>
+
+          <div className="flex flex-col gap-3 self-stretch sm:flex-row sm:items-center md:self-center">
+            <div className="relative min-w-[220px]">
+              <select
+                value={String(activeClass.id)}
+                onChange={(event) => {
+                  setCurrentClassroomId(event.target.value);
+                  showToast(`Dang chuyen sang lop #${event.target.value}.`, 'info');
+                }}
+                className="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-xs font-bold uppercase text-slate-700 outline-none transition-colors hover:border-[#4EACAF]/20"
+              >
+                {classrooms.map((classroom) => (
+                  <option key={classroom.id} value={String(classroom.id)}>
+                    {classroom.className}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              onClick={() => triggerSimulation('REPORT', '')}
+              className="flex items-center justify-center gap-1.5 rounded-lg bg-[#4EACAF] px-4 py-2.5 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm transition-all hover:bg-[#3E8C8F]"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Tao bao cao lop
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {(errorMessage || isResultsLoading) && (
+        <div
+          className={cn(
+            'rounded-2xl border p-4 text-sm shadow-sm',
+            errorMessage
+              ? 'border-rose-100 bg-rose-50 text-rose-700'
+              : 'border-sky-100 bg-sky-50 text-sky-700'
+          )}
+        >
+          <div className="flex items-start gap-3">
+            {errorMessage ? (
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            ) : (
+              <Activity className="mt-0.5 h-5 w-5 shrink-0 animate-pulse" />
+            )}
+            <div className="space-y-2">
+              <p className="font-semibold">
+                {errorMessage || 'Dang dong bo ket qua hoc tap cua lop...'}
+              </p>
+              {errorMessage && (
+                <button
+                  onClick={() => setReloadSeed((value) => value + 1)}
+                  className="rounded-xl bg-white px-3 py-2 text-xs font-black uppercase tracking-wider text-rose-600 transition-colors hover:bg-rose-100"
+                >
+                  Tai lai du lieu
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-teal-100 bg-teal-50 text-[#4EACAF]">
+            <Baby className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-lg font-bold leading-none text-slate-800">
+              {summaryMetrics.totalKids} hoc sinh
+            </p>
+            <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              Si so lop hoc
             </p>
           </div>
         </div>
- 
-        {/* Dynamic selector class switch action */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 self-stretch md:self-center">
-          
-          <div className="relative min-w-[200px]">
-            <select
-              value={currentClassroomId}
-              onChange={(e) => {
-                setCurrentClassroomId(e.target.value);
-                showToast(`Nạp mô tả giáo trình lớp ${e.target.value}`, 'success');
-              }}
-              className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/20 pl-4 pr-10 py-2.5 rounded-lg font-bold text-xs text-slate-700 uppercase outline-none cursor-pointer transition-colors"
-            >
-              {MOCK_CLASSROOMS.map(cl => (
-                <option key={cl.ClassId} value={cl.ClassId}>🏫 {cl.ClassName}</option>
-              ))}
-            </select>
+
+        <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-rose-100 bg-[#FF8E8E]/10 text-[#FF8E8E]">
+            <Award className="h-5 w-5" />
           </div>
- 
+          <div>
+            <p className="text-lg font-bold leading-none text-slate-800">
+              {summaryMetrics.avgClassScore}/100
+            </p>
+            <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              Diem trung binh lop
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-amber-100 bg-[#FFF9EE] text-[#FFA800]">
+            <Clock className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-lg font-bold leading-none text-slate-800">
+              {summaryMetrics.totalPracticeMinutes} phut
+            </p>
+            <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              Tong thoi gian luyen
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-cyan-100 bg-[#F2FAFB] text-[#20D0D4]">
+            <CheckCircle className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-lg font-bold leading-none text-slate-800">
+              {summaryMetrics.completionRate}%
+            </p>
+            <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              Ty le hoan thanh
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-100 bg-white p-2 shadow-sm">
+        {tabs.map(({ tab, label, icon: IconComponent }) => (
           <button
-            onClick={() => triggerSimulation('REPORT', '')}
-            className="px-4 py-2.5 bg-[#4EACAF] hover:bg-[#3E8C8F] text-white font-extrabold uppercase text-xs tracking-wider rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            key={tab}
+            onClick={() => {
+              setActiveTab(tab);
+              showToast(`Dang xem tab ${label.toLowerCase()}.`, 'info');
+            }}
+            className={cn(
+              'flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all',
+              activeTab === tab
+                ? 'bg-[#4EACAF] text-white shadow-sm'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-[#4EACAF]'
+            )}
           >
-            <FileSpreadsheet className="w-4 h-4" />
-            Tạo báo cáo lớp
+            <IconComponent className="h-4 w-4" />
+            {label}
           </button>
-        </div>
- 
+        ))}
       </div>
 
-      {/* 2. Kid-friendly styled Class overview metrics row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        
-        {/* Enrolled kids sum */}
-        <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-0.5">
-          <div className="w-10 h-10 bg-teal-50 border border-teal-100 rounded-lg flex items-center justify-center shrink-0 text-[#4EACAF]">
-            <Baby className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-lg font-bold text-slate-800 tracking-tight leading-none">{summaryMetrics.totalKids} Học sinh</p>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">Sĩ số lớp học</p>
-          </div>
-        </div>
-
-        {/* Class average basic score */}
-        <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-0.5">
-          <div className="w-10 h-10 bg-[#FF8E8E]/10 border border-rose-100 rounded-lg flex items-center justify-center shrink-0 text-[#FF8E8E]">
-            <Award className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-lg font-bold text-slate-800 tracking-tight leading-none">{summaryMetrics.avgClassScore}/100</p>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">Điểm trung bình</p>
-          </div>
-        </div>
-
-        {/* Total practice elapsed minutes */}
-        <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-0.5">
-          <div className="w-10 h-10 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center justify-center shrink-0 text-indigo-500">
-            <Clock className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-lg font-bold text-slate-800 tracking-tight leading-none">{summaryMetrics.totalPracticeMinutes} phút</p>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">Tương tác VR</p>
-          </div>
-        </div>
-
-        {/* Homework completed percentage */}
-        <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-0.5">
-          <div className="w-10 h-10 bg-emerald-50 border border-emerald-100 rounded-lg flex items-center justify-center shrink-0 text-emerald-500">
-            <CheckCircle className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-lg font-bold text-emerald-600 tracking-tight leading-none">{summaryMetrics.completionRate}%</p>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">Nộp bài tập</p>
-          </div>
-        </div>
-
-      </div>
-
-      {/* 3. Styled tab buttons selector card */}
-      <div className="bg-white rounded-xl p-1.5 border border-slate-100 flex flex-col md:flex-row items-stretch md:items-center justify-start gap-1">
-        {[
-          { tab: 'STUDENTS', label: 'Danh Sách Học Sinh', icon: Users },
-          { tab: 'RESULTS', label: 'Kết Quả Gần Đây', icon: ClipboardList },
-          { tab: 'ANALYSES', label: 'Phân Tích Tiến Độ', icon: TrendingUp },
-          { tab: 'PROGRAM', label: 'Thông Tin Chương Trình', icon: BookOpen }
-        ].map((t) => {
-          const IconComponent = t.icon;
-          return (
-            <button
-              key={t.tab}
-              onClick={() => {
-                setActiveTab(t.tab as any);
-                showToast(`Chuyển sang xem cấu kiện: ${t.label}`, 'info');
-              }}
-              className={cn(
-                "px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer rounded-lg",
-                activeTab === t.tab 
-                  ? "bg-[#4EACAF] text-white shadow-sm"
-                  : "text-slate-600 hover:text-[#4EACAF] hover:bg-slate-50"
-              )}
-            >
-              <IconComponent className="w-4 h-4" />
-              {t.label}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* 4. Tab contents mapping dynamic spaces */}
-      <div className="space-y-6">
-        
-        {/* Tab 1: Student List & Detailed Database Schema table integration */}
-        {activeTab === 'STUDENTS' && (
-          <div className="space-y-6">
-            
-            {/* Table layout filter/search tool */}
-            <div className="bg-white rounded-xl p-4 border border-slate-100 flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input 
-                  type="text" 
-                  placeholder="Tìm học sinh trong danh sách (Ví dụ: Minh, Sophia...)" 
-                  value={studentSearchQuery}
-                  onChange={(e) => setStudentSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-slate-50 border border-slate-200 font-semibold text-slate-705 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs" 
-                />
-                {studentSearchQuery && (
-                  <button onClick={() => setStudentSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 p-1 cursor-pointer">
-                    <X className="w-3.5 h-3.5 text-slate-400" />
-                  </button>
-                )}
-              </div>
-
-              {/* Progress level state selector */}
-              <div className="relative min-w-[200px]">
-                <select
-                  value={selectedProgressFilter}
-                  onChange={(e) => setSelectedProgressFilter(e.target.value)}
-                  className="w-full appearance-none bg-slate-50 border border-slate-200 pl-4 pr-10 py-2.5 rounded-lg font-bold text-xs text-slate-655 uppercase cursor-pointer"
+      {activeTab === 'STUDENTS' && (
+        <div className="space-y-6">
+          <div className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-white p-4 sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Tim hoc sinh theo ten hoac id"
+                value={studentSearchQuery}
+                onChange={(event) => setStudentSearchQuery(event.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-10 text-xs font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
+              />
+              {studentSearchQuery && (
+                <button
+                  onClick={() => setStudentSearchQuery('')}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1"
                 >
-                  <option value="ALL">TIẾN TRÌNH (TẤT CẢ)</option>
-                  <option value="Improving">ĐANG TIẾN BỘ</option>
-                  <option value="Stable">ỔN ĐỊNH</option>
-                  <option value="Need Support">CẦN HỖ TRỢ</option>
-                </select>
-                <Filter className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              </div>
+                  <X className="h-3.5 w-3.5 text-slate-400" />
+                </button>
+              )}
             </div>
 
-            {/* Main robust Student Database table layout */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-              <div className="px-6 py-4.5 border-b border-slate-50 bg-white">
-                <h3 className="text-base font-bold text-slate-800 leading-none">Danh sách học sinh của lớp</h3>
-                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Danh sách các em được chỉ định tham gia rèn luyện dải âm mộc</p>
-              </div>
-
-              <div className="overflow-x-auto text-left">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold text-xs uppercase tracking-wider">
-                      <th className="py-3 px-4">Mã bé</th>
-                      <th className="py-3 px-4">Họ tên bé</th>
-                      <th className="py-3 px-4 text-center">Tuổi</th>
-                      <th className="py-3 px-4 text-center">Giới tính</th>
-                      <th className="py-3 px-4">Trình độ luyện</th>
-                      <th className="py-3 px-4 text-center">Điểm số trung bình</th>
-                      <th className="py-3 px-4">Mức độ tiến tiến</th>
-                      <th className="py-3 px-4 text-right">Tác vụ can thiệp</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
-                    {childrenInClass
-                      .filter(child => {
-                        const scoreAnalysis = getAnalysisForChild(child.ChildId);
-                        
-                        // Search text matching
-                        const matchesSearch = child.FullName.toLowerCase().includes(studentSearchQuery.toLowerCase()) || child.ChildId.includes(studentSearchQuery);
-                        // Filter matching
-                        const matchesProgress = selectedProgressFilter === 'ALL' || scoreAnalysis.ProgressLevel === selectedProgressFilter;
-
-                        return matchesSearch && matchesProgress;
-                      })
-                      .map((kid) => {
-                        const ana = getAnalysisForChild(kid.ChildId);
-                        const progressStyle = getProgressLevelBadge(ana.ProgressLevel);
-                        
-                        return (
-                          <tr key={kid.ChildId} className="hover:bg-slate-50/50 transition-colors">
-                            
-                            {/* Kid ID */}
-                            <td className="py-5 px-10 font-mono text-gray-400 text-xs font-black">
-                              {kid.ChildId}
-                            </td>
-
-                            {/* FullName */}
-                            <td className="py-5 px-6">
-                              <span className="text-gray-900 font-extrabold text-sm md:text-base block">{kid.FullName}</span>
-                              <span className="text-[10px] text-gray-400 tracking-tight font-medium">Lớp: {activeClass.ClassId}</span>
-                            </td>
-
-                            {/* Age */}
-                            <td className="py-5 px-6 text-center font-mono font-black text-gray-500">
-                              {kid.Age}t
-                            </td>
-
-                            {/* Gender */}
-                            <td className="py-5 px-6 text-center text-xs font-extrabold">
-                              {kid.Gender === 'Male' ? 'Nam 👦' : 'Nữ 👧'}
-                            </td>
-
-                            {/* Practice Level */}
-                            <td className="py-5 px-6 text-xs text-[#264E50] font-black italic">
-                              {kid.LearningLevel}
-                            </td>
-
-                            {/* Average Score */}
-                            <td className="py-5 px-6 text-center">
-                              <span className={cn(
-                                "font-black text-base italic",
-                                ana.AverageScore >= 85 ? 'text-[#34A853]' : ana.AverageScore >= 60 ? 'text-[#20D0D4]' : 'text-[#FF8E8E]'
-                              )}>
-                                {ana.AverageScore}đ
-                              </span>
-                            </td>
-
-                            {/* Progress level status badge */}
-                            <td className="py-5 px-6">
-                              <span className={cn(
-                                "px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border",
-                                progressStyle.bg
-                              )}>
-                                {progressStyle.label}
-                              </span>
-                            </td>
-
-                            {/* Large portfolio of action control buttons */}
-                            <td className="py-5 px-10 text-right">
-                              <div className="flex items-center justify-end gap-1.5">
-                                
-                                <button
-                                  onClick={() => {
-                                    if (onNavigate) {
-                                      onNavigate(`TEACHER_STUDENT_DETAIL:${kid.ChildId}`);
-                                    } else {
-                                      triggerSimulation('PROFILE', kid.FullName);
-                                    }
-                                  }}
-                                  className="py-1.5 px-3 bg-[#4EACAF]/10 hover:bg-[#4EACAF] text-[#4EACAF] hover:text-white rounded-xl text-xs font-black transition-all"
-                                  title="Xem hồ sơ học sinh"
-                                >
-                                  Xem hồ sơ học sinh
-                                </button>
-
-                                <button
-                                  onClick={() => triggerSimulation('HISTORY', kid.FullName)}
-                                  className="p-2 bg-indigo-50 text-indigo-500 hover:bg-indigo-500 hover:text-white rounded-xl transition-all"
-                                  title="Lịch sử các phiên luyện tập"
-                                >
-                                  <History className="w-3.5 h-3.5" />
-                                </button>
-
-                                <button
-                                  onClick={() => triggerSimulation('REPLAY', kid.FullName)}
-                                  className="p-2 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-all"
-                                  title="Trọc quan vị trí miệng 3D"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                </button>
-
-                                <button
-                                  onClick={() => triggerSimulation('ANALYZE', kid.FullName)}
-                                  className="p-2 bg-yellow-50 text-[#FFA800] hover:bg-[#FFA800] hover:text-white rounded-xl transition-all"
-                                  title="Phân tích chi tiết âm mộc"
-                                >
-                                  <TrendingUp className="w-3.5 h-3.5" />
-                                </button>
-
-                              </div>
-                            </td>
-
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </table>
-              </div>
+            <div className="relative min-w-[200px]">
+              <select
+                value={selectedProgressFilter}
+                onChange={(event) => setSelectedProgressFilter(event.target.value)}
+                className="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-4 pr-10 text-xs font-bold uppercase text-slate-700"
+              >
+                <option value="ALL">Tien do (tat ca)</option>
+                <option value="Improving">Dang tien bo</option>
+                <option value="Stable">On dinh</option>
+                <option value="Need Support">Can ho tro</option>
+              </select>
+              <Filter className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             </div>
-
           </div>
-        )}
 
-        {/* Tab 2: Recent results table */}
-        {activeTab === 'RESULTS' && (
-          <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden">
-            <div className="px-10 py-8 border-b border-gray-50 bg-white/50">
-              <h3 className="text-2xl font-black text-gray-900 leading-none italic">Dải điểm phiên chơi gần đây</h3>
-              <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-2">Dòng tập ghi âm mộc của trẻ được phân tích tự động từ hệ thống VR</p>
+          <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+            <div className="border-b border-slate-50 px-6 py-4">
+              <h3 className="text-base font-bold text-slate-800">
+                Danh sach hoc sinh cua lop
+              </h3>
+              <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                Du lieu ghep tu enrollments va child-profile
+              </p>
             </div>
 
             <div className="overflow-x-auto text-left">
               <table className="w-full border-collapse">
                 <thead>
-                  <tr className="bg-[#FDFCF5]/60 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
-                    <th className="py-5 px-10">Mã kết quả</th>
-                    <th className="py-5 px-6">Học sinh bé</th>
-                    <th className="py-5 px-6">Mã bài chơi</th>
-                    <th className="py-5 px-6 text-center">Trạng thái bài tập</th>
-                    <th className="py-5 px-6 text-center">Thời lượng</th>
-                    <th className="py-5 px-6 text-center">Điểm phiên</th>
-                    <th className="py-5 px-6">Ngày ghi nhận</th>
+                  <tr className="border-b border-slate-100 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+                    <th className="px-4 py-3">Ma be</th>
+                    <th className="px-4 py-3">Ho ten</th>
+                    <th className="px-4 py-3 text-center">Tuoi</th>
+                    <th className="px-4 py-3 text-center">Gioi tinh</th>
+                    <th className="px-4 py-3">Trinh do</th>
+                    <th className="px-4 py-3 text-center">Diem TB</th>
+                    <th className="px-4 py-3">Tien do</th>
+                    <th className="px-4 py-3 text-right">Tac vu</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
-                  {classResults.map((result) => {
-                    const child = getChildInfo(result.ChildId);
-                    
-                    return (
-                      <tr key={result.ResultId} className="hover:bg-slate-50/50 transition-colors">
-                        
-                        <td className="py-5 px-10 font-mono text-gray-400 text-xs font-black">{result.ResultId}</td>
-                        
-                        <td className="py-5 px-6 text-gray-900 font-extrabold">{child.FullName}</td>
-                        
-                        <td className="py-5 px-6 font-mono text-gray-500 text-xs">{result.ExerciseId}</td>
-                        
-                        <td className="py-5 px-6 text-center">
-                          <span className={cn(
-                            "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider",
-                            result.CompletionStatus === 'Completed' ? 'bg-[#F2FAF4] text-[#34A853]' : 'bg-rose-50 text-rose-500'
-                          )}>
-                            {result.CompletionStatus === 'Completed' ? 'Vượt ải' : 'Nửa chừng'}
-                          </span>
-                        </td>
+                <tbody className="divide-y divide-gray-50 text-sm font-bold text-gray-700">
+                  {filteredChildren.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={8}
+                        className="px-6 py-10 text-center text-sm font-semibold text-slate-400"
+                      >
+                        Khong co hoc sinh nao phu hop bo loc hien tai.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredChildren.map((child) => {
+                      const analysis =
+                        analysisByChildId[child.ChildId] ?? buildAnalysis(child, []);
+                      const progressStyle = getProgressLevelBadge(
+                        analysis.ProgressLevel
+                      );
 
-                        <td className="py-5 px-6 text-center font-mono text-gray-500">{result.DurationSeconds}s</td>
-
-                        <td className="py-5 px-6 text-center">
-                          <strong className={cn(
-                            "text-base italic",
-                            result.Score >= 85 ? 'text-[#4EACAF]' : 'text-rose-500'
-                          )}>{result.Score}đ</strong>
-                        </td>
-
-                        <td className="py-5 px-6 text-xs text-gray-400 font-medium">{result.CreatedAt}</td>
-
-                      </tr>
-                    );
-                  })}
+                      return (
+                        <tr
+                          key={child.ChildId}
+                          className="transition-colors hover:bg-slate-50/50"
+                        >
+                          <td className="px-6 py-5 font-mono text-xs font-black text-gray-400">
+                            {child.ChildId}
+                          </td>
+                          <td className="px-6 py-5">
+                            <span className="block text-sm font-extrabold text-gray-900 md:text-base">
+                              {child.FullName}
+                            </span>
+                            <span className="text-[10px] font-medium tracking-tight text-gray-400">
+                              Lop: {activeClass.id}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5 text-center font-mono font-black text-gray-500">
+                            {child.Age > 0 ? `${child.Age}t` : '--'}
+                          </td>
+                          <td className="px-6 py-5 text-center text-xs font-extrabold">
+                            {child.Gender}
+                          </td>
+                          <td className="px-6 py-5 text-xs font-black italic text-[#264E50]">
+                            {child.LearningLevel}
+                          </td>
+                          <td className="px-6 py-5 text-center">
+                            <span
+                              className={cn(
+                                'text-base font-black italic',
+                                analysis.AverageScore >= 85
+                                  ? 'text-[#34A853]'
+                                  : analysis.AverageScore >= 60
+                                    ? 'text-[#20D0D4]'
+                                    : 'text-[#FF8E8E]'
+                              )}
+                            >
+                              {analysis.AverageScore}d
+                            </span>
+                          </td>
+                          <td className="px-6 py-5">
+                            <span
+                              className={cn(
+                                'rounded-full border px-3 py-1.5 text-xs font-bold uppercase tracking-wider',
+                                progressStyle.bg
+                              )}
+                            >
+                              {progressStyle.label}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => {
+                                  if (onNavigate) {
+                                    onNavigate(
+                                      `TEACHER_STUDENT_DETAIL:${child.ChildId}`
+                                    );
+                                    return;
+                                  }
+                                  triggerSimulation('PROFILE', child.FullName);
+                                }}
+                                className="rounded-xl bg-[#4EACAF]/10 px-3 py-1.5 text-xs font-black text-[#4EACAF] transition-all hover:bg-[#4EACAF] hover:text-white"
+                              >
+                                Xem ho so
+                              </button>
+                              <button
+                                onClick={() =>
+                                  triggerSimulation('HISTORY', child.FullName)
+                                }
+                                className="rounded-xl bg-indigo-50 p-2 text-indigo-500 transition-all hover:bg-indigo-500 hover:text-white"
+                              >
+                                <History className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  triggerSimulation('REPLAY', child.FullName)
+                                }
+                                className="rounded-xl bg-rose-50 p-2 text-rose-500 transition-all hover:bg-rose-500 hover:text-white"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  triggerSimulation('ANALYZE', child.FullName)
+                                }
+                                className="rounded-xl bg-yellow-50 p-2 text-[#FFA800] transition-all hover:bg-[#FFA800] hover:text-white"
+                              >
+                                <TrendingUp className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Tab 3: Detailed progress analyses */}
-        {activeTab === 'ANALYSES' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {childrenInClass.map((kd) => {
-              const scoreAnalysis = getAnalysisForChild(kd.ChildId);
-              const statusStyle = getProgressLevelBadge(scoreAnalysis.ProgressLevel);
-              
+      {activeTab === 'RESULTS' && (
+        <div className="overflow-hidden rounded-[32px] border border-gray-100 bg-white shadow-sm">
+          <div className="border-b border-gray-50 bg-white/50 px-8 py-6">
+            <h3 className="text-2xl font-black italic leading-none text-gray-900">
+              Ket qua luyen tap gan day
+            </h3>
+            <p className="mt-2 text-xs font-bold uppercase tracking-widest text-gray-400">
+              Du lieu tong hop tu results/by-child cua tung hoc sinh trong lop
+            </p>
+          </div>
+
+          <div className="overflow-x-auto text-left">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-gray-100 bg-[#FDFCF5]/60 text-xs font-extrabold uppercase tracking-widest text-[#555]">
+                  <th className="px-8 py-5">Ma ket qua</th>
+                  <th className="px-6 py-5">Hoc sinh</th>
+                  <th className="px-6 py-5">Bai tap</th>
+                  <th className="px-6 py-5 text-center">Trang thai</th>
+                  <th className="px-6 py-5 text-center">Lan thu</th>
+                  <th className="px-6 py-5 text-center">Thoi luong</th>
+                  <th className="px-6 py-5 text-center">Diem</th>
+                  <th className="px-6 py-5">Ngay ghi nhan</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50 text-sm font-bold text-gray-700">
+                {classResults.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      className="px-6 py-10 text-center text-sm font-semibold text-slate-400"
+                    >
+                      Chua co ket qua nao cho lop nay.
+                    </td>
+                  </tr>
+                ) : (
+                  classResults.map((result) => {
+                    const child =
+                      childrenById[result.ChildId] ??
+                      childrenInClass.find((item) => item.ChildId === result.ChildId);
+
+                    return (
+                      <tr
+                        key={result.ResultId}
+                        className="transition-colors hover:bg-slate-50/50"
+                      >
+                        <td className="px-8 py-5 font-mono text-xs font-black text-gray-400">
+                          {result.ResultId}
+                        </td>
+                        <td className="px-6 py-5 font-extrabold text-gray-900">
+                          {child?.FullName ?? `Child #${result.ChildId}`}
+                        </td>
+                        <td className="px-6 py-5 font-mono text-xs text-gray-500">
+                          {result.ExerciseId}
+                        </td>
+                        <td className="px-6 py-5 text-center">
+                          <span
+                            className={cn(
+                              'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-wider',
+                              result.CompletionStatus === 'Completed'
+                                ? 'bg-[#F2FAF4] text-[#34A853]'
+                                : 'bg-rose-50 text-rose-500'
+                            )}
+                          >
+                            {result.CompletionStatus}
+                          </span>
+                        </td>
+                        <td className="px-6 py-5 text-center font-mono text-gray-500">
+                          {result.AttemptNumber}
+                        </td>
+                        <td className="px-6 py-5 text-center font-mono text-gray-500">
+                          {result.DurationSeconds}s
+                        </td>
+                        <td className="px-6 py-5 text-center">
+                          <strong
+                            className={cn(
+                              'text-base italic',
+                              result.Score >= 85
+                                ? 'text-[#4EACAF]'
+                                : 'text-rose-500'
+                            )}
+                          >
+                            {result.Score}d
+                          </strong>
+                        </td>
+                        <td className="px-6 py-5 text-xs font-medium text-gray-400">
+                          {result.CreatedAt || '--'}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'ANALYSES' && (
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+          {childrenInClass.length === 0 ? (
+            <div className="rounded-[32px] border border-slate-100 bg-white p-8 text-sm font-semibold text-slate-400 shadow-sm">
+              Chua co hoc sinh nao trong lop de phan tich.
+            </div>
+          ) : (
+            childrenInClass.map((child) => {
+              const analysis =
+                analysisByChildId[child.ChildId] ?? buildAnalysis(child, []);
+              const statusStyle = getProgressLevelBadge(analysis.ProgressLevel);
+
               return (
-                <div key={kd.ChildId} className="bg-white rounded-[36px] p-8 border border-gray-100 shadow-sm space-y-4">
-                  
-                  <div className="flex justify-between items-start gap-4 border-b pb-4">
+                <div
+                  key={child.ChildId}
+                  className="space-y-4 rounded-[32px] border border-gray-100 bg-white p-8 shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-4 border-b pb-4">
                     <div>
-                      <h4 className="text-lg font-black text-gray-800 tracking-tight leading-none">{kd.FullName}</h4>
-                      <span className="text-[10px] text-gray-400 tracking-wider font-extrabold block mt-2">Trình: {kd.LearningLevel}</span>
+                      <h4 className="text-lg font-black leading-none text-gray-800">
+                        {child.FullName}
+                      </h4>
+                      <span className="mt-2 block text-[10px] font-extrabold tracking-wider text-gray-400">
+                        Trinh do: {child.LearningLevel}
+                      </span>
                     </div>
-
-                    <span className={cn(
-                      "px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-wide border",
-                      statusStyle.bg
-                    )}>
+                    <span
+                      className={cn(
+                        'rounded-full border px-3.5 py-1.5 text-xs font-black uppercase tracking-wide',
+                        statusStyle.bg
+                      )}
+                    >
                       {statusStyle.label}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-[#FDFCF5] p-3.5 rounded-2xl">
-                      <span className="text-[9px] text-[#4EACAF] font-black uppercase tracking-wider block">Điểm trung bình khóa</span>
-                      <strong className="text-xl font-black text-gray-900 italic block mt-1">{scoreAnalysis.AverageScore} Điểm</strong>
+                    <div className="rounded-2xl bg-[#FDFCF5] p-3.5">
+                      <span className="block text-[9px] font-black uppercase tracking-wider text-[#4EACAF]">
+                        Diem trung binh
+                      </span>
+                      <strong className="mt-1 block text-xl font-black text-gray-900">
+                        {analysis.AverageScore} diem
+                      </strong>
                     </div>
-
-                    <div className="bg-[#FFFDF5] p-3.5 rounded-2xl">
-                      <span className="text-[9px] text-[#FF8E8E] font-black uppercase tracking-wider block">Nhập vai kịch bản VR</span>
-                      <strong className="text-xs font-black text-gray-700 block mt-1">10 Phút/Ngày đề xuất</strong>
+                    <div className="rounded-2xl bg-[#FFFDF5] p-3.5">
+                      <span className="block text-[9px] font-black uppercase tracking-wider text-[#FF8E8E]">
+                        Hoan thanh
+                      </span>
+                      <strong className="mt-1 block text-xl font-black text-gray-900">
+                        {analysis.CompletionRate}%
+                      </strong>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 p-3.5">
+                      <span className="block text-[9px] font-black uppercase tracking-wider text-slate-500">
+                        Tong luyen tap
+                      </span>
+                      <strong className="mt-1 block text-sm font-black text-gray-700">
+                        {analysis.TotalPracticeMinutes} phut
+                      </strong>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 p-3.5">
+                      <span className="block text-[9px] font-black uppercase tracking-wider text-slate-500">
+                        So ket qua
+                      </span>
+                      <strong className="mt-1 block text-sm font-black text-gray-700">
+                        {(resultsByChildId[child.ChildId] ?? []).length} lan luyen
+                      </strong>
                     </div>
                   </div>
 
                   <div className="space-y-1.5 pt-2">
-                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-wider block">Ý kiến đề xuất can thiệp:</span>
-                    <p className="text-xs font-bold text-[#264E50]/90 leading-relaxed italic bg-emerald-50/50 p-3.5 rounded-2xl border border-emerald-100/30">
-                      &ldquo;{scoreAnalysis.Recommendation}&rdquo;
+                    <span className="block text-[10px] font-black uppercase tracking-wider text-gray-400">
+                      De xuat ho tro:
+                    </span>
+                    <p className="rounded-2xl border border-emerald-100/30 bg-emerald-50/50 p-3.5 text-xs font-bold leading-relaxed text-[#264E50]/90">
+                      "{analysis.Recommendation}"
                     </p>
                   </div>
-
                 </div>
               );
-            })}
-          </div>
-        )}
+            })
+          )}
+        </div>
+      )}
 
-        {/* Tab 4: Program informational parameters layout */}
-        {activeTab === 'PROGRAM' && (
-          <div className="bg-white rounded-[40px] p-8 md:p-10 shadow-sm border border-gray-100 space-y-8">
-            
-            <div className="max-w-2xl space-y-4">
-              <span className="inline-flex items-center gap-1.5 text-xs bg-[#4EACAF]/10 text-[#4EACAF] px-3.5 py-1 rounded-full font-black uppercase tracking-widest leading-none">
-                Chuyên đề: {programInfo.ProgramId}
+      {activeTab === 'PROGRAM' && (
+        <div className="space-y-8 rounded-[32px] border border-gray-100 bg-white p-8 shadow-sm md:p-10">
+          <div className="max-w-2xl space-y-4">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#4EACAF]/10 px-3.5 py-1 text-xs font-black uppercase tracking-widest leading-none text-[#4EACAF]">
+              <Sparkles className="h-3.5 w-3.5" />
+              Chuong trinh #{activeClass.programId}
+            </span>
+            <h3 className="text-3xl font-black leading-none tracking-tight text-gray-900">
+              {activeClass.programName}
+            </h3>
+            <p className="text-sm font-semibold leading-relaxed text-gray-500">
+              {activeClass.description || 'Chua co mo ta chi tiet cho lop hoc nay.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 pt-4 sm:grid-cols-3">
+            <div className="space-y-1 rounded-2xl border bg-[#FDFCF5] p-5">
+              <span className="block text-[9px] font-black uppercase tracking-wider text-gray-400">
+                Do tuoi muc tieu
               </span>
-              <h3 className="text-3xl font-black text-gray-900 tracking-tight leading-none italic">{programInfo.ProgramName}</h3>
-              <p className="text-sm font-semibold text-gray-500 leading-relaxed">
-                {programInfo.Description}
-              </p>
+              <strong className="text-base font-black text-gray-800">
+                {activeClass.targetAgeFrom} - {activeClass.targetAgeTo} tuoi
+              </strong>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4 border-t border-gray-50">
-              
-              <div className="space-y-1 bg-[#FDFCF5] p-5 rounded-2xl border">
-                <span className="text-[9px] text-gray-400 font-black uppercase tracking-wider block">Độ tuổi phổ biến:</span>
-                <strong className="text-base text-gray-800 font-black">Từ 7 đến 11 tuổi học đường</strong>
-              </div>
-
-              <div className="space-y-1 bg-[#FDFCF5] p-5 rounded-2xl border">
-                <span className="text-[9px] text-gray-400 font-black uppercase tracking-wider block">Phương màng ngôn ngữ:</span>
-                <strong className="text-base text-[#4EACAF] font-black">{programInfo.Language} (Phát âm tiếng bản ngữ)</strong>
-              </div>
-
-              <div className="space-y-1 bg-[#FDFCF5] p-5 rounded-2xl border">
-                <span className="text-[9px] text-gray-405 font-black uppercase tracking-wider block">Thiết bị mầm học đề xuất:</span>
-                <strong className="text-base text-indigo-500 font-black">Kính GodotXR Headset v2</strong>
-              </div>
-
+            <div className="space-y-1 rounded-2xl border bg-[#FDFCF5] p-5">
+              <span className="block text-[9px] font-black uppercase tracking-wider text-gray-400">
+                Ngon ngu
+              </span>
+              <strong className="text-base font-black text-[#4EACAF]">
+                {activeClass.programLanguage}
+              </strong>
             </div>
 
+            <div className="space-y-1 rounded-2xl border bg-[#FDFCF5] p-5">
+              <span className="block text-[9px] font-black uppercase tracking-wider text-gray-400">
+                Hoc ky
+              </span>
+              <strong className="text-base font-black text-indigo-500">
+                {activeClass.semesterName}
+              </strong>
+            </div>
           </div>
-        )}
 
-      </div>
+          <div className="grid grid-cols-1 gap-4 border-t border-gray-50 pt-6 md:grid-cols-2">
+            <div className="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
+              <Calendar className="mt-0.5 h-5 w-5 shrink-0 text-[#4EACAF]" />
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider text-slate-500">
+                  Thoi gian lop hoc
+                </p>
+                <p className="mt-1 text-sm font-semibold text-slate-700">
+                  Tu {formatDate(activeClass.startDate)} den{' '}
+                  {formatDate(activeClass.endDate)}
+                </p>
+              </div>
+            </div>
 
+            <div className="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
+              <GraduationCap className="mt-0.5 h-5 w-5 shrink-0 text-[#FF8E8E]" />
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider text-slate-500">
+                  Tong quan lop
+                </p>
+                <p className="mt-1 text-sm font-semibold text-slate-700">
+                  {activeClass.enrollmentCount} hoc sinh, giao vien{' '}
+                  {activeClass.teacherName}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
+              <Info className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider text-slate-500">
+                  Trang thai dong bo
+                </p>
+                <p className="mt-1 text-sm font-semibold text-slate-700">
+                  Class detail dang dung classrooms + enrollments + child-profile +
+                  results.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
+              <ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-indigo-500" />
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider text-slate-500">
+                  Luu y flow
+                </p>
+                <p className="mt-1 text-sm font-semibold text-slate-700">
+                  Neu route vao bang mock id cu, trang se tu fallback sang lop API
+                  hop le dau tien.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

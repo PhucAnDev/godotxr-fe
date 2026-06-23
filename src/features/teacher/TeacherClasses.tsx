@@ -1,919 +1,1092 @@
-import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { 
-  GraduationCap, 
-  Users, 
-  Calendar, 
-  Search, 
-  SlidersHorizontal, 
-  X, 
-  CheckCircle, 
-  Info, 
-  Eye, 
-  User, 
-  Clock, 
-  FileSpreadsheet, 
-  TrendingUp, 
-  BookOpen, 
-  Activity, 
-  Globe, 
-  Sparkles, 
-  Baby, 
-  ChevronRight, 
-  Smile, 
+import React, { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import {
+  Activity,
   AlertCircle,
-  FolderMinus,
-  Briefcase,
-  PlayCircle,
-  FileDown
+  Baby,
+  BookOpen,
+  Calendar,
+  CheckCircle,
+  Eye,
+  FileDown,
+  FileSpreadsheet,
+  Globe,
+  GraduationCap,
+  Info,
+  Search,
+  Sparkles,
+  TrendingUp,
+  User,
+  Users,
+  X,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { getCurrentUser } from '../../lib/authMock';
+import {
+  getClassrooms,
+  type ClassroomResponse,
+} from '../../services/classroomService';
+import {
+  getEnrollments,
+  type EnrollmentResponse,
+} from '../../services/enrollmentService';
+import {
+  getResultsByChild,
+  type ResultResponse,
+} from '../../services/resultService';
+import type { PagedResponse, ServiceResult } from '../../services/serviceTypes';
 
-// DB Interfaces according to project specifications
-export interface Teacher {
-  TeacherId: string;
-  UserId: string;
-  FullName: string;
-  Specialty: string;
-  Gender: 'Male' | 'Female' | 'Other';
-  Status: 'Active' | 'Inactive';
-}
+type ClassroomStatus = 'Active' | 'Inactive' | 'Completed' | 'Upcoming';
+type ModalType = 'DETAILS' | 'STUDENTS' | 'PERFORMANCE' | 'REPORT' | null;
 
-export interface Classroom {
-  ClassId: string;
-  TeacherId: string;
-  ProgramId: string;
-  ClassName: string;
-  Description: string;
-  StartDate: string;
-  EndDate: string;
-  Status: 'Active' | 'Inactive' | 'Completed' | 'Upcoming';
+type Result = {
+  ResultId: string;
+  ChildId: string;
+  Score: number;
+  CompletionStatus: 'Completed' | 'Incomplete' | 'Failed';
+  DurationSeconds: number;
   CreatedAt: string;
-  UpdatedAt: string;
-}
+};
 
-export interface Program {
-  ProgramId: string;
-  ProgramName: string;
-  Language: 'Tiếng Việt' | 'Tiếng Anh';
-  TargetAgeFrom: number;
-  TargetAgeTo: number;
-}
-
-export interface Enrollment {
-  EnrollmentId: string;
-  ChildId: string;
-  ClassId: string;
-  EnrollmentDate: string;
-  Status: 'Enrolled' | 'Graduated' | 'Dropped';
-}
-
-export interface Child {
-  ChildId: string;
-  FullName: string;
-  Age: number;
-  Gender: 'Male' | 'Female' | 'Other';
-  LearningLevel: string;
-  Status: 'Active' | 'Inactive';
-}
-
-// Mock Database Tables mapping out schema exactly
-const MOCK_TEACHERS: Teacher[] = [
-  {
-    TeacherId: 'TCH-001',
-    UserId: 'USR-T1',
-    FullName: 'Trần Thị Hồng (Ms. Johnson)',
-    Specialty: 'Phát âm cơ bản & Đồng hành rèn luyện VR',
-    Gender: 'Female',
-    Status: 'Active'
-  },
-  {
-    TeacherId: 'TCH-002',
-    UserId: 'USR-T2',
-    FullName: 'Lê Hoàng Long',
-    Specialty: 'Chậm phát âm & Ghép vần phản xạ qua VR',
-    Gender: 'Male',
-    Status: 'Active'
-  }
-];
-
-const MOCK_PROGRAMS: Program[] = [
-  { ProgramId: 'PROG-101', ProgramName: 'Phiêu lưu nông trại vui vẻ', Language: 'Tiếng Việt', TargetAgeFrom: 7, TargetAgeTo: 8 },
-  { ProgramId: 'PROG-102', ProgramName: 'Sửa lỗi ngọng âm gió nâng cao', Language: 'Tiếng Việt', TargetAgeFrom: 8, TargetAgeTo: 9 },
-  { ProgramId: 'PROG-103', ProgramName: 'Phản phản xạ nhanh & Ghép vần kì ảo', Language: 'Tiếng Việt', TargetAgeFrom: 7, TargetAgeTo: 10 },
-  { ProgramId: 'PROG-104', ProgramName: 'VR Interactive Phonics Adventure', Language: 'Tiếng Anh', TargetAgeFrom: 7, TargetAgeTo: 11 }
-];
-
-const MOCK_CLASSROOMS: Classroom[] = [
-  {
-    ClassId: 'CLS-801',
-    TeacherId: 'TCH-001', // Ms. Johnson
-    ProgramId: 'PROG-101',
-    ClassName: 'Lớp VR Phát Âm 1 - Sáng Thứ 2 & 4',
-    Description: 'Lớp học rèn luyện về phát âm nguyên âm đơn phối hợp cử chỉ qua kính VR sinh động.',
-    StartDate: '2026-03-01',
-    EndDate: '2026-08-31',
-    Status: 'Active',
-    CreatedAt: '2026-02-15 08:30',
-    UpdatedAt: '2026-03-01 09:00'
-  },
-  {
-    ClassId: 'CLS-802',
-    TeacherId: 'TCH-001', // Ms. Johnson
-    ProgramId: 'PROG-102',
-    ClassName: 'Lớp Chuyên Đề Chữa Ngọng Gió S-X',
-    Description: 'Tập trung làm chủ cơ lưỡi, áp lực hơi từ họng và điều phối lực môi khi phát dải âm gió S.',
-    StartDate: '2026-04-10',
-    EndDate: '2026-07-10',
-    Status: 'Active',
-    CreatedAt: '2026-04-01 10:00',
-    UpdatedAt: '2026-04-10 14:00'
-  },
-  {
-    ClassId: 'CLS-803',
-    TeacherId: 'TCH-001', // Ms. Johnson
-    ProgramId: 'PROG-104',
-    ClassName: 'English Phonics Explorer VR - Level 1',
-    Description: 'Interactive immersion using GodotXR headsets, introducing vocabulary and basic phonemes.',
-    StartDate: '2025-10-01',
-    EndDate: '2026-02-15',
-    Status: 'Completed',
-    CreatedAt: '2025-09-15 09:00',
-    UpdatedAt: '2026-02-15 16:00'
-  },
-  {
-    ClassId: 'CLS-804',
-    TeacherId: 'TCH-001', // Ms. Johnson
-    ProgramId: 'PROG-103',
-    ClassName: 'Khóa Tăng Tốc Phản Xạ Âm Thần Tốc',
-    Description: 'Huấn luyện tăng tốc độ phát âm từ ghép thông minh qua các chặng đua 3D sống động.',
-    StartDate: '2026-06-15',
-    EndDate: '2026-09-15',
-    Status: 'Upcoming',
-    CreatedAt: '2026-05-15 11:00',
-    UpdatedAt: '2026-05-15 11:00'
-  },
-  {
-    ClassId: 'CLS-805',
-    TeacherId: 'TCH-002', // Co-operating but assigned other
-    ProgramId: 'PROG-103',
-    ClassName: 'Vương Quốc Âm Thanh Kì Diệu',
-    Description: 'Giáo án ghép vần rèn luyện tốc độ qua thực tế ảo.',
-    StartDate: '2026-02-01',
-    EndDate: '2026-08-01',
-    Status: 'Active',
-    CreatedAt: '2026-01-20 14:00',
-    UpdatedAt: '2026-02-01 08:00'
-  }
-];
-
-const MOCK_CHILDREN: Child[] = [
-  { ChildId: 'CHD-001', FullName: 'Nguyễn Tiến Minh (Leo)', Age: 8, Gender: 'Male', LearningLevel: 'Bậc 1 - Phát âm đơn VR', Status: 'Active' },
-  { ChildId: 'CHD-002', FullName: 'Trần Thảo Linh (Sophia)', Age: 7, Gender: 'Female', LearningLevel: 'Bậc 2 - Âm đôi ghép từ VR', Status: 'Active' },
-  { ChildId: 'CHD-003', FullName: 'Phạm Minh Khang', Age: 9, Gender: 'Male', LearningLevel: 'Bậc 1 - Sửa ngọng S VR', Status: 'Active' },
-  { ChildId: 'CHD-004', FullName: 'Hoàng Anh Thư', Age: 11, Gender: 'Female', LearningLevel: 'Bậc 2 - Ghép vần VR', Status: 'Active' },
-  { ChildId: 'CHD-005', FullName: 'Lê Bảo Nam', Age: 10, Gender: 'Male', LearningLevel: 'Bậc 3 - Phản xạ nhanh VR', Status: 'Active' },
-  { ChildId: 'CHD-006', FullName: 'Vũ Hải Đăng', Age: 8, Gender: 'Male', LearningLevel: 'Bậc 1 - Phát âm b, p VR', Status: 'Active' },
-  { ChildId: 'CHD-007', FullName: 'Phan Khánh Ngọc', Age: 9, Gender: 'Female', LearningLevel: 'Bậc 2 - Ghép vần âm gió VR', Status: 'Active' }
-];
-
-const MOCK_ENROLLMENTS: Enrollment[] = [
-  // Class 801 (Leo, Sophia, Minh Khang, Anh Thư)
-  { EnrollmentId: 'ENR-001', ChildId: 'CHD-001', ClassId: 'CLS-801', EnrollmentDate: '2026-02-20', Status: 'Enrolled' },
-  { EnrollmentId: 'ENR-002', ChildId: 'CHD-002', ClassId: 'CLS-801', EnrollmentDate: '2026-02-21', Status: 'Enrolled' },
-  { EnrollmentId: 'ENR-003', ChildId: 'CHD-003', ClassId: 'CLS-801', EnrollmentDate: '2026-02-22', Status: 'Enrolled' },
-  { EnrollmentId: 'ENR-004', ChildId: 'CHD-004', ClassId: 'CLS-801', EnrollmentDate: '2026-02-25', Status: 'Enrolled' },
-
-  // Class 802 (Leo, Sophia, Khánh Ngọc)
-  { EnrollmentId: 'ENR-005', ChildId: 'CHD-001', ClassId: 'CLS-802', EnrollmentDate: '2026-04-05', Status: 'Enrolled' },
-  { EnrollmentId: 'ENR-006', ChildId: 'CHD-002', ClassId: 'CLS-802', EnrollmentDate: '2026-04-06', Status: 'Enrolled' },
-  { EnrollmentId: 'ENR-007', ChildId: 'CHD-007', ClassId: 'CLS-802', EnrollmentDate: '2026-04-08', Status: 'Enrolled' },
-
-  // Class 803 (Bảo Nam, Hải Đăng)
-  { EnrollmentId: 'ENR-008', ChildId: 'CHD-005', ClassId: 'CLS-803', EnrollmentDate: '2025-09-20', Status: 'Graduated' },
-  { EnrollmentId: 'ENR-009', ChildId: 'CHD-006', ClassId: 'CLS-803', EnrollmentDate: '2025-09-22', Status: 'Graduated' },
-
-  // Class 804 (Anh Thư, Khánh Ngọc)
-  { EnrollmentId: 'ENR-010', ChildId: 'CHD-004', ClassId: 'CLS-804', EnrollmentDate: '2026-05-20', Status: 'Enrolled' },
-  { EnrollmentId: 'ENR-011', ChildId: 'CHD-007', ClassId: 'CLS-804', EnrollmentDate: '2026-05-22', Status: 'Enrolled' }
-];
-
-// Custom simulated learning scores for students inside classrooms
-const MOCK_STUDENT_PERFORMANCE_SCORES: Record<string, { childId: string; avgScore: number; completionRate: number; keyFocus: string }> = {
-  'CHD-001': { childId: 'CHD-001', avgScore: 92, completionRate: 95, keyFocus: 'Bộ vần nguyên âm kép và phản xạ VR ổn định' },
-  'CHD-002': { childId: 'CHD-002', avgScore: 94, completionRate: 100, keyFocus: 'Vượt trích âm dốc họng, khẩu hình mở đứng tốt' },
-  'CHD-003': { childId: 'CHD-003', avgScore: 68, completionRate: 75, keyFocus: 'Vẫn lẫn phụ âm gió S & L nhịp trung bình' },
-  'CHD-004': { childId: 'CHD-004', avgScore: 85, completionRate: 90, keyFocus: 'Khá nhỏ giọng mộc nhưng phát tròn âm' },
-  'CHD-005': { childId: 'CHD-005', avgScore: 55, completionRate: 50, keyFocus: 'Mỏi cơ hàm sớm, cần can thiệp dãn bài' },
-  'CHD-006': { childId: 'CHD-006', avgScore: 88, completionRate: 92, keyFocus: 'Bật được âm b mạnh, phụ âm p còn nông hơi' },
-  'CHD-007': { childId: 'CHD-007', avgScore: 90, completionRate: 95, keyFocus: 'Ghép vần tốc độ tốt, nhạy thính giác' }
+type StudentPerformance = {
+  avgScore: number;
+  completionRate: number;
+  totalAttempts: number;
+  keyFocus: string;
 };
 
 interface TeacherClassesProps {
   onNavigate?: (screen: string) => void;
 }
 
-export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
-  // Use active Teacher - TCH-001 (Ms. Johnson) as the current logged-in role
-  const activeTeacher = MOCK_TEACHERS[0];
+const API_PAGE_SIZE = 100;
 
-  // Dynamic state selectors and searches
+function formatDate(value: string | null | undefined): string {
+  if (!value) return '--';
+  return value.slice(0, 10);
+}
+
+function formatDateTime(value: string | null | undefined): string {
+  if (!value) return '';
+  return value.replace('T', ' ').slice(0, 19);
+}
+
+function normalizeClassStatus(status: string): ClassroomStatus {
+  if (status === 'Inactive') return 'Inactive';
+  if (status === 'Completed') return 'Completed';
+  if (status === 'Upcoming') return 'Upcoming';
+  return 'Active';
+}
+
+function normalizeResultStatus(
+  result: ResultResponse
+): Result['CompletionStatus'] {
+  if (result.completionStatus === 'Completed') return 'Completed';
+  if (result.score <= 0) return 'Failed';
+  return 'Incomplete';
+}
+
+function mapResultRecord(result: ResultResponse): Result {
+  return {
+    ResultId: String(result.id),
+    ChildId: String(result.childId),
+    Score: Math.round(result.score),
+    CompletionStatus: normalizeResultStatus(result),
+    DurationSeconds: result.durationSeconds,
+    CreatedAt:
+      formatDateTime(result.completedAt) || formatDateTime(result.startedAt),
+  };
+}
+
+async function loadAllPages<T>(
+  loadPage: (
+    pageNumber?: number,
+    pageSize?: number
+  ) => Promise<ServiceResult<PagedResponse<T>>>
+): Promise<T[]> {
+  const items: T[] = [];
+  let pageNumber = 1;
+  let totalPages = 1;
+
+  while (pageNumber <= totalPages) {
+    const result = await loadPage(pageNumber, API_PAGE_SIZE);
+
+    if (!result.success || !result.data) {
+      throw new Error(result.errors.join(' ') || result.message);
+    }
+
+    items.push(...result.data.items);
+    totalPages = Math.max(result.data.totalPages, 1);
+    pageNumber += 1;
+  }
+
+  return items;
+}
+
+function buildStudentPerformance(results: Result[]): StudentPerformance {
+  const totalAttempts = results.length;
+  const avgScore =
+    totalAttempts > 0
+      ? Math.round(results.reduce((sum, result) => sum + result.Score, 0) / totalAttempts)
+      : 0;
+  const completedCount = results.filter(
+    (result) => result.CompletionStatus === 'Completed'
+  ).length;
+  const completionRate =
+    totalAttempts > 0 ? Math.round((completedCount / totalAttempts) * 100) : 0;
+
+  let keyFocus = 'Can tiep tuc duy tri nhiet do luyen tap deu dan.';
+  if (avgScore >= 85 && completionRate >= 80) {
+    keyFocus = 'San sang tang do kho va mo rong them bai tap phan xa.';
+  } else if (avgScore < 60 || completionRate < 50) {
+    keyFocus = 'Can giao vien theo sat va chia nho muc tieu tung buoc.';
+  } else if (completionRate >= 70) {
+    keyFocus = 'Can cung co do chinh xac va lap lai co trong tam.';
+  }
+
+  return {
+    avgScore,
+    completionRate,
+    totalAttempts,
+    keyFocus,
+  };
+}
+
+export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
+  const currentUser = getCurrentUser();
+  const [classrooms, setClassrooms] = useState<ClassroomResponse[]>([]);
+  const [enrollments, setEnrollments] = useState<EnrollmentResponse[]>([]);
+  const [resultsByChildId, setResultsByChildId] = useState<
+    Record<string, Result[]>
+  >({});
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [filterLanguage, setFilterLanguage] = useState<string>('ALL');
-
-  // Interactive UI modals state
-  const [selectedClass, setSelectedClass] = useState<Classroom | null>(null);
-  const [modalType, setModalType] = useState<'DETAILS' | 'STUDENTS' | 'PERFORMANCE' | 'REPORT' | null>(null);
-
-  // Simulated state for report generation progress bar
+  const [selectedClass, setSelectedClass] = useState<ClassroomResponse | null>(null);
+  const [modalType, setModalType] = useState<ModalType>(null);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
+  const [toastMessage, setToastMessage] = useState<{
+    text: string;
+    type: 'success' | 'info' | 'warn';
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isResultsLoading, setIsResultsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [reloadSeed, setReloadSeed] = useState(0);
 
-  // Floating feedback notifications
-  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'warn' } | null>(null);
-
-  const showToast = (text: string, type: 'success' | 'info' | 'warn' = 'success') => {
+  const showToast = (
+    text: string,
+    type: 'success' | 'info' | 'warn' = 'success'
+  ) => {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Helper mappings
-  const getProgramInfo = (id: string): Program => {
-    return MOCK_PROGRAMS.find(p => p.ProgramId === id) || {
-      ProgramId: id,
-      ProgramName: 'Chương trình rèn luyện phát âm VR',
-      Language: 'Tiếng Việt',
-      TargetAgeFrom: 7,
-      TargetAgeTo: 11
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadTeacherData = async () => {
+      setIsLoading(true);
+      setIsResultsLoading(false);
+      setErrorMessage('');
+
+      try {
+        const [allClassrooms, allEnrollments] = await Promise.all([
+          loadAllPages(getClassrooms),
+          loadAllPages(getEnrollments),
+        ]);
+
+        if (!isMounted) return;
+
+        const teacherId =
+          Number(currentUser?.UserId.replace(/\D/g, '')) || undefined;
+        const teacherName = currentUser?.FullName.trim().toLowerCase() ?? '';
+
+        const teacherClassrooms = allClassrooms.filter((classroom) => {
+          const matchedById = teacherId ? classroom.userId === teacherId : false;
+          const matchedByName = teacherName
+            ? classroom.teacherName.trim().toLowerCase() === teacherName
+            : false;
+          return matchedById || matchedByName;
+        });
+
+        const nextClassrooms =
+          teacherClassrooms.length > 0 ? teacherClassrooms : allClassrooms;
+        const classIds = new Set(nextClassrooms.map((classroom) => classroom.id));
+        const nextEnrollments = allEnrollments.filter((enrollment) =>
+          classIds.has(enrollment.classId)
+        );
+
+        setClassrooms(nextClassrooms);
+        setEnrollments(nextEnrollments);
+
+        const childIds = Array.from(
+          new Set(nextEnrollments.map((enrollment) => String(enrollment.childId)))
+        );
+
+        if (childIds.length === 0) {
+          setResultsByChildId({});
+          return;
+        }
+
+        setIsResultsLoading(true);
+
+        const resultEntries = await Promise.all(
+          childIds.map(async (childId) => {
+            const result = await getResultsByChild(Number(childId));
+
+            if (!result.success || !result.data) {
+              throw new Error(result.errors.join(' ') || result.message);
+            }
+
+            return [
+              childId,
+              result.data
+                .map(mapResultRecord)
+                .sort((left, right) => right.CreatedAt.localeCompare(left.CreatedAt)),
+            ] as const;
+          })
+        );
+
+        if (!isMounted) return;
+
+        setResultsByChildId(Object.fromEntries(resultEntries));
+      } catch (error) {
+        if (!isMounted) return;
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : 'Khong the tai du lieu teacher classes.'
+        );
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+          setIsResultsLoading(false);
+        }
+      }
     };
+
+    void loadTeacherData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser?.FullName, currentUser?.UserId, reloadSeed]);
+
+  const getEnrolledStudentsInClass = (classId: number) => {
+    return enrollments
+      .filter((enrollment) => enrollment.classId === classId)
+      .filter((enrollment, index, array) => {
+        return (
+          array.findIndex((item) => item.childId === enrollment.childId) === index
+        );
+      });
   };
 
-  const getEnrolledChildrenInClass = (classId: string): Child[] => {
-    const kidIds = MOCK_ENROLLMENTS
-      .filter(e => e.ClassId === classId)
-      .map(e => e.ChildId);
-    return MOCK_CHILDREN.filter(c => kidIds.includes(c.ChildId));
+  const getClassResults = (classId: number) => {
+    return getEnrolledStudentsInClass(classId)
+      .flatMap((enrollment) => resultsByChildId[String(enrollment.childId)] ?? [])
+      .sort((left, right) => right.CreatedAt.localeCompare(left.CreatedAt));
   };
 
-  // 2. FILTERED CLASSROOM LIST FOR TEACHER
-  // Shows classes assigned to the specific teacher (TCH-001)
   const teacherClassesList = useMemo(() => {
-    return MOCK_CLASSROOMS.filter(c => {
-      // Must be assigned to this teacher
-      if (c.TeacherId !== activeTeacher.TeacherId) return false;
+    return classrooms.filter((classroom) => {
+      const status = normalizeClassStatus(classroom.status);
 
-      // Filter by status active-inactive-completed
-      if (filterStatus !== 'ALL' && c.Status !== filterStatus) return false;
+      if (filterStatus !== 'ALL' && status !== filterStatus) return false;
+      if (
+        filterLanguage !== 'ALL' &&
+        classroom.programLanguage !== filterLanguage
+      ) {
+        return false;
+      }
 
-      // Filter by language type
-      const prog = getProgramInfo(c.ProgramId);
-      if (filterLanguage !== 'ALL' && prog.Language !== filterLanguage) return false;
+      const keyword = searchQuery.trim().toLowerCase();
+      if (!keyword) return true;
 
-      // Filter by textbox search
-      const keyword = searchQuery.toLowerCase();
-      const textToMatch = `${c.ClassName} ${prog.ProgramName} ${c.ClassId} ${c.Description}`.toLowerCase();
-      if (searchQuery && !textToMatch.includes(keyword)) return false;
+      const textToMatch = [
+        String(classroom.id),
+        classroom.className,
+        classroom.programName,
+        classroom.description ?? '',
+        classroom.teacherName,
+        classroom.semesterName,
+      ]
+        .join(' ')
+        .toLowerCase();
 
-      return true;
+      return textToMatch.includes(keyword);
     });
-  }, [filterStatus, filterLanguage, searchQuery, activeTeacher.TeacherId]);
+  }, [classrooms, filterLanguage, filterStatus, searchQuery]);
 
-  // STATISTICAL QUANTIFIERS CALCULATOR (Deriving from entire assigned portfolio of this teacher)
   const stats = useMemo(() => {
-    const totalClassesOwned = MOCK_CLASSROOMS.filter(c => c.TeacherId === activeTeacher.TeacherId).length;
-    const activeClassesOwned = MOCK_CLASSROOMS.filter(c => c.TeacherId === activeTeacher.TeacherId && c.Status === 'Active').length;
-    
-    // Get distinct students enrolled across all of this teacher's classes
-    const classIdsOwned = MOCK_CLASSROOMS.filter(c => c.TeacherId === activeTeacher.TeacherId).map(c => c.ClassId);
-    const childrenIdsEnrolled = MOCK_ENROLLMENTS
-      .filter(e => classIdsOwned.includes(e.ClassId))
-      .map(e => e.ChildId);
-    const uniqueChildrenCount = Array.from(new Set(childrenIdsEnrolled)).length;
-
-    // Simulated homework assignments completed during current educational cycle
-    const mockCompletedExercisesThisWeek = uniqueChildrenCount * 6 + 14;
+    const activeClassesOwned = classrooms.filter(
+      (classroom) => normalizeClassStatus(classroom.status) === 'Active'
+    ).length;
+    const uniqueChildrenCount = new Set(
+      enrollments.map((enrollment) => enrollment.childId)
+    ).size;
+    const totalResultsRecorded = Object.values(resultsByChildId).flat().length;
 
     return {
-      totalClassesOwned,
+      totalClassesOwned: classrooms.length,
       activeClassesOwned,
       uniqueChildrenCount,
-      mockCompletedExercisesThisWeek
+      totalResultsRecorded,
     };
-  }, [activeTeacher.TeacherId]);
+  }, [classrooms, enrollments, resultsByChildId]);
 
-  // Handle mock class report generation sequence
   const executeSimulatedReportGeneration = () => {
     if (!selectedClass) return;
+
     setIsGeneratingReport(true);
     setGenerationProgress(10);
-    showToast(`Đang quét dải âm phổ, tổng hợp học hiệu cho lớp ${selectedClass.ClassName}...`, 'info');
+    showToast(
+      `Dang tong hop bao cao lop ${selectedClass.className} tu du lieu API.`,
+      'info'
+    );
 
     const interval = setInterval(() => {
-      setGenerationProgress(prev => {
+      setGenerationProgress((prev) => {
         if (prev >= 100) {
           clearInterval(interval);
           setTimeout(() => {
             setIsGeneratingReport(false);
             setGenerationProgress(0);
-            showToast(`Tuyệt vời! Kết xút báo cáo lớp học ${selectedClass.ClassName} hoàn tất!`, 'success');
+            showToast(
+              `Da tao xong khung bao cao cho lop ${selectedClass.className}.`,
+              'success'
+            );
           }, 300);
           return 100;
         }
         return prev + 30;
       });
-    }, 455);
+    }, 450);
   };
 
-  const getStatusBadgeStyle = (status: Classroom['Status']) => {
-    const mapping: Record<Classroom['Status'], { bg: string; text: string; dot: string; label: string }> = {
-      Active: { bg: 'bg-[#F2FAF4] text-[#34A853] border-emerald-100', text: 'text-[#34A853]', dot: 'bg-[#34A853]', label: 'Đang mở' },
-      Inactive: { bg: 'bg-gray-100 text-gray-500 border-gray-200', text: 'text-gray-500', dot: 'bg-gray-400', label: 'Không hoạt động' },
-      Completed: { bg: 'bg-[#F2FAFB] text-[#20D0D4] border-cyan-100', text: 'text-[#20D0D4]', dot: 'bg-[#20D0D4]', label: 'Đã bế mạc' },
-      Upcoming: { bg: 'bg-[#FFF9EE] text-[#FFA800] border-amber-100', text: 'text-[#FFA800]', dot: 'bg-[#FFA800]', label: 'Sắp diễn ra' },
+  const getStatusBadgeStyle = (status: ClassroomStatus) => {
+    const mapping: Record<
+      ClassroomStatus,
+      { bg: string; dot: string; label: string }
+    > = {
+      Active: {
+        bg: 'bg-[#F2FAF4] text-[#34A853] border-emerald-100',
+        dot: 'bg-[#34A853]',
+        label: 'Dang mo',
+      },
+      Inactive: {
+        bg: 'bg-gray-100 text-gray-500 border-gray-200',
+        dot: 'bg-gray-400',
+        label: 'Khong hoat dong',
+      },
+      Completed: {
+        bg: 'bg-[#F2FAFB] text-[#20D0D4] border-cyan-100',
+        dot: 'bg-[#20D0D4]',
+        label: 'Da ket thuc',
+      },
+      Upcoming: {
+        bg: 'bg-[#FFF9EE] text-[#FFA800] border-amber-100',
+        dot: 'bg-[#FFA800]',
+        label: 'Sap dien ra',
+      },
     };
-    return mapping[status] || { bg: 'bg-gray-50 text-gray-500 border-gray-100', text: 'text-gray-500', dot: 'bg-gray-400', label: status };
+
+    return mapping[status];
   };
+
+  const selectedClassEnrollments = selectedClass
+    ? getEnrolledStudentsInClass(selectedClass.id)
+    : [];
+  const selectedClassResults = selectedClass ? getClassResults(selectedClass.id) : [];
+
+  if (isLoading && classrooms.length === 0) {
+    return (
+      <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="flex items-center gap-3 text-slate-600">
+          <Activity className="h-5 w-5 animate-pulse text-[#4EACAF]" />
+          <span className="font-semibold">
+            Dang tai teacher classes tu classrooms, enrollments va results...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative text-left" id="teacher-classes-view">
-      
-      {/* Toast Overlay notification alerts */}
+    <div
+      className="relative space-y-10 pb-24 text-left animate-in fade-in slide-in-from-bottom-4 duration-700"
+      id="teacher-classes-view"
+    >
       <AnimatePresence>
         {toastMessage && (
           <motion.div
             initial={{ opacity: 0, y: -45, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -45, scale: 0.95 }}
-            className="fixed top-12 left-1/2 -translate-x-1/2 z-[300] w-[90%] max-w-lg pointer-events-auto"
-            id="classes-toast-floating"
+            className="fixed left-1/2 top-12 z-[300] w-[90%] max-w-lg -translate-x-1/2 pointer-events-auto"
           >
-            <div className={cn(
-              "px-6 py-4 rounded-3xl shadow-xl flex items-center gap-4 border-2 border-white backdrop-blur-md font-bold text-white text-sm tracking-wide leading-snug",
-              toastMessage.type === 'success' ? 'bg-[#4EACAF]/95' : toastMessage.type === 'info' ? 'bg-indigo-600/95' : 'bg-[#FF8E8E]/95'
-            )}>
-              <div className="bg-white/20 p-2 rounded-xl shrink-0">
+            <div
+              className={cn(
+                'flex items-center gap-4 rounded-3xl border-2 border-white px-6 py-4 text-sm font-bold leading-snug text-white shadow-xl backdrop-blur-md',
+                toastMessage.type === 'success'
+                  ? 'bg-[#4EACAF]/95'
+                  : toastMessage.type === 'info'
+                    ? 'bg-indigo-600/95'
+                    : 'bg-[#FF8E8E]/95'
+              )}
+            >
+              <div className="rounded-xl bg-white/20 p-2 shrink-0">
                 {toastMessage.type === 'success' ? (
-                  <CheckCircle className="w-5 h-5 text-white" />
+                  <CheckCircle className="h-5 w-5 text-white" />
                 ) : toastMessage.type === 'warn' ? (
-                  <AlertCircle className="w-5 h-5 text-white" />
+                  <AlertCircle className="h-5 w-5 text-white" />
                 ) : (
-                  <Activity className="w-5 h-5 text-white animate-pulse" />
+                  <Activity className="h-5 w-5 animate-pulse text-white" />
                 )}
               </div>
-              <p className="flex-1 min-w-0 font-extrabold italic">{toastMessage.text}</p>
-              <button onClick={() => setToastMessage(null)} className="p-1 hover:bg-white/10 rounded-full transition-colors text-white">
-                <X className="w-5 h-5" />
+              <p className="min-w-0 flex-1">{toastMessage.text}</p>
+              <button
+                onClick={() => setToastMessage(null)}
+                className="rounded-full p-1 text-white transition-colors hover:bg-white/10"
+              >
+                <X className="h-5 w-5" />
               </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Styled Dashboard Header emphasizing specialized Early Intervention classes */}
-      <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="flex flex-col justify-between gap-8 rounded-[32px] border border-white/60 bg-white/70 p-8 shadow-sm backdrop-blur-md lg:flex-row lg:items-center">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
-            <GraduationCap className="w-3.5 h-3.5" />
-            Giám sát sư phạm lớp học VR
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#4EACAF]/10 px-4 py-1.5 text-xs font-black uppercase tracking-widest leading-none text-[#4EACAF]">
+            <GraduationCap className="h-3.5 w-3.5" />
+            Giam sat su pham lop hoc VR
           </div>
-          <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
-            Lớp Học <span className="text-[#4EACAF]">Của Tôi</span>
+          <h1 className="pt-1 text-4xl font-black leading-none tracking-tight text-gray-900 md:text-5xl">
+            Lop Hoc <span className="text-[#4EACAF]">Cua Toi</span>
           </h1>
-          <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed mt-1">
-            Quản lý kế hoạch bài học, điều phối hoạt động rèn luyện và theo dõi sát kết quả luyện tập của từng lớp học do bạn trực tiếp phụ trách.
+          <p className="max-w-2xl text-sm font-bold leading-relaxed text-gray-500 md:text-base">
+            Danh sach nay da map truc tiep tu BE. Giao vien co the xem lop, si so,
+            ket qua luyen tap va dieu huong sang class detail ma khong con phu
+            thuoc mock id.
           </p>
         </div>
 
-        {/* Teacher profile snapshot */}
-        <div className="bg-[#E2F2F3] border border-[#C5E1E3] p-4 rounded-[24px] flex items-center gap-4 shadow-sm self-start lg:self-center shrink-0">
-          <div className="w-12 h-12 bg-white/60 text-[#4EACAF] rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-white/80">
-            <User className="w-6 h-6" />
+        <div className="flex items-center gap-4 self-start rounded-[24px] border border-[#C5E1E3] bg-[#E2F2F3] p-4 shadow-sm lg:self-center">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/80 bg-white/60 text-[#4EACAF] shadow-sm">
+            <User className="h-6 w-6" />
           </div>
           <div>
-            <h5 className="font-black text-sm text-[#264E50] leading-tight italic">{activeTeacher.FullName}</h5>
-            <p className="text-[10px] text-[#264E50]/60 font-black uppercase tracking-wider mt-1">{activeTeacher.Specialty}</p>
+            <h5 className="text-sm font-black leading-tight text-[#264E50]">
+              {currentUser?.FullName || 'Teacher'}
+            </h5>
+            <p className="mt-1 text-[10px] font-black uppercase tracking-wider text-[#264E50]/60">
+              {currentUser?.Specialty || 'Teacher flow API'}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Children-friendly informative statement panel */}
-      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex gap-3 text-xs font-medium leading-relaxed text-slate-550">
-        <Info className="w-5 h-5 text-[#4EACAF] shrink-0 mt-0.5" />
+      <div className="flex gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs font-medium leading-relaxed text-slate-600">
+        <Info className="mt-0.5 h-5 w-5 shrink-0 text-[#4EACAF]" />
         <div className="space-y-0.5">
-          <p className="text-slate-700 font-bold uppercase text-[10px] tracking-wider">Lưu ý chuyên môn của giáo viên:</p>
-          <span>Dữ liệu phục vụ mục đích tham khảo cho học viên và cha mẹ trong quá trình rèn luyện trên phòng phát âm 3D GodotXR. Hệ thống không thay thế các chẩn đoán điều trị y khoa.</span>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-700">
+            Trang thai dong bo:
+          </p>
+          <span>
+            TeacherClasses dang dung `classrooms + enrollments + results`. Cac chi
+            so ket qua lop duoc suy ra tu ket qua cua hoc sinh dang ghi danh trong
+            lop.
+          </span>
         </div>
       </div>
 
-      {/* 2. Statistic indicators block */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        
-        {/* Total assigned classes */}
-        <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center gap-3.5 transition-transform hover:-translate-y-0.5">
-          <div className="w-10 h-10 bg-teal-50 border border-teal-100 rounded-lg flex items-center justify-center shrink-0 text-[#4EACAF]">
-            <BookOpen className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xl font-bold text-slate-800 tracking-tight leading-none">{stats.totalClassesOwned}</p>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">Lớp phụ trách</p>
-          </div>
-        </div>
-
-        {/* Unique kids counts */}
-        <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center gap-3.5 transition-transform hover:-translate-y-0.5">
-          <div className="w-10 h-10 bg-rose-50 border border-rose-100 rounded-lg flex items-center justify-center shrink-0 text-[#FF8E8E]">
-            <Users className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xl font-bold text-slate-800 tracking-tight leading-none">{stats.uniqueChildrenCount} học sinh</p>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">Học sinh lớp tôi</p>
-          </div>
-        </div>
-
-        {/* Currently actively run classes */}
-        <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center gap-3.5 transition-transform hover:-translate-y-0.5">
-          <div className="w-10 h-10 bg-emerald-50 border border-emerald-100 rounded-lg flex items-center justify-center shrink-0 text-emerald-500">
-            <CheckCircle className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xl font-bold text-emerald-600 tracking-tight leading-none">{stats.activeClassesOwned}/{stats.totalClassesOwned}</p>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">Đang hoạt động</p>
-          </div>
-        </div>
-
-        {/* Weekly completed lesson cycles */}
-        <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center gap-3.5 transition-transform hover:-translate-y-0.5">
-          <div className="w-10 h-10 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center justify-center shrink-0 text-indigo-500">
-            <Activity className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xl font-bold text-slate-800 tracking-tight leading-none">{stats.mockCompletedExercisesThisWeek}</p>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">Hoàn thành tuần này</p>
-          </div>
-        </div>
-
-      </div>
-
-      {/* 3. Search and Multi-filter segment for Classes */}
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex flex-col md:flex-row gap-3" id="classes-search-block">
-        
-        {/* Search Input box */}
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input 
-            type="text" 
-            placeholder="Tìm lớp học của bạn theo tên lớp hoặc giáo án VR (Ví dụ: Phát Âm 1, Chữa Ngọng...)" 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-slate-50 border border-slate-200 font-semibold text-slate-700 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs" 
-          />
-          {searchQuery && (
-            <button 
-              onClick={() => setSearchQuery('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-gray-250 hover:bg-gray-200 rounded-full transition-colors cursor-pointer"
-              title="Hủy từ tìm kiếm"
-            >
-              <X className="w-3.5 h-3.5 text-slate-400 text-gray-500 hover:text-rose-500" />
-            </button>
+      {(errorMessage || isResultsLoading) && (
+        <div
+          className={cn(
+            'rounded-2xl border p-4 text-sm shadow-sm',
+            errorMessage
+              ? 'border-rose-100 bg-rose-50 text-rose-700'
+              : 'border-sky-100 bg-sky-50 text-sky-700'
           )}
+        >
+          <div className="flex items-start gap-3">
+            {errorMessage ? (
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            ) : (
+              <Activity className="mt-0.5 h-5 w-5 shrink-0 animate-pulse" />
+            )}
+            <div className="space-y-2">
+              <p className="font-semibold">
+                {errorMessage || 'Dang dong bo them ket qua luyen tap cua hoc sinh...'}
+              </p>
+              {errorMessage && (
+                <button
+                  onClick={() => setReloadSeed((value) => value + 1)}
+                  className="rounded-xl bg-white px-3 py-2 text-xs font-black uppercase tracking-wider text-rose-600 transition-colors hover:bg-rose-100"
+                >
+                  Tai lai du lieu
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-[#4EACAF]/10 p-3 text-[#4EACAF]">
+              <GraduationCap className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-black text-slate-800">
+                {stats.totalClassesOwned}
+              </p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Tong so lop
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Classroom status dropdown filter */}
-        <div className="relative w-full md:w-48">
+        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-emerald-50 p-3 text-emerald-600">
+              <CheckCircle className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-black text-slate-800">
+                {stats.activeClassesOwned}
+              </p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Lop dang hoat dong
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-rose-50 p-3 text-[#FF8E8E]">
+              <Baby className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-black text-slate-800">
+                {stats.uniqueChildrenCount}
+              </p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Hoc sinh dang quan ly
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-indigo-50 p-3 text-indigo-500">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-black text-slate-800">
+                {stats.totalResultsRecorded}
+              </p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Luot ket qua ghi nhan
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-[28px] border border-white/70 bg-white p-6 shadow-sm">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_220px_220px]">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Tim theo ten lop, chuong trinh, hoc ky hoac ma lop"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-10 text-sm font-semibold text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/20 pl-4 pr-10 py-2.5 rounded-lg font-bold text-xs text-slate-600 outline-none cursor-pointer uppercase focus:bg-white focus:border-[#4EACAF]"
+            onChange={(event) => setFilterStatus(event.target.value)}
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
           >
-            <option value="ALL">MỌI TRẠNG THÁI</option>
-            <option value="Active">ĐANG HOẠT ĐỘNG</option>
-            <option value="Upcoming">SẮP DIỄN RA</option>
-            <option value="Completed">ĐÃ HOÀN THÀNH</option>
+            <option value="ALL">Tat ca trang thai</option>
+            <option value="Active">Dang mo</option>
+            <option value="Upcoming">Sap dien ra</option>
+            <option value="Completed">Da ket thuc</option>
+            <option value="Inactive">Khong hoat dong</option>
           </select>
-          <SlidersHorizontal className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-        </div>
 
-        {/* Program language dropdown filter */}
-        <div className="relative w-full md:w-48">
           <select
             value={filterLanguage}
-            onChange={(e) => setFilterLanguage(e.target.value)}
-            className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/20 pl-4 pr-10 py-2.5 rounded-lg font-bold text-xs text-slate-600 outline-none cursor-pointer uppercase focus:bg-white focus:border-[#4EACAF]"
+            onChange={(event) => setFilterLanguage(event.target.value)}
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
           >
-            <option value="ALL">MỌI NGÔN NGỮ</option>
-            <option value="Tiếng Việt">TIẾNG VIỆT 🇻🇳</option>
-            <option value="Tiếng Anh">TIẾNG ANH 🇺🇸</option>
+            <option value="ALL">Tat ca ngon ngu</option>
+            <option value="Tiếng Việt">Tieng Viet</option>
+            <option value="Tiếng Anh">Tieng Anh</option>
           </select>
-          <SlidersHorizontal className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
         </div>
-
-        {/* Clear query parameters click */}
-        {(searchQuery || filterStatus !== 'ALL' || filterLanguage !== 'ALL') && (
-          <button
-            onClick={() => {
-              setSearchQuery('');
-              setFilterStatus('ALL');
-              setFilterLanguage('ALL');
-              showToast('Đặt lại tất cả màng lọc!', 'info');
-            }}
-            className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0"
-          >
-            Xóa lọc
-          </button>
-        )}
-
       </div>
 
-      {/* 4. Beautiful Interactive Class Card Grid */}
       {teacherClassesList.length === 0 ? (
-        <div className="bg-white rounded-[40px] p-24 text-center space-y-4 shadow-sm border border-gray-150">
-          <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto border-4 border-dashed border-gray-100/90">
-            <FolderMinus className="w-8 h-8 text-gray-300" />
-          </div>
-          <p className="text-xl font-black text-gray-700">Không tìm thấy lớp học rèn luyện VR nào!</p>
-          <p className="text-xs text-gray-400 max-w-sm mx-auto">Vui lòng rà soát lại các bộ lọc tìm kiếm hoặc dãn dải từ tìm kiếm để kiểm duyệt.</p>
+        <div className="rounded-[32px] border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm">
+          <p className="text-lg font-black text-slate-700">
+            Khong co lop hoc nao phu hop bo loc hien tai.
+          </p>
+          <p className="mt-2 text-sm font-semibold text-slate-400">
+            Thu doi tu khoa, trang thai hoac ngon ngu de hien thi lai danh sach.
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8" id="classroom-cards-grid">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2" id="classroom-cards-grid">
           {teacherClassesList.map((classroom) => {
-            const program = getProgramInfo(classroom.ProgramId);
-            const enrolledKids = getEnrolledChildrenInClass(classroom.ClassId);
-            const statusDetail = getStatusBadgeStyle(classroom.Status);
+            const status = normalizeClassStatus(classroom.status);
+            const statusDetail = getStatusBadgeStyle(status);
+            const enrolledStudents = getEnrolledStudentsInClass(classroom.id);
+            const classResults = getClassResults(classroom.id);
+            const averageScore =
+              classResults.length > 0
+                ? Math.round(
+                    classResults.reduce((sum, result) => sum + result.Score, 0) /
+                      classResults.length
+                  )
+                : 0;
 
             return (
               <motion.div
-                key={classroom.ClassId}
-                layout
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-white rounded-[36px] overflow-hidden border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative"
+                key={classroom.id}
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-sm"
               >
-                {/* Visual Accent Top Bar matched by language */}
-                <div className={cn(
-                  "h-2.5 w-full",
-                  program.Language === 'Tiếng Anh' ? 'bg-indigo-400' : 'bg-[#4EACAF]'
-                )} />
-
-                {/* Card Body */}
-                <div className="p-8 space-y-6 flex-1 flex flex-col justify-between">
-                  
-                  {/* Class Identity & Language badge */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-[10px] bg-slate-100 text-slate-500 px-3 py-1 rounded-md font-mono font-black uppercase">
-                        Mã lớp: {classroom.ClassId}
-                      </span>
-                      <span className={cn(
-                        "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border",
+                <div className="space-y-5 p-8">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-md bg-slate-100 px-3 py-1 text-[10px] font-mono font-black uppercase text-slate-500">
+                      Ma lop: {classroom.id}
+                    </span>
+                    <span className="rounded-md bg-[#4EACAF]/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#4EACAF]">
+                      API_DATABASE
+                    </span>
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-wider',
                         statusDetail.bg
-                      )}>
-                        <span className={cn("w-1.5 h-1.5 rounded-full", statusDetail.dot)} />
-                        {statusDetail.label}
-                      </span>
-                    </div>
+                      )}
+                    >
+                      <span className={cn('h-1.5 w-1.5 rounded-full', statusDetail.dot)} />
+                      {statusDetail.label}
+                    </span>
+                  </div>
 
-                    <h3 className="text-xl font-black text-gray-900 tracking-tight leading-tight italic hover:text-[#4EACAF] transition-colors">
-                      {classroom.ClassName}
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-black leading-tight text-gray-900 transition-colors hover:text-[#4EACAF]">
+                      {classroom.className}
                     </h3>
-
-                    <p className="text-xs text-gray-400/95 font-semibold line-clamp-2 min-h-[32px]">
-                      {classroom.Description}
+                    <p className="min-h-[40px] text-sm font-semibold text-gray-500 line-clamp-2">
+                      {classroom.description || 'Chua co mo ta cho lop hoc nay.'}
                     </p>
                   </div>
 
-                  {/* Program Reference Block */}
-                  <div className="bg-[#FDFCF5] p-4.5 rounded-2xl border border-yellow-50 space-y-2">
+                  <div className="space-y-2 rounded-2xl border border-yellow-50 bg-[#FDFCF5] p-4">
                     <div className="flex items-center gap-2 text-xs font-black text-amber-600">
-                      <Sparkles className="w-4.5 h-4.5 text-[#FFA800]" />
-                      Trình giáo án: &ldquo;{program.ProgramName}&rdquo;
+                      <Sparkles className="h-4.5 w-4.5 text-[#FFA800]" />
+                      Chuong trinh: "{classroom.programName}"
                     </div>
-                    <div className="flex flex-wrap gap-y-1.5 gap-x-4 text-[11px] font-bold text-gray-500">
+                    <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] font-bold text-gray-500">
                       <span className="flex items-center gap-1">
-                        <Globe className="w-3.5 h-3.5 text-gray-400" />
-                        Ngôn ngữ: {program.Language}
+                        <Globe className="h-3.5 w-3.5 text-gray-400" />
+                        Ngon ngu: {classroom.programLanguage}
                       </span>
-                      <span>•</span>
-                      <span>Độ tuổi can thiệp: {program.TargetAgeFrom} - {program.TargetAgeTo} tuổi</span>
+                      <span>
+                        Do tuoi: {classroom.targetAgeFrom} - {classroom.targetAgeTo}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Students and timeline details metrics row */}
                   <div className="grid grid-cols-2 gap-4 border-t border-gray-50 pt-5">
-                    
                     <div className="space-y-1">
-                      <span className="text-[9px] text-gray-400 font-black uppercase tracking-wider block">Thời điểm niên khóa:</span>
-                      <span className="text-xs text-gray-600 font-bold flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-[#4EACAF]" />
-                        {classroom.StartDate}
+                      <span className="block text-[9px] font-black uppercase tracking-wider text-gray-400">
+                        Bat dau
+                      </span>
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-gray-600">
+                        <Calendar className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        {formatDate(classroom.startDate)}
                       </span>
                     </div>
 
                     <div className="space-y-1">
-                      <span className="text-[9px] text-gray-400 font-black uppercase tracking-wider block">Sĩ số lớp:</span>
-                      <span className="text-xs text-gray-700 font-extrabold flex items-center gap-1.5">
-                        <Baby className="w-3.5 h-3.5 text-[#FF8E8E]" />
-                        {enrolledKids.length} Học sinh
+                      <span className="block text-[9px] font-black uppercase tracking-wider text-gray-400">
+                        Si so
+                      </span>
+                      <span className="flex items-center gap-1.5 text-xs font-extrabold text-gray-700">
+                        <Baby className="h-3.5 w-3.5 text-[#FF8E8E]" />
+                        {enrolledStudents.length} hoc sinh
                       </span>
                     </div>
 
+                    <div className="space-y-1">
+                      <span className="block text-[9px] font-black uppercase tracking-wider text-gray-400">
+                        Hoc ky
+                      </span>
+                      <span className="text-xs font-bold text-gray-600">
+                        {classroom.semesterName}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <span className="block text-[9px] font-black uppercase tracking-wider text-gray-400">
+                        Diem trung binh
+                      </span>
+                      <span className="text-xs font-extrabold text-gray-700">
+                        {averageScore}/100
+                      </span>
+                    </div>
                   </div>
-
                 </div>
 
-                {/* Actions Bottom Bar inside nice soft wrapper */}
-                <div className="bg-gray-50/50 border-t border-gray-50 px-8 py-5.5 grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5">
-                  
-                  {/* View info details modal trigger */}
+                <div className="grid grid-cols-2 gap-2.5 border-t border-gray-50 bg-gray-50/50 px-8 py-5 sm:flex sm:flex-wrap sm:justify-end">
                   <button
                     onClick={() => {
                       if (onNavigate) {
-                        onNavigate(`TEACHER_CLASS_DETAIL:${classroom.ClassId}`);
-                      } else {
-                        setSelectedClass(classroom);
-                        setModalType('DETAILS');
-                        showToast(`Đã mở mô tả biên chế lớp ${classroom.ClassName}`, 'info');
+                        onNavigate(`TEACHER_CLASS_DETAIL:${classroom.id}`);
+                        return;
                       }
+                      setSelectedClass(classroom);
+                      setModalType('DETAILS');
                     }}
-                    className="py-2.5 px-3 bg-white hover:bg-gray-100 text-gray-600 border border-gray-150 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1 cursor-pointer"
-                    title="Mô tả thông số chi tiết"
+                    className="flex items-center justify-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs font-black text-gray-600 transition-all hover:bg-gray-100"
                   >
-                    <Eye className="w-3.5 h-3.5" />
-                    Mô tả thông số chi tiết
+                    <Eye className="h-3.5 w-3.5" />
+                    Xem chi tiet
                   </button>
 
-                  {/* View direct student enrollment modal trigger */}
                   <button
                     onClick={() => {
                       setSelectedClass(classroom);
                       setModalType('STUDENTS');
-                      showToast(`Khởi tạo danh sách học viên lớp ${classroom.ClassName}`, 'success');
+                      showToast(`Dang mo danh sach hoc sinh lop ${classroom.className}.`);
                     }}
-                    className="py-2.5 px-3 bg-[#4EACAF]/10 hover:bg-[#4EACAF] text-[#4EACAF] hover:text-white rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-[#4EACAF]/10 px-3 py-2.5 text-xs font-black text-[#4EACAF] transition-all hover:bg-[#4EACAF] hover:text-white"
                   >
-                    <Users className="w-3.5 h-3.5" />
-                    Xem học sinh
+                    <Users className="h-3.5 w-3.5" />
+                    Xem hoc sinh
                   </button>
 
-                  {/* View learning results scores performance simulator */}
                   <button
                     onClick={() => {
                       setSelectedClass(classroom);
                       setModalType('PERFORMANCE');
-                      showToast(`Trực quan dải điểm trung bình cho lớp ${classroom.ClassId}`, 'info');
+                      showToast(`Dang tong hop ket qua cho lop #${classroom.id}.`, 'info');
                     }}
-                    className="py-2.5 px-3 bg-indigo-50 hover:bg-indigo-500 text-indigo-500 hover:text-white rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-indigo-50 px-3 py-2.5 text-xs font-black text-indigo-500 transition-all hover:bg-indigo-500 hover:text-white"
                   >
-                    <TrendingUp className="w-3.5 h-3.5" />
-                    Xem kết quả
+                    <TrendingUp className="h-3.5 w-3.5" />
+                    Xem ket qua
                   </button>
 
-                  {/* Simulate detailed custom teacher progress class analysis assessment report */}
                   <button
                     onClick={() => {
                       setSelectedClass(classroom);
                       setModalType('REPORT');
                     }}
-                    className="py-2.5 px-3 bg-rose-50 hover:bg-[#FF8E8E] text-[#FF8E8E] hover:text-white rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer col-span-2 sm:col-span-1"
+                    className="col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-rose-50 px-3 py-2.5 text-xs font-black text-[#FF8E8E] transition-all hover:bg-[#FF8E8E] hover:text-white sm:col-span-1"
                   >
-                    <FileSpreadsheet className="w-3.5 h-3.5" />
-                    Tạo báo cáo
+                    <FileSpreadsheet className="h-3.5 w-3.5" />
+                    Tao bao cao
                   </button>
-
                 </div>
-
               </motion.div>
             );
           })}
         </div>
       )}
 
-      {/* 5. PORTFOLIO OF ACTION INTERACTIVE OVERLAY MODALS */}
       <AnimatePresence>
         {selectedClass && modalType && (
-          <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/15 animate-in fade-in duration-300 overflow-y-auto w-full h-full">
-            
+          <div className="fixed inset-0 z-[200] flex h-full w-full items-center justify-center overflow-y-auto bg-gray-900/15 p-4 backdrop-blur-xl md:p-6">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 flex flex-col my-8"
-              id="classes-action-modal"
+              className="my-8 flex w-full max-w-2xl flex-col overflow-hidden rounded-[36px] border border-gray-100 bg-white shadow-2xl"
             >
-              
-              {/* Header mapped dynamically */}
-              <div className="bg-[#E2F2F3] px-8 py-6 flex items-center justify-between border-b border-[#C5E1E3] text-gray-900">
+              <div className="flex items-center justify-between border-b border-[#C5E1E3] bg-[#E2F2F3] px-8 py-6 text-gray-900">
                 <div className="space-y-1">
-                  <span className="inline-flex items-center gap-1.5 bg-[#4EACAF] text-white px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider">
-                    {modalType === 'DETAILS' && 'Thông tin lớp học'}
-                    {modalType === 'STUDENTS' && 'Danh sách mầm học'}
-                    {modalType === 'PERFORMANCE' && 'Dải phân tích điểm số'}
-                    {modalType === 'REPORT' && 'Kết xuất báo cáo can thiệp'}
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#4EACAF] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
+                    {modalType === 'DETAILS' && 'Thong tin lop hoc'}
+                    {modalType === 'STUDENTS' && 'Danh sach hoc sinh'}
+                    {modalType === 'PERFORMANCE' && 'Phan tich ket qua'}
+                    {modalType === 'REPORT' && 'Xuat bao cao'}
                   </span>
-                  <h2 className="text-xl font-black italic tracking-tight leading-tight">
-                    {selectedClass.ClassName}
+                  <h2 className="text-xl font-black leading-tight">
+                    {selectedClass.className}
                   </h2>
                 </div>
-                <button 
+                <button
                   onClick={() => {
                     setSelectedClass(null);
                     setModalType(null);
-                  }} 
-                  className="p-2 hover:bg-white/50 rounded-full transition-colors shrink-0"
+                    setIsGeneratingReport(false);
+                    setGenerationProgress(0);
+                  }}
+                  className="rounded-full p-2 transition-colors hover:bg-white/50"
                 >
-                  <X className="w-6 h-6 text-gray-500" />
+                  <X className="h-6 w-6 text-gray-500" />
                 </button>
               </div>
 
-              {/* MODAL BODY CASES */}
-              
-              {/* Case 1: Broad details description */}
               {modalType === 'DETAILS' && (
-                <div className="app-modal-body p-8 space-y-6 text-left">
-                  
+                <div className="space-y-6 p-8 text-left">
                   <div className="space-y-2">
-                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">Mô tả mục tiêu trị âm:</h4>
-                    <p className="text-sm font-bold text-gray-700 leading-relaxed bg-slate-50 p-5 rounded-2xl border">
-                      {selectedClass.Description}
+                    <h4 className="text-xs font-black uppercase tracking-wider text-gray-400">
+                      Mo ta lop hoc
+                    </h4>
+                    <p className="rounded-2xl border bg-slate-50 p-5 text-sm font-bold leading-relaxed text-gray-700">
+                      {selectedClass.description || 'Chua co mo ta chi tiet cho lop hoc nay.'}
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="bg-[#FDFCF5] p-4.5 rounded-xl border">
-                      <span className="text-[10px] text-gray-400 block uppercase font-bold">Mã kịch bản giáo trình</span>
-                      <strong className="text-[#264E50]">{getProgramInfo(selectedClass.ProgramId).ProgramName}</strong>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="rounded-xl border bg-[#FDFCF5] p-4.5">
+                      <span className="block text-[10px] font-bold uppercase text-gray-400">
+                        Chuong trinh
+                      </span>
+                      <strong className="text-[#264E50]">
+                        {selectedClass.programName}
+                      </strong>
                     </div>
 
-                    <div className="bg-[#FDFCF5] p-4.5 rounded-xl border">
-                      <span className="text-[10px] text-gray-400 block uppercase font-bold">Thời hạn hoàn khóa</span>
-                      <span className="text-xs font-black text-gray-600 block mt-1">
-                        Từ ngày {selectedClass.StartDate} đến {selectedClass.EndDate}
+                    <div className="rounded-xl border bg-[#FDFCF5] p-4.5">
+                      <span className="block text-[10px] font-bold uppercase text-gray-400">
+                        Thoi gian
+                      </span>
+                      <span className="mt-1 block text-xs font-black text-gray-600">
+                        Tu {formatDate(selectedClass.startDate)} den{' '}
+                        {formatDate(selectedClass.endDate)}
                       </span>
                     </div>
 
-                    <div className="bg-[#FDFCF5] p-4.5 rounded-xl border">
-                      <span className="text-[10px] text-gray-400 block uppercase font-bold">Môi trường ngôn ngữ</span>
-                      <strong className="text-[#FF8E8E]">{getProgramInfo(selectedClass.ProgramId).Language}</strong>
+                    <div className="rounded-xl border bg-[#FDFCF5] p-4.5">
+                      <span className="block text-[10px] font-bold uppercase text-gray-400">
+                        Ngon ngu
+                      </span>
+                      <strong className="text-[#FF8E8E]">
+                        {selectedClass.programLanguage}
+                      </strong>
                     </div>
 
-                    <div className="bg-[#FDFCF5] p-4.5 rounded-xl border">
-                      <span className="text-[10px] text-gray-400 block uppercase font-bold">Tổng thời lượng niên khóa</span>
-                      <span className="text-xs font-black text-gray-600 block mt-1">
-                        180 ngày học tương thích thực tế ảo
+                    <div className="rounded-xl border bg-[#FDFCF5] p-4.5">
+                      <span className="block text-[10px] font-bold uppercase text-gray-400">
+                        Hoc ky
+                      </span>
+                      <span className="mt-1 block text-xs font-black text-gray-600">
+                        {selectedClass.semesterName}
                       </span>
                     </div>
-
                   </div>
-
                 </div>
               )}
 
-              {/* Case 2: List of Students */}
               {modalType === 'STUDENTS' && (
-                <div className="app-modal-body p-8 space-y-4 max-h-[50vh] overflow-y-auto">
-                  
-                  <div className="flex items-center justify-between border-b pb-3 text-xs font-black text-gray-400 uppercase">
-                    <span>Học viên rèn luyện</span>
-                    <span>Tuổi & Trình độ</span>
+                <div className="max-h-[50vh] space-y-4 overflow-y-auto p-8">
+                  <div className="flex items-center justify-between border-b pb-3 text-xs font-black uppercase text-gray-400">
+                    <span>Hoc sinh ghi danh</span>
+                    <span>Trang thai va ngay vao lop</span>
                   </div>
 
-                  {getEnrolledChildrenInClass(selectedClass.ClassId).length === 0 ? (
-                    <p className="text-center py-12 text-sm text-gray-400 font-semibold italic">Không ghi nhận học sinh nào đang tham gia lớp này.</p>
+                  {selectedClassEnrollments.length === 0 ? (
+                    <p className="py-12 text-center text-sm font-semibold italic text-gray-400">
+                      Khong co hoc sinh nao dang ghi danh lop nay.
+                    </p>
                   ) : (
-                    getEnrolledChildrenInClass(selectedClass.ClassId).map((kid) => (
-                      <div key={kid.ChildId} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100/70 transition-colors">
+                    selectedClassEnrollments.map((enrollment) => (
+                      <div
+                        key={enrollment.id}
+                        className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 transition-colors hover:bg-slate-100/70"
+                      >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-[#FF8E8E]/10 text-[#FF8E8E] rounded-xl flex items-center justify-center shrink-0">
-                            <Baby className="w-5.5 h-5.5" />
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF8E8E]/10 text-[#FF8E8E]">
+                            <Baby className="h-5.5 w-5.5" />
                           </div>
                           <div>
-                            <span className="font-extrabold text-sm text-gray-800 block">{kid.FullName}</span>
-                            <span className="text-[10px] bg-[#4EACAF]/10 text-[#4EACAF] font-bold uppercase tracking-wider px-2 py-0.5 rounded mt-1 inline-block">
-                              Mức tập: {kid.LearningLevel}
+                            <span className="block text-sm font-extrabold text-gray-800">
+                              {enrollment.childFullName}
+                            </span>
+                            <span className="mt-1 inline-block rounded bg-[#4EACAF]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#4EACAF]">
+                              Muc tap: {enrollment.childLearningLevel}
                             </span>
                           </div>
                         </div>
 
                         <div className="text-right">
-                          <span className="text-xs text-gray-500 font-extrabold block">Tuổi: {kid.Age}t</span>
-                          <span className="text-[10px] text-gray-400 font-medium block">ID: {kid.ChildId}</span>
+                          <span className="block text-xs font-extrabold text-gray-500">
+                            {enrollment.status}
+                          </span>
+                          <span className="block text-[10px] font-medium text-gray-400">
+                            {formatDate(enrollment.enrollmentDate)}
+                          </span>
                         </div>
                       </div>
                     ))
                   )}
-
                 </div>
               )}
 
-              {/* Case 3: Performance Results */}
               {modalType === 'PERFORMANCE' && (
-                <div className="app-modal-body p-8 space-y-6 text-left max-h-[50vh] overflow-y-auto">
-                  
-                  <div className="space-y-4">
-                    {getEnrolledChildrenInClass(selectedClass.ClassId).map((kid) => {
-                      const perf = MOCK_STUDENT_PERFORMANCE_SCORES[kid.ChildId] || { avgScore: 80, completionRate: 85, keyFocus: 'Tiến triển lành mạnh' };
-                      
+                <div className="max-h-[50vh] space-y-6 overflow-y-auto p-8 text-left">
+                  {selectedClassEnrollments.length === 0 ? (
+                    <p className="py-12 text-center text-sm font-semibold italic text-gray-400">
+                      Chua co du lieu hoc sinh de tong hop ket qua.
+                    </p>
+                  ) : (
+                    selectedClassEnrollments.map((enrollment) => {
+                      const performance = buildStudentPerformance(
+                        resultsByChildId[String(enrollment.childId)] ?? []
+                      );
+
                       return (
-                        <div key={kid.ChildId} className="space-y-2 border-b border-gray-50 pb-4">
-                          
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="font-black text-gray-800">{kid.FullName}</span>
-                            <span className="font-black text-[#4EACAF]">{perf.avgScore}/100 Điểm cơ bản</span>
+                        <div
+                          key={enrollment.id}
+                          className="space-y-2 border-b border-gray-50 pb-4"
+                        >
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-black text-gray-800">
+                              {enrollment.childFullName}
+                            </span>
+                            <span className="font-black text-[#4EACAF]">
+                              {performance.avgScore}/100 diem trung binh
+                            </span>
                           </div>
 
-                          {/* Interactive score progress row */}
                           <div className="relative">
-                            <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                              <div 
+                            <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
+                              <div
                                 className={cn(
-                                  "h-full rounded-full transition-all duration-500",
-                                  perf.avgScore >= 85 ? 'bg-emerald-500' : perf.avgScore >= 60 ? 'bg-[#ffa800]' : 'bg-rose-500'
+                                  'h-full rounded-full transition-all duration-500',
+                                  performance.avgScore >= 85
+                                    ? 'bg-emerald-500'
+                                    : performance.avgScore >= 60
+                                      ? 'bg-[#FFA800]'
+                                      : 'bg-rose-500'
                                 )}
-                                style={{ width: `${perf.avgScore}%` }}
+                                style={{ width: `${performance.avgScore}%` }}
                               />
                             </div>
                           </div>
 
-                          <div className="flex justify-between items-center text-[10px] font-bold text-gray-400">
-                            <span>Tất vụ hoàn thành: {perf.completionRate}%</span>
-                            <span className="truncate max-w-[280px] italic">Can thiệp chính: {perf.keyFocus}</span>
+                          <div className="flex items-center justify-between gap-3 text-[10px] font-bold text-gray-400">
+                            <span>
+                              Hoan thanh: {performance.completionRate}% ·{' '}
+                              {performance.totalAttempts} lan ghi nhan
+                            </span>
+                            <span className="max-w-[280px] truncate italic">
+                              Trong tam: {performance.keyFocus}
+                            </span>
                           </div>
-
                         </div>
                       );
-                    })}
-                  </div>
-
+                    })
+                  )}
                 </div>
               )}
 
-              {/* Case 4: Class Analysis Report download simulator */}
               {modalType === 'REPORT' && (
-                <div className="app-modal-body p-8 space-y-6 text-center">
-                  
-                  <div className="w-16 h-16 bg-[#FFF2F2] rounded-full flex items-center justify-center mx-auto text-[#FF8E8E] border-2 border-dashed border-[#FF8E8E]/40">
-                    <FileSpreadsheet className="w-8 h-8" />
+                <div className="space-y-6 p-8 text-center">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-[#FF8E8E]/40 bg-[#FFF2F2] text-[#FF8E8E]">
+                    <FileSpreadsheet className="h-8 w-8" />
                   </div>
 
-                  <div className="space-y-2 max-w-md mx-auto">
-                    <h4 className="text-base font-black text-gray-800">Khởi chế dải hồ sơ hiệu suất học tập VR!</h4>
+                  <div className="mx-auto max-w-md space-y-2">
+                    <h4 className="text-base font-black text-gray-800">
+                      Khoi tao khung bao cao lop hoc
+                    </h4>
                     <p className="text-xs text-gray-400">
-                      Hệ thống tự động biên soạn và chắp bút dải nhận xét, so mẫu giọng mộc học sinh với phổ chuẩn và lưu trữ dưới dạng bảng danh mục PDF.
+                      He thong se tong hop si so, luot luyen tap va chat luong ket
+                      qua cua hoc sinh trong lop tu du lieu API hien tai.
                     </p>
                   </div>
 
-                  <div className="bg-[#FFFDF5] p-4.5 rounded-2xl border border-yellow-105 text-left text-xs font-semibold text-gray-600 block">
-                    <strong className="text-gray-800 font-extrabold uppercase text-[10px] block mb-1">Cấu kiện bao gồm:</strong>
-                    - Biểu đồ điểm bình quân 6 học đường gần nhất.<br />
-                    - Thư nhận xét gợi ý chỉnh âm cho từng phụ huynh.<br />
-                    - Thẻ hỗ trợ rèn uốn phụ âm phát âm trực quan.
+                  <div className="block rounded-2xl border border-yellow-100 bg-[#FFFDF5] p-4.5 text-left text-xs font-semibold text-gray-600">
+                    <strong className="mb-1 block text-[10px] font-extrabold uppercase text-gray-800">
+                      Bao gom:
+                    </strong>
+                    - Tong quan lop va chuong trinh.<br />
+                    - Danh sach hoc sinh dang ghi danh.<br />
+                    - Tong hop ket qua luyen tap theo hoc sinh.
                   </div>
 
-                  {/* Simulator progress bar if active */}
+                  <div className="rounded-2xl border bg-slate-50 p-4 text-left">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                      Tong quan nhanh
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-slate-700">
+                      {selectedClassEnrollments.length} hoc sinh ·{' '}
+                      {selectedClassResults.length} ket qua ghi nhan
+                    </p>
+                  </div>
+
                   {isGeneratingReport && (
                     <div className="space-y-2 animate-pulse">
-                      <div className="flex justify-between text-[11px] font-black text-[#4EACAF] uppercase tracking-wider">
-                        <span>Đang xử lý biểu mộc...</span>
+                      <div className="flex justify-between text-[11px] font-black uppercase tracking-wider text-[#4EACAF]">
+                        <span>Dang xu ly bao cao...</span>
                         <span>{generationProgress}%</span>
                       </div>
-                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-[#4EACAF] transition-all duration-300" style={{ width: `${generationProgress}%` }} />
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          className="h-full bg-[#4EACAF] transition-all duration-300"
+                          style={{ width: `${generationProgress}%` }}
+                        />
                       </div>
                     </div>
                   )}
 
-                  {/* Download simulated action */}
                   {!isGeneratingReport && (
                     <button
                       onClick={executeSimulatedReportGeneration}
-                      className="w-full py-3.5 bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black uppercase text-xs tracking-wider rounded-2xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#4EACAF] py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-sm transition-all hover:bg-[#4EACAF]/90"
                     >
-                      <FileDown className="w-4 h-4" />
-                      Yêu cầu kết xuất (.PDF)
+                      <FileDown className="h-4 w-4" />
+                      Yeu cau ket xuat
                     </button>
                   )}
-
                 </div>
               )}
 
-              {/* Modal footer footer */}
-              <div className="bg-gray-50 px-8 py-5 flex items-center justify-end border-t border-gray-100 gap-3">
+              <div className="flex items-center justify-end gap-3 border-t border-gray-100 bg-gray-50 px-8 py-5">
                 <button
                   onClick={() => {
                     setSelectedClass(null);
                     setModalType(null);
+                    setIsGeneratingReport(false);
+                    setGenerationProgress(0);
                   }}
-                  className="px-5 py-2.5 bg-[#264E50] hover:bg-[#1E3B3D] text-white rounded-2xl text-xs font-black transition-colors"
+                  className="rounded-2xl bg-[#264E50] px-5 py-2.5 text-xs font-black text-white transition-colors hover:bg-[#1E3B3D]"
                 >
-                  Đóng lại
+                  Dong lai
                 </button>
               </div>
-
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-
     </div>
   );
 }

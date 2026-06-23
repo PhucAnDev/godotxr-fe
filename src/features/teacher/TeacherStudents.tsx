@@ -1,25 +1,42 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  Baby, 
-  Search, 
-  Filter, 
-  Sparkles, 
-  Award, 
-  GraduationCap, 
-  TrendingUp, 
-  AlertCircle, 
-  ChevronRight, 
-  Heart, 
-  Phone, 
-  Mail, 
-  CheckCircle2, 
-  SlidersHorizontal 
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  AlertCircle,
+  Award,
+  Baby,
+  CheckCircle2,
+  ChevronRight,
+  Filter,
+  GraduationCap,
+  Heart,
+  Mail,
+  Phone,
+  Search,
+  Sparkles,
+  TrendingUp,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
+import { getCurrentUser } from '../../lib/authMock';
+import {
+  getChildProfiles,
+  type ChildProfileResponse,
+} from '../../services/childProfileService';
+import {
+  getClassrooms,
+  type ClassroomResponse,
+} from '../../services/classroomService';
+import {
+  getEnrollments,
+  type EnrollmentResponse,
+} from '../../services/enrollmentService';
+import {
+  getResultsByChild,
+  type ResultResponse,
+} from '../../services/resultService';
+import type { PagedResponse, ServiceResult } from '../../services/serviceTypes';
+import { getUserById } from '../../services/userService';
 
-// Shared interfaces
 export interface Child {
   ChildId: string;
   ParentUserId: string;
@@ -41,114 +58,260 @@ export interface ParentUser {
   PhoneNumber: string;
 }
 
-// Exactly matching MOCK database from TeacherStudentDetail
-const MOCK_PARENT_USERS: ParentUser[] = [
-  { UserId: 'USR-P1', FullName: 'Nguyễn Tiến Dũng', Email: 'dung.nguyen@email.com', PhoneNumber: '0912345678' },
-  { UserId: 'USR-P2', FullName: 'Trần Thị Thu Hương', Email: 'huong.tran@email.com', PhoneNumber: '0987654321' },
-  { UserId: 'USR-P3', FullName: 'Phạm Minh Hải', Email: 'hai.pham@email.com', PhoneNumber: '0901122334' },
-  { UserId: 'USR-P4', FullName: 'Hoàng Ngọc Ánh', Email: 'anh.hoang@email.com', PhoneNumber: '0933445566' }
-];
-
-const MOCK_CHILDREN: Child[] = [
-  { 
-    ChildId: 'CHD-001', 
-    ParentUserId: 'USR-P1', 
-    FullName: 'Nguyễn Tiến Minh (Leo)', 
-    Age: 8, 
-    Gender: 'Male', 
-    LearningLevel: 'Bậc 1 - Phát âm đơn', 
-    Note: 'Bé thông minh nhưng thỉnh thoảng mất tập trung giữa buổi chơi. Thích trò chơi Nông trại 3D. Cần hỗ trợ phụ âm trượt sóng.',
-    Status: 'Active',
-    ProgressLevel: 'Improving',
-    CreatedAt: '2026-01-10',
-    UpdatedAt: '2026-05-30'
-  },
-  { 
-    ChildId: 'CHD-002', 
-    ParentUserId: 'USR-P2', 
-    FullName: 'Trần Thảo Linh (Sophia)', 
-    Age: 9, 
-    Gender: 'Female', 
-    LearningLevel: 'Bậc 2 - Âm đôi ghép từ', 
-    Note: 'Phản xạ phát âm nhạy bén, lực hơi khá tốt. Thỉnh thoảng bị mỏi hàm khi uốn cụm âm kép ngắn.',
-    Status: 'Active',
-    ProgressLevel: 'Stable',
-    CreatedAt: '2026-01-12',
-    UpdatedAt: '2026-05-29'
-  },
-  { 
-    ChildId: 'CHD-003', 
-    ParentUserId: 'USR-P3', 
-    FullName: 'Phạm Minh Khang', 
-    Age: 7, 
-    Gender: 'Male', 
-    LearningLevel: 'Bậc 1 - Sửa ngọng S', 
-    Note: 'Bé rụt rè trước micro mộc. Phát hơi dẹt lưỡi, đặc biệt là dải âm gió S và X. Điểm luyện tập gần đây thấp, cần giáo viên hỗ trợ thêm.',
-    Status: 'Active',
-    ProgressLevel: 'Need Support',
-    CreatedAt: '2026-02-15',
-    UpdatedAt: '2026-05-28'
-  },
-  { 
-    ChildId: 'CHD-004', 
-    ParentUserId: 'USR-P4', 
-    FullName: 'Hoàng Anh Thư', 
-    Age: 10, 
-    Gender: 'Female', 
-    LearningLevel: 'Bậc 2 - Ghép vần', 
-    Note: 'Phát âm tròn chữ nhưng âm lượng tương đối nhỏ. Họng khỏe nhưng lưỡi hơi thụ động về sau.',
-    Status: 'Active',
-    ProgressLevel: 'Stable',
-    CreatedAt: '2026-02-20',
-    UpdatedAt: '2026-05-31'
-  }
-];
-
 interface TeacherStudentsProps {
   onNavigate: (screen: string) => void;
 }
 
+const API_PAGE_SIZE = 100;
+
+function formatDateTime(value: string | null | undefined): string {
+  if (!value) return '';
+  return value.replace('T', ' ').slice(0, 19);
+}
+
+function mapChildRecord(child: ChildProfileResponse): Omit<Child, 'ProgressLevel'> {
+  return {
+    ChildId: String(child.id),
+    ParentUserId: String(child.userId),
+    FullName: child.fullName,
+    Age: child.age,
+    Gender:
+      child.gender === 'Female' || child.gender === 'Other'
+        ? child.gender
+        : 'Male',
+    LearningLevel: child.learningLevel,
+    Note: child.note ?? '',
+    Status: child.status === 'Inactive' ? 'Inactive' : 'Active',
+    CreatedAt: formatDateTime(child.createdAt),
+    UpdatedAt: formatDateTime(child.updatedAt),
+  };
+}
+
+function normalizeResultStatus(result: ResultResponse) {
+  if (result.completionStatus === 'Completed') return 'Completed';
+  if (result.score <= 0) return 'Failed';
+  return 'Incomplete';
+}
+
+function buildProgressLevel(
+  results: ResultResponse[]
+): Child['ProgressLevel'] {
+  if (results.length === 0) return 'Stable';
+
+  const averageScore = Math.round(
+    results.reduce((sum, result) => sum + result.score, 0) / results.length
+  );
+  const completedCount = results.filter(
+    (result) => normalizeResultStatus(result) === 'Completed'
+  ).length;
+  const completionRate = Math.round((completedCount / results.length) * 100);
+
+  if (averageScore >= 85 && completionRate >= 80) return 'Improving';
+  if (averageScore < 60 || completionRate < 50) return 'Need Support';
+  return 'Stable';
+}
+
+async function loadAllPages<T>(
+  loadPage: (
+    pageNumber?: number,
+    pageSize?: number
+  ) => Promise<ServiceResult<PagedResponse<T>>>
+): Promise<T[]> {
+  const items: T[] = [];
+  let pageNumber = 1;
+  let totalPages = 1;
+
+  while (pageNumber <= totalPages) {
+    const result = await loadPage(pageNumber, API_PAGE_SIZE);
+
+    if (!result.success || !result.data) {
+      throw new Error(result.errors.join(' ') || result.message);
+    }
+
+    items.push(...result.data.items);
+    totalPages = Math.max(result.data.totalPages, 1);
+    pageNumber += 1;
+  }
+
+  return items;
+}
+
+function getAvatarUrl(id: string) {
+  const seed = id.toLowerCase();
+  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&backgroundColor=c0aede`;
+}
+
 export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
+  const currentUser = getCurrentUser();
+  const [children, setChildren] = useState<Child[]>([]);
+  const [parentById, setParentById] = useState<Record<string, ParentUser>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGender, setSelectedGender] = useState<string>('All');
   const [selectedLevel, setSelectedLevel] = useState<string>('All');
-
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(4); // 4 cards per page
+  const [pageSize, setPageSize] = useState(4);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [reloadSeed, setReloadSeed] = useState(0);
 
-  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, selectedGender, selectedLevel]);
 
-  // Find associated parent user info helpers
-  const getParentInfo = (parentId: string) => {
-    return MOCK_PARENT_USERS.find(p => p.UserId === parentId);
-  };
+  useEffect(() => {
+    let isMounted = true;
 
-  // Get Avatar based on gender and student ID to match other screens
-  const getAvatarUrl = (id: string, gender: string) => {
-    const seed = id.toLowerCase();
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&backgroundColor=c0aede`;
-  };
+    const loadTeacherStudents = async () => {
+      setIsLoading(true);
+      setErrorMessage('');
 
-  // Filter children list
+      try {
+        const [allClassrooms, allEnrollments, allChildren] = await Promise.all([
+          loadAllPages(getClassrooms),
+          loadAllPages(getEnrollments),
+          loadAllPages(getChildProfiles),
+        ]);
+
+        if (!isMounted) return;
+
+        const teacherId =
+          Number(currentUser?.UserId.replace(/\D/g, '')) || undefined;
+        const teacherName = currentUser?.FullName.trim().toLowerCase() ?? '';
+
+        const teacherClassIds = new Set(
+          allClassrooms
+            .filter((classroom: ClassroomResponse) => {
+              const matchedById = teacherId
+                ? classroom.userId === teacherId
+                : false;
+              const matchedByName = teacherName
+                ? classroom.teacherName.trim().toLowerCase() === teacherName
+                : false;
+              return matchedById || matchedByName;
+            })
+            .map((classroom) => classroom.id)
+        );
+
+        const teacherEnrollments = allEnrollments.filter((enrollment) =>
+          teacherClassIds.has(enrollment.classId)
+        );
+
+        const childIds = Array.from(
+          new Set(teacherEnrollments.map((enrollment) => enrollment.childId))
+        );
+
+        const childLookup = new Map(
+          allChildren.map((child) => [child.id, child] as const)
+        );
+
+        const resultEntries = await Promise.all(
+          childIds.map(async (childId) => {
+            const result = await getResultsByChild(childId);
+
+            if (!result.success || !result.data) {
+              throw new Error(result.errors.join(' ') || result.message);
+            }
+
+            return [childId, result.data] as const;
+          })
+        );
+
+        const parentIds = Array.from(
+          new Set(
+            childIds
+              .map((childId) => childLookup.get(childId)?.userId)
+              .filter((value): value is number => typeof value === 'number')
+          )
+        );
+
+        const parentEntries = await Promise.all(
+          parentIds.map(async (parentId) => {
+            const result = await getUserById(parentId);
+
+            if (!result.success || !result.data) {
+              return null;
+            }
+
+            return [
+              String(parentId),
+              {
+                UserId: String(result.data.id),
+                FullName: result.data.fullName,
+                Email: result.data.email,
+                PhoneNumber: result.data.phone,
+              },
+            ] as const;
+          })
+        );
+
+        if (!isMounted) return;
+
+        const resultsByChildId = Object.fromEntries(
+          resultEntries.map(([childId, results]) => [String(childId), results])
+        );
+
+        const nextChildren = childIds
+          .map((childId) => childLookup.get(childId))
+          .filter((child): child is ChildProfileResponse => Boolean(child))
+          .map((child) => ({
+            ...mapChildRecord(child),
+            ProgressLevel: buildProgressLevel(
+              resultsByChildId[String(child.id)] ?? []
+            ),
+          }))
+          .sort((left, right) => left.FullName.localeCompare(right.FullName));
+
+        setChildren(nextChildren);
+        setParentById(
+          Object.fromEntries(parentEntries.filter(Boolean) as Array<
+            readonly [string, ParentUser]
+          >)
+        );
+      } catch (error) {
+        if (!isMounted) return;
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : 'Khong the tai danh sach hoc sinh.'
+        );
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadTeacherStudents();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser?.FullName, currentUser?.UserId, reloadSeed]);
+
+  const levelOptions = useMemo(
+    () => ['All', ...Array.from(new Set(children.map((child) => child.LearningLevel)))],
+    [children]
+  );
+
   const filteredChildren = useMemo(() => {
-    return MOCK_CHILDREN.filter(child => {
-      const parent = getParentInfo(child.ParentUserId);
-      const matchesSearch = 
-        child.FullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        child.ChildId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        child.LearningLevel.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (parent && parent.FullName.toLowerCase().includes(searchTerm.toLowerCase()));
+    return children.filter((child) => {
+      const parent = parentById[child.ParentUserId];
+      const keyword = searchTerm.trim().toLowerCase();
+      const matchesSearch =
+        !keyword ||
+        child.FullName.toLowerCase().includes(keyword) ||
+        child.ChildId.toLowerCase().includes(keyword) ||
+        child.LearningLevel.toLowerCase().includes(keyword) ||
+        parent?.FullName.toLowerCase().includes(keyword);
 
-      const matchesGender = selectedGender === 'All' || child.Gender === selectedGender;
-      const matchesLevel = selectedLevel === 'All' || child.LearningLevel.includes(selectedLevel);
+      const matchesGender =
+        selectedGender === 'All' || child.Gender === selectedGender;
+      const matchesLevel =
+        selectedLevel === 'All' || child.LearningLevel === selectedLevel;
 
       return matchesSearch && matchesGender && matchesLevel;
     });
-  }, [searchTerm, selectedGender, selectedLevel]);
+  }, [children, parentById, searchTerm, selectedGender, selectedLevel]);
 
   const totalPages = Math.max(1, Math.ceil(filteredChildren.length / pageSize));
 
@@ -163,282 +326,345 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
     return filteredChildren.slice(startIndex, startIndex + pageSize);
   }, [filteredChildren, currentPage, pageSize]);
 
-  // Statistics
   const stats = useMemo(() => {
+    const total = children.length;
+    const averageAge =
+      total > 0
+        ? (children.reduce((sum, child) => sum + child.Age, 0) / total).toFixed(1)
+        : '0.0';
+    const boys = children.filter((child) => child.Gender === 'Male').length;
+    const girls = children.filter((child) => child.Gender === 'Female').length;
+
     return {
-      total: MOCK_CHILDREN.length,
-      averageAge: (MOCK_CHILDREN.reduce((sum, c) => sum + c.Age, 0) / MOCK_CHILDREN.length).toFixed(1),
-      boys: MOCK_CHILDREN.filter(c => c.Gender === 'Male').length,
-      girls: MOCK_CHILDREN.filter(c => c.Gender === 'Female').length,
+      total,
+      averageAge,
+      boys,
+      girls,
     };
-  }, []);
+  }, [children]);
+
+  if (isLoading) {
+    return (
+      <div className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="flex items-center gap-3 text-slate-600">
+          <TrendingUp className="h-5 w-5 animate-pulse text-[#4EACAF]" />
+          <span className="font-semibold">
+            Dang tai danh sach hoc sinh tu classrooms, enrollments, child-profile va
+            results...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8" id="teacher-students-container">
-      {/* Header Panel */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-[#4EACAF]/10 to-[#FF8E8E]/10 p-8 rounded-[40px] border-2 border-white/80 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-teal-100/30 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 space-y-2">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#4EACAF]/10 border border-[#4EACAF]/20 text-[#4EACAF] text-xs font-black uppercase tracking-wider">
-            <Baby className="w-4 h-4" /> Danh sách học sinh của tôi
-          </div>
-          <h1 className="text-4xl font-black italic tracking-tighter text-gray-900">
-            Quản Lý <span className="text-[#4EACAF]">Phát Âm</span> Học Viên
-          </h1>
-          <p className="text-gray-500 font-bold max-w-xl text-sm">
-            Theo dõi sự tiến bộ, điều chỉnh độ khó và hỗ trợ dầy đủ quá trình tập luyện tương tác 3D GodotXR của từng bé.
-          </p>
-        </div>
-
-        <div className="shrink-0 flex items-center gap-3">
-          <div className="p-4 bg-white rounded-3xl shadow-md border border-gray-100 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-[#FF8E8E]/10 text-[#FF8E8E] flex items-center justify-center">
-              <Award className="w-6 h-6" />
+      <div className="relative overflow-hidden rounded-[40px] border-2 border-white/80 bg-gradient-to-r from-[#4EACAF]/10 to-[#FF8E8E]/10 p-8 shadow-sm">
+        <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-teal-100/30 blur-3xl" />
+        <div className="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#4EACAF]/20 bg-[#4EACAF]/10 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-[#4EACAF]">
+              <Baby className="h-4 w-4" /> Danh sach hoc sinh cua toi
             </div>
-            <div>
-              <div className="text-2xl font-black text-gray-900">{stats.total}</div>
-              <div className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Tổng học viên</div>
+            <h1 className="text-4xl font-black tracking-tighter text-gray-900">
+              Quan Ly <span className="text-[#4EACAF]">Hoc Vien</span>
+            </h1>
+            <p className="max-w-xl text-sm font-bold text-gray-500">
+              Man nay da duoc map bang du lieu that theo cac lop ma giao vien dang
+              phu trach, de flow teacher tu list sang student detail duoc dong bo
+              hoan toan.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4 rounded-3xl border border-gray-100 bg-white p-4 shadow-md">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FF8E8E]/10 text-[#FF8E8E]">
+                <Award className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="text-2xl font-black text-gray-900">
+                  {stats.total}
+                </div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                  Tong hoc vien
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Grid of fast overview boxes */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <motion.div 
+      {errorMessage && (
+        <div className="rounded-2xl border border-rose-100 bg-rose-50 p-4 text-sm text-rose-700 shadow-sm">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            <div className="space-y-2">
+              <p className="font-semibold">{errorMessage}</p>
+              <button
+                onClick={() => setReloadSeed((value) => value + 1)}
+                className="rounded-xl bg-white px-3 py-2 text-xs font-black uppercase tracking-wider text-rose-600 transition-colors hover:bg-rose-100"
+              >
+                Tai lai du lieu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <motion.div
           whileHover={{ y: -4 }}
-          className="bg-white p-6 rounded-[32px] shadow-sm border-2 border-slate-50 flex items-center gap-5"
+          className="flex items-center gap-5 rounded-[32px] border-2 border-slate-50 bg-white p-6 shadow-sm"
         >
-          <div className="w-14 h-14 bg-[#4EACAF]/10 text-[#4EACAF] rounded-2xl flex items-center justify-center">
-            <GraduationCap className="w-8 h-8" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#4EACAF]/10 text-[#4EACAF]">
+            <GraduationCap className="h-8 w-8" />
           </div>
           <div>
-            <h4 className="text-2xl font-black text-gray-900">{stats.total} Học sinh</h4>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Lớp tôi phụ trách</p>
+            <h4 className="text-2xl font-black text-gray-900">
+              {stats.total} Hoc sinh
+            </h4>
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
+              Lop toi phu trach
+            </p>
           </div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           whileHover={{ y: -4 }}
-          className="bg-white p-6 rounded-[32px] shadow-sm border-2 border-slate-50 flex items-center gap-5"
+          className="flex items-center gap-5 rounded-[32px] border-2 border-slate-50 bg-white p-6 shadow-sm"
         >
-          <div className="w-14 h-14 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center">
-            <TrendingUp className="w-8 h-8" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-500">
+            <TrendingUp className="h-8 w-8" />
           </div>
           <div>
-            <h4 className="text-2xl font-black text-gray-900">{stats.averageAge} Tuổi</h4>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Độ tuổi trung bình</p>
+            <h4 className="text-2xl font-black text-gray-900">
+              {stats.averageAge} Tuoi
+            </h4>
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
+              Do tuoi trung binh
+            </p>
           </div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           whileHover={{ y: -4 }}
-          className="bg-white p-6 rounded-[32px] shadow-sm border-2 border-slate-50 flex items-center gap-5"
+          className="flex items-center gap-5 rounded-[32px] border-2 border-slate-50 bg-white p-6 shadow-sm"
         >
-          <div className="w-14 h-14 bg-sky-50 text-sky-500 rounded-2xl flex items-center justify-center">
-            <Sparkles className="w-8 h-8" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 text-sky-500">
+            <Sparkles className="h-8 w-8" />
           </div>
           <div>
-            <h4 className="text-2xl font-black text-gray-900">{stats.boys} Bé trai</h4>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Tình cảm &ăng nổ</p>
+            <h4 className="text-2xl font-black text-gray-900">{stats.boys} Be trai</h4>
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
+              Gioi tinh nam
+            </p>
           </div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           whileHover={{ y: -4 }}
-          className="bg-white p-6 rounded-[32px] shadow-sm border-2 border-slate-50 flex items-center gap-5"
+          className="flex items-center gap-5 rounded-[32px] border-2 border-slate-50 bg-white p-6 shadow-sm"
         >
-          <div className="w-14 h-14 bg-pink-50 text-pink-500 rounded-2xl flex items-center justify-center">
-            <Heart className="w-8 h-8" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-pink-50 text-pink-500">
+            <Heart className="h-8 w-8" />
           </div>
           <div>
-            <h4 className="text-2xl font-black text-gray-900">{stats.girls} Bé gái</h4>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Dịu dàng & siêng năng</p>
+            <h4 className="text-2xl font-black text-gray-900">{stats.girls} Be gai</h4>
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
+              Gioi tinh nu
+            </p>
           </div>
         </motion.div>
       </div>
 
-      {/* Control filters bar */}
-      <div className="bg-white p-6 rounded-[32px] shadow-sm border-b-4 border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Search */}
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-5 h-5 text-gray-400 absolute left-5 top-1/2 -translate-y-1/2" />
+      <div className="flex flex-col justify-between gap-4 rounded-[32px] border-b-4 border-gray-100 bg-white p-6 shadow-sm md:flex-row md:items-center">
+        <div className="relative max-w-md flex-1">
+          <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Tìm theo tên học sinh, ID hoặc tên phụ huynh..."
+            placeholder="Tim theo ten hoc sinh, ID, trinh do hoac ten phu huynh..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-13 pr-5 py-4 rounded-[20px] bg-slate-50 border-2 border-slate-50 focus:border-[#4EACAF] focus:bg-white text-sm font-bold text-gray-800 outline-none transition-all placeholder:text-gray-400"
+            onChange={(event) => setSearchTerm(event.target.value)}
+            className="w-full rounded-[20px] border-2 border-slate-50 bg-slate-50 py-4 pl-14 pr-5 text-sm font-bold text-gray-800 outline-none transition-all placeholder:text-gray-400 focus:border-[#4EACAF] focus:bg-white"
           />
         </div>
 
-        {/* Filters */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Gender Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-[18px]">
-            {['All', 'Male', 'Female'].map((gender) => (
+          <div className="flex items-center gap-1.5 rounded-[18px] bg-slate-50 p-1.5">
+            {['All', 'Male', 'Female', 'Other'].map((gender) => (
               <button
                 key={gender}
                 onClick={() => setSelectedGender(gender)}
                 className={cn(
-                  "px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer",
+                  'cursor-pointer rounded-xl px-4 py-2 text-xs font-black transition-all',
                   selectedGender === gender
-                    ? "bg-[#4EACAF] text-white shadow-md shadow-[#4EACAF]/20"
-                    : "text-gray-500 hover:text-gray-800 hover:bg-slate-100/60"
+                    ? 'bg-[#4EACAF] text-white shadow-md shadow-[#4EACAF]/20'
+                    : 'text-gray-500 hover:bg-slate-100/60 hover:text-gray-800'
                 )}
               >
-                {gender === 'All' ? 'Tất cả giới tính' : gender === 'Male' ? 'Bé Trai' : 'Bé Gái'}
+                {gender === 'All' ? 'Tat ca gioi tinh' : gender}
               </button>
             ))}
           </div>
 
-          {/* Level Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-[18px]">
-            {['All', 'Bậc 1', 'Bậc 2'].map((lvl) => (
-              <button
-                key={lvl}
-                onClick={() => setSelectedLevel(lvl)}
-                className={cn(
-                  "px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer",
-                  selectedLevel === lvl
-                    ? "bg-[#4EACAF] text-white shadow-md shadow-[#4EACAF]/20"
-                    : "text-gray-500 hover:text-gray-800 hover:bg-slate-100/60"
-                )}
-              >
-                {lvl === 'All' ? 'Tất cả trình độ' : lvl}
-              </button>
-            ))}
+          <div className="flex items-center gap-2 rounded-[18px] bg-slate-50 p-1.5 pr-3">
+            <Filter className="h-4 w-4 text-slate-400" />
+            <select
+              value={selectedLevel}
+              onChange={(event) => setSelectedLevel(event.target.value)}
+              className="rounded-xl bg-transparent px-2 py-2 text-xs font-black text-slate-700 outline-none"
+            >
+              {levelOptions.map((level) => (
+                <option key={level} value={level}>
+                  {level === 'All' ? 'Tat ca trinh do' : level}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
 
-      {/* Children grid display */}
       {filteredChildren.length === 0 ? (
-        <div className="bg-white py-16 px-6 text-center rounded-[40px] border-2 border-dashed border-slate-200">
-          <AlertCircle className="w-14 h-14 text-orange-400 mx-auto mb-4 animate-pulse" />
-          <h3 className="text-xl font-bold text-slate-800 mb-2">Không tìm thấy thông tin phù hợp</h3>
-          <p className="text-sm text-slate-400 font-bold max-w-sm mx-auto">
-            Hệ thống không tìm thấy học viên nào khớp với bộ lọc hoặc từ khóa tìm kiếm của bạn. Hãy đổi thông số tìm kiếm nhé!
+        <div className="rounded-[40px] border-2 border-dashed border-slate-200 bg-white px-6 py-16 text-center">
+          <AlertCircle className="mx-auto mb-4 h-14 w-14 animate-pulse text-orange-400" />
+          <h3 className="mb-2 text-xl font-bold text-slate-800">
+            Khong tim thay thong tin phu hop
+          </h3>
+          <p className="mx-auto max-w-sm text-sm font-bold text-slate-400">
+            He thong khong tim thay hoc vien nao khop voi bo loc hoac tu khoa tim
+            kiem cua ban.
           </p>
         </div>
       ) : (
         <div className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
             {paginatedChildren.map((child) => {
-              const parent = getParentInfo(child.ParentUserId);
+              const parent = parentById[child.ParentUserId];
+
               return (
                 <motion.div
                   key={child.ChildId}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   whileHover={{ y: -6 }}
-                  className="bg-white rounded-[40px] p-8 shadow-sm border-b-8 border-gray-100 hover:border-b-8 hover:border-[#4EACAF]/40 transition-all flex flex-col justify-between"
+                  className="flex flex-col justify-between rounded-[40px] border-b-8 border-gray-100 bg-white p-8 shadow-sm transition-all hover:border-b-8 hover:border-[#4EACAF]/40"
                 >
                   <div className="space-y-6">
-                    {/* Top line ID & Level Tag */}
                     <div className="flex flex-wrap items-center justify-between gap-2.5">
-                      <span className="text-[10px] font-black italic tracking-wider text-gray-400 uppercase bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
+                      <span className="rounded-full border border-slate-100 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase italic tracking-wider text-gray-400">
                         {child.ChildId}
                       </span>
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-[#4EACAF] bg-[#4EACAF]/10 px-2.5 py-1 rounded-full border border-[#4EACAF]/10">
+                        <span className="rounded-full border border-[#4EACAF]/10 bg-[#4EACAF]/10 px-2.5 py-1 text-[10px] font-bold text-[#4EACAF]">
                           {child.LearningLevel}
                         </span>
                         {child.ProgressLevel === 'Improving' && (
-                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-                            Đang tiến bộ
+                          <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-600">
+                            Dang tien bo
                           </span>
                         )}
                         {child.ProgressLevel === 'Stable' && (
-                          <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100">
-                            Ổn định
+                          <span className="rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-[10px] font-bold text-indigo-600">
+                            On dinh
                           </span>
                         )}
                         {child.ProgressLevel === 'Need Support' && (
-                          <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-100 flex items-center gap-1">
-                            <AlertCircle className="w-3.5 h-3.5" /> Thầy cô cần hỗ trợ
+                          <span className="flex items-center gap-1 rounded-full border border-rose-100 bg-rose-50 px-2.5 py-1 text-[10px] font-bold text-rose-600">
+                            <AlertCircle className="h-3.5 w-3.5" /> Can ho tro
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Main profile block */}
                     <div className="flex items-start gap-5">
                       <div className="relative shrink-0">
-                        <div className="w-20 h-20 rounded-[28px] bg-sky-100 border-4 border-white shadow-xl flex items-center justify-center overflow-hidden">
-                          <img 
-                            src={getAvatarUrl(child.ChildId, child.Gender)} 
+                        <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-[28px] border-4 border-white bg-sky-100 shadow-xl">
+                          <img
+                            src={getAvatarUrl(child.ChildId)}
                             alt={child.FullName}
-                            className="w-full h-full object-cover"
+                            className="h-full w-full object-cover"
                             referrerPolicy="no-referrer"
                           />
                         </div>
-                        <div className={cn(
-                          "absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs shadow-md",
-                          child.Gender === 'Male' ? "bg-sky-500 text-white" : "bg-pink-500 text-white"
-                        )}>
-                          {child.Gender === 'Male' ? '♂' : '♀'}
+                        <div
+                          className={cn(
+                            'absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white text-xs shadow-md',
+                            child.Gender === 'Male'
+                              ? 'bg-sky-500 text-white'
+                              : child.Gender === 'Female'
+                                ? 'bg-pink-500 text-white'
+                                : 'bg-violet-500 text-white'
+                          )}
+                        >
+                          {child.Gender === 'Male'
+                            ? 'M'
+                            : child.Gender === 'Female'
+                              ? 'F'
+                              : 'O'}
                         </div>
                       </div>
 
                       <div className="space-y-1 text-left">
-                        <h3 className="text-2xl font-black italic tracking-tight text-gray-900 hover:text-[#4EACAF] transition-colors">
+                        <h3 className="text-2xl font-black tracking-tight text-gray-900 transition-colors hover:text-[#4EACAF]">
                           {child.FullName}
                         </h3>
-                        <div className="flex items-center gap-3 text-slate-500 text-xs font-bold">
-                          <span>Tuổi: <strong className="text-slate-800">{child.Age}</strong></span>
-                          <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                        <div className="flex items-center gap-3 text-xs font-bold text-slate-500">
+                          <span>
+                            Tuoi: <strong className="text-slate-800">{child.Age}</strong>
+                          </span>
+                          <div className="h-1.5 w-1.5 rounded-full bg-slate-300" />
                           <span className="flex items-center gap-1">
-                            Trạng thái: 
-                            <span className="inline-flex items-center gap-1 text-emerald-600 font-extrabold bg-emerald-50 px-2 py-0.5 rounded-md">
-                              <CheckCircle2 className="w-3 h-3" /> Tích cực
+                            Trang thai:
+                            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 font-extrabold text-emerald-600">
+                              <CheckCircle2 className="h-3 w-3" />
+                              {child.Status === 'Active' ? 'Tich cuc' : 'Tam dung'}
                             </span>
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Parental Info section */}
                     {parent && (
-                      <div className="p-4 rounded-2xl bg-orange-50/50 border border-orange-100/50 space-y-2 text-xs">
-                        <div className="flex items-center gap-2 text-slate-700 font-black">
-                          <Heart className="w-4 h-4 text-orange-400 fill-orange-400" /> 
-                          <span>Phụ huynh: {parent.FullName}</span>
+                      <div className="space-y-2 rounded-2xl border border-orange-100/50 bg-orange-50/50 p-4 text-xs">
+                        <div className="flex items-center gap-2 font-black text-slate-700">
+                          <Heart className="h-4 w-4 fill-orange-400 text-orange-400" />
+                          <span>Phu huynh: {parent.FullName}</span>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[#777] font-bold">
+                        <div className="grid grid-cols-1 gap-2 font-bold text-[#777] sm:grid-cols-2">
                           <div className="flex items-center gap-2">
-                            <Phone className="w-3.5 h-3.5 text-slate-400" />
+                            <Phone className="h-3.5 w-3.5 text-slate-400" />
                             <span>{parent.PhoneNumber}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Mail className="w-3.5 h-3.5 text-slate-400" />
+                            <Mail className="h-3.5 w-3.5 text-slate-400" />
                             <span className="truncate">{parent.Email}</span>
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {/* Diagnostic remarks / Notes of teaching */}
                     {child.Note && (
-                      <p className="text-xs text-slate-400 italic font-bold border-l-4 border-slate-100 pl-3 leading-relaxed">
-                        " {child.Note} "
+                      <p className="border-l-4 border-slate-100 pl-3 text-xs font-bold italic leading-relaxed text-slate-400">
+                        "{child.Note}"
                       </p>
                     )}
                   </div>
 
-                  <div className="pt-6 mt-6 border-t border-gray-50 flex items-center justify-between">
-                    <span className="text-[11px] text-gray-400 font-bold uppercase">
-                      Cập nhật: {child.UpdatedAt}
+                  <div className="mt-6 flex items-center justify-between border-t border-gray-50 pt-6">
+                    <span className="text-[11px] font-bold uppercase text-gray-400">
+                      Cap nhat: {child.UpdatedAt || child.CreatedAt}
                     </span>
-                    
+
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => onNavigate(`TEACHER_STUDENT_DETAIL:${child.ChildId}`)}
-                      className="inline-flex items-center gap-1.5 px-5 py-3 bg-[#4EACAF] text-white font-black text-xs rounded-2xl shadow-md hover:bg-[#5ec4c7] hover:shadow-lg shadow-[#4EACAF]/10 transition-all cursor-pointer"
+                      onClick={() =>
+                        onNavigate(`TEACHER_STUDENT_DETAIL:${child.ChildId}`)
+                      }
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-2xl bg-[#4EACAF] px-5 py-3 text-xs font-black text-white shadow-md shadow-[#4EACAF]/10 transition-all hover:bg-[#5ec4c7] hover:shadow-lg"
                     >
-                      Xem chi tiết học bạ
-                      <ChevronRight className="w-4 h-4" />
+                      Xem chi tiet hoc ba
+                      <ChevronRight className="h-4 w-4" />
                     </motion.button>
                   </div>
                 </motion.div>
@@ -446,7 +672,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
             })}
           </div>
 
-          <div className="bg-white rounded-[40px] p-6 border border-slate-100">
+          <div className="rounded-[40px] border border-slate-100 bg-white p-6">
             <Pagination
               currentPage={currentPage}
               totalItems={filteredChildren.length}
@@ -456,7 +682,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                 setPageSize(size);
                 setCurrentPage(1);
               }}
-              itemLabel="học sinh"
+              itemLabel="hoc sinh"
             />
           </div>
         </div>

@@ -55,6 +55,21 @@ export interface CreateAccountResponse {
   message: string;
 }
 
+export interface UserWithChildrenProfileResponse extends UserResponse {
+  childProfiles: Array<{
+    id: number;
+    userId: number;
+    fullName: string;
+    age: number;
+    gender: string;
+    learningLevel: string;
+    note: string | null;
+    status: string;
+    createdAt: string;
+    updatedAt: string | null;
+  }>;
+}
+
 export interface UpdateUserPayload {
   fullName?: string;
   email?: string;
@@ -196,6 +211,25 @@ export async function deleteUser(
     const response = await apiRequest<boolean>(`/api/users/${id}`, {
       method: 'DELETE',
     });
+
+    return {
+      success: response.success,
+      message: response.message,
+      errors: response.errors ?? [],
+      data: response.data,
+    };
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+export async function getCurrentUserWithChildrenProfiles(): Promise<
+  UserServiceResult<UserWithChildrenProfileResponse>
+> {
+  try {
+    const response = await apiRequest<UserWithChildrenProfileResponse>(
+      '/api/users/children-profiles'
+    );
 
     return {
       success: response.success,
