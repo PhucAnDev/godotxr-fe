@@ -562,12 +562,12 @@ export default function SchoolYearManagement() {
       {/* 5. Create / Edit form Modal Container overlay */}
       <AnimatePresence>
         {isOpenFormModal && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/15 animate-in fade-in duration-300 overflow-y-auto w-full h-full" id="year-modal-overlay">
+          <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/15 animate-in fade-in duration-300 overflow-y-auto w-full h-full" id="year-modal-overlay">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 12 }}
-              className="bg-white rounded-[40px] shadow-2xl w-full max-w-xl overflow-hidden border border-gray-100 relative z-30"
+              className="app-modal-panel app-modal-panel--compact bg-white rounded-[40px] shadow-2xl w-full max-w-xl overflow-hidden border border-gray-100 relative z-30"
               id="year-modal-box"
             >
               {/* Header block */}
@@ -593,7 +593,7 @@ export default function SchoolYearManagement() {
               </div>
 
               {/* Form Input areas */}
-              <form onSubmit={handleSaveSubmit} className="p-8 space-y-6" id="year-detail-form">
+              <form onSubmit={handleSaveSubmit} className="app-modal-body p-8 space-y-6" id="year-detail-form">
                 <div className="space-y-4">
                   
                   {/* Name value input */}

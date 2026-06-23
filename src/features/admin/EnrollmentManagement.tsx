@@ -810,12 +810,12 @@ export default function EnrollmentManagement() {
       {/* 5. Modal Systems Overlay */}
       <AnimatePresence>
         {modalType && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/10 animate-in fade-in duration-300 overflow-y-auto w-full h-full" id="enrollment-modal-container">
+          <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/10 animate-in fade-in duration-300 overflow-y-auto w-full h-full" id="enrollment-modal-container">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 12 }}
-              className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 relative z-30 my-8"
+              className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 relative z-30 my-8"
               id="enrollment-modal-inner"
             >
               {/* Modal Header */}
@@ -855,7 +855,7 @@ export default function EnrollmentManagement() {
 
               {/* Modal Body: DETAIL */}
               {modalType === 'detail' && selectedEnrollment ? (
-                <div className="p-8 md:p-10 space-y-8" id="modal-detail">
+                <div className="app-modal-body p-8 md:p-10 space-y-8" id="modal-detail">
                   {(() => {
                     const child = children.find(c => c.ChildId === selectedEnrollment.ChildId);
                     const classroom = classrooms.find(cls => cls.ClassId === selectedEnrollment.ClassId);
@@ -945,7 +945,7 @@ export default function EnrollmentManagement() {
                 </div>
               ) : modalType === 'transfer' && selectedEnrollment ? (
                 /* Modal Body: TRANSFER CLASS */
-                <form onSubmit={handleTransferClassSubmit} className="p-8 md:p-10 space-y-6" id="transfer-form">
+                <form onSubmit={handleTransferClassSubmit} className="app-modal-body p-8 md:p-10 space-y-6" id="transfer-form">
                   {(() => {
                     const currentClass = classrooms.find(c => c.ClassId === selectedEnrollment.ClassId);
                     const child = children.find(c => c.ChildId === selectedEnrollment.ChildId);
@@ -985,7 +985,7 @@ export default function EnrollmentManagement() {
                           </span>
                         </div>
 
-                        <div className="pt-6 border-t border-gray-150 flex gap-4">
+                        <div className="app-modal-actions pt-6 border-t border-gray-150 flex gap-4">
                            <button 
                              type="button"
                              onClick={handleCloseModal}
@@ -1006,8 +1006,8 @@ export default function EnrollmentManagement() {
                 </form>
               ) : (
                 /* Modal Body: ADD / EDIT form template */
-                <form onSubmit={handleSaveEnrollment} className="p-8 md:p-10 space-y-6" id="add-edit-enroll-form">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <form onSubmit={handleSaveEnrollment} className="app-modal-body p-8 md:p-10 space-y-6" id="add-edit-enroll-form">
+                  <div className="app-modal-form-grid grid grid-cols-1 md:grid-cols-2 gap-6">
 
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
@@ -1088,7 +1088,7 @@ export default function EnrollmentManagement() {
                     </div>
                   </div>
 
-                  <div className="pt-6 border-t border-gray-100 flex gap-4">
+                  <div className="app-modal-actions pt-6 border-t border-gray-100 flex gap-4">
                      <button 
                        type="button"
                        onClick={handleCloseModal}

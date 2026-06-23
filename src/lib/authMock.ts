@@ -114,8 +114,10 @@ export function updateCurrentUserPassword(newPassword: string): boolean {
   if (!currentUser) return false;
 
   const users = getStoredUsers();
+  let foundCurrentUser = false;
   const updatedUsers = users.map(u => {
     if (u.UserId === currentUser.UserId) {
+      foundCurrentUser = true;
       return {
         ...u,
         Password: newPassword,
@@ -128,10 +130,16 @@ export function updateCurrentUserPassword(newPassword: string): boolean {
 
   saveStoredUsers(updatedUsers);
 
-  // Update current user cached copy
-  const updatedMe = updatedUsers.find(u => u.UserId === currentUser.UserId);
-  if (updatedMe) {
-    setCurrentUser(updatedMe);
+  const updatedCurrentUser = foundCurrentUser
+    ? updatedUsers.find(u => u.UserId === currentUser.UserId) || null
+    : {
+        ...currentUser,
+        Password: newPassword,
+        MustChangePassword: false,
+      };
+
+  if (updatedCurrentUser) {
+    setCurrentUser(updatedCurrentUser);
   }
   return true;
 }

@@ -1370,12 +1370,12 @@ export default function ExerciseManagement() {
       {/* 6. Dynamic Integrated Forms, VR sandbox simulation, & Reports Modal wrapper */}
       <AnimatePresence>
         {activeModal && (
-          <div className="fixed inset-0 z-[200] flex items-start justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/10 animate-in fade-in duration-300 overflow-y-auto" id="exercises-overlay-block">
+          <div className="app-modal-overlay fixed inset-0 z-[200] flex items-start justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/10 animate-in fade-in duration-300 overflow-y-auto" id="exercises-overlay-block">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 12 }}
-              className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl border border-gray-100 relative z-30 my-4 md:my-6 max-h-[calc(100vh-48px)] flex flex-col overflow-hidden"
+              className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-2xl border border-gray-100 relative z-30 my-4 md:my-6 max-h-[calc(100vh-48px)] flex flex-col overflow-hidden"
               id="unified-modal-box"
             >
               {/* Header Title Section change depending on category */}
@@ -1419,7 +1419,7 @@ export default function ExerciseManagement() {
 
               {/* Modal Body: STUDENT REPORTS */}
               {activeModal === 'reports' && modalPayload ? (
-                <div className="flex flex-col min-h-0">
+                <div className="app-modal-body flex flex-col min-h-0">
                   <div className="p-6 md:p-8 space-y-6 overflow-y-auto max-h-[calc(100vh-220px)]">
                     <div className="bg-indigo-50/70 p-5 rounded-3xl border border-indigo-100 flex items-center justify-between">
                       <div className="flex items-center gap-4">
@@ -1501,7 +1501,7 @@ export default function ExerciseManagement() {
                 </div>
               ) : activeModal === 'preview_question' && modalPayload ? (
                 /* Modal Body: VR INTERACTIVE PREVIEW SIMULATION PLAYER */
-                <div className="flex flex-col min-h-0">
+                <div className="app-modal-body flex flex-col min-h-0">
                   <div className="p-6 md:p-8 space-y-6 overflow-y-auto max-h-[calc(100vh-220px)]">
                     <div className="bg-slate-900 text-white rounded-3xl p-6 relative font-mono text-left overflow-hidden border-4 border-slate-700 shadow-inner">
                       {/* Retro coordinate grid backdrops */}
@@ -1626,7 +1626,7 @@ export default function ExerciseManagement() {
                 </div>
               ) : (activeModal === 'add_exercise' || activeModal === 'edit_exercise') ? (
                 /* Modal Body: ADD / EDIT EXERCISE FORM */
-                <form onSubmit={handleSubmitExerciseForm} className="flex flex-col min-h-0" id="add-edit-exercise-form">
+                <form onSubmit={handleSubmitExerciseForm} className="app-modal-body flex flex-col min-h-0" id="add-edit-exercise-form">
                   <div className="p-6 md:p-8 space-y-5 overflow-y-auto max-h-[calc(100vh-220px)]">
                     <div className="space-y-4">
                       {/* Lesson Selection */}
@@ -1702,7 +1702,7 @@ export default function ExerciseManagement() {
                       </div>
 
                       {/* Options settings grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="app-modal-form-grid grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Difficulty */}
                         <div className="space-y-2">
                           <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
@@ -1815,7 +1815,7 @@ export default function ExerciseManagement() {
                 </form>
               ) : (
                 /* Modal Body: ADD / EDIT QUESTION FORM */
-                <form onSubmit={handleSubmitQuestionForm} className="flex flex-col min-h-0" id="add-edit-question-form">
+                <form onSubmit={handleSubmitQuestionForm} className="app-modal-body flex flex-col min-h-0" id="add-edit-question-form">
                   <div className="p-6 md:p-8 space-y-5 overflow-y-auto max-h-[calc(100vh-220px)]">
                     <div className="space-y-4">
                       {/* Prest Exercise selection option (Disabled if created from exercise context block) */}

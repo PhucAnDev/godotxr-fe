@@ -1,8 +1,25 @@
 import { LogOut, Settings, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { Logo } from '../../features/public/HomeView';
 import type { SidebarItem, UserRole } from '../../app/navigation';
+
+function isSidebarItemActive(item: SidebarItem, pathname: string) {
+  if (pathname === item.path) {
+    return true;
+  }
+
+  if (item.id === 'TEACHER_CLASSES' && pathname.startsWith('/teacher/class/')) {
+    return true;
+  }
+
+  if (item.id === 'TEACHER_STUDENTS' && pathname.startsWith('/teacher/student/')) {
+    return true;
+  }
+
+  return item.children?.some((child) => pathname === child.path) ?? false;
+}
 
 export function Sidebar({
   userRole,
@@ -23,16 +40,58 @@ export function Sidebar({
   const isAdmin = userRole === 'ADMIN';
   const isTeacher = userRole === 'TEACHER';
 
+  const defaultExpandedGroups = useMemo(
+    () =>
+      Object.fromEntries(
+        sidebarItems
+          .filter(
+            (item) =>
+              item.children &&
+              (item.path === location.pathname ||
+                item.children.some((child) => child.path === location.pathname))
+          )
+          .map((item) => [item.id, true])
+      ) as Record<string, boolean>,
+    [location.pathname, sidebarItems]
+  );
+
+  const [expandedGroups, setExpandedGroups] =
+    useState<Record<string, boolean>>(defaultExpandedGroups);
+
+  useEffect(() => {
+    setExpandedGroups((current) => ({ ...defaultExpandedGroups, ...current }));
+  }, [defaultExpandedGroups]);
+
+  const baseItemClass = isAdmin
+    ? 'rounded-xl text-sm'
+    : isTeacher
+      ? 'rounded-[20px] text-sm'
+      : 'rounded-[24px] text-sm';
+
+  const activeItemClass = isAdmin
+    ? 'bg-[#4EACAF] text-white font-black shadow-md shadow-[#4EACAF]/15'
+    : isTeacher
+      ? 'bg-[#4EACAF] text-white font-black shadow-lg shadow-[#4EACAF]/20'
+      : 'bg-[#4EACAF] text-white font-black shadow-xl shadow-[#4EACAF]/20';
+
+  const inactiveItemClass = isAdmin
+    ? 'hover:bg-slate-800 text-slate-300 font-medium'
+    : isTeacher
+      ? 'hover:bg-[#D7E5E0] text-gray-700 font-bold'
+      : 'hover:bg-[#E5DFCA] text-[#555] font-bold tracking-tight';
+
   return (
-    <aside className={cn(
-      'w-72 flex flex-col h-screen sticky top-0 transition-colors duration-500',
-      isAdmin
-        ? 'bg-slate-900 border-r border-slate-800 text-slate-100'
-        : isTeacher
-          ? 'bg-[#E6EFEB] border-r border-[#D2E0DC] text-gray-800'
-          : 'bg-[#F2ECD8] border-r border-[#E5DFCA] text-[#423D33]',
-      className
-    )}>
+    <aside
+      className={cn(
+        'w-72 flex flex-col h-screen sticky top-0 transition-colors duration-500',
+        isAdmin
+          ? 'bg-slate-900 border-r border-slate-800 text-slate-100'
+          : isTeacher
+            ? 'bg-[#E6EFEB] border-r border-[#D2E0DC] text-gray-800'
+            : 'bg-[#F2ECD8] border-r border-[#E5DFCA] text-[#423D33]',
+        className
+      )}
+    >
       <div className="p-6 md:p-8 flex justify-between items-center shrink-0">
         <Logo className={isAdmin ? 'brightness-110' : ''} />
         {onClose && (
@@ -54,36 +113,90 @@ export function Sidebar({
 
       <nav className="flex-1 px-4 py-2 space-y-1.5 overflow-y-auto">
         {sidebarItems.map((item) => {
-          const isActive = location.pathname === item.path ||
-            (item.id === 'TEACHER_CLASSES' && location.pathname.startsWith('/teacher/class/')) ||
-            (item.id === 'TEACHER_STUDENTS' && location.pathname.startsWith('/teacher/student/'));
+          const isActive = isSidebarItemActive(item, location.pathname);
+          const isExpanded =
+            item.children && (expandedGroups[item.id] || isActive);
+
           return (
-            <button
-              key={item.id}
-              onClick={() => {
-                navigate(item.path);
-                if (onClose) onClose();
-              }}
-              className={cn(
-                'w-full flex items-center space-x-3 px-5 py-3 transition-all shrink-0 cursor-pointer',
-                isAdmin
-                  ? 'rounded-xl text-sm ' + (isActive ? 'bg-[#4EACAF] text-white font-black shadow-md shadow-[#4EACAF]/15' : 'hover:bg-slate-800 text-slate-300 font-medium')
-                  : isTeacher
-                    ? 'rounded-[20px] text-sm ' + (isActive ? 'bg-[#4EACAF] text-white font-black shadow-lg shadow-[#4EACAF]/20' : 'hover:bg-[#D7E5E0] text-gray-700 font-bold')
-                    : 'rounded-[24px] text-sm ' + (isActive ? 'bg-[#4EACAF] text-white font-black shadow-xl shadow-[#4EACAF]/20' : 'hover:bg-[#E5DFCA] text-[#555] font-bold tracking-tight')
+            <div key={item.id} className="space-y-1.5">
+              <button
+                onClick={() => {
+                  navigate(item.path);
+                  if (item.children) {
+                    setExpandedGroups((current) => ({
+                      ...current,
+                      [item.id]: true,
+                    }));
+                  }
+                  if (onClose) onClose();
+                }}
+                className={cn(
+                  'w-full flex items-center space-x-3 px-5 py-3 transition-all shrink-0 cursor-pointer',
+                  baseItemClass,
+                  isActive ? activeItemClass : inactiveItemClass
+                )}
+              >
+                <item.icon
+                  className={cn(
+                    'shrink-0',
+                    isAdmin ? 'w-5 h-5' : 'w-6 h-6',
+                    isActive ? 'text-white opacity-100' : 'opacity-85'
+                  )}
+                />
+                <span className="text-left font-bold">{item.label}</span>
+              </button>
+
+              {item.children && isExpanded && (
+                <div className="ml-4 pl-3 border-l border-white/10 space-y-1">
+                  {item.children.map((child) => {
+                    const isChildActive = location.pathname === child.path;
+                    return (
+                      <button
+                        key={child.id}
+                        onClick={() => {
+                          navigate(child.path);
+                          setExpandedGroups((current) => ({
+                            ...current,
+                            [item.id]: true,
+                          }));
+                          if (onClose) onClose();
+                        }}
+                        className={cn(
+                          'w-full flex items-center space-x-3 px-4 py-2.5 transition-all cursor-pointer',
+                          baseItemClass,
+                          isChildActive ? activeItemClass : inactiveItemClass
+                        )}
+                      >
+                        <child.icon
+                          className={cn(
+                            'shrink-0',
+                            isAdmin ? 'w-4.5 h-4.5' : 'w-5 h-5',
+                            isChildActive ? 'text-white opacity-100' : 'opacity-85'
+                          )}
+                        />
+                        <span className="text-left text-[15px] font-bold">
+                          {child.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               )}
-            >
-              <item.icon className={cn('shrink-0', isAdmin ? 'w-5 h-5' : 'w-6 h-6', isActive ? 'text-white opacity-1' : 'opacity-85')} />
-              <span className="text-left font-bold">{item.label}</span>
-            </button>
+            </div>
           );
         })}
       </nav>
 
-      <div className={cn(
-        'p-6 space-y-2 shrink-0 border-t',
-        isAdmin ? 'border-slate-800' : isTeacher ? 'border-[#D2E0DC]' : 'border-[#E5DFCA]'
-      )}>
+      <div
+        className={cn(
+          'p-6 space-y-2 shrink-0 border-t',
+          isAdmin
+            ? 'border-slate-800'
+            : isTeacher
+              ? 'border-[#D2E0DC]'
+              : 'border-[#E5DFCA]'
+        )}
+      >
         {userRole === 'PARENT' && (
           <button
             onClick={() => {

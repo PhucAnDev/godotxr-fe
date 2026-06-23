@@ -643,12 +643,12 @@ export default function ProgramManagement() {
       {/* 5. Modals Overlays */}
       <AnimatePresence>
         {modalType && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/10 animate-in fade-in duration-300 overflow-y-auto w-full h-full" id="program-modal-overlay">
+          <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/10 animate-in fade-in duration-300 overflow-y-auto w-full h-full" id="program-modal-overlay">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 12 }}
-              className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 relative z-30 my-8"
+              className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 relative z-30 my-8"
               id="program-modal-box"
             >
               {/* Modal Header */}
@@ -684,7 +684,7 @@ export default function ProgramManagement() {
 
               {/* Modal Body: LESSONS Viewer */}
               {modalType === 'lessons' && selectedProgram ? (
-                <div className="p-8 md:p-10 space-y-6" id="modal-lessons-view">
+                <div className="app-modal-body p-8 md:p-10 space-y-6" id="modal-lessons-view">
                   <div className="bg-indigo-50 p-5 rounded-3xl border border-indigo-100 flex items-center gap-4 text-indigo-700">
                     <GraduationCap className="w-10 h-10 shrink-0" />
                     <div>
@@ -739,7 +739,7 @@ export default function ProgramManagement() {
                 </div>
               ) : (
                 /* Modal Body: ADD OR EDIT FORM */
-                <form onSubmit={handleSaveProgram} className="p-8 md:p-10 space-y-6" id="program-add-edit-form">
+                <form onSubmit={handleSaveProgram} className="app-modal-body p-8 md:p-10 space-y-6" id="program-add-edit-form">
                   <div className="space-y-4">
                     
                     {/* Program Name */}
@@ -772,7 +772,7 @@ export default function ProgramManagement() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="app-modal-form-grid grid grid-cols-1 md:grid-cols-2 gap-6">
                       
                       {/* Age range From */}
                       <div className="space-y-2">
@@ -845,7 +845,7 @@ export default function ProgramManagement() {
                     </div>
                   </div>
 
-                  <div className="pt-6 border-t border-gray-150 flex gap-4">
+                  <div className="app-modal-actions pt-6 border-t border-gray-150 flex gap-4">
                     <button 
                       type="button"
                       onClick={handleCloseModal}

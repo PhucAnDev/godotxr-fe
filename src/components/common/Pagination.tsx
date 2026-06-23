@@ -1,4 +1,3 @@
-import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -31,47 +30,59 @@ export default function Pagination({
   const endIdx = Math.min(currentPage * pageSize, totalItems);
 
   const getVisiblePages = () => {
-    const pages: (number | string)[] = [];
+    const pages: Array<number | string> = [];
+
     if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      if (currentPage <= 4) {
-        pages.push(1, 2, 3, 4, 5, '...', totalPages);
-      } else if (currentPage >= totalPages - 3) {
-        pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-      } else {
-        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      for (let index = 1; index <= totalPages; index += 1) {
+        pages.push(index);
       }
+      return pages;
     }
-    return pages;
+
+    if (currentPage <= 4) {
+      return [1, 2, 3, 4, 5, '...', totalPages];
+    }
+
+    if (currentPage >= totalPages - 3) {
+      return [
+        1,
+        '...',
+        totalPages - 4,
+        totalPages - 3,
+        totalPages - 2,
+        totalPages - 1,
+        totalPages,
+      ];
+    }
+
+    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
   };
 
   const visiblePages = getVisiblePages();
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 p-4 bg-white border border-slate-100 rounded-2xl shadow-sm z-10 relative">
-      {/* Information info */}
-      <div className="text-slate-500 font-bold text-xs sm:text-sm">
-        Hiển thị <span className="text-[#4EACAF]">{startIdx}–{endIdx}</span> trong tổng số <span className="text-slate-700">{totalItems}</span> {itemLabel}
+    <div className="relative z-10 mt-6 flex flex-col items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:flex-row">
+      <div className="text-xs font-bold text-slate-500 sm:text-sm">
+        Hiển thị <span className="text-[#4EACAF]">{startIdx}-{endIdx}</span> trong
+        tổng số <span className="text-slate-700">{totalItems}</span> {itemLabel}
       </div>
 
-      {/* Pages Controls */}
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        {/* Page Size Select */}
         {onPageSizeChange && (
-          <div className="flex items-center gap-1.5 mr-2">
-            <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Số dòng:</span>
+          <div className="mr-2 flex items-center gap-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+              Số dòng:
+            </span>
             <select
               value={pageSize}
-              onChange={(e) => {
-                const newSize = Number(e.target.value);
-                onPageSizeChange(newSize);
+              onChange={(event) => {
+                onPageSizeChange(Number(event.target.value));
               }}
-              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl outline-none focus:border-[#4EACAF] cursor-pointer"
+              className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-[#4EACAF]"
             >
-              {pageSizeOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
+              {pageSizeOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
                 </option>
               ))}
             </select>
@@ -84,44 +95,44 @@ export default function Pagination({
             onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
             className={cn(
-              "w-8 h-8 rounded-xl flex items-center justify-center border border-slate-100 bg-white text-slate-650 transition-all shadow-xs shrink-0 select-none",
+              'flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-xl border border-slate-100 bg-white text-slate-600 transition-all shadow-xs',
               currentPage === 1
-                ? "opacity-40 cursor-not-allowed bg-slate-50"
-                : "hover:bg-slate-50 hover:text-slate-800 cursor-pointer"
+                ? 'cursor-not-allowed bg-slate-50 opacity-40'
+                : 'cursor-pointer hover:bg-slate-50 hover:text-slate-800'
             )}
             title="Trang trước"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="h-4 w-4" />
           </button>
 
-          {visiblePages.map((p, idx) => {
-            if (p === '...') {
+          {visiblePages.map((page, index) => {
+            if (page === '...') {
               return (
                 <span
-                  key={`ellipsis-${idx}`}
-                  className="w-8 h-8 flex items-center justify-center text-slate-400 font-black text-xs select-none"
+                  key={`ellipsis-${index}`}
+                  className="flex h-8 w-8 select-none items-center justify-center text-xs font-black text-slate-400"
                 >
                   ...
                 </span>
               );
             }
 
-            const pageNum = p as number;
-            const isActive = pageNum === currentPage;
+            const pageNumber = page as number;
+            const isActive = pageNumber === currentPage;
 
             return (
               <button
                 type="button"
-                key={`page-${pageNum}`}
-                onClick={() => onPageChange(pageNum)}
+                key={`page-${pageNumber}`}
+                onClick={() => onPageChange(pageNumber)}
                 className={cn(
-                  "w-8 h-8 rounded-xl flex items-center justify-center font-extrabold text-xs transition-all select-none",
+                  'flex h-8 w-8 select-none items-center justify-center rounded-xl text-xs font-extrabold transition-all',
                   isActive
-                    ? "bg-[#4EACAF] text-white shadow-md shadow-[#4EACAF]/20"
-                    : "border border-slate-100 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-850 cursor-pointer"
+                    ? 'bg-[#4EACAF] text-white shadow-md shadow-[#4EACAF]/20'
+                    : 'cursor-pointer border border-slate-100 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800'
                 )}
               >
-                {pageNum}
+                {pageNumber}
               </button>
             );
           })}
@@ -131,14 +142,14 @@ export default function Pagination({
             onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
             className={cn(
-              "w-8 h-8 rounded-xl flex items-center justify-center border border-slate-100 bg-white text-slate-650 transition-all shadow-xs shrink-0 select-none",
+              'flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-xl border border-slate-100 bg-white text-slate-600 transition-all shadow-xs',
               currentPage === totalPages
-                ? "opacity-40 cursor-not-allowed bg-slate-50"
-                : "hover:bg-slate-50 hover:text-slate-800 cursor-pointer"
+                ? 'cursor-not-allowed bg-slate-50 opacity-40'
+                : 'cursor-pointer hover:bg-slate-50 hover:text-slate-800'
             )}
             title="Trang sau"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       </div>

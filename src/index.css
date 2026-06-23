@@ -159,6 +159,96 @@
   background-color: rgba(15, 23, 42, 0.45) !important;
 }
 
+.app-modal-overlay {
+  padding: 1rem !important;
+  overflow-y: auto !important;
+}
+
+@media (min-width: 768px) {
+  .app-modal-overlay {
+    padding: 1.5rem !important;
+  }
+}
+
+.app-modal-panel {
+  width: 100% !important;
+  max-width: min(calc(100vw - 2rem), 56rem) !important;
+  max-height: calc(100dvh - 2rem) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.app-modal-panel--compact {
+  max-width: min(calc(100vw - 2rem), 40rem) !important;
+}
+
+.app-modal-panel--wide {
+  max-width: min(calc(100vw - 2rem), 64rem) !important;
+}
+
+.app-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.app-modal-form-grid {
+  align-items: start;
+}
+
+.app-modal-form-grid > * {
+  min-width: 0;
+}
+
+.app-modal-form-grid > div > label:first-child {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: flex-end;
+}
+
+@media (max-width: 767px) {
+  .app-modal-form-grid > div > label:first-child {
+    min-height: 0;
+  }
+}
+
+.app-modal-form-grid input:not([type="checkbox"]):not([type="radio"]),
+.app-modal-form-grid select {
+  min-height: 3.5rem;
+}
+
+.app-modal-form-grid textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.app-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .app-modal-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.app-modal-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  align-items: stretch;
+}
+
+.app-modal-choice-card {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
 
 /* ==========================================
    TEACHER PORTAL STANDARDIZATION (Clear, Clinical, structured)

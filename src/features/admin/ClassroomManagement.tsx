@@ -834,12 +834,12 @@ export default function ClassroomManagement() {
       {/* 5. Modals System Overlays */}
       <AnimatePresence>
         {modalType && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/10 animate-in fade-in duration-300 overflow-y-auto w-full h-full" id="classroom-modal-backdrop">
+          <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/10 animate-in fade-in duration-300 overflow-y-auto w-full h-full" id="classroom-modal-backdrop">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 relative z-30 my-8"
+              className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 relative z-30 my-8"
               id="classroom-modal-content"
             >
               {/* Modal Header */}
@@ -879,7 +879,7 @@ export default function ClassroomManagement() {
 
               {/* Modal Body: DETAIL info */}
               {modalType === 'detail' && selectedClass ? (
-                <div className="p-8 md:p-10 space-y-8" id="modal-detail-body">
+                <div className="app-modal-body p-8 md:p-10 space-y-8" id="modal-detail-body">
                   <div className="flex flex-col md:flex-row gap-6 items-start pb-6 border-b border-gray-50 font-bold">
                      <div className="w-20 h-20 rounded-3xl bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0 mx-auto md:mx-0">
                         <School className="w-10 h-10 text-purple-600" />
@@ -962,7 +962,7 @@ export default function ClassroomManagement() {
                 </div>
               ) : modalType === 'students' && selectedClass ? (
                 /* Modal Body: LIST enrolled students inside class */
-                <div className="p-8 md:p-10 space-y-6" id="modal-students-body">
+                <div className="app-modal-body p-8 md:p-10 space-y-6" id="modal-students-body">
                    <div className="flex items-center gap-4 bg-orange-50 p-5 rounded-3xl border border-orange-100">
                       <Users className="w-10 h-10 text-orange-500 shrink-0" />
                       <div>
@@ -1018,8 +1018,8 @@ export default function ClassroomManagement() {
                 </div>
               ) : (
                 /* Modal Body: ADD/EDIT Form submission */
-                <form onSubmit={handleSaveClassroom} className="p-8 md:p-10 space-y-6" id="classroom-form">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <form onSubmit={handleSaveClassroom} className="app-modal-body p-8 md:p-10 space-y-6" id="classroom-form">
+                  <div className="app-modal-form-grid grid grid-cols-1 md:grid-cols-2 gap-6">
 
                     <div className="space-y-2 col-span-1 md:col-span-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
@@ -1134,7 +1134,7 @@ export default function ClassroomManagement() {
                     </div>
                   </div>
 
-                  <div className="pt-6 border-t border-gray-100 flex gap-4">
+                  <div className="app-modal-actions pt-6 border-t border-gray-100 flex gap-4">
                      <button 
                        type="button"
                        onClick={handleCloseModal}

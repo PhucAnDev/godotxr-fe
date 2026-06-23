@@ -26,6 +26,8 @@ import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
 import { useUserManagement, type UserResponse } from '../../hooks/useUserManagement';
 
+type CreateAccountRole = 'Teacher' | 'Parent';
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Chuyển roleName từ BE sang màu badge */
@@ -39,6 +41,19 @@ function getRoleBadgeClass(roleName: string) {
       return 'bg-indigo-50 text-indigo-700 border border-indigo-200';
     default:
       return 'bg-slate-100 text-slate-500 border border-slate-200';
+  }
+}
+
+function getRoleDisplayName(roleName: string) {
+  switch (roleName.toLowerCase()) {
+    case 'admin':
+      return 'Quản trị viên';
+    case 'teacher':
+      return 'Giáo viên';
+    case 'parent':
+      return 'Phụ huynh';
+    default:
+      return roleName;
   }
 }
 
@@ -91,8 +106,6 @@ export default function UserManagement() {
     setFormPhone,
     formUsername,
     setFormUsername,
-    formPassword,
-    setFormPassword,
     formGender,
     setFormGender,
     formSpecialty,
@@ -110,8 +123,13 @@ export default function UserManagement() {
     setAlertConfig,
   } = useUserManagement();
 
+  const [selectedCreateRole, setSelectedCreateRole] =
+    React.useState<CreateAccountRole | null>(null);
+
   const isCreateMode = modalType === 'add';
-  const isAccountInviteFlow = isCreateMode && formRoleName !== 'Admin';
+  const isChoosingCreateRole = isCreateMode && selectedCreateRole === null;
+  const isTeacherCreateMode = isCreateMode && selectedCreateRole === 'Teacher';
+  const isAccountInviteFlow = isCreateMode && !isChoosingCreateRole;
   const roleOptions =
     roles.length > 0
       ? roles.filter((role) =>
@@ -120,16 +138,38 @@ export default function UserManagement() {
       : [];
   const specialtyLabel =
     formRoleName === 'Teacher'
-      ? 'Chuyen mon'
+      ? 'Chuyên môn'
       : formRoleName === 'Parent'
-        ? 'Thong tin bo sung'
-        : 'Bo phan / ghi chu';
+        ? 'Thông tin bổ sung'
+        : 'Bộ phận / ghi chú';
   const specialtyPlaceholder =
     formRoleName === 'Teacher'
-      ? 'Vi du: Tri lieu ngon ngu'
+      ? 'Ví dụ: Trị liệu ngôn ngữ'
       : formRoleName === 'Parent'
-        ? 'Vi du: Phu huynh chinh'
-        : 'Vi du: Quan tri he thong';
+        ? 'Ví dụ: Phụ huynh chính'
+        : 'Ví dụ: Quản trị hệ thống';
+
+  const handleOpenCreateAccount = () => {
+    handleOpenAdd();
+    setSelectedCreateRole(null);
+  };
+
+  const handleCloseUserModal = () => {
+    setSelectedCreateRole(null);
+    handleCloseModal();
+  };
+
+  const handleChooseCreateRole = (role: CreateAccountRole) => {
+    setSelectedCreateRole(role);
+    setFormRoleName(role);
+    setFormSpecialty(role === 'Teacher' ? '' : 'Phụ huynh hỗ trợ');
+  };
+
+  React.useEffect(() => {
+    if (modalType !== 'add') {
+      setSelectedCreateRole(null);
+    }
+  }, [modalType]);
 
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative">
@@ -182,7 +222,7 @@ export default function UserManagement() {
         </div>
 
         <button
-          onClick={handleOpenAdd}
+          onClick={handleOpenCreateAccount}
           className="bg-[#4EACAF] hover:bg-[#3d8c8e] text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all text-sm shrink-0 active:scale-95 cursor-pointer"
         >
           <UserPlus className="w-4 h-4" />
@@ -258,7 +298,7 @@ export default function UserManagement() {
               <option value="ALL">Tất cả Vai trò</option>
               {roles.map((role) => (
                 <option key={role.id} value={role.roleName}>
-                  {role.roleName}
+                  {getRoleDisplayName(role.roleName)}
                 </option>
               ))}
             </select>
@@ -380,7 +420,7 @@ export default function UserManagement() {
                           'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase',
                           getRoleBadgeClass(user.roleName)
                         )}>
-                          {user.roleName}
+                          {getRoleDisplayName(user.roleName)}
                         </span>
                       </td>
 
@@ -480,12 +520,12 @@ export default function UserManagement() {
       {/* 5. Modals */}
       <AnimatePresence>
         {modalType && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/10 animate-in fade-in duration-300 overflow-y-auto">
+          <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/10 animate-in fade-in duration-300 overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 relative z-30"
+              className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 relative z-30"
             >
               {/* Modal Header */}
               <div className={cn(
@@ -498,18 +538,24 @@ export default function UserManagement() {
                     {modalType === 'add' && <UserPlus className="w-6 h-6 text-[#4EACAF]" />}
                     {modalType === 'edit' && <Edit3 className="w-6 h-6 text-sky-500" />}
                     {modalType === 'detail' && <Info className="w-6 h-6 text-purple-600" />}
-                    {modalType === 'add' && 'Thêm tài khoản người dùng'}
+                    {modalType === 'add' &&
+                      (isChoosingCreateRole
+                        ? 'Chọn loại tài khoản cần tạo'
+                        : `Tạo tài khoản ${getRoleDisplayName(selectedCreateRole || '')}`)}
                     {modalType === 'edit' && `Chỉnh sửa: ${selectedUser?.fullName}`}
                     {modalType === 'detail' && 'Chi tiết tài khoản'}
                   </h2>
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-                    {modalType === 'add' && 'Khởi tạo tài khoản quản trị, giáo viên hoặc cha mẹ'}
+                    {modalType === 'add' &&
+                      (isChoosingCreateRole
+                        ? 'Chọn loại tài khoản trước khi nhập thông tin'
+                        : 'Nhập thông tin để hệ thống gửi email xác minh')}
                     {modalType === 'edit' && 'Cập nhật lại thông tin cá nhân và cài đặt trạng thái'}
                     {modalType === 'detail' && 'Toàn bộ dữ liệu người dùng từ hệ thống BE'}
                   </p>
                 </div>
                 <button
-                  onClick={handleCloseModal}
+                  onClick={handleCloseUserModal}
                   className="p-2.5 hover:bg-white/70 rounded-full transition-colors"
                 >
                   <X className="w-6 h-6 text-gray-500" />
@@ -520,13 +566,69 @@ export default function UserManagement() {
               {modalType === 'detail' && selectedUser ? (
                 <DetailModalBody
                   user={selectedUser}
-                  onClose={handleCloseModal}
+                  onClose={handleCloseUserModal}
                   onResetPassword={handleResetPassword}
                 />
+              ) : isChoosingCreateRole ? (
+                <div className="app-modal-body p-8 md:p-10 space-y-6">
+                  <div className="space-y-2">
+                    <p className="text-sm font-bold text-slate-700">
+                      Admin hãy chọn đối tượng cần tạo tài khoản.
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Sau khi chọn, hệ thống sẽ hiển thị biểu mẫu phù hợp với
+                      từng loại tài khoản.
+                    </p>
+                  </div>
+
+                  <div className="app-modal-choice-grid grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      {
+                        role: 'Parent' as CreateAccountRole,
+                        title: 'Tài khoản phụ huynh',
+                        description:
+                          'Dùng form tạo phụ huynh với các thông tin cơ bản và thông tin bổ sung.',
+                      },
+                      {
+                        role: 'Teacher' as CreateAccountRole,
+                        title: 'Tài khoản giáo viên',
+                        description:
+                          'Dùng form tạo giáo viên và bổ sung thêm thông tin chuyên môn.',
+                      },
+                    ].map((option) => (
+                      <button
+                        key={option.role}
+                        type="button"
+                        onClick={() => handleChooseCreateRole(option.role)}
+                        className="app-modal-choice-card text-left rounded-3xl border border-slate-200 p-6 hover:border-[#4EACAF] hover:bg-[#4EACAF]/5 transition-all"
+                      >
+                        <div className="w-12 h-12 rounded-2xl bg-[#4EACAF]/10 flex items-center justify-center mb-4">
+                          <UserPlus className="w-5 h-5 text-[#4EACAF]" />
+                        </div>
+                        <p className="text-lg font-black text-slate-800">
+                          {option.title}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-500 leading-relaxed">
+                          {option.description}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="app-modal-actions pt-4 border-t border-gray-100 flex gap-4">
+                    <button
+                      type="button"
+                      onClick={handleCloseUserModal}
+                      className="flex-1 py-4 border-4 border-gray-100 hover:border-gray-200 text-gray-400 hover:text-gray-600 font-extrabold rounded-2xl transition-all uppercase text-sm tracking-widest"
+                    >
+                      Hủy bỏ
+                    </button>
+                  </div>
+                </div>
               ) : (
                 /* Modal Body — Add / Edit Form */
-                <form onSubmit={handleSaveUser} className="p-8 md:p-10 space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <form onSubmit={handleSaveUser} className="app-modal-body p-8 md:p-10 space-y-6">
+                  <div className="app-modal-form-grid grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Họ và tên */}
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
@@ -576,34 +678,54 @@ export default function UserManagement() {
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
                         Vai trò thành viên <span className="text-[#FF8E8E]">*</span>
                       </label>
-                      <div className="relative">
-                        <select
-                          value={formRoleName}
-                          onChange={(e) => setFormRoleName(e.target.value as any)}
-                          className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 outline-none cursor-pointer appearance-none focus:border-[#4EACAF]"
-                        >
-                          {roleOptions.length > 0 ? (
-                            roleOptions.map((role) => (
-                              <option key={role.id} value={role.roleName}>
-                                {role.roleName} — {role.description.slice(0, 40)}...
-                              </option>
-                            ))
-                          ) : (
-                            <>
-                              <option value="Admin">Admin</option>
-                              <option value="Teacher">Teacher</option>
-                              <option value="Parent">Parent</option>
-                            </>
-                          )}
-                        </select>
-                        <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                      </div>
+                      {modalType === 'add' ? (
+                        <div className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 flex items-center justify-between gap-3">
+                          <div>
+                            <p className="font-black italic tracking-wide text-gray-700">
+                              {getRoleDisplayName(selectedCreateRole || '')}
+                            </p>
+                            <p className="text-xs text-slate-400 mt-1">
+                              Đây là loại tài khoản bạn đang tạo.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedCreateRole(null)}
+                            className="shrink-0 px-3 py-2 rounded-xl text-xs font-black text-[#4EACAF] bg-[#4EACAF]/10 hover:bg-[#4EACAF]/15 transition-colors"
+                          >
+                            Chọn lại
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <select
+                            value={formRoleName}
+                            onChange={(e) => setFormRoleName(e.target.value as any)}
+                            className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 outline-none cursor-pointer appearance-none focus:border-[#4EACAF]"
+                          >
+                            {roleOptions.length > 0 ? (
+                              roleOptions.map((role) => (
+                                <option key={role.id} value={role.roleName}>
+                                  {getRoleDisplayName(role.roleName)} — {role.description.slice(0, 40)}...
+                                </option>
+                              ))
+                            ) : (
+                              <>
+                                <option value="Admin">Quản trị viên</option>
+                                <option value="Teacher">Giáo viên</option>
+                                <option value="Parent">Phụ huynh</option>
+                              </>
+                            )}
+                          </select>
+                          <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                        </div>
+                      )}
                     </div>
 
-                    {/* Username — chỉ hiện khi Add */}
+                    {/* Giới tính */}
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
-                        Gioi tinh <span className="text-[#FF8E8E]">*</span>
+                        Giới tính <span className="text-[#FF8E8E]">*</span>
                       </label>
                       <div className="relative">
                         <select
@@ -611,9 +733,9 @@ export default function UserManagement() {
                           onChange={(e) => setFormGender(e.target.value as 'Male' | 'Female' | 'Other')}
                           className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none cursor-pointer appearance-none focus:border-[#4EACAF]"
                         >
-                          <option value="Female">Nu</option>
+                          <option value="Female">Nữ</option>
                           <option value="Male">Nam</option>
-                          <option value="Other">Khac</option>
+                          <option value="Other">Khác</option>
                         </select>
                         <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
                       </div>
@@ -631,12 +753,18 @@ export default function UserManagement() {
                         onChange={(e) => setFormSpecialty(e.target.value)}
                         className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold outline-none focus:border-[#4EACAF] focus:bg-white transition-all text-gray-700"
                       />
+                      {isTeacherCreateMode && (
+                        <p className="text-[11px] text-slate-400 font-medium">
+                          Hãy nhập chuyên môn hoặc lĩnh vực phụ trách của giáo
+                          viên.
+                        </p>
+                      )}
                     </div>
 
                     {modalType === 'add' && (
                       <div className="space-y-2">
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
-                          Username <span className="text-[#FF8E8E]">*</span>
+                          Tên đăng nhập <span className="text-[#FF8E8E]">*</span>
                         </label>
                         <input
                           type="text"
@@ -649,32 +777,17 @@ export default function UserManagement() {
                       </div>
                     )}
 
-                    {/* Password — chỉ hiện khi Add */}
-                    {modalType === 'add' && (
-                      <div className="space-y-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
-                          Mật khẩu <span className="text-[#FF8E8E]">*</span>
-                        </label>
-                        <input
-                          type="password"
-                          required
-                          minLength={6}
-                          placeholder="Tối thiểu 6 ký tự"
-                          value={formPassword}
-                          onChange={(e) => setFormPassword(e.target.value)}
-                          className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold outline-none focus:border-[#4EACAF] focus:bg-white transition-all text-gray-700"
-                        />
-                      </div>
-                    )}
-
                     {/* Trạng thái — chỉ hiện khi Edit */}
                     {isAccountInviteFlow && (
                       <div className="md:col-span-2 rounded-2xl border border-[#4EACAF]/15 bg-[#4EACAF]/5 px-5 py-4 text-sm text-slate-600">
                         <p className="font-bold text-[#356f70]">
-                          Teacher vĂ  Parent sáº½ Ä‘Æ°á»£c táº¡o qua flow `create-account`.
+                          Tài khoản giáo viên và phụ huynh sẽ được tạo kèm email
+                          xác minh.
                         </p>
                         <p className="mt-1 text-xs font-medium">
-                          Há»‡ thá»‘ng sáº½ táº¡o máº­t kháº©u táº¡m, gá»­i email xĂ¡c minh, vĂ  yĂªu cáº§u ngÆ°á»i dĂ¹ng Ä‘á»•i máº­t kháº©u á»Ÿ láº§n Ä‘Äƒng nháº­p Ä‘áº§u tiĂªn.
+                          Hệ thống sẽ tự tạo mật khẩu tạm, gửi email xác minh,
+                          và yêu cầu người dùng đổi mật khẩu ở lần đăng nhập đầu
+                          tiên.
                         </p>
                       </div>
                     )}
@@ -717,10 +830,10 @@ export default function UserManagement() {
                   </div>
 
                   {/* Form Actions */}
-                  <div className="pt-6 border-t border-gray-100 flex gap-4">
+                  <div className="app-modal-actions pt-6 border-t border-gray-100 flex gap-4">
                     <button
                       type="button"
-                      onClick={handleCloseModal}
+                      onClick={handleCloseUserModal}
                       className="flex-1 py-4 border-4 border-gray-100 hover:border-gray-200 text-gray-400 hover:text-gray-600 font-extrabold rounded-2xl transition-all uppercase text-sm tracking-widest"
                     >
                       Hủy bỏ
@@ -757,7 +870,7 @@ function DetailModalBody({
   onResetPassword: (user: UserResponse) => Promise<void>;
 }) {
   return (
-    <div className="p-8 md:p-10 space-y-8">
+    <div className="app-modal-body p-8 md:p-10 space-y-8">
       {/* Avatar + tên */}
       <div className="flex flex-col md:flex-row gap-8 items-start pb-6 border-b border-gray-50">
         <div className="w-24 h-24 rounded-3xl bg-purple-50 border border-purple-100 flex items-center justify-center p-3 shrink-0 mx-auto md:mx-0">
@@ -785,7 +898,7 @@ function DetailModalBody({
               'inline-flex items-center gap-1.5 px-3 py-1 rounded-full uppercase text-[10px]',
               getRoleBadgeClass(user.roleName)
             )}>
-              {user.roleName}
+              {getRoleDisplayName(user.roleName)}
             </span>
             <span className={cn(
               'inline-flex items-center px-3 py-0.5 rounded-full uppercase text-[10px]',

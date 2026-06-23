@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import {
   createAccount,
-  createUser,
   getUsers,
   updateUser,
   type UserGender,
@@ -54,8 +53,6 @@ export interface UseUserManagementReturn {
   setFormPhone: (value: string) => void;
   formUsername: string;
   setFormUsername: (value: string) => void;
-  formPassword: string;
-  setFormPassword: (value: string) => void;
   formGender: UserGender;
   setFormGender: (value: UserGender) => void;
   formSpecialty: string;
@@ -78,16 +75,29 @@ function getDefaultSpecialty(role: UserRoleEnum): string {
     case 'Teacher':
       return '';
     case 'Parent':
-      return 'Parent Support';
+      return 'Phụ huynh hỗ trợ';
     case 'Admin':
-      return 'System Administration';
+      return 'Quản trị hệ thống';
     default:
-      return 'General Support';
+      return 'Hỗ trợ chung';
   }
 }
 
 function usesCreateAccountFlow(role: UserRoleEnum): boolean {
   return role === 'Teacher' || role === 'Parent';
+}
+
+function getRoleLabel(role: string): string {
+  switch (role.trim().toLowerCase()) {
+    case 'admin':
+      return 'quản trị viên';
+    case 'teacher':
+      return 'giáo viên';
+    case 'parent':
+      return 'phụ huynh';
+    default:
+      return role;
+  }
 }
 
 export function useUserManagement(): UseUserManagementReturn {
@@ -111,7 +121,6 @@ export function useUserManagement(): UseUserManagementReturn {
   const [formEmail, setFormEmail] = useState('');
   const [formPhone, setFormPhone] = useState('');
   const [formUsername, setFormUsername] = useState('');
-  const [formPassword, setFormPassword] = useState('');
   const [formGender, setFormGender] = useState<UserGender>('Female');
   const [formSpecialty, setFormSpecialty] = useState(
     getDefaultSpecialty('Parent')
@@ -124,7 +133,7 @@ export function useUserManagement(): UseUserManagementReturn {
   const triggerNotification = useCallback(
     (message: string, type: 'success' | 'warning' = 'success') => {
       setAlertConfig({ message, type });
-      setTimeout(() => setAlertConfig(null), 4000);
+      window.setTimeout(() => setAlertConfig(null), 4000);
     },
     []
   );
@@ -141,7 +150,7 @@ export function useUserManagement(): UseUserManagementReturn {
     }
 
     triggerNotification(
-      result.message || 'Khong the tai danh sach nguoi dung.',
+      result.message || 'Không thể tải danh sách người dùng.',
       'warning'
     );
   }, [currentPage, pageSize, triggerNotification]);
@@ -154,11 +163,11 @@ export function useUserManagement(): UseUserManagementReturn {
   }, []);
 
   useEffect(() => {
-    fetchUsers();
+    void fetchUsers();
   }, [fetchUsers]);
 
   useEffect(() => {
-    fetchRoles();
+    void fetchRoles();
   }, [fetchRoles]);
 
   useEffect(() => {
@@ -170,18 +179,10 @@ export function useUserManagement(): UseUserManagementReturn {
       return;
     }
 
-    if (usesCreateAccountFlow(formRoleName) && formPassword.length < 6) {
-      setFormPassword('invite1');
-    }
-
-    if (formRoleName === 'Admin' && formPassword === 'invite1') {
-      setFormPassword('');
-    }
-
     if (!formSpecialty.trim() && formRoleName !== 'Teacher') {
       setFormSpecialty(getDefaultSpecialty(formRoleName));
     }
-  }, [formPassword, formRoleName, formSpecialty, modalType]);
+  }, [formRoleName, formSpecialty, modalType]);
 
   const totalUsers = totalCount;
   const activeUsers = users.filter((user) => user.isActive).length;
@@ -189,6 +190,7 @@ export function useUserManagement(): UseUserManagementReturn {
   const thisMonthUsers = users.filter((user) => {
     const createdAt = new Date(user.createdAt);
     const now = new Date();
+
     return (
       createdAt.getMonth() === now.getMonth() &&
       createdAt.getFullYear() === now.getFullYear()
@@ -220,7 +222,6 @@ export function useUserManagement(): UseUserManagementReturn {
     setFormEmail('');
     setFormPhone('');
     setFormUsername('');
-    setFormPassword('');
     setFormGender('Female');
     setFormRoleName('Parent');
     setFormSpecialty(getDefaultSpecialty('Parent'));
@@ -235,7 +236,6 @@ export function useUserManagement(): UseUserManagementReturn {
     setFormEmail(user.email);
     setFormPhone(user.phone);
     setFormUsername(user.username);
-    setFormPassword('');
     setFormGender((user.gender as UserGender) || 'Other');
     setFormSpecialty(
       user.specialty || getDefaultSpecialty(user.roleName as UserRoleEnum)
@@ -259,18 +259,18 @@ export function useUserManagement(): UseUserManagementReturn {
     event.preventDefault();
 
     if (!formFullName.trim() || !formEmail.trim()) {
-      triggerNotification('Vui long dien day du ho ten va email!', 'warning');
+      triggerNotification('Vui lòng điền đầy đủ họ tên và email.', 'warning');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formEmail)) {
-      triggerNotification('Email khong dung dinh dang!', 'warning');
+      triggerNotification('Email không đúng định dạng.', 'warning');
       return;
     }
 
     if (!formUsername.trim() && modalType === 'add') {
-      triggerNotification('Vui long nhap username!', 'warning');
+      triggerNotification('Vui lòng nhập tên đăng nhập.', 'warning');
       return;
     }
 
@@ -278,66 +278,45 @@ export function useUserManagement(): UseUserManagementReturn {
       formSpecialty.trim() || getDefaultSpecialty(formRoleName);
 
     if (!resolvedSpecialty) {
-      triggerNotification('Vui long nhap thong tin bo sung!', 'warning');
+      triggerNotification('Vui lòng nhập thông tin bổ sung.', 'warning');
       return;
-    }
-
-    if (modalType === 'add' && formRoleName === 'Admin') {
-      if (!formPassword || formPassword.length < 6) {
-        triggerNotification('Mat khau phai co it nhat 6 ky tu!', 'warning');
-        return;
-      }
     }
 
     setIsSaving(true);
 
     if (modalType === 'add') {
-      if (usesCreateAccountFlow(formRoleName)) {
-        const result = await createAccount({
-          username: formUsername.trim(),
-          fullName: formFullName.trim(),
-          email: formEmail.trim(),
-          phone: formPhone.trim() || undefined,
-          gender: formGender,
-          specialty: resolvedSpecialty,
-          roleName: formRoleName,
-        });
+      if (!usesCreateAccountFlow(formRoleName)) {
+        triggerNotification(
+          'Chức năng này chỉ hỗ trợ tạo tài khoản giáo viên hoặc phụ huynh.',
+          'warning'
+        );
+        setIsSaving(false);
+        return;
+      }
 
-        if (result.success && result.data) {
-          triggerNotification(
-            result.data.message ||
-              `Da tao tai khoan ${result.data.roleName} va gui email xac minh.`
-          );
-          handleCloseModal();
-          await fetchUsers();
-        } else {
-          const message =
-            result.errors.length > 0 ? result.errors.join(' ') : result.message;
-          triggerNotification(message || 'Tao tai khoan that bai.', 'warning');
-        }
+      const result = await createAccount({
+        username: formUsername.trim(),
+        fullName: formFullName.trim(),
+        email: formEmail.trim(),
+        phone: formPhone.trim() || undefined,
+        gender: formGender,
+        specialty: resolvedSpecialty,
+        roleName: formRoleName,
+      });
+
+      if (result.success && result.data) {
+        triggerNotification(
+          result.data.message ||
+            `Đã tạo tài khoản ${getRoleLabel(
+              result.data.roleName
+            )} và gửi email xác minh.`
+        );
+        handleCloseModal();
+        await fetchUsers();
       } else {
-        const result = await createUser({
-          username: formUsername.trim(),
-          password: formPassword,
-          fullName: formFullName.trim(),
-          email: formEmail.trim(),
-          phone: formPhone.trim() || undefined,
-          gender: formGender,
-          specialty: resolvedSpecialty,
-          roleName: formRoleName,
-        });
-
-        if (result.success && result.data) {
-          triggerNotification(
-            `Da tao thanh cong tai khoan "${result.data.fullName}"!`
-          );
-          handleCloseModal();
-          await fetchUsers();
-        } else {
-          const message =
-            result.errors.length > 0 ? result.errors.join(' ') : result.message;
-          triggerNotification(message || 'Tao tai khoan that bai.', 'warning');
-        }
+        const message =
+          result.errors.length > 0 ? result.errors.join(' ') : result.message;
+        triggerNotification(message || 'Tạo tài khoản thất bại.', 'warning');
       }
     } else if (modalType === 'edit' && selectedUser) {
       const result = await updateUser(selectedUser.id, {
@@ -357,14 +336,14 @@ export function useUserManagement(): UseUserManagementReturn {
           )
         );
         triggerNotification(
-          `Cap nhat tai khoan "${result.data.fullName}" thanh cong!`
+          `Cập nhật tài khoản "${result.data.fullName}" thành công.`
         );
         handleCloseModal();
       } else {
         const message =
           result.errors.length > 0 ? result.errors.join(' ') : result.message;
         triggerNotification(
-          message || 'Cap nhat tai khoan that bai.',
+          message || 'Cập nhật tài khoản thất bại.',
           'warning'
         );
       }
@@ -386,8 +365,8 @@ export function useUserManagement(): UseUserManagementReturn {
 
     if (result.success) {
       const message = nextActive
-        ? `Da mo khoa tai khoan "${user.fullName}"!`
-        : `Da khoa tai khoan "${user.fullName}"!`;
+        ? `Đã mở khóa tài khoản "${user.fullName}".`
+        : `Đã khóa tài khoản "${user.fullName}".`;
       triggerNotification(message, nextActive ? 'success' : 'warning');
       return;
     }
@@ -398,19 +377,19 @@ export function useUserManagement(): UseUserManagementReturn {
       )
     );
     triggerNotification(
-      result.message || 'Thao tac that bai. Vui long thu lai.',
+      result.message || 'Thao tác thất bại. Vui lòng thử lại.',
       'warning'
     );
   };
 
   const handleResetPassword = async (user: UserResponse) => {
     triggerNotification(
-      `Da gui yeu cau dat lai mat khau cho "${user.fullName}".`
+      `Đã gửi yêu cầu đặt lại mật khẩu cho "${user.fullName}".`
     );
   };
 
   const handleRefresh = () => {
-    fetchUsers();
+    void fetchUsers();
   };
 
   return {
@@ -447,8 +426,6 @@ export function useUserManagement(): UseUserManagementReturn {
     setFormPhone,
     formUsername,
     setFormUsername,
-    formPassword,
-    setFormPassword,
     formGender,
     setFormGender,
     formSpecialty,

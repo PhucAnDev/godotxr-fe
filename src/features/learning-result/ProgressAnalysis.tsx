@@ -983,13 +983,13 @@ export default function ProgressAnalysis() {
       {/* 7. Detailed Analysis Assessment Interactive Modal Component */}
       <AnimatePresence>
         {isDetailOpen && selectedAnalysis && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/20 animate-in fade-in duration-300 overflow-y-auto w-full h-full">
+          <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/20 animate-in fade-in duration-300 overflow-y-auto w-full h-full">
             
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="bg-white rounded-[40px] shadow-2xl w-full max-w-3xl overflow-hidden border border-gray-100 flex flex-col my-8"
+              className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-3xl overflow-hidden border border-gray-100 flex flex-col my-8"
               id="analysis-detail-modal"
             >
               
@@ -1013,7 +1013,7 @@ export default function ProgressAnalysis() {
               </div>
 
               {/* Modal assessment body with responsive columns */}
-              <div className="p-8 space-y-6 overflow-y-auto max-h-[70vh]">
+              <div className="app-modal-body p-8 space-y-6 overflow-y-auto max-h-[70vh]">
                 
                 {/* Child mini metadata panel */}
                 <div className="bg-[#FDFCF5] p-5.5 rounded-3xl border border-yellow-105 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
