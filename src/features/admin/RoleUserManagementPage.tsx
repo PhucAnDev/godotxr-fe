@@ -698,7 +698,6 @@ export default function RoleUserManagementPage({
                       {variant === 'teacher' ? 'Tên đăng nhập' : 'Giới tính'}
                     </th>
                     <th className="px-6 py-5">Trạng thái</th>
-                    <th className="px-6 py-5">Ngày tạo</th>
                     <th className="px-8 py-5 text-right">Tùy chọn</th>
                   </tr>
                 </thead>
@@ -709,18 +708,13 @@ export default function RoleUserManagementPage({
                         {formatUserCode(user.id)}
                       </td>
                       <td className="px-6 py-5">
-                        <div className="flex items-center gap-4">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#4EACAF]/20 bg-[#4EACAF]/10 text-sm font-black text-[#4EACAF]">
-                            {getInitials(user.fullName)}
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-base font-black text-[#111]">
-                              {user.fullName}
-                            </p>
-                            <p className="text-xs font-semibold text-slate-400">
-                              {variant === 'teacher' ? 'Giáo viên' : 'Phụ huynh'}
-                            </p>
-                          </div>
+                        <div className="space-y-1">
+                          <p className="text-base font-black text-[#111]">
+                            {user.fullName}
+                          </p>
+                          <p className="text-xs font-semibold text-slate-400">
+                            {variant === 'teacher' ? 'Giáo viên' : 'Phụ huynh'}
+                          </p>
                         </div>
                       </td>
                       <td className="px-6 py-5">
@@ -760,9 +754,6 @@ export default function RoleUserManagementPage({
                         >
                           {getStatusLabel(user.isActive)}
                         </span>
-                      </td>
-                      <td className="px-6 py-5 text-xs font-semibold text-slate-500">
-                        {formatDateTime(user.createdAt)}
                       </td>
                       <td className="px-8 py-5">
                         <div className="flex items-center justify-end gap-2">
@@ -835,23 +826,31 @@ export default function RoleUserManagementPage({
               exit={{ opacity: 0, y: 20, scale: 0.96 }}
               className="app-modal-panel w-full max-w-2xl overflow-hidden rounded-[32px] border border-slate-100 bg-white shadow-2xl"
             >
-              <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+              <div className={cn(
+                'px-8 py-6 flex items-center justify-between border-b',
+                modalMode === 'edit' ? 'bg-sky-50 border-sky-100' : 'bg-purple-50 border-purple-100'
+              )}>
                 <div>
-                  <h2 className="text-xl font-black text-slate-800">
-                    {modalMode === 'detail'
-                      ? `Chi tiết ${config.itemLabel}`
-                      : `Chỉnh sửa ${config.itemLabel}`}
+                  <h2 className="text-2xl font-black italic tracking-tight flex items-center gap-2 text-gray-900">
+                    {modalMode === 'edit' ? (
+                      <Edit3 className="w-6 h-6 text-sky-500" />
+                    ) : (
+                      <Eye className="w-6 h-6 text-purple-600" />
+                    )}
+                    {modalMode === 'edit'
+                      ? `Chỉnh sửa ${config.itemLabel}`
+                      : `Chi tiết ${config.itemLabel}`}
                   </h2>
-                  <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
                     {selectedUser.fullName}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="rounded-full p-2 transition-colors hover:bg-slate-100"
+                  className="p-2.5 hover:bg-white/70 rounded-full transition-colors cursor-pointer"
                 >
-                  <X className="h-5 w-5 text-slate-500" />
+                  <X className="w-6 h-6 text-gray-500" />
                 </button>
               </div>
 
@@ -933,7 +932,7 @@ export default function RoleUserManagementPage({
                       </div>
                     </FormField>
 
-                    <FormField label={config.specialtyLabel} className="sm:col-span-2">
+                    <FormField label={config.specialtyLabel}>
                       <input
                         type="text"
                         value={formSpecialty}

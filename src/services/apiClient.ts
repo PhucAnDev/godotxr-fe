@@ -43,7 +43,25 @@ export function subscribeAuthExpired(listener: () => void) {
   return () => window.removeEventListener(AUTH_EXPIRED_EVENT, listener);
 }
 
-async function tryRefreshAccessToken() {
+// Mutex: đảm bảo chỉ có 1 refresh request tại 1 thời điểm.
+// Các API call 401 đồng thời sẽ đợi kết quả chung thay vì gọi refresh riêng.
+let refreshPromise: Promise<string | null> | null = null;
+
+async function tryRefreshAccessToken(): Promise<string | null> {
+  // Nếu đã có refresh đang chạy → đợi kết quả của nó
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = doRefresh();
+  try {
+    return await refreshPromise;
+  } finally {
+    refreshPromise = null;
+  }
+}
+
+async function doRefresh(): Promise<string | null> {
   const accessToken = localStorage.getItem('auth_token');
   const refreshToken = localStorage.getItem('refresh_token');
 
@@ -51,28 +69,32 @@ async function tryRefreshAccessToken() {
     return null;
   }
 
-  const refreshResponse = await fetch(`${API_BASE_URL}/api/auth/refresh-token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      accessToken,
-      refreshToken,
-    }),
-  });
+  try {
+    const refreshResponse = await fetch(`${API_BASE_URL}/api/auth/refresh-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accessToken,
+        refreshToken,
+      }),
+    });
 
-  if (!refreshResponse.ok) {
+    if (!refreshResponse.ok) {
+      return null;
+    }
+
+    const refreshBody = (await refreshResponse.json()) as RefreshTokenResponse;
+    if (!refreshBody.data) {
+      return null;
+    }
+
+    localStorage.setItem('auth_token', refreshBody.data.accessToken);
+    localStorage.setItem('refresh_token', refreshBody.data.refreshToken);
+
+    return refreshBody.data.accessToken;
+  } catch {
     return null;
   }
-
-  const refreshBody = (await refreshResponse.json()) as RefreshTokenResponse;
-  if (!refreshBody.data) {
-    return null;
-  }
-
-  localStorage.setItem('auth_token', refreshBody.data.accessToken);
-  localStorage.setItem('refresh_token', refreshBody.data.refreshToken);
-
-  return refreshBody.data.accessToken;
 }
 
 export async function apiRequest<T>(
