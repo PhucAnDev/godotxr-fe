@@ -1,7 +1,10 @@
 import { useCallback } from 'react';
 import {
+  createChildProfile as createChildProfileService,
+  deleteChildProfile as deleteChildProfileService,
   getChildProfileById as getChildProfileByIdService,
   getChildProfiles as getChildProfilesService,
+  updateChildProfile as updateChildProfileService,
 } from '../services/childProfileService';
 
 export type { ChildProfileResponse } from '../services/childProfileService';
@@ -19,5 +22,29 @@ export function useChildManagementApi() {
     []
   );
 
-  return { getChildProfiles, getChildProfileById };
+  const createChildProfile = useCallback(
+    (...args: Parameters<typeof createChildProfileService>) =>
+      createChildProfileService(...args),
+    []
+  );
+
+  const updateChildProfile = useCallback(
+    (...args: Parameters<typeof updateChildProfileService>) =>
+      updateChildProfileService(...args),
+    []
+  );
+
+  const deleteChildProfile = useCallback(
+    (...args: Parameters<typeof deleteChildProfileService>) =>
+      deleteChildProfileService(...args),
+    []
+  );
+
+  return {
+    getChildProfiles,
+    getChildProfileById,
+    createChildProfile,
+    updateChildProfile,
+    deleteChildProfile,
+  };
 }

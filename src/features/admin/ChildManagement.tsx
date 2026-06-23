@@ -15,7 +15,9 @@ import {
   Lock,
   Plus,
   RefreshCw,
+  Save,
   Search,
+  Trash2,
   TrendingUp,
   Unlock,
   X,
@@ -26,6 +28,7 @@ import {
   useChildManagementApi,
   type ChildProfileResponse,
 } from '../../hooks/useChildManagementApi';
+import type { ChildProfilePayload } from '../../services/childProfileService';
 
 interface Child {
   ChildId: string;
@@ -40,7 +43,27 @@ interface Child {
   UpdatedAt: string;
 }
 
+interface ChildFormState {
+  userId: string;
+  fullName: string;
+  age: string;
+  gender: Child['Gender'];
+  learningLevel: Child['LearningLevel'];
+  note: string;
+  status: Child['Status'];
+}
+
 const API_PAGE_SIZE = 100;
+
+const EMPTY_FORM: ChildFormState = {
+  userId: '',
+  fullName: '',
+  age: '',
+  gender: 'Male',
+  learningLevel: 'Beginner',
+  note: '',
+  status: 'Active',
+};
 
 function mapChildProfile(profile: ChildProfileResponse): Child {
   return {
@@ -50,10 +73,35 @@ function mapChildProfile(profile: ChildProfileResponse): Child {
     Age: profile.age,
     Gender: profile.gender,
     LearningLevel: profile.learningLevel,
-    Note: profile.note?.trim() || 'Chưa có ghi chú bổ sung từ hệ thống.',
+    Note: profile.note?.trim() || 'Chua co ghi chu bo sung tu he thong.',
     Status: profile.status,
     CreatedAt: profile.createdAt,
     UpdatedAt: profile.updatedAt ?? profile.createdAt,
+  };
+}
+
+function mapChildToForm(child: Child): ChildFormState {
+  return {
+    userId: child.ParentUserId,
+    fullName: child.FullName,
+    age: String(child.Age),
+    gender: child.Gender,
+    learningLevel: child.LearningLevel,
+    note:
+      child.Note === 'Chua co ghi chu bo sung tu he thong.' ? '' : child.Note,
+    status: child.Status,
+  };
+}
+
+function mapFormToPayload(form: ChildFormState): ChildProfilePayload {
+  return {
+    userId: Number(form.userId),
+    fullName: form.fullName.trim(),
+    age: Number(form.age),
+    gender: form.gender,
+    learningLevel: form.learningLevel,
+    note: form.note.trim() || null,
+    status: form.status,
   };
 }
 
@@ -76,34 +124,42 @@ function formatDateTime(value: string) {
 function getGenderLabel(gender: Child['Gender']) {
   switch (gender) {
     case 'Male':
-      return 'Cậu bé (Nam)';
+      return 'Cau be (Nam)';
     case 'Female':
-      return 'Cô bé (Nữ)';
+      return 'Co be (Nu)';
     default:
-      return 'Khác';
+      return 'Khac';
   }
 }
 
 function getStatusLabel(status: Child['Status']) {
-  return status === 'Active' ? 'Đang học' : 'Tạm ngưng';
+  return status === 'Active' ? 'Dang hoc' : 'Tam ngung';
 }
 
 function hasSupportFlag(child: Child) {
   const note = child.Note.toLocaleLowerCase('vi-VN');
   return (
     child.Age < 5 ||
-    note.includes('cần') ||
-    note.includes('theo dõi') ||
-    note.includes('lưu ý')
+    note.includes('can') ||
+    note.includes('theo doi') ||
+    note.includes('luu y')
   );
 }
 
 export default function ChildManagement() {
-  const { getChildProfiles, getChildProfileById } = useChildManagementApi();
+  const {
+    getChildProfiles,
+    getChildProfileById,
+    createChildProfile,
+    updateChildProfile,
+    deleteChildProfile,
+  } = useChildManagementApi();
 
   const [childrenList, setChildrenList] = useState<Child[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterAge, setFilterAge] = useState('ALL');
@@ -114,8 +170,13 @@ export default function ChildManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const [modalType, setModalType] = useState<'detail' | null>(null);
+  const [modalType, setModalType] = useState<
+    'detail' | 'form' | 'delete' | null
+  >(null);
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
+  const [formState, setFormState] = useState<ChildFormState>(EMPTY_FORM);
+  const [formError, setFormError] = useState('');
   const [alertConfig, setAlertConfig] = useState<{
     message: string;
     type: 'success' | 'warning';
@@ -144,7 +205,7 @@ export default function ChildManagement() {
         triggerNotification(
           result.errors.join(' ') ||
             result.message ||
-            'Không thể tải danh sách hồ sơ trẻ.',
+            'Khong the tai danh sach ho so tre.',
           'warning'
         );
         return;
@@ -155,7 +216,11 @@ export default function ChildManagement() {
       pageNumber += 1;
     }
 
-    setChildrenList(loadedChildren);
+    setChildrenList(
+      loadedChildren.sort((left, right) =>
+        left.FullName.localeCompare(right.FullName)
+      )
+    );
     setIsLoading(false);
   }, [getChildProfiles, triggerNotification]);
 
@@ -171,6 +236,10 @@ export default function ChildManagement() {
     setModalType(null);
     setSelectedChild(null);
     setIsDetailLoading(false);
+    setIsSaving(false);
+    setIsDeleting(false);
+    setFormError('');
+    setFormState(EMPTY_FORM);
   };
 
   const handleOpenDetail = useCallback(
@@ -187,7 +256,7 @@ export default function ChildManagement() {
         triggerNotification(
           result.errors.join(' ') ||
             result.message ||
-            'Không thể tải chi tiết hồ sơ trẻ.',
+            'Khong the tai chi tiet ho so tre.',
           'warning'
         );
       }
@@ -197,15 +266,150 @@ export default function ChildManagement() {
     [getChildProfileById, triggerNotification]
   );
 
-  const handleUnsupportedAction = useCallback(
-    (actionLabel: string) => {
+  const openCreateModal = () => {
+    setFormMode('create');
+    setSelectedChild(null);
+    setFormState(EMPTY_FORM);
+    setFormError('');
+    setModalType('form');
+  };
+
+  const openEditModal = useCallback(
+    async (child: Child) => {
+      setFormMode('edit');
+      setSelectedChild(child);
+      setFormState(mapChildToForm(child));
+      setFormError('');
+      setModalType('form');
+
+      const result = await getChildProfileById(Number(child.ChildId));
+
+      if (result.success && result.data) {
+        const nextChild = mapChildProfile(result.data);
+        setSelectedChild(nextChild);
+        setFormState(mapChildToForm(nextChild));
+      }
+    },
+    [getChildProfileById]
+  );
+
+  const openDeleteModal = (child: Child) => {
+    setSelectedChild(child);
+    setModalType('delete');
+  };
+
+  const handleFormChange = <K extends keyof ChildFormState>(
+    key: K,
+    value: ChildFormState[K]
+  ) => {
+    setFormState((current) => ({ ...current, [key]: value }));
+  };
+
+  const validateForm = () => {
+    if (!formState.userId.trim()) return 'Vui long nhap userId lien ket.';
+    if (Number.isNaN(Number(formState.userId)) || Number(formState.userId) <= 0) {
+      return 'userId phai la so duong hop le.';
+    }
+    if (!formState.fullName.trim()) return 'Vui long nhap ho ten tre.';
+    if (!formState.age.trim()) return 'Vui long nhap do tuoi.';
+    if (Number.isNaN(Number(formState.age)) || Number(formState.age) <= 0) {
+      return 'Do tuoi phai la so duong hop le.';
+    }
+
+    return '';
+  };
+
+  const handleSubmitForm = async () => {
+    const validationError = validateForm();
+    if (validationError) {
+      setFormError(validationError);
+      return;
+    }
+
+    setFormError('');
+    setIsSaving(true);
+
+    const payload = mapFormToPayload(formState);
+
+    const result =
+      formMode === 'create'
+        ? await createChildProfile(payload)
+        : await updateChildProfile(Number(selectedChild?.ChildId), payload);
+
+    if (!result.success || !result.data) {
+      setIsSaving(false);
+      setFormError(result.errors.join(' ') || result.message);
+      return;
+    }
+
+    await fetchChildren();
+    setIsSaving(false);
+    handleCloseModal();
+    triggerNotification(
+      formMode === 'create'
+        ? 'Da tao ho so tre moi tu ChildProfile API.'
+        : 'Da cap nhat ho so tre thanh cong.',
+      'success'
+    );
+  };
+
+  const handleToggleStatus = async (child: Child) => {
+    const nextStatus = child.Status === 'Active' ? 'Inactive' : 'Active';
+    const payload: ChildProfilePayload = {
+      userId: Number(child.ParentUserId),
+      fullName: child.FullName,
+      age: child.Age,
+      gender: child.Gender,
+      learningLevel: child.LearningLevel,
+      note:
+        child.Note === 'Chua co ghi chu bo sung tu he thong.' ? null : child.Note,
+      status: nextStatus,
+    };
+
+    const result = await updateChildProfile(Number(child.ChildId), payload);
+
+    if (!result.success || !result.data) {
       triggerNotification(
-        `${actionLabel} chưa khả dụng vì backend hiện mới hỗ trợ xem danh sách và chi tiết hồ sơ trẻ.`,
+        result.errors.join(' ') ||
+          result.message ||
+          'Khong the cap nhat trang thai ho so tre.',
         'warning'
       );
-    },
-    [triggerNotification]
-  );
+      return;
+    }
+
+    await fetchChildren();
+    triggerNotification(
+      nextStatus === 'Active'
+        ? 'Da mo lai ho so tre.'
+        : 'Da tam khoa ho so tre.',
+      'success'
+    );
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedChild) return;
+
+    setIsDeleting(true);
+    const result = await deleteChildProfile(Number(selectedChild.ChildId));
+
+    if (!result.success) {
+      setIsDeleting(false);
+      triggerNotification(
+        result.errors.join(' ') ||
+          result.message ||
+          'Khong the xoa ho so tre.',
+        'warning'
+      );
+      return;
+    }
+
+    await fetchChildren();
+    setIsDeleting(false);
+    const deletedName = selectedChild.FullName;
+    handleCloseModal();
+    triggerNotification(`Da xoa ho so tre ${deletedName}.`, 'success');
+  };
 
   const totalChildren = childrenList.length;
   const activeChildren = childrenList.filter(
@@ -317,13 +521,15 @@ export default function ChildManagement() {
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             <Baby className="h-3.5 w-3.5" />
-            Hồ sơ học tập nhi đồng
+            Ho so hoc tap nhi dong
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
-            Quản Lý <span className="text-[#4EACAF]">Hồ Sơ Trẻ Em</span>
+            Quan Ly <span className="text-[#4EACAF]">Ho So Tre Em</span>
           </h1>
           <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed mt-1">
-            Quản lý thông tin chi tiết và tiến trình học tập của trẻ trên hệ thống GodotXR. Hỗ trợ theo dõi kết quả trị liệu và tối ưu hóa sự phối hợp giáo dục giữa nhà trường và gia đình.
+            Quan ly thong tin chi tiet va tien trinh hoc tap cua tre tren he thong
+            GodotXR. FE da map truc tiep CRUD vao ChildProfile API de them, sua,
+            cap nhat trang thai va xoa ho so.
           </p>
         </div>
 
@@ -334,48 +540,48 @@ export default function ChildManagement() {
             className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white/60 px-6 py-4 text-sm font-bold text-slate-655 transition-all hover:bg-white/80 cursor-pointer active:scale-95 shrink-0"
           >
             <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
-            Tải lại
+            Tai lai
           </button>
           <button
             type="button"
-            onClick={() => handleUnsupportedAction('Thêm hồ sơ trẻ')}
+            onClick={openCreateModal}
             className="bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black italic tracking-tight py-4 px-8 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[#4EACAF]/20 transition-all hover:scale-105 active:scale-95 shrink-0 cursor-pointer"
           >
             <Plus className="w-5 h-5" strokeWidth={2.5} />
-            Đăng ký hồ sơ trẻ em mới
+            Dang ky ho so tre em moi
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatItem
-          title="Tổng số trẻ"
+          title="Tong so tre"
           value={totalChildren}
-          subtitle="Hồ sơ nhi đồng đồng bộ từ API"
+          subtitle="Ho so nhi dong dong bo tu API"
           icon={<Baby className="h-5 w-5 text-[#4EACAF]" />}
           bgColor="bg-[#4EACAF]/5"
           borderColor="border-slate-100"
         />
         <StatItem
-          title="Trẻ đang học"
+          title="Tre dang hoc"
           value={activeChildren}
-          subtitle="Hồ sơ còn trạng thái Active"
+          subtitle="Ho so con trang thai Active"
           icon={<Activity className="h-5 w-5 text-emerald-600" />}
           bgColor="bg-emerald-50/70"
           borderColor="border-slate-100"
         />
         <StatItem
-          title="Bé cần lưu ý thêm"
+          title="Be can luu y them"
           value={needSupportChildren}
-          subtitle="Suy luận từ note và độ tuổi hiện có"
+          subtitle="Suy luan tu note va do tuoi hien co"
           icon={<Brain className="h-5 w-5 text-rose-600" />}
           bgColor="bg-rose-50/70"
           borderColor="border-slate-100"
         />
         <StatItem
-          title="Độ tuổi trung bình"
+          title="Do tuoi trung binh"
           value={averageAge}
-          subtitle="Tính từ dữ liệu child profile"
+          subtitle="Tinh tu du lieu child profile"
           icon={<Clock className="h-5 w-5 text-amber-600" />}
           bgColor="bg-amber-50/70"
           borderColor="border-slate-100"
@@ -387,9 +593,9 @@ export default function ChildManagement() {
           <div className="flex items-start gap-3">
             <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0" />
             <p>
-              API hiện chưa trả về tên phụ huynh, số điện thoại, lịch sử tiến độ
-              hoặc các endpoint tạo/cập nhật hồ sơ. Page đang hiển thị theo đúng
-              dữ liệu BE có sẵn để tránh dùng mock state.
+              API hien chua tra ve ten phu huynh, so dien thoai va lich su tien do.
+              Tuy vay FE da dung ChildProfile API that cho danh sach, chi tiet,
+              tao, cap nhat va xoa ho so.
             </p>
           </div>
         </div>
@@ -398,7 +604,7 @@ export default function ChildManagement() {
           <Search className="absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Tìm theo tên bé, mã hồ sơ hoặc mã tài khoản liên kết..."
+            placeholder="Tim theo ten be, ma ho so hoac ma tai khoan lien ket..."
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-10 text-sm font-semibold text-gray-700 outline-none transition-all placeholder:text-gray-400 focus:border-[#4EACAF] focus:bg-white"
@@ -414,60 +620,45 @@ export default function ChildManagement() {
         </div>
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <div className="relative">
-            <select
-              value={filterAge}
-              onChange={(event) => setFilterAge(event.target.value)}
-              className="w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-xs font-bold text-gray-700 outline-none hover:border-[#4EACAF]/45"
-            >
-              <option value="ALL">Mọi Độ Tuổi</option>
-              <option value="UNDER_5">Dưới 5 tuổi</option>
-              <option value="S_5_7">Từ 5 - 7 tuổi</option>
-              <option value="OVER_7">Trên 7 tuổi</option>
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          </div>
-
-          <div className="relative">
-            <select
-              value={filterGender}
-              onChange={(event) => setFilterGender(event.target.value)}
-              className="w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-xs font-bold text-gray-700 outline-none hover:border-[#4EACAF]/45"
-            >
-              <option value="ALL">Mọi giới tính</option>
-              <option value="Male">Cậu bé (Nam)</option>
-              <option value="Female">Cô bé (Nữ)</option>
-              <option value="Other">Khác</option>
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          </div>
-
-          <div className="relative">
-            <select
-              value={filterLevel}
-              onChange={(event) => setFilterLevel(event.target.value)}
-              className="w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-xs font-bold text-gray-700 outline-none hover:border-[#4EACAF]/45"
-            >
-              <option value="ALL">Mọi cấp độ học</option>
-              <option value="Beginner">Beginner (Nhập môn)</option>
-              <option value="Intermediate">Intermediate (Trung cấp)</option>
-              <option value="Advanced">Advanced (Nâng cao)</option>
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          </div>
-
-          <div className="relative">
-            <select
-              value={filterStatus}
-              onChange={(event) => setFilterStatus(event.target.value)}
-              className="w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-xs font-bold text-gray-700 outline-none hover:border-[#4EACAF]/45"
-            >
-              <option value="ALL">Mọi trạng thái</option>
-              <option value="Active">Đang học</option>
-              <option value="Inactive">Tạm ngưng</option>
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          </div>
+          <SelectField
+            value={filterAge}
+            onChange={setFilterAge}
+            options={[
+              { value: 'ALL', label: 'Moi Do Tuoi' },
+              { value: 'UNDER_5', label: 'Duoi 5 tuoi' },
+              { value: 'S_5_7', label: 'Tu 5 - 7 tuoi' },
+              { value: 'OVER_7', label: 'Tren 7 tuoi' },
+            ]}
+          />
+          <SelectField
+            value={filterGender}
+            onChange={setFilterGender}
+            options={[
+              { value: 'ALL', label: 'Moi gioi tinh' },
+              { value: 'Male', label: 'Cau be (Nam)' },
+              { value: 'Female', label: 'Co be (Nu)' },
+              { value: 'Other', label: 'Khac' },
+            ]}
+          />
+          <SelectField
+            value={filterLevel}
+            onChange={setFilterLevel}
+            options={[
+              { value: 'ALL', label: 'Moi cap do hoc' },
+              { value: 'Beginner', label: 'Beginner (Nhap mon)' },
+              { value: 'Intermediate', label: 'Intermediate (Trung cap)' },
+              { value: 'Advanced', label: 'Advanced (Nang cao)' },
+            ]}
+          />
+          <SelectField
+            value={filterStatus}
+            onChange={setFilterStatus}
+            options={[
+              { value: 'ALL', label: 'Moi trang thai' },
+              { value: 'Active', label: 'Dang hoc' },
+              { value: 'Inactive', label: 'Tam ngung' },
+            ]}
+          />
         </div>
       </div>
 
@@ -475,10 +666,10 @@ export default function ChildManagement() {
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
           <div>
             <h3 className="text-lg font-bold leading-none text-slate-800">
-              Danh sách trẻ can thiệp âm
+              Danh sach tre can thiep am
             </h3>
             <p className="mt-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
-              Hiển thị {filteredChildren.length} hồ sơ phù hợp bộ lọc
+              Hien thi {filteredChildren.length} ho so phu hop bo loc
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -496,10 +687,10 @@ export default function ChildManagement() {
             </div>
             <div className="space-y-2">
               <p className="text-lg font-black text-slate-800">
-                Đang tải hồ sơ trẻ từ API
+                Dang tai ho so tre tu API
               </p>
               <p className="text-sm text-slate-500">
-                Hệ thống sẽ tự gom toàn bộ các trang dữ liệu từ backend.
+                He thong se tu gom toan bo cac trang du lieu tu backend.
               </p>
             </div>
           </div>
@@ -510,8 +701,8 @@ export default function ChildManagement() {
             </div>
             <p className="text-xl font-black text-gray-700">
               {isFiltering
-                ? 'Không tìm thấy hồ sơ trẻ em phù hợp bộ lọc.'
-                : 'API chưa trả về hồ sơ trẻ nào.'}
+                ? 'Khong tim thay ho so tre em phu hop bo loc.'
+                : 'API chua tra ve ho so tre nao.'}
             </p>
             <button
               onClick={() => {
@@ -523,7 +714,7 @@ export default function ChildManagement() {
               }}
               className="rounded-xl border border-gray-200 px-5 py-2 text-xs font-black uppercase text-[#4EACAF] transition-all hover:bg-gray-100"
             >
-              Đặt lại bộ lọc
+              Dat lai bo loc
             </button>
           </div>
         ) : (
@@ -532,14 +723,14 @@ export default function ChildManagement() {
               <table className="w-full border-collapse text-left">
                 <thead>
                   <tr className="border-b border-gray-100 bg-[#FDFCF5]/50 text-xs font-bold uppercase tracking-widest text-[#555]">
-                    <th className="px-10 py-5">Mã số</th>
-                    <th className="px-6 py-5">Hồ sơ trẻ</th>
-                    <th className="px-6 py-5">Độ tuổi</th>
-                    <th className="px-6 py-5">Giới tính</th>
-                    <th className="px-6 py-5">Tài khoản liên kết</th>
-                    <th className="px-6 py-5">Cấp độ</th>
-                    <th className="px-6 py-5">Trạng thái</th>
-                    <th className="px-10 py-5 text-right">Tùy chọn quản trị</th>
+                    <th className="px-10 py-5">Ma so</th>
+                    <th className="px-6 py-5">Ho so tre</th>
+                    <th className="px-6 py-5">Do tuoi</th>
+                    <th className="px-6 py-5">Gioi tinh</th>
+                    <th className="px-6 py-5">Tai khoan lien ket</th>
+                    <th className="px-6 py-5">Cap do</th>
+                    <th className="px-6 py-5">Trang thai</th>
+                    <th className="px-10 py-5 text-right">Tuy chon quan tri</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm font-bold text-gray-700">
@@ -564,14 +755,14 @@ export default function ChildManagement() {
                               {child.FullName}
                             </p>
                             <p className="pt-0.5 text-xs font-medium text-gray-400">
-                              Tạo ngày {formatDateTime(child.CreatedAt)}
+                              Tao ngay {formatDateTime(child.CreatedAt)}
                             </p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-5">
                         <span className="font-extrabold text-gray-900">
-                          {child.Age} tuổi
+                          {child.Age} tuoi
                         </span>
                       </td>
                       <td className="px-6 py-5 text-gray-600">
@@ -580,10 +771,10 @@ export default function ChildManagement() {
                       <td className="px-6 py-5">
                         <div className="space-y-0.5">
                           <p className="font-extrabold text-gray-800">
-                            Tài khoản #{child.ParentUserId}
+                            Tai khoan #{child.ParentUserId}
                           </p>
                           <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                            userId từ child-profile
+                            userId tu child-profile
                           </p>
                         </div>
                       </td>
@@ -619,48 +810,55 @@ export default function ChildManagement() {
                           <button
                             onClick={() => void handleOpenDetail(child)}
                             className="rounded-xl p-2 text-teal-600 transition-colors hover:bg-teal-50 hover:scale-105"
-                            title="Thông tin chi tiết"
+                            title="Thong tin chi tiet"
                           >
                             <Eye className="h-4.5 w-4.5" />
                           </button>
 
                           <button
-                            onClick={() =>
-                              handleUnsupportedAction('Lịch sử học tập')
-                            }
-                            className="rounded-xl p-2 text-orange-500 transition-colors hover:bg-orange-50 hover:scale-105"
-                            title="Backend chưa có API tiến độ"
-                          >
-                            <TrendingUp className="h-4.5 w-4.5" />
-                          </button>
-
-                          <button
-                            onClick={() =>
-                              handleUnsupportedAction('Chỉnh sửa hồ sơ trẻ')
-                            }
+                            onClick={() => openEditModal(child)}
                             className="rounded-xl p-2 text-sky-500 transition-colors hover:bg-sky-50 hover:scale-105"
-                            title="Backend chưa có API cập nhật"
+                            title="Chinh sua ho so"
                           >
                             <Edit3 className="h-4.5 w-4.5" />
                           </button>
 
                           <button
-                            onClick={() =>
-                              handleUnsupportedAction('Cập nhật trạng thái')
-                            }
+                            onClick={() => void handleToggleStatus(child)}
                             className={cn(
                               'rounded-xl p-2 transition-colors hover:scale-105',
                               child.Status === 'Active'
                                 ? 'text-rose-500 hover:bg-rose-50'
                                 : 'text-emerald-500 hover:bg-emerald-50'
                             )}
-                            title="Backend chưa có API đổi trạng thái"
+                            title="Cap nhat trang thai"
                           >
                             {child.Status === 'Active' ? (
                               <Lock className="h-4.5 w-4.5" />
                             ) : (
                               <Unlock className="h-4.5 w-4.5" />
                             )}
+                          </button>
+
+                          <button
+                            onClick={() => openDeleteModal(child)}
+                            className="rounded-xl p-2 text-rose-500 transition-colors hover:bg-rose-50 hover:scale-105"
+                            title="Xoa ho so"
+                          >
+                            <Trash2 className="h-4.5 w-4.5" />
+                          </button>
+
+                          <button
+                            onClick={() =>
+                              triggerNotification(
+                                'Lich su hoc tap se map tiep khi co nhom analytics/detail phu hop.',
+                                'warning'
+                              )
+                            }
+                            className="rounded-xl p-2 text-orange-500 transition-colors hover:bg-orange-50 hover:scale-105"
+                            title="Tien do hoc tap"
+                          >
+                            <TrendingUp className="h-4.5 w-4.5" />
                           </button>
                         </div>
                       </td>
@@ -680,7 +878,7 @@ export default function ChildManagement() {
                   setPageSize(size);
                   setCurrentPage(1);
                 }}
-                itemLabel="hồ sơ trẻ"
+                itemLabel="ho so tre"
               />
             </div>
           </>
@@ -689,159 +887,446 @@ export default function ChildManagement() {
 
       <AnimatePresence>
         {modalType === 'detail' && selectedChild && (
-          <div className="app-modal-overlay fixed inset-0 z-[200] flex h-full w-full items-center justify-center overflow-y-auto bg-gray-900/10 p-4 backdrop-blur-xl animate-in fade-in duration-300 md:p-6">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="app-modal-panel relative z-30 w-full max-w-2xl overflow-hidden rounded-[40px] border border-gray-100 bg-white shadow-2xl"
-            >
-              <div className="flex items-center justify-between border-b border-purple-100 bg-purple-50 px-8 py-6 text-gray-900">
-                <div>
-                  <h2 className="flex items-center gap-2 text-2xl font-black italic tracking-tight">
-                    <Info className="h-6 w-6 text-purple-600" />
-                    Chi tiết hồ sơ học viên
-                  </h2>
-                  <p className="mt-1 text-xs font-bold uppercase tracking-widest text-gray-400">
-                    Đồng bộ từ `GET /api/child-profile/{'{id}'}`
-                  </p>
-                </div>
-                <button
-                  onClick={handleCloseModal}
-                  className="rounded-full p-2.5 transition-colors hover:bg-white/70"
-                >
-                  <X className="h-6 w-6 text-gray-500" />
-                </button>
+          <ModalFrame
+            title="Chi tiet ho so hoc vien"
+            subtitle="Dong bo tu `GET /api/child-profile/{id}`"
+            onClose={handleCloseModal}
+            accent="purple"
+          >
+            <div className="space-y-8 p-8 md:p-10">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#4EACAF]/15 bg-[#4EACAF]/5 px-4 py-3 text-sm text-slate-600">
+                <span>
+                  Du lieu dang bam theo contract hien co cua backend, khong dung
+                  mock detail.
+                </span>
+                {isDetailLoading && (
+                  <span className="inline-flex items-center gap-2 font-bold text-[#4EACAF]">
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    Dang lam moi chi tiet...
+                  </span>
+                )}
               </div>
 
-              <div className="app-modal-body space-y-8 p-8 md:p-10">
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#4EACAF]/15 bg-[#4EACAF]/5 px-4 py-3 text-sm text-slate-600">
-                  <span>
-                    Dữ liệu đang bám theo contract hiện có của backend, không
-                    dùng mock detail.
-                  </span>
-                  {isDetailLoading && (
-                    <span className="inline-flex items-center gap-2 font-bold text-[#4EACAF]">
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                      Đang làm mới chi tiết...
-                    </span>
-                  )}
+              <div className="flex flex-col items-start gap-8 border-b border-gray-50 pb-6 font-bold md:flex-row">
+                <div className="mx-auto flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl border border-purple-100 bg-purple-50 p-3 md:mx-0">
+                  <img
+                    src={`https://api.dicebear.com/7.x/bottts/svg?seed=${selectedChild.FullName}`}
+                    alt="Detail Avatar"
+                    className="h-full w-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
                 </div>
-
-                <div className="flex flex-col items-start gap-8 border-b border-gray-50 pb-6 font-bold md:flex-row">
-                  <div className="mx-auto flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl border border-purple-100 bg-purple-50 p-3 md:mx-0">
-                    <img
-                      src={`https://api.dicebear.com/7.x/bottts/svg?seed=${selectedChild.FullName}`}
-                      alt="Detail Avatar"
-                      className="h-full w-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                  <div className="flex-1 space-y-3 text-center md:text-left">
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
-                        <span className="text-2xl font-black text-gray-900">
-                          {selectedChild.FullName}
-                        </span>
-                        <span className="rounded-full bg-gray-100 px-3 py-0.5 text-[9px] font-black uppercase tracking-widest text-gray-400">
-                          ID: {selectedChild.ChildId}
-                        </span>
-                      </div>
-                      <p className="text-gray-400">
-                        Độ tuổi: {selectedChild.Age} tuổi | Giới tính:{' '}
-                        {getGenderLabel(selectedChild.Gender)}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-wrap items-center justify-center gap-3 pt-1 text-xs md:justify-start">
-                      <span
-                        className={cn(
-                          'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase italic',
-                          selectedChild.LearningLevel === 'Beginner'
-                            ? 'bg-sky-50 text-sky-600'
-                            : selectedChild.LearningLevel === 'Intermediate'
-                              ? 'bg-amber-50 text-amber-600'
-                              : 'bg-purple-50 text-purple-600'
-                        )}
-                      >
-                        Trình độ: {selectedChild.LearningLevel}
+                <div className="flex-1 space-y-3 text-center md:text-left">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
+                      <span className="text-2xl font-black text-gray-900">
+                        {selectedChild.FullName}
                       </span>
-
-                      <span
-                        className={cn(
-                          'inline-flex items-center rounded-full px-4 py-0.5 text-[10px] font-black uppercase',
-                          selectedChild.Status === 'Active'
-                            ? 'bg-emerald-50 text-emerald-600'
-                            : 'bg-gray-100 text-gray-500'
-                        )}
-                      >
-                        {selectedChild.Status === 'Active'
-                          ? 'Đang học tập'
-                          : 'Tạm dừng bài tập'}
+                      <span className="rounded-full bg-gray-100 px-3 py-0.5 text-[9px] font-black uppercase tracking-widest text-gray-400">
+                        ID: {selectedChild.ChildId}
                       </span>
                     </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6 text-sm md:grid-cols-2">
-                  <DetailRow
-                    label="Tên đầy đủ trẻ (fullName)"
-                    value={selectedChild.FullName}
-                  />
-                  <DetailRow
-                    label="Tài khoản liên kết (userId)"
-                    value={selectedChild.ParentUserId}
-                  />
-                  <DetailRow
-                    label="Độ tuổi"
-                    value={`${selectedChild.Age} tuổi`}
-                  />
-                  <DetailRow
-                    label="Giới tính"
-                    value={getGenderLabel(selectedChild.Gender)}
-                  />
-                  <DetailRow
-                    label="Thời khắc khởi tạo hồ sơ"
-                    value={formatDateTime(selectedChild.CreatedAt)}
-                  />
-                  <DetailRow
-                    label="Sửa đổi sau cùng"
-                    value={formatDateTime(selectedChild.UpdatedAt)}
-                  />
-                  <div className="col-span-1 space-y-1.5 rounded-2xl border border-[#F2ECD8]/40 bg-[#FDFCF5]/60 p-4 md:col-span-2">
-                    <span className="block text-[10px] font-black uppercase tracking-widest text-gray-400">
-                      Chẩn đoán - Lưu ý lâm sàng (note)
-                    </span>
-                    <span className="block text-sm font-bold italic leading-relaxed text-gray-800">
-                      "{selectedChild.Note}"
-                    </span>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4 text-sm text-amber-800">
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0" />
-                    <p>
-                      API chi tiết hiện chưa trả về tên phụ huynh, số điện thoại
-                      và lịch sử học tập. Khi BE mở rộng contract, phần modal này
-                      có thể nối tiếp mà không cần quay lại mock data.
+                    <p className="text-gray-400">
+                      Do tuoi: {selectedChild.Age} tuoi | Gioi tinh:{' '}
+                      {getGenderLabel(selectedChild.Gender)}
                     </p>
                   </div>
-                </div>
 
-                <div className="flex justify-end">
-                  <button
-                    onClick={handleCloseModal}
-                    className="rounded-2xl bg-gray-100 px-8 py-4 font-black text-gray-600 transition-all hover:bg-gray-200"
-                  >
-                    Quay lại
-                  </button>
+                  <div className="flex flex-wrap items-center justify-center gap-3 pt-1 text-xs md:justify-start">
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase italic',
+                        selectedChild.LearningLevel === 'Beginner'
+                          ? 'bg-sky-50 text-sky-600'
+                          : selectedChild.LearningLevel === 'Intermediate'
+                            ? 'bg-amber-50 text-amber-600'
+                            : 'bg-purple-50 text-purple-600'
+                      )}
+                    >
+                      Trinh do: {selectedChild.LearningLevel}
+                    </span>
+
+                    <span
+                      className={cn(
+                        'inline-flex items-center rounded-full px-4 py-0.5 text-[10px] font-black uppercase',
+                        selectedChild.Status === 'Active'
+                          ? 'bg-emerald-50 text-emerald-600'
+                          : 'bg-gray-100 text-gray-500'
+                      )}
+                    >
+                      {selectedChild.Status === 'Active'
+                        ? 'Dang hoc tap'
+                        : 'Tam dung bai tap'}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </motion.div>
-          </div>
+
+              <div className="grid grid-cols-1 gap-6 text-sm md:grid-cols-2">
+                <DetailRow
+                  label="Ten day du tre (fullName)"
+                  value={selectedChild.FullName}
+                />
+                <DetailRow
+                  label="Tai khoan lien ket (userId)"
+                  value={selectedChild.ParentUserId}
+                />
+                <DetailRow label="Do tuoi" value={`${selectedChild.Age} tuoi`} />
+                <DetailRow
+                  label="Gioi tinh"
+                  value={getGenderLabel(selectedChild.Gender)}
+                />
+                <DetailRow
+                  label="Thoi khac khoi tao ho so"
+                  value={formatDateTime(selectedChild.CreatedAt)}
+                />
+                <DetailRow
+                  label="Sua doi sau cung"
+                  value={formatDateTime(selectedChild.UpdatedAt)}
+                />
+                <div className="col-span-1 space-y-1.5 rounded-2xl border border-[#F2ECD8]/40 bg-[#FDFCF5]/60 p-4 md:col-span-2">
+                  <span className="block text-[10px] font-black uppercase tracking-widest text-gray-400">
+                    Chan doan - Luu y lam sang (note)
+                  </span>
+                  <span className="block text-sm font-bold italic leading-relaxed text-gray-800">
+                    "{selectedChild.Note}"
+                  </span>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4 text-sm text-amber-800">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0" />
+                  <p>
+                    API chi tiet hien chua tra ve ten phu huynh, so dien thoai va
+                    lich su hoc tap. Khi BE mo rong contract, phan modal nay co the
+                    noi tiep ma khong can quay lai mock data.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={handleCloseModal}
+                  className="rounded-2xl bg-gray-100 px-8 py-4 font-black text-gray-600 transition-all hover:bg-gray-200"
+                >
+                  Quay lai
+                </button>
+              </div>
+            </div>
+          </ModalFrame>
+        )}
+
+        {modalType === 'form' && (
+          <ModalFrame
+            title={
+              formMode === 'create' ? 'Dang ky ho so tre moi' : 'Chinh sua ho so tre'
+            }
+            subtitle={
+              formMode === 'create'
+                ? 'Dong bo tu `POST /api/child-profile`'
+                : 'Dong bo tu `PUT /api/child-profile/{id}`'
+            }
+            onClose={handleCloseModal}
+            accent="teal"
+          >
+            <div className="space-y-6 p-8 md:p-10">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <InputField
+                  label="User ID lien ket"
+                  value={formState.userId}
+                  onChange={(value) => handleFormChange('userId', value)}
+                  placeholder="Vi du: 3"
+                />
+                <InputField
+                  label="Ho ten tre"
+                  value={formState.fullName}
+                  onChange={(value) => handleFormChange('fullName', value)}
+                  placeholder="Nhap ho ten day du"
+                />
+                <InputField
+                  label="Do tuoi"
+                  value={formState.age}
+                  onChange={(value) => handleFormChange('age', value)}
+                  placeholder="Vi du: 7"
+                  inputMode="numeric"
+                />
+                <SelectInputField
+                  label="Gioi tinh"
+                  value={formState.gender}
+                  onChange={(value) =>
+                    handleFormChange('gender', value as Child['Gender'])
+                  }
+                  options={[
+                    { value: 'Male', label: 'Male' },
+                    { value: 'Female', label: 'Female' },
+                    { value: 'Other', label: 'Other' },
+                  ]}
+                />
+                <SelectInputField
+                  label="Cap do hoc"
+                  value={formState.learningLevel}
+                  onChange={(value) =>
+                    handleFormChange(
+                      'learningLevel',
+                      value as Child['LearningLevel']
+                    )
+                  }
+                  options={[
+                    { value: 'Beginner', label: 'Beginner' },
+                    { value: 'Intermediate', label: 'Intermediate' },
+                    { value: 'Advanced', label: 'Advanced' },
+                  ]}
+                />
+                <SelectInputField
+                  label="Trang thai"
+                  value={formState.status}
+                  onChange={(value) =>
+                    handleFormChange('status', value as Child['Status'])
+                  }
+                  options={[
+                    { value: 'Active', label: 'Active' },
+                    { value: 'Inactive', label: 'Inactive' },
+                  ]}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-500">
+                  Ghi chu
+                </label>
+                <textarea
+                  value={formState.note}
+                  onChange={(event) =>
+                    handleFormChange('note', event.target.value)
+                  }
+                  rows={4}
+                  placeholder="Nhap ghi chu neu co..."
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
+                />
+              </div>
+
+              {formError && (
+                <div className="rounded-2xl border border-rose-100 bg-rose-50 p-4 text-sm font-semibold text-rose-700">
+                  {formError}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={handleCloseModal}
+                  className="rounded-2xl bg-gray-100 px-6 py-3 text-sm font-black text-gray-600 transition-all hover:bg-gray-200"
+                >
+                  Huy
+                </button>
+                <button
+                  onClick={() => void handleSubmitForm()}
+                  disabled={isSaving}
+                  className={cn(
+                    'inline-flex items-center gap-2 rounded-2xl bg-[#4EACAF] px-6 py-3 text-sm font-black text-white transition-all',
+                    isSaving ? 'cursor-not-allowed opacity-70' : 'hover:bg-[#4EACAF]/90'
+                  )}
+                >
+                  {isSaving ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {formMode === 'create' ? 'Tao ho so' : 'Luu thay doi'}
+                </button>
+              </div>
+            </div>
+          </ModalFrame>
+        )}
+
+        {modalType === 'delete' && selectedChild && (
+          <ModalFrame
+            title="Xoa ho so tre"
+            subtitle="Dong bo tu `DELETE /api/child-profile/{id}`"
+            onClose={handleCloseModal}
+            accent="rose"
+          >
+            <div className="space-y-6 p-8 md:p-10">
+              <div className="rounded-2xl border border-rose-100 bg-rose-50/70 p-5 text-sm text-rose-700">
+                <p className="font-semibold">
+                  Ban sap xoa ho so <strong>{selectedChild.FullName}</strong> (ID:{' '}
+                  {selectedChild.ChildId}).
+                </p>
+                <p className="mt-2">
+                  Hanh dong nay khong the hoan tac. Vui long xac nhan neu day la ho
+                  so can xoa khoi he thong.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={handleCloseModal}
+                  className="rounded-2xl bg-gray-100 px-6 py-3 text-sm font-black text-gray-600 transition-all hover:bg-gray-200"
+                >
+                  Huy
+                </button>
+                <button
+                  onClick={() => void handleConfirmDelete()}
+                  disabled={isDeleting}
+                  className={cn(
+                    'inline-flex items-center gap-2 rounded-2xl bg-rose-500 px-6 py-3 text-sm font-black text-white transition-all',
+                    isDeleting ? 'cursor-not-allowed opacity-70' : 'hover:bg-rose-600'
+                  )}
+                >
+                  {isDeleting ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                  Xac nhan xoa
+                </button>
+              </div>
+            </div>
+          </ModalFrame>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function SelectField({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+}) {
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-xs font-bold text-gray-700 outline-none hover:border-[#4EACAF]/45"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+    </div>
+  );
+}
+
+function ModalFrame({
+  title,
+  subtitle,
+  onClose,
+  accent,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  onClose: () => void;
+  accent: 'purple' | 'teal' | 'rose';
+  children: React.ReactNode;
+}) {
+  const accentStyles = {
+    purple: 'border-purple-100 bg-purple-50',
+    teal: 'border-[#C5E1E3] bg-[#E2F2F3]',
+    rose: 'border-rose-100 bg-rose-50',
+  };
+
+  return (
+    <div className="app-modal-overlay fixed inset-0 z-[200] flex h-full w-full items-center justify-center overflow-y-auto bg-gray-900/10 p-4 backdrop-blur-xl animate-in fade-in duration-300 md:p-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        className="app-modal-panel relative z-30 w-full max-w-2xl overflow-hidden rounded-[40px] border border-gray-100 bg-white shadow-2xl"
+      >
+        <div
+          className={cn(
+            'flex items-center justify-between px-8 py-6 text-gray-900 border-b',
+            accentStyles[accent]
+          )}
+        >
+          <div>
+            <h2 className="flex items-center gap-2 text-2xl font-black italic tracking-tight">
+              <Info className="h-6 w-6" />
+              {title}
+            </h2>
+            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-gray-400">
+              {subtitle}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-full p-2.5 transition-colors hover:bg-white/70"
+          >
+            <X className="h-6 w-6 text-gray-500" />
+          </button>
+        </div>
+        {children}
+      </motion.div>
+    </div>
+  );
+}
+
+function InputField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  inputMode,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
+}) {
+  return (
+    <div className="space-y-2">
+      <label className="block text-xs font-black uppercase tracking-wider text-slate-500">
+        {label}
+      </label>
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        inputMode={inputMode}
+        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
+      />
+    </div>
+  );
+}
+
+function SelectInputField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+}) {
+  return (
+    <div className="space-y-2">
+      <label className="block text-xs font-black uppercase tracking-wider text-slate-500">
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
@@ -879,16 +1364,14 @@ function StatItem({
         <div className={cn('shrink-0 rounded-2xl p-4 shadow-inner', bgColor)}>
           {icon}
         </div>
-        <div className="space-y-0.5">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
             {title}
           </p>
-          <p className="text-3xl font-black leading-none text-gray-900">
-            {typeof value === 'number' ? value.toLocaleString('vi-VN') : value}
-          </p>
-          <p className="line-clamp-1 pt-1 text-[11px] font-medium text-gray-500">
-            {subtitle}
-          </p>
+          <h3 className="mt-1 text-4xl font-black leading-none tracking-tight text-slate-900">
+            {value}
+          </h3>
+          <p className="mt-2 text-xs font-semibold text-slate-500">{subtitle}</p>
         </div>
       </div>
     </div>
@@ -897,13 +1380,11 @@ function StatItem({
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="space-y-1.5 rounded-2xl border border-[#F2ECD8]/40 bg-[#FDFCF5]/60 p-4">
+    <div className="space-y-1.5 rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
       <span className="block text-[10px] font-black uppercase tracking-widest text-gray-400">
         {label}
       </span>
-      <span className="block break-all text-sm font-bold text-gray-800">
-        {value}
-      </span>
+      <span className="block text-sm font-bold text-gray-800">{value}</span>
     </div>
   );
 }

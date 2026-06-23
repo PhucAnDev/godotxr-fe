@@ -19,9 +19,22 @@ export interface ChildProfileResponse {
   updatedAt: string | null;
 }
 
-async function request<T>(endpoint: string): Promise<ServiceResult<T>> {
+export interface ChildProfilePayload {
+  userId: number;
+  fullName: string;
+  age: number;
+  gender: 'Male' | 'Female' | 'Other';
+  learningLevel: 'Beginner' | 'Intermediate' | 'Advanced';
+  note?: string | null;
+  status: 'Active' | 'Inactive';
+}
+
+async function request<T>(
+  endpoint: string,
+  options?: RequestInit
+): Promise<ServiceResult<T>> {
   try {
-    return fromResponse(await apiRequest<T>(endpoint));
+    return fromResponse(await apiRequest<T>(endpoint, options));
   } catch (error) {
     return fromError(error);
   }
@@ -34,3 +47,20 @@ export const getChildProfiles = (pageNumber = 1, pageSize = 100) =>
 
 export const getChildProfileById = (id: number) =>
   request<ChildProfileResponse>(`/api/child-profile/${id}`);
+
+export const createChildProfile = (payload: ChildProfilePayload) =>
+  request<ChildProfileResponse>('/api/child-profile', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+export const updateChildProfile = (id: number, payload: ChildProfilePayload) =>
+  request<ChildProfileResponse>(`/api/child-profile/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+
+export const deleteChildProfile = (id: number) =>
+  request<boolean>(`/api/child-profile/${id}`, {
+    method: 'DELETE',
+  });
