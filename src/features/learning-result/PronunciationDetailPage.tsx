@@ -26,6 +26,12 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
+import { useLearningResultApi } from '../../hooks/useLearningResultApi';
+import type { ChildProfileResponse } from '../../services/childProfileService';
+import type { ExerciseResponse } from '../../services/exerciseService';
+import type { PronunciationDetailResponse } from '../../services/pronunciationDetailService';
+import type { ResultResponse } from '../../services/resultService';
+import type { PagedResponse, ServiceResult } from '../../services/serviceTypes';
 
 // DB Interfaces according to specification
 interface PronunciationDetail {
@@ -34,7 +40,7 @@ interface PronunciationDetail {
   ExpectedPhoneme: string;
   ActualPhoneme: string;
   AccuracyScore: number;
-  IssueType: 'Chính xác' | 'Ngọng giọng gió' | 'Bẹt khẩu hình' | 'Nuốt âm cuối' | 'Biến âm phụ âm' | 'Hụt hơi';
+  IssueType: string;
   ReplayDataUrl: string;
 }
 
@@ -62,6 +68,108 @@ interface Exercise {
   DifficultyLevel: 'Dễ' | 'Trung bình' | 'Khó';
   TargetSkill: string;
   Language: string;
+}
+
+type RoleView = 'ADMIN' | 'TEACHER' | 'PARENT';
+
+const API_PAGE_SIZE = 100;
+
+function getStoredRoleView(): RoleView {
+  const role = localStorage.getItem('user_role');
+
+  if (role === 'TEACHER') return 'TEACHER';
+  if (role === 'PARENT') return 'PARENT';
+  return 'ADMIN';
+}
+
+function formatDateTime(value: string | null | undefined): string {
+  if (!value) return '';
+  return value.replace('T', ' ').slice(0, 19);
+}
+
+function mapDifficultyLevel(level: string): Exercise['DifficultyLevel'] {
+  const normalized = level.trim().toLowerCase();
+
+  if (normalized === 'hard' || normalized === 'khó') return 'Khó';
+  if (normalized === 'medium' || normalized === 'trung bình') {
+    return 'Trung bình';
+  }
+
+  return 'Dễ';
+}
+
+function mapChildRecord(child: ChildProfileResponse): Child {
+  return {
+    ChildId: String(child.id),
+    FullName: child.fullName,
+    Age: child.age,
+    LearningLevel: child.learningLevel,
+  };
+}
+
+function mapExerciseRecord(exercise: ExerciseResponse): Exercise {
+  return {
+    ExerciseId: String(exercise.id),
+    ExerciseName: exercise.exerciseName,
+    DifficultyLevel: mapDifficultyLevel(exercise.difficultyLevel),
+    TargetSkill: exercise.targetSkill,
+    Language: exercise.language,
+  };
+}
+
+function mapResultRecord(result: ResultResponse): Result {
+  const completedAt = formatDateTime(result.completedAt);
+  const startedAt = formatDateTime(result.startedAt);
+
+  return {
+    ResultId: String(result.id),
+    ChildId: String(result.childId),
+    ExerciseId: String(result.exerciseId),
+    Score: Math.round(result.score),
+    AudioRecordUrl: result.audioRecordUrl ?? '',
+    ReplayDataUrl: result.replayDataUrl ?? '',
+    FeedbackText: result.feedbackText ?? '',
+    CreatedAt: completedAt || startedAt,
+  };
+}
+
+function mapPronunciationDetailRecord(
+  detail: PronunciationDetailResponse
+): PronunciationDetail {
+  return {
+    DetailId: String(detail.id),
+    ResultId: String(detail.resultId),
+    ExpectedPhoneme: detail.expectedPhoneme,
+    ActualPhoneme: detail.actualPhoneme,
+    AccuracyScore: detail.accuracyScore,
+    IssueType: detail.issueType ?? 'Chưa phân loại',
+    ReplayDataUrl: detail.replayDataUrl ?? '',
+  };
+}
+
+async function loadAllPages<T>(
+  loadPage: (
+    pageNumber?: number,
+    pageSize?: number
+  ) => Promise<ServiceResult<PagedResponse<T>>>
+): Promise<T[]> {
+  const items: T[] = [];
+  let pageNumber = 1;
+  let totalPages = 1;
+
+  while (pageNumber <= totalPages) {
+    const result = await loadPage(pageNumber, API_PAGE_SIZE);
+
+    if (!result.success || !result.data) {
+      throw new Error(result.errors.join(' ') || result.message);
+    }
+
+    items.push(...result.data.items);
+    totalPages = Math.max(result.data.totalPages, 1);
+    pageNumber += 1;
+  }
+
+  return items;
 }
 
 // Mock Database Tables mapping out schema exactly
@@ -228,11 +336,22 @@ const MOCK_PRONUNCIATION_DETAILS: PronunciationDetail[] = [
 ];
 
 export default function PronunciationDetailPage() {
+  const {
+    getChildProfiles,
+    getCurrentUserWithChildrenProfiles,
+    getExercises,
+    getResultById,
+    getResultsByChild,
+    getPronunciationDetailById,
+    getPronunciationDetailsByResult,
+  } = useLearningResultApi();
   // Main Data States
-  const [details] = useState<PronunciationDetail[]>(MOCK_PRONUNCIATION_DETAILS);
-  const [results] = useState<Result[]>(MOCK_RESULTS);
-  const [children] = useState<Child[]>(MOCK_CHILDREN);
-  const [exercises] = useState<Exercise[]>(MOCK_EXERCISES);
+  const [details, setDetails] = useState<PronunciationDetail[]>([]);
+  const [results, setResults] = useState<Result[]>([]);
+  const [children, setChildren] = useState<Child[]>([]);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [isApiLoading, setIsApiLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // Search, criteria and filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -240,7 +359,8 @@ export default function PronunciationDetailPage() {
   const [filterAccuracyRange, setFilterAccuracyRange] = useState<string>('ALL');
 
   // Role Simulator state (Admin, Teacher, Parent) to align with platform design
-  const [currentRoleView, setCurrentRoleView] = useState<'ADMIN' | 'TEACHER' | 'PARENT'>('ADMIN');
+  const [currentRoleView, setCurrentRoleView] =
+    useState<RoleView>(getStoredRoleView());
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -263,6 +383,100 @@ export default function PronunciationDetailPage() {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 3000);
   };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPronunciationData() {
+      setIsApiLoading(true);
+      setApiError(null);
+
+      try {
+        const roleView = getStoredRoleView();
+        const [exerciseRecords, childRecords] = await Promise.all([
+          loadAllPages(getExercises),
+          roleView === 'PARENT'
+            ? (async () => {
+                const parentResult =
+                  await getCurrentUserWithChildrenProfiles();
+
+                if (!parentResult.success || !parentResult.data) {
+                  throw new Error(
+                    parentResult.errors.join(' ') || parentResult.message
+                  );
+                }
+
+                return parentResult.data.childProfiles;
+              })()
+            : loadAllPages(getChildProfiles),
+        ]);
+
+        const resultSettled = await Promise.allSettled(
+          childRecords.map((child) => getResultsByChild(child.id))
+        );
+
+        const rawResults = resultSettled.flatMap((settled) => {
+          if (settled.status !== 'fulfilled') return [];
+          if (!settled.value.success || !settled.value.data) return [];
+          return settled.value.data;
+        });
+
+        const uniqueResults = Array.from(
+          new Map(rawResults.map((result) => [result.id, result])).values()
+        ).sort((left, right) => {
+          const rightTime = right.completedAt ?? right.startedAt ?? '';
+          const leftTime = left.completedAt ?? left.startedAt ?? '';
+          return rightTime.localeCompare(leftTime);
+        });
+
+        const detailSettled = await Promise.allSettled(
+          uniqueResults.map((result) => getPronunciationDetailsByResult(result.id))
+        );
+
+        const rawDetails = detailSettled.flatMap((settled) => {
+          if (settled.status !== 'fulfilled') return [];
+          if (!settled.value.success || !settled.value.data) return [];
+          return settled.value.data;
+        });
+
+        const uniqueDetails = Array.from(
+          new Map(rawDetails.map((detail) => [detail.id, detail])).values()
+        );
+
+        if (cancelled) return;
+
+        setCurrentRoleView(roleView);
+        setChildren(childRecords.map(mapChildRecord));
+        setExercises(exerciseRecords.map(mapExerciseRecord));
+        setResults(uniqueResults.map(mapResultRecord));
+        setDetails(uniqueDetails.map(mapPronunciationDetailRecord));
+      } catch (error) {
+        if (cancelled) return;
+
+        setApiError(
+          error instanceof Error
+            ? error.message
+            : 'Khong the tai du lieu phat am tu API.'
+        );
+      } finally {
+        if (!cancelled) {
+          setIsApiLoading(false);
+        }
+      }
+    }
+
+    void loadPronunciationData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    getChildProfiles,
+    getCurrentUserWithChildrenProfiles,
+    getExercises,
+    getPronunciationDetailsByResult,
+    getResultsByChild,
+  ]);
 
   // Resolve references mapping helpers
   const getResultInfo = (resId: string): Result => {
@@ -394,8 +608,8 @@ export default function PronunciationDetailPage() {
     }, 3000);
   };
 
-  const getIssueBadgeStyle = (issue: PronunciationDetail['IssueType']) => {
-    const mappings: Record<PronunciationDetail['IssueType'], { bg: string, text: string, border: string }> = {
+  const getIssueBadgeStyle = (issue: string) => {
+    const mappings: Record<string, { bg: string, text: string, border: string }> = {
       'Chính xác': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100' },
       'Ngọng giọng gió': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-100' },
       'Bẹt khẩu hình': { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-100' },
@@ -639,11 +853,25 @@ export default function PronunciationDetailPage() {
             <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1.5">Đối chiếu âm kỳ vọng và âm trẻ phát ra thực tế từ kính GodotXR</p>
           </div>
           <span className="text-[10px] bg-teal-50 text-[#4EACAF] px-2.5 py-1.5 rounded-md font-bold uppercase tracking-wider border border-teal-100/30 self-start sm:self-auto">
-            DATABASE: PRONUNCIATION_DETAIL ({filteredDetails.length} dòng)
+            API_DATABASE: PRONUNCIATION_DETAIL ({filteredDetails.length} dòng)
           </span>
         </div>
 
-        {filteredDetails.length === 0 ? (
+        {apiError ? (
+          <div className="mx-6 mt-6 rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-bold text-amber-700">
+            {apiError}
+          </div>
+        ) : null}
+
+        {isApiLoading ? (
+          <div className="py-24 text-center space-y-4">
+            <div className="w-20 h-20 bg-teal-50 rounded-full flex items-center justify-center mx-auto border-4 border-dashed border-teal-100">
+              <Activity className="w-8 h-8 text-teal-400 animate-pulse" />
+            </div>
+            <p className="text-xl font-black text-gray-700">Đang tải chi tiết phát âm từ API...</p>
+            <p className="text-xs text-gray-400 max-w-sm mx-auto">Hệ thống đang đối chiếu kết quả, hồ sơ trẻ và từng âm tiết được ghi nhận từ backend.</p>
+          </div>
+        ) : filteredDetails.length === 0 ? (
           <div className="py-24 text-center space-y-4">
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto border-4 border-dashed border-gray-100">
               <Smile className="w-8 h-8 text-gray-300" />
@@ -756,8 +984,20 @@ export default function PronunciationDetailPage() {
                             
                             {/* Replay tracking map action */}
                             <button
-                              onClick={() => {
-                                setActiveReplay(item);
+                              onClick={async () => {
+                                const detailId = Number(item.DetailId);
+                                const detailResponse = Number.isNaN(detailId)
+                                  ? null
+                                  : await getPronunciationDetailById(detailId);
+
+                                if (detailResponse?.success && detailResponse.data) {
+                                  setActiveReplay(
+                                    mapPronunciationDetailRecord(detailResponse.data)
+                                  );
+                                } else {
+                                  setActiveReplay(item);
+                                }
+
                                 showToast('Nạp tọa độ cử động góc môi, khớp lưỡi từ tệp replay...', 'info');
                               }}
                               className="py-1.5 px-3 bg-[#4EACAF]/10 hover:bg-[#4EACAF] text-[#4EACAF] hover:text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5"
@@ -785,7 +1025,25 @@ export default function PronunciationDetailPage() {
 
                             {/* Detail feedback view panel switch */}
                             <button
-                              onClick={() => setActiveFeedback(result_ref)}
+                              onClick={async () => {
+                                const resultId = Number(result_ref.ResultId);
+                                const resultResponse = Number.isNaN(resultId)
+                                  ? null
+                                  : await getResultById(resultId);
+
+                                if (resultResponse?.success && resultResponse.data) {
+                                  const latest = mapResultRecord(resultResponse.data);
+                                  setResults((current) =>
+                                    current.map((result) =>
+                                      result.ResultId === latest.ResultId ? latest : result
+                                    )
+                                  );
+                                  setActiveFeedback(latest);
+                                  return;
+                                }
+
+                                setActiveFeedback(result_ref);
+                              }}
                               className="p-2 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-all"
                               title="Xem nhận xét từ giáo viên đồng hành"
                             >
