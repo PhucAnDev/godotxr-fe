@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, 
@@ -32,6 +32,7 @@ import {
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
 import { useLearningResultApi } from '../../hooks/useLearningResultApi';
+import { getSessionUser } from '../../lib/authSession';
 import type { ChildProfileResponse } from '../../services/childProfileService';
 import type { EventLogResponse } from '../../services/eventLogService';
 import type { ExerciseResponse } from '../../services/exerciseService';
@@ -49,7 +50,7 @@ interface Child {
 interface Exercise {
   ExerciseId: string;
   ExerciseName: string;
-  DifficultyLevel: 'Dễ' | 'Trung bình' | 'Khó';
+  DifficultyLevel: 'Dá»…' | 'Trung bĂ¬nh' | 'KhĂ³';
   TargetSkill: string;
   Language: string;
 }
@@ -91,12 +92,12 @@ function formatDateTime(value: string | null | undefined): string {
 function mapDifficultyLevel(level: string): Exercise['DifficultyLevel'] {
   const normalized = level.trim().toLowerCase();
 
-  if (normalized === 'hard' || normalized === 'khó') return 'Khó';
-  if (normalized === 'medium' || normalized === 'trung bình') {
-    return 'Trung bình';
+  if (normalized === 'hard' || normalized === 'khĂ³') return 'KhĂ³';
+  if (normalized === 'medium' || normalized === 'trung bĂ¬nh') {
+    return 'Trung bĂ¬nh';
   }
 
-  return 'Dễ';
+  return 'Dá»…';
 }
 
 function mapResultStatus(status: string): LearningResult['CompletionStatus'] {
@@ -189,142 +190,12 @@ async function loadAllPages<T>(
   return items;
 }
 
-// Initial Mock Data according to architecture DB
-const MOCK_CHILDREN: Child[] = [
-  { ChildId: 'CHD-001', FullName: 'Nguyễn Tiến Minh (Leo)', Age: 8, LearningLevel: 'Bậc 1 - Phát âm đơn VR' },
-  { ChildId: 'CHD-002', FullName: 'Trần Thảo Linh (Sophia)', Age: 7, LearningLevel: 'Bậc 2 - Âm đôi ghép từ VR' },
-  { ChildId: 'CHD-003', FullName: 'Phạm Minh Khang', Age: 9, LearningLevel: 'Bậc 1 - Sửa ngọng S VR' },
-  { ChildId: 'CHD-004', FullName: 'Hoàng Anh Thư', Age: 11, LearningLevel: 'Bậc 2 - Ghép vần VR' },
-  { ChildId: 'CHD-005', FullName: 'Lê Bảo Nam', Age: 10, LearningLevel: 'Bậc 3 - Phản xạ nhanh VR' }
-];
-
-const MOCK_EXERCISES: Exercise[] = [
-  { ExerciseId: 'EX-101', ExerciseName: 'Phiêu lưu nông trại vui vẻ', DifficultyLevel: 'Dễ', TargetSkill: 'Phát âm phụ âm đầu b, c, d', Language: 'Tiếng Việt' },
-  { ExerciseId: 'EX-102', ExerciseName: 'Thử thách phát âm S & X', DifficultyLevel: 'Trung bình', TargetSkill: 'Sửa ngọng phụ âm gió', Language: 'Tiếng Việt' },
-  { ExerciseId: 'EX-103', ExerciseName: 'Giải đố vần nguyên âm đôi', DifficultyLevel: 'Dễ', TargetSkill: 'Ghép vần ay, uô, iê', Language: 'Tiếng Việt' },
-  { ExerciseId: 'EX-104', ExerciseName: 'Truy tìm thần thú rừng sâu', DifficultyLevel: 'Khó', TargetSkill: 'Phóng đại khẩu hình qua Avatar 3D', Language: 'Tiếng Việt' },
-  { ExerciseId: 'EX-105', ExerciseName: 'Đường đua âm thanh sôi động', DifficultyLevel: 'Trung bình', TargetSkill: 'Phản xạ trường từ vựng', Language: 'Tiếng Việt' }
-];
-
-const INITIAL_RESULTS: LearningResult[] = [
-  {
-    ResultId: 'RES-8821',
-    ChildId: 'CHD-001', // Leo
-    ExerciseId: 'EX-101',
-    AttemptNumber: 1,
-    CompletionStatus: 'Completed',
-    Score: 95,
-    StartedAt: '2026-05-30 08:30:12',
-    CompletedAt: '2026-05-30 08:32:15',
-    DurationSeconds: 123,
-    AudioRecordUrl: 'https://storage.googleapis.com/godotxr-records/leo_farm_adventure_att1.mp3',
-    ReplayDataUrl: 'https://storage.googleapis.com/godotxr-replays/leo_farm_adventure_att1.json',
-    InteractionLog: '00:15 - Phát âm "bò": Chính xác (100% Khớp)\n00:45 - Phát âm "cừu": Chính xác (92% Khớp)\n01:10 - Phát âm "dê": Chính xác (94% Khớp)\n01:50 - Phát âm bế mạc "gà trống": Đạt đỉnh cao âm trường ngọt.',
-    FeedbackText: 'Bé phát âm rất rõ ràng, tròn trịa âm gió đầu và giữ nhịp game cực kỳ thông thạo. Tiếp tục phát huy nhé con!',
-    CreatedAt: '2026-05-30 08:32:15'
-  },
-  {
-    ResultId: 'RES-8822',
-    ChildId: 'CHD-001', // Leo
-    ExerciseId: 'EX-102',
-    AttemptNumber: 1,
-    CompletionStatus: 'NeedReview',
-    Score: 78,
-    StartedAt: '2026-05-30 09:00:00',
-    CompletedAt: '2026-05-30 09:03:40',
-    DurationSeconds: 220,
-    AudioRecordUrl: 'https://storage.googleapis.com/godotxr-records/leo_s_x_challenge_att1.mp3',
-    ReplayDataUrl: 'https://storage.googleapis.com/godotxr-replays/leo_s_x_challenge_att1.json',
-    InteractionLog: '00:30 - Phát âm từ "sáo": Lẫn lộn thành "xáo" (Hệ thống ghi nhận sai lệch gió)\n01:15 - Phát âm từ "xương": Tốt (88%)\n02:20 - Phát âm từ "sung sướng": Phát âm "sung" bị ngọng môi mở nhỏ bẹt.',
-    FeedbackText: 'Bé còn một chút lẫn lộn giữa âm S và X khi kết hợp từ ghép "sung sướng". Cô giáo cần giúp bé chỉnh khẩu hình lưỡi cụp nhẹ.',
-    CreatedAt: '2026-05-30 09:03:40'
-  },
-  {
-    ResultId: 'RES-8823',
-    ChildId: 'CHD-002', // Sophia
-    ExerciseId: 'EX-102',
-    AttemptNumber: 2,
-    CompletionStatus: 'Completed',
-    Score: 100,
-    StartedAt: '2026-05-30 14:15:30',
-    CompletedAt: '2026-05-30 14:17:50',
-    DurationSeconds: 140,
-    AudioRecordUrl: 'https://storage.googleapis.com/godotxr-records/sophia_s_x_att2.mp3',
-    ReplayDataUrl: 'https://storage.googleapis.com/godotxr-replays/sophia_s_x_att2.json',
-    InteractionLog: '00:20 - Từ "sen": Tốt (95%)\n00:50 - Từ "xép": Tốt (98%)\n01:20 - Từ "súc sắc": Tuyệt đối (100% Khớp dải sóng âm)\n01:35 - Replay 3D cho thấy bé cười tươi và vỗ tay trong VR.',
-    FeedbackText: 'Lần thử thứ hai vô cùng ngoạn mục! Bé Sophia đã sửa được dứt điểm nhược điểm bẹt môi từ tuần trước. Điểm tuyệt đối xuất sắc!',
-    CreatedAt: '2026-05-30 14:17:50'
-  },
-  {
-    ResultId: 'RES-8824',
-    ChildId: 'CHD-003', // Minh Khang
-    ExerciseId: 'EX-103',
-    AttemptNumber: 1,
-    CompletionStatus: 'Failed',
-    Score: 45,
-    StartedAt: '2026-05-29 10:00:22',
-    CompletedAt: '2026-05-29 10:04:10',
-    DurationSeconds: 228,
-    AudioRecordUrl: 'https://storage.googleapis.com/godotxr-records/khang_ay_uo_att1.mp3',
-    ReplayDataUrl: 'https://storage.googleapis.com/godotxr-replays/khang_ay_uo_att1.json',
-    InteractionLog: '00:40 - Thử vần "tay": Phát âm hụt hơi\n01:30 - Thử vần "cuội": Phát âm không khớp (Ghi nhận dưới 40% biên độ)\n02:50 - Bé bỏ kính VR nửa chừng do mỏi mệt tâm lý.',
-    FeedbackText: 'Khang hôm nay có vẻ hơi mệt hoặc buồn ngủ, phát âm khá nhỏ và chưa phối hợp tốt với kính GodotXR. Đề xuất đổi bài tập dễ hơn.',
-    CreatedAt: '2026-05-29 10:04:10'
-  },
-  {
-    ResultId: 'RES-8825',
-    ChildId: 'CHD-004', // Anh Thư
-    ExerciseId: 'EX-104',
-    AttemptNumber: 1,
-    CompletionStatus: 'InProgress',
-    Score: 60,
-    StartedAt: '2026-05-31 15:40:00',
-    CompletedAt: '2026-05-31 15:45:00',
-    DurationSeconds: 300,
-    AudioRecordUrl: '',
-    ReplayDataUrl: '',
-    InteractionLog: 'Bé đang tương tác ở trạm rừng thiêng thần thú...\n- Phát âm "hổ": Thành công trạm 1\n- Trạm 2: Chưa đồng hành phát âm dải "phượng hoàng".',
-    FeedbackText: 'Bài tập đang dở dang. Thư cần tiếp tục tương tác thêm thời gian rảnh rỗi cuối tuần này.',
-    CreatedAt: '2026-05-31 15:45:00'
-  },
-  {
-    ResultId: 'RES-8826',
-    ChildId: 'CHD-005', // Bảo Nam
-    ExerciseId: 'EX-105',
-    AttemptNumber: 3,
-    CompletionStatus: 'Completed',
-    Score: 92,
-    StartedAt: '2026-05-31 10:10:00',
-    CompletedAt: '2026-05-31 10:12:45',
-    DurationSeconds: 165,
-    AudioRecordUrl: 'https://storage.googleapis.com/godotxr-records/nam_race_att3.mp3',
-    ReplayDataUrl: 'https://storage.googleapis.com/godotxr-replays/nam_race_att3.json',
-    InteractionLog: '00:10 - Vượt chướng ngại vật âm "k"\n00:45 - Trả lời câu đố "bánh chưng": Khớp 90%\n01:30 - Phát âm "mèo mướp": Nhận biết tốt.',
-    FeedbackText: 'Bảo Nam là một học sinh có phản xạ 3D rất tốt. Bé hoàn thành vượt mục tiêu của tuần trước đề ra.',
-    CreatedAt: '2026-05-31 10:12:45'
-  },
-  {
-    ResultId: 'RES-8827',
-    ChildId: 'CHD-001', // Leo
-    ExerciseId: 'EX-105',
-    AttemptNumber: 2,
-    CompletionStatus: 'Completed',
-    Score: 88,
-    StartedAt: '2026-05-28 09:15:00',
-    CompletedAt: '2026-05-28 09:18:12',
-    DurationSeconds: 192,
-    AudioRecordUrl: 'https://storage.googleapis.com/godotxr-records/leo_race_att2.mp3',
-    ReplayDataUrl: 'https://storage.googleapis.com/godotxr-replays/leo_race_att2.json',
-    InteractionLog: '00:15 - Trả lời âm "qua": Chính xác (85%)\n01:10 - Trả lời âm "nhà": Tốt (90%)\n02:00 - Hoàn thành chặng đua thứ ba.',
-    FeedbackText: 'Khả năng tập trung của Leo tăng đáng kể. Con rất thích trò đua xe kích hoạt giọng nói này.',
-    CreatedAt: '2026-05-28 09:18:12'
-  }
-];
-
 export default function LearningResultManagement() {
   const {
     getChildProfiles,
     getCurrentUserWithChildrenProfiles,
+    getClassrooms,
+    getEnrollments,
     getExercises,
     getResultById,
     getResultsByChild,
@@ -346,9 +217,9 @@ export default function LearningResultManagement() {
   const [filterSkill, setFilterSkill] = useState<string>('ALL');
   const [filterDateRange, setFilterDateRange] = useState<string>('ALL');
 
-  // Role Simulator state
-  const [currentRoleView, setCurrentRoleView] =
-    useState<RoleView>(getStoredRoleView());
+  const currentRoleView = getStoredRoleView();
+  const canEditFeedback =
+    currentRoleView === 'ADMIN' || currentRoleView === 'TEACHER';
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -357,7 +228,7 @@ export default function LearningResultManagement() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterStatus, filterDifficulty, filterSkill, filterDateRange, currentRoleView]);
+  }, [searchQuery, filterStatus, filterDifficulty, filterSkill, filterDateRange]);
 
   // Simulation play helpers
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
@@ -390,6 +261,7 @@ export default function LearningResultManagement() {
 
       try {
         const roleView = getStoredRoleView();
+        const sessionUser = getSessionUser();
         const [exerciseRecords, childRecords] = await Promise.all([
           loadAllPages(getExercises),
           roleView === 'PARENT'
@@ -405,7 +277,36 @@ export default function LearningResultManagement() {
 
                 return parentResult.data.childProfiles;
               })()
-            : loadAllPages(getChildProfiles),
+            : roleView === 'TEACHER'
+              ? (async () => {
+                  const [allChildren, classroomRecords, enrollmentRecords] =
+                    await Promise.all([
+                      loadAllPages(getChildProfiles),
+                      loadAllPages(getClassrooms),
+                      loadAllPages(getEnrollments),
+                    ]);
+
+                  const teacherId = sessionUser?.UserId;
+                  const teacherClassIds = new Set(
+                    classroomRecords
+                      .filter((classroom) => String(classroom.userId) === teacherId)
+                      .map((classroom) => classroom.id)
+                  );
+                  const teacherChildIds = new Set(
+                    enrollmentRecords
+                      .filter(
+                        (enrollment) =>
+                          teacherClassIds.has(enrollment.classId) &&
+                          enrollment.status !== 'Cancelled'
+                      )
+                      .map((enrollment) => enrollment.childId)
+                  );
+
+                  return allChildren.filter((child) =>
+                    teacherChildIds.has(child.id)
+                  );
+                })()
+              : loadAllPages(getChildProfiles),
         ]);
 
         const resultSettled = await Promise.allSettled(
@@ -428,7 +329,6 @@ export default function LearningResultManagement() {
 
         if (cancelled) return;
 
-        setCurrentRoleView(roleView);
         setChildren(childRecords.map(mapChildRecord));
         setExercises(exerciseRecords.map(mapExerciseRecord));
         setResults(uniqueResults.map(mapResultRecord));
@@ -454,34 +354,29 @@ export default function LearningResultManagement() {
     };
   }, [
     getChildProfiles,
+    getClassrooms,
     getCurrentUserWithChildrenProfiles,
+    getEnrollments,
     getExercises,
     getResultsByChild,
   ]);
 
   // Helper getters
   const getChildInfo = (id: string): Child => {
-    return children.find(c => c.ChildId === id) || { ChildId: id, FullName: 'Học sinh ẩn danh', Age: 8, LearningLevel: 'Bậc 1' };
+    return children.find(c => c.ChildId === id) || { ChildId: id, FullName: 'Há»c sinh áº©n danh', Age: 8, LearningLevel: 'Báº­c 1' };
   };
 
   const getExerciseInfo = (id: string): Exercise => {
-    return exercises.find(e => e.ExerciseId === id) || { ExerciseId: id, ExerciseName: 'Bài tập rèn luyện', DifficultyLevel: 'Dễ', TargetSkill: 'Mặc định', Language: 'Tiếng Việt' };
+    return exercises.find(e => e.ExerciseId === id) || { ExerciseId: id, ExerciseName: 'BĂ i táº­p rĂ¨n luyá»‡n', DifficultyLevel: 'Dá»…', TargetSkill: 'Máº·c Ä‘á»‹nh', Language: 'Tiáº¿ng Viá»‡t' };
   };
 
   // ROLE-BASED FILTERING LOGIC
-  // - Admin: Xem tất cả.
-  // - Teacher (Giáo viên phụ trách): Xem các bé thuộc lớp phụ trách. Giả lập xem các bé: Bảo Nam, Anh Thư, Minh Khang (CHD-003, CHD-004, CHD-005)
-  // - Parent (Phụ huynh bé Leo): Chỉ xem bé của mình (CHD-001 - Leo)
+  // - Admin: Xem táº¥t cáº£.
+  // - Teacher (GiĂ¡o viĂªn phá»¥ trĂ¡ch): Xem cĂ¡c bĂ© thuá»™c lá»›p phá»¥ trĂ¡ch. Giáº£ láº­p xem cĂ¡c bĂ©: Báº£o Nam, Anh ThÆ°, Minh Khang (CHD-003, CHD-004, CHD-005)
+  // - Parent (Phá»¥ huynh bĂ© Leo): Chá»‰ xem bĂ© cá»§a mĂ¬nh (CHD-001 - Leo)
   const getRoleFilteredResults = (dataList: LearningResult[]) => {
-    if (currentRoleView === 'ADMIN') {
-      return dataList;
-    } else if (currentRoleView === 'TEACHER') {
-      // Teacher views CHD-003, CHD-004, CHD-005 (Simulated assigned classroom children)
-      return dataList.filter(r => ['CHD-003', 'CHD-004', 'CHD-005'].includes(r.ChildId));
-    } else {
-      // Parent views only Leo (CHD-001)
-      return dataList.filter(r => r.ChildId === 'CHD-001');
-    }
+    const visibleChildIds = new Set(children.map((child) => child.ChildId));
+    return dataList.filter((result) => visibleChildIds.has(result.ChildId));
   };
 
   // Active results list depending on Role and input Search Query & Dropdowns
@@ -525,7 +420,7 @@ export default function LearningResultManagement() {
     return displayResults.slice(startIndex, startIndex + pageSize);
   }, [displayResults, currentPage, pageSize]);
 
-  // Unique target skills list from MOCK_EXERCISES for select dropdown filters
+  // Unique target skills list from API exercises for select dropdown filters
   const allTargetSkills = Array.from(new Set(exercises.map(e => e.TargetSkill)));
 
   // STATISTICS CALCULATIONS (Based on ROLE-FILTERED subset for accuracy)
@@ -546,10 +441,10 @@ export default function LearningResultManagement() {
   // Helper renderer for completion statuses
   const renderStatusBadge = (status: LearningResult['CompletionStatus']) => {
     const maps: Record<LearningResult['CompletionStatus'], { bg: string; text: string; label: string; dot: string }> = {
-      Completed: { bg: 'bg-emerald-50 text-emerald-600 border-emerald-100', text: 'text-emerald-700', label: 'Thành công', dot: 'bg-emerald-500' },
-      InProgress: { bg: 'bg-sky-50 text-sky-600 border-sky-100', text: 'text-sky-700', label: 'Đang làm dở', dot: 'bg-sky-400' },
-      Failed: { bg: 'bg-rose-50 text-rose-500 border-rose-100', text: 'text-rose-600', label: 'Chưa đạt', dot: 'bg-rose-500' },
-      NeedReview: { bg: 'bg-amber-50 text-amber-600 border-amber-100', text: 'text-amber-700', label: 'Cần cô duyệt', dot: 'bg-amber-500' }
+      Completed: { bg: 'bg-emerald-50 text-emerald-600 border-emerald-100', text: 'text-emerald-700', label: 'ThĂ nh cĂ´ng', dot: 'bg-emerald-500' },
+      InProgress: { bg: 'bg-sky-50 text-sky-600 border-sky-100', text: 'text-sky-700', label: 'Äang lĂ m dá»Ÿ', dot: 'bg-sky-400' },
+      Failed: { bg: 'bg-rose-50 text-rose-500 border-rose-100', text: 'text-rose-600', label: 'ChÆ°a Ä‘áº¡t', dot: 'bg-rose-500' },
+      NeedReview: { bg: 'bg-amber-50 text-amber-600 border-amber-100', text: 'text-amber-700', label: 'Cáº§n cĂ´ duyá»‡t', dot: 'bg-amber-500' }
     };
     const style = maps[status];
     return (
@@ -613,7 +508,7 @@ export default function LearningResultManagement() {
       FeedbackText: feedbackInput
     });
     setEditFeedbackMode(false);
-    showToast('Đã lưu ý kiến nhận xét can thiệp thành công!', 'success');
+    showToast('ÄĂ£ lÆ°u Ă½ kiáº¿n nháº­n xĂ©t can thiá»‡p thĂ nh cĂ´ng!', 'success');
   };
 
   const getResultInteractionLog = (result: LearningResult | null): string => {
@@ -628,30 +523,30 @@ export default function LearningResultManagement() {
 
   const handleSimulateAudioPlay = (res: LearningResult) => {
     if (!res.AudioRecordUrl) {
-      showToast('Đang học dở, chưa có tệp âm thanh ghi từ tai nghe VR!', 'warn');
+      showToast('Äang há»c dá»Ÿ, chÆ°a cĂ³ tá»‡p Ă¢m thanh ghi tá»« tai nghe VR!', 'warn');
       return;
     }
     setPlayingAudioId(res.ResultId);
     setIsAudioSimulateActive(true);
-    showToast(`Đang mô phỏng phát bản thu phát âm: "${getChildInfo(res.ChildId).FullName}"...`, 'info');
+    showToast(`Äang mĂ´ phá»ng phĂ¡t báº£n thu phĂ¡t Ă¢m: "${getChildInfo(res.ChildId).FullName}"...`, 'info');
     setTimeout(() => {
       setPlayingAudioId(null);
       setIsAudioSimulateActive(false);
-      showToast('Đã phát âm bản thu hoàn tất!', 'success');
+      showToast('ÄĂ£ phĂ¡t Ă¢m báº£n thu hoĂ n táº¥t!', 'success');
     }, 4500);
   };
 
   const handleSimulate3DReplay = (res: LearningResult) => {
     if (!res.ReplayDataUrl) {
-      showToast('Bài học đang diễn ra, chưa kết xuất file đồ thị tương tác!', 'warn');
+      showToast('BĂ i há»c Ä‘ang diá»…n ra, chÆ°a káº¿t xuáº¥t file Ä‘á»“ thá»‹ tÆ°Æ¡ng tĂ¡c!', 'warn');
       return;
     }
     setPlayingReplayId(res.ResultId);
-    showToast(`Đang tải tọa độ chuyển động và dải tương tác VR cho "${res.ResultId}"...`, 'info');
+    showToast(`Äang táº£i tá»a Ä‘á»™ chuyá»ƒn Ä‘á»™ng vĂ  dáº£i tÆ°Æ¡ng tĂ¡c VR cho "${res.ResultId}"...`, 'info');
     setTimeout(() => {
       // simulate virtual replay completion
       setPlayingReplayId(null);
-      showToast('Nạp dữ liệu mô tả trực quan từ ứng dụng kính VR thành công!', 'success');
+      showToast('Náº¡p dá»¯ liá»‡u mĂ´ táº£ trá»±c quan tá»« á»©ng dá»¥ng kĂ­nh VR thĂ nh cĂ´ng!', 'success');
     }, 4000);
   };
 
@@ -701,48 +596,34 @@ export default function LearningResultManagement() {
         )}
       </AnimatePresence>
 
-      {/* Hero Header Unit with Role Switcher & Header */}
+      {/* Hero Header Unit */}
       <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-3">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             <TrendingUp className="w-3.5 h-3.5" />
-            Bảng kết quả rèn luyện phát âm VR
+            Báº£ng káº¿t quáº£ rĂ¨n luyá»‡n phĂ¡t Ă¢m VR
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1">
-            Kết Quả <span className="text-[#FF8E8E]">Luyện Tập</span>
+            Káº¿t Quáº£ <span className="text-[#FF8E8E]">Luyá»‡n Táº­p</span>
           </h1>
           <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed">
-            Theo dõi điểm số hiệu chỉnh, thời lượng tương tác VR, phát lại tệp âm thanh thu mộc và phản hồi rèn luyện của hệ thống GodotXR.
+            Theo dĂµi Ä‘iá»ƒm sá»‘ hiá»‡u chá»‰nh, thá»i lÆ°á»£ng tÆ°Æ¡ng tĂ¡c VR, phĂ¡t láº¡i tá»‡p Ă¢m thanh thu má»™c vĂ  pháº£n há»“i rĂ¨n luyá»‡n cá»§a há»‡ thá»‘ng GodotXR.
           </p>
         </div>
 
-        {/* Role visual switcher inside GodotXR design paradigm */}
-        <div className="bg-[#E2F2F3] border border-[#C5E1E3] p-1.5 rounded-[24px] flex flex-col sm:flex-row items-stretch sm:items-center gap-1 shadow-inner self-start lg:self-center">
-          <div className="px-4 py-2 italic font-black text-xs text-[#264E50] uppercase tracking-wider self-center hidden sm:block">
-            Phân vai thử nghiệm:
-          </div>
-          <div className="flex gap-1">
-            {[
-              { role: 'ADMIN', label: 'Admin' },
-              { role: 'TEACHER', label: 'Teacher' },
-              { role: 'PARENT', label: 'Parent' }
-            ].map((rItem) => (
-              <button
-                key={rItem.role}
-                onClick={() => {
-                  setCurrentRoleView(rItem.role as any);
-                  showToast(`Đã chuyển sang góc nhìn quyền của: ${rItem.role}!`, 'info');
-                }}
-                className={cn(
-                  "px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all",
-                  currentRoleView === rItem.role 
-                    ? "bg-[#4EACAF] text-white shadow-sm font-extrabold italic scale-105" 
-                    : "text-[#264E50]/60 hover:text-[#264E50] hover:bg-white/40"
-                )}
-              >
-                {rItem.label}
-              </button>
-            ))}
+        <div className="bg-[#E2F2F3] border border-[#C5E1E3] px-5 py-4 rounded-[24px] flex items-center gap-3 shadow-inner self-start lg:self-center">
+          <UserSquare2 className="w-5 h-5 text-[#4EACAF]" />
+          <div className="space-y-1">
+            <p className="text-[11px] font-black text-[#264E50] uppercase tracking-[0.24em]">
+              Current data scope
+            </p>
+            <p className="text-sm font-extrabold text-[#264E50]">
+              {currentRoleView === 'ADMIN' && 'All learning results'}
+              {currentRoleView === 'TEACHER' &&
+                'Children in assigned classrooms'}
+              {currentRoleView === 'PARENT' &&
+                'Children linked to this parent account'}
+            </p>
           </div>
         </div>
       </div>
@@ -757,7 +638,7 @@ export default function LearningResultManagement() {
           </div>
           <div>
             <p className="text-3xl font-black text-gray-900 tracking-tight leading-none">{totalAttempts}</p>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Tổng lượt luyện</p>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Tá»•ng lÆ°á»£t luyá»‡n</p>
           </div>
         </div>
 
@@ -768,7 +649,7 @@ export default function LearningResultManagement() {
           </div>
           <div>
             <p className="text-3xl font-black text-gray-900 tracking-tight leading-none">{averageScore}/100</p>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Điểm số trung bình</p>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Äiá»ƒm sá»‘ trung bĂ¬nh</p>
           </div>
         </div>
 
@@ -778,8 +659,8 @@ export default function LearningResultManagement() {
             <Clock className="w-7 h-7 text-indigo-500" />
           </div>
           <div>
-            <p className="text-3xl font-black text-gray-900 tracking-tight leading-none">{formattedTotalMinutes} phút</p>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Tổng giờ tương tác</p>
+            <p className="text-3xl font-black text-gray-900 tracking-tight leading-none">{formattedTotalMinutes} phĂºt</p>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Tá»•ng giá» tÆ°Æ¡ng tĂ¡c</p>
           </div>
         </div>
 
@@ -790,7 +671,7 @@ export default function LearningResultManagement() {
           </div>
           <div>
             <p className="text-3xl font-black text-emerald-600 tracking-tight leading-none">{completionRate}%</p>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Tỷ lệ hoàn thành</p>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Tá»· lá»‡ hoĂ n thĂ nh</p>
           </div>
         </div>
 
@@ -800,15 +681,29 @@ export default function LearningResultManagement() {
       <div className="bg-[#FFFDF5] p-5.5 rounded-[28px] border border-amber-200/50 flex gap-4 text-xs font-bold leading-relaxed text-gray-600">
         <Info className="w-6 h-6 text-amber-500 shrink-0" />
         <div className="space-y-1">
-          <p className="text-gray-800 font-black uppercase text-[10px] tracking-wider">Mô phỏng bộ lọc vai trò hoạt động:</p>
+          <p className="text-gray-800 font-black uppercase text-[10px] tracking-wider">
+            Data scope from current session:
+          </p>
           {currentRoleView === 'ADMIN' && (
-            <span>Quyền hạn <strong>Quản trị viên (Admin)</strong>: Đang hiển thị toàn bộ hệ thống lớp học VR. Bạn có thể sửa nhận xét, nghe audio mộc và tải đồ thị replay rèn luyện game GodotXR.</span>
+            <span>
+              <strong>Admin</strong>: viewing all learning results in the
+              system, with access to feedback editing, audio playback and
+              replay detail.
+            </span>
           )}
           {currentRoleView === 'TEACHER' && (
-            <span>Quyền hạn <strong>Giáo viên (Teacher)</strong>: Đang lọc danh sách học sinh thuộc lớp phụ trách (Minh Khang, Anh Thư, Bảo Nam). Bạn được quyền cập nhật đánh giá, nhận xét rèn luyện âm thanh từ phiên học VR.</span>
+            <span>
+              <strong>Teacher</strong>: viewing only children enrolled in the
+              classrooms assigned to this teacher, with feedback editing
+              enabled.
+            </span>
           )}
           {currentRoleView === 'PARENT' && (
-            <span>Quyền hạn <strong>Phụ huynh (Parent)</strong>: Chỉ xem được lịch sử học tập của học tập học sinh <strong>Nguyễn Tiến Minh (Leo)</strong>. Quyền chỉnh sửa nhận xét bị khép lại để giữ toàn vẹn dữ liệu học tập.</span>
+            <span>
+              <strong>Parent</strong>: viewing only the children linked to the
+              current parent account. Feedback stays read-only to preserve
+              learning history integrity.
+            </span>
           )}
         </div>
       </div>
@@ -823,7 +718,7 @@ export default function LearningResultManagement() {
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input 
               type="text" 
-              placeholder="Tìm theo tên học sinh, bé cưng hoặc tên bài tập (VD: Nông trại, Leo, sáo...)" 
+              placeholder="TĂ¬m theo tĂªn há»c sinh, bĂ© cÆ°ng hoáº·c tĂªn bĂ i táº­p (VD: NĂ´ng tráº¡i, Leo, sĂ¡o...)" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-14 pr-12 py-4 rounded-2xl bg-[#FDFCF5] border-2 border-transparent font-bold text-gray-700 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm" 
@@ -832,7 +727,7 @@ export default function LearningResultManagement() {
               <button 
                 onClick={() => setSearchQuery('')}
                 className="absolute right-5 top-1/2 -translate-y-1/2 p-1.5 bg-gray-200/50 hover:bg-gray-200 rounded-full transition-colors"
-                title="Hủy từ khóa"
+                title="Há»§y tá»« khĂ³a"
               >
                 <X className="w-4.5 h-4.5 text-gray-600" />
               </button>
@@ -846,11 +741,11 @@ export default function LearningResultManagement() {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="w-full appearance-none bg-[#FDFCF5] border-2 border-transparent hover:border-[#4EACAF]/20 pl-5 pr-10 py-4 rounded-2xl font-black italic text-xs tracking-wide text-gray-700 outline-none cursor-pointer uppercase focus:bg-white focus:border-[#4EACAF]"
             >
-              <option value="ALL">Tất cả trạng thái</option>
-              <option value="Completed">Đã thành công</option>
-              <option value="InProgress">Đang dở dang</option>
-              <option value="Failed">Chưa đạt yêu cầu</option>
-              <option value="NeedReview">Chờ giáo viên duyệt</option>
+              <option value="ALL">Táº¥t cáº£ tráº¡ng thĂ¡i</option>
+              <option value="Completed">ÄĂ£ thĂ nh cĂ´ng</option>
+              <option value="InProgress">Äang dá»Ÿ dang</option>
+              <option value="Failed">ChÆ°a Ä‘áº¡t yĂªu cáº§u</option>
+              <option value="NeedReview">Chá» giĂ¡o viĂªn duyá»‡t</option>
             </select>
             <SlidersHorizontal className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
@@ -862,17 +757,17 @@ export default function LearningResultManagement() {
           
           {/* Filter Difficulty */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Độ khó bài tập:</label>
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Äá»™ khĂ³ bĂ i táº­p:</label>
             <div className="relative">
               <select
                 value={filterDifficulty}
                 onChange={(e) => setFilterDifficulty(e.target.value)}
                 className="w-full appearance-none bg-[#FDFCF5] border-2 border-transparent hover:border-[#4EACAF]/20 pl-4 pr-10 py-3.5 rounded-2xl font-bold text-xs tracking-wide text-gray-700 outline-none cursor-pointer focus:bg-white focus:border-[#4EACAF]"
               >
-                <option value="ALL">TẤT CẢ ĐỘ KHÓ</option>
-                <option value="Dễ">DỄ (KID LEVEL 1)</option>
-                <option value="Trung bình">TRUNG BÌNH (LEVEL 2)</option>
-                <option value="Khó">KHÓ (LEVEL 3)</option>
+                <option value="ALL">Táº¤T Cáº¢ Äá»˜ KHĂ“</option>
+                <option value="Dá»…">Dá»„ (KID LEVEL 1)</option>
+                <option value="Trung bĂ¬nh">TRUNG BĂŒNH (LEVEL 2)</option>
+                <option value="KhĂ³">KHĂ“ (LEVEL 3)</option>
               </select>
               <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
@@ -880,14 +775,14 @@ export default function LearningResultManagement() {
 
           {/* Filter Target Skill */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Khẩu ngữ dải tần can thiệp:</label>
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Kháº©u ngá»¯ dáº£i táº§n can thiá»‡p:</label>
             <div className="relative">
               <select
                 value={filterSkill}
                 onChange={(e) => setFilterSkill(e.target.value)}
                 className="w-full appearance-none bg-[#FDFCF5] border-2 border-transparent hover:border-[#4EACAF]/20 pl-4 pr-10 py-3.5 rounded-2xl font-bold text-xs tracking-wide text-gray-700 outline-none cursor-pointer focus:bg-white focus:border-[#4EACAF]"
               >
-                <option value="ALL">TẤT CẢ KỸ NĂNG</option>
+                <option value="ALL">Táº¤T Cáº¢ Ká»¸ NÄ‚NG</option>
                 {allTargetSkills.map((sk, index) => (
                   <option key={index} value={sk}>{sk}</option>
                 ))}
@@ -898,17 +793,17 @@ export default function LearningResultManagement() {
 
           {/* Filter Date range */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Khoảng thời gian nộp bài:</label>
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Khoáº£ng thá»i gian ná»™p bĂ i:</label>
             <div className="relative">
               <select
                 value={filterDateRange}
                 onChange={(e) => setFilterDateRange(e.target.value)}
                 className="w-full appearance-none bg-[#FDFCF5] border-2 border-transparent hover:border-[#4EACAF]/20 pl-4 pr-10 py-3.5 rounded-2xl font-bold text-xs tracking-wide text-gray-700 outline-none cursor-pointer focus:bg-white focus:border-[#4EACAF]"
               >
-                <option value="ALL">TẤT CẢ THỜI GIAN</option>
-                <option value="TODAY">HÔM NAY (31/05/2026)</option>
-                <option value="3DAYS">3 NGÀY GẦN NHẤT</option>
-                <option value="7DAYS">7 NGÀY GẦN NHẤT</option>
+                <option value="ALL">Táº¤T Cáº¢ THá»œI GIAN</option>
+                <option value="TODAY">HĂ”M NAY (31/05/2026)</option>
+                <option value="3DAYS">3 NGĂ€Y Gáº¦N NHáº¤T</option>
+                <option value="7DAYS">7 NGĂ€Y Gáº¦N NHáº¤T</option>
               </select>
               <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
@@ -926,12 +821,12 @@ export default function LearningResultManagement() {
                 setFilterDifficulty('ALL');
                 setFilterSkill('ALL');
                 setFilterDateRange('ALL');
-                showToast('Đã xóa bỏ toàn bộ màng lọc!', 'info');
+                showToast('ÄĂ£ xĂ³a bá» toĂ n bá»™ mĂ ng lá»c!', 'info');
               }}
               className="inline-flex items-center gap-1.5 text-xs text-[#FF8E8E] font-black uppercase tracking-wider hover:underline"
             >
               <ListRestart className="w-3.5 h-3.5" />
-              Reset toàn bộ màng lọc dữ liệu
+              Reset toĂ n bá»™ mĂ ng lá»c dá»¯ liá»‡u
             </button>
           </div>
         )}
@@ -943,11 +838,11 @@ export default function LearningResultManagement() {
         
         <div className="px-10 py-8 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/50 backdrop-blur-sm">
           <div>
-            <h3 className="text-2xl font-black text-gray-900 leading-none italic">Danh sách kết quả can thiệp chi tiết</h3>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-2">Dòng dữ liệu mộc lưu vết VR headset, nỗ lực sửa ngọng của trẻ nhỏ</p>
+            <h3 className="text-2xl font-black text-gray-900 leading-none italic">Danh sĂ¡ch káº¿t quáº£ can thiá»‡p chi tiáº¿t</h3>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-2">DĂ²ng dá»¯ liá»‡u má»™c lÆ°u váº¿t VR headset, ná»— lá»±c sá»­a ngá»ng cá»§a tráº» nhá»</p>
           </div>
           <span className="text-xs bg-indigo-50 text-indigo-600 px-3.5 py-1.5 rounded-full font-bold uppercase tracking-wider border border-indigo-100/30 self-start sm:self-center">
-            API_DATABASE: RESULT ({displayResults.length} dòng)
+            API_DATABASE: RESULT ({displayResults.length} dĂ²ng)
           </span>
         </div>
 
@@ -962,16 +857,16 @@ export default function LearningResultManagement() {
             <div className="w-20 h-20 bg-teal-50 rounded-full flex items-center justify-center mx-auto border-4 border-dashed border-teal-100 italic">
               <Activity className="w-8 h-8 text-teal-400 animate-pulse" />
             </div>
-            <p className="text-xl font-black text-gray-700">Đang tải kết quả luyện tập từ API...</p>
-            <p className="text-xs text-gray-400 max-w-md mx-auto">Hệ thống đang ghép hồ sơ trẻ, bài tập và các lượt luyện để hiển thị đúng theo quyền truy cập hiện tại.</p>
+            <p className="text-xl font-black text-gray-700">Äang táº£i káº¿t quáº£ luyá»‡n táº­p tá»« API...</p>
+            <p className="text-xs text-gray-400 max-w-md mx-auto">Há»‡ thá»‘ng Ä‘ang ghĂ©p há»“ sÆ¡ tráº», bĂ i táº­p vĂ  cĂ¡c lÆ°á»£t luyá»‡n Ä‘á»ƒ hiá»ƒn thá»‹ Ä‘Ăºng theo quyá»n truy cáº­p hiá»‡n táº¡i.</p>
           </div>
         ) : displayResults.length === 0 ? (
           <div className="py-24 text-center space-y-4">
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto border-4 border-dashed border-gray-100 italic">
               <Award className="w-8 h-8 text-gray-300" />
             </div>
-            <p className="text-xl font-black text-gray-700">Không tìm thấy lượt tập luyện nào tương ứng!</p>
-            <p className="text-xs text-gray-400 max-w-md mx-auto">Vui lòng thử điều phối lại dải tìm kiếm hoặc đổi phân quyền người dùng (Admin, Teacher, Parent) ở trên thanh đầu trang.</p>
+            <p className="text-xl font-black text-gray-700">KhĂ´ng tĂ¬m tháº¥y lÆ°á»£t táº­p luyá»‡n nĂ o tÆ°Æ¡ng á»©ng!</p>
+            <p className="text-xs text-gray-400 max-w-md mx-auto">Vui lĂ²ng thá»­ Ä‘iá»u phá»‘i láº¡i dáº£i tĂ¬m kiáº¿m hoáº·c Ä‘á»•i phĂ¢n quyá»n ngÆ°á»i dĂ¹ng (Admin, Teacher, Parent) á»Ÿ trĂªn thanh Ä‘áº§u trang.</p>
           </div>
         ) : (
           <>
@@ -979,15 +874,15 @@ export default function LearningResultManagement() {
             <table className="w-full border-collapse" id="results-table-element">
               <thead>
                 <tr className="bg-[#FDFCF5]/60 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
-                  <th className="py-5 px-10">Mã kết quả</th>
-                  <th className="py-5 px-6">Tên Học Sinh Bé</th>
-                  <th className="py-5 px-6">Bài tập VR</th>
-                  <th className="py-5 px-6 text-center">Lượt thử</th>
-                  <th className="py-5 px-6 text-center">Điểm số thu âm</th>
-                  <th className="py-5 px-6">Thời lượng</th>
-                  <th className="py-5 px-6">Trạng thái</th>
-                  <th className="py-5 px-6">Thời điểm nộp</th>
-                  <th className="py-5 px-10 text-right">Tác vụ can thiệp</th>
+                  <th className="py-5 px-10">MĂ£ káº¿t quáº£</th>
+                  <th className="py-5 px-6">TĂªn Há»c Sinh BĂ©</th>
+                  <th className="py-5 px-6">BĂ i táº­p VR</th>
+                  <th className="py-5 px-6 text-center">LÆ°á»£t thá»­</th>
+                  <th className="py-5 px-6 text-center">Äiá»ƒm sá»‘ thu Ă¢m</th>
+                  <th className="py-5 px-6">Thá»i lÆ°á»£ng</th>
+                  <th className="py-5 px-6">Tráº¡ng thĂ¡i</th>
+                  <th className="py-5 px-6">Thá»i Ä‘iá»ƒm ná»™p</th>
+                  <th className="py-5 px-10 text-right">TĂ¡c vá»¥ can thiá»‡p</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
@@ -1008,7 +903,7 @@ export default function LearningResultManagement() {
                           {chd.FullName}
                         </div>
                         <span className="text-[10px] text-[#4EACAF] font-bold uppercase tracking-tight">
-                          {chd.LearningLevel} ({chd.Age} tuổi)
+                          {chd.LearningLevel} ({chd.Age} tuá»•i)
                         </span>
                       </td>
 
@@ -1020,9 +915,9 @@ export default function LearningResultManagement() {
                         <div className="flex items-center gap-1.5">
                           <span className={cn(
                             "text-[9px] px-1.5 py-0.5 rounded font-black uppercase text-white",
-                            exe.DifficultyLevel === 'Dễ' && 'bg-emerald-400',
-                            exe.DifficultyLevel === 'Trung bình' && 'bg-indigo-400',
-                            exe.DifficultyLevel === 'Khó' && 'bg-[#FF8E8E]'
+                            exe.DifficultyLevel === 'Dá»…' && 'bg-emerald-400',
+                            exe.DifficultyLevel === 'Trung bĂ¬nh' && 'bg-indigo-400',
+                            exe.DifficultyLevel === 'KhĂ³' && 'bg-[#FF8E8E]'
                           )}>
                             {exe.DifficultyLevel}
                           </span>
@@ -1035,7 +930,7 @@ export default function LearningResultManagement() {
                       {/* Attempt number */}
                       <td className="py-5 px-6 text-center font-mono">
                         <span className="px-2 py-0.5 bg-gray-100 rounded-md text-xs font-extrabold">
-                          Lần {itm.AttemptNumber}
+                          Láº§n {itm.AttemptNumber}
                         </span>
                       </td>
 
@@ -1046,7 +941,7 @@ export default function LearningResultManagement() {
                             "font-black text-base italic",
                             itm.Score >= 90 ? 'text-emerald-500' : itm.Score >= 70 ? 'text-indigo-500' : 'text-rose-500'
                           )}>
-                            {itm.Score > 0 ? `${itm.Score}` : '—'}
+                            {itm.Score > 0 ? `${itm.Score}` : 'â€”'}
                           </span>
                           {itm.Score > 0 && (
                             <div className="w-8 h-1 bg-gray-100 rounded-full overflow-hidden mt-1">
@@ -1064,7 +959,7 @@ export default function LearningResultManagement() {
 
                       {/* Duration in seconds */}
                       <td className="py-5 px-6 text-gray-500 font-mono text-xs">
-                        {itm.DurationSeconds} giây
+                        {itm.DurationSeconds} giĂ¢y
                       </td>
 
                       {/* Completion status */}
@@ -1074,7 +969,7 @@ export default function LearningResultManagement() {
 
                       {/* Time submitted */}
                       <td className="py-5 px-6 text-xs text-gray-400 font-medium">
-                        {itm.CompletedAt ? itm.CompletedAt : 'Đang xử lý...'}
+                        {itm.CompletedAt ? itm.CompletedAt : 'Äang xá»­ lĂ½...'}
                       </td>
 
                       {/* Actions toolbox */}
@@ -1085,10 +980,10 @@ export default function LearningResultManagement() {
                           <button
                             onClick={() => handleOpenDetailModal(itm)}
                             className="py-1.5 px-3 bg-[#4EACAF]/10 hover:bg-[#4EACAF] text-[#4EACAF] hover:text-white rounded-xl text-xs font-black transition-all flex items-center gap-1"
-                            title="Bấm để xem tương tác chi tiết"
+                            title="Báº¥m Ä‘á»ƒ xem tÆ°Æ¡ng tĂ¡c chi tiáº¿t"
                           >
                             <Eye className="w-3.5 h-3.5" />
-                            Chi tiết
+                            Chi tiáº¿t
                           </button>
 
                           {/* Quick audio play */}
@@ -1101,7 +996,7 @@ export default function LearningResultManagement() {
                                   ? "bg-emerald-500 text-white animate-bounce" 
                                   : "bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white"
                               )}
-                              title="Nghe giọng bé thu từ kính VR"
+                              title="Nghe giá»ng bĂ© thu tá»« kĂ­nh VR"
                             >
                               <Volume2 className="w-3.5 h-3.5" />
                             </button>
@@ -1117,7 +1012,7 @@ export default function LearningResultManagement() {
                                   ? "bg-indigo-500 text-white animate-pulse" 
                                   : "bg-indigo-50 text-indigo-600 hover:bg-indigo-500 hover:text-white"
                               )}
-                              title="Xem replay chuyển động 3D thần sầu"
+                              title="Xem replay chuyá»ƒn Ä‘á»™ng 3D tháº§n sáº§u"
                             >
                               <Play className="w-3.5 h-3.5" />
                             </button>
@@ -1143,7 +1038,7 @@ export default function LearningResultManagement() {
                 setPageSize(size);
                 setCurrentPage(1);
               }}
-              itemLabel="kết quả"
+              itemLabel="káº¿t quáº£"
             />
           </div>
         </>
@@ -1169,13 +1064,13 @@ export default function LearningResultManagement() {
                 <div className="space-y-1">
                   <div className="inline-flex items-center gap-1.5 bg-[#4EACAF] text-white px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider">
                     <Activity className="w-3 h-3" />
-                    Lưu vết hồ sơ y tế học đường
+                    LÆ°u váº¿t há»“ sÆ¡ y táº¿ há»c Ä‘Æ°á»ng
                   </div>
                   <h2 className="text-2xl font-black italic tracking-tight flex items-center gap-2">
-                    Báo cáo chi tiết lượt luyện tập #{selectedResult.ResultId}
+                    BĂ¡o cĂ¡o chi tiáº¿t lÆ°á»£t luyá»‡n táº­p #{selectedResult.ResultId}
                   </h2>
                   <p className="text-xs font-bold text-[#264E50]/70">
-                    Ứng dụng Kính VR đồng bộ thông suốt với hệ thống Dashboard GodotXR
+                    á»¨ng dá»¥ng KĂ­nh VR Ä‘á»“ng bá»™ thĂ´ng suá»‘t vá»›i há»‡ thá»‘ng Dashboard GodotXR
                   </p>
                 </div>
                 <button 
@@ -1195,7 +1090,7 @@ export default function LearningResultManagement() {
                   {/* Left Column: Children specs */}
                   <div className="bg-[#FDFCF5] p-5 rounded-3xl border border-yellow-105 space-y-3">
                     <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                      <span className="text-xs font-black text-[#FF8E8E] uppercase tracking-wider">Thông tin học sinh</span>
+                      <span className="text-xs font-black text-[#FF8E8E] uppercase tracking-wider">ThĂ´ng tin há»c sinh</span>
                       <span className="text-[10px] bg-white text-gray-500 px-2 py-0.5 rounded-md font-bold text-mono">
                         ID: {selectedResult.ChildId}
                       </span>
@@ -1205,7 +1100,7 @@ export default function LearningResultManagement() {
                         {getChildInfo(selectedResult.ChildId).FullName}
                       </p>
                       <p className="text-xs font-bold text-gray-500">
-                        Độ tuổi: <span className="text-black">{getChildInfo(selectedResult.ChildId).Age} tuổi</span> | Trình độ: <span className="text-black">{getChildInfo(selectedResult.ChildId).LearningLevel}</span>
+                        Äá»™ tuá»•i: <span className="text-black">{getChildInfo(selectedResult.ChildId).Age} tuá»•i</span> | TrĂ¬nh Ä‘á»™: <span className="text-black">{getChildInfo(selectedResult.ChildId).LearningLevel}</span>
                       </p>
                     </div>
                   </div>
@@ -1213,7 +1108,7 @@ export default function LearningResultManagement() {
                   {/* Right Column: Exercises specs */}
                   <div className="bg-[#FDFCF5] p-5 rounded-3xl border border-yellow-105 space-y-3">
                     <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                      <span className="text-xs font-black text-[#4EACAF] uppercase tracking-wider">Bài tập huấn luyện ngôn từ 3D</span>
+                      <span className="text-xs font-black text-[#4EACAF] uppercase tracking-wider">BĂ i táº­p huáº¥n luyá»‡n ngĂ´n tá»« 3D</span>
                       <span className="text-[10px] bg-white text-gray-500 px-2 py-0.5 rounded-md font-bold text-mono">
                         ID: {selectedResult.ExerciseId}
                       </span>
@@ -1223,9 +1118,9 @@ export default function LearningResultManagement() {
                         {getExerciseInfo(selectedResult.ExerciseId).ExerciseName}
                       </p>
                       <div className="flex items-center gap-3 text-xs font-bold text-gray-400 mt-1">
-                        <span>Độ khó: <strong className="text-[#FF8E8E]">{getExerciseInfo(selectedResult.ExerciseId).DifficultyLevel}</strong></span>
+                        <span>Äá»™ khĂ³: <strong className="text-[#FF8E8E]">{getExerciseInfo(selectedResult.ExerciseId).DifficultyLevel}</strong></span>
                         <span>|</span>
-                        <span>Ngôn ngữ: <strong className="text-black">{getExerciseInfo(selectedResult.ExerciseId).Language}</strong></span>
+                        <span>NgĂ´n ngá»¯: <strong className="text-black">{getExerciseInfo(selectedResult.ExerciseId).Language}</strong></span>
                       </div>
                     </div>
                   </div>
@@ -1236,7 +1131,7 @@ export default function LearningResultManagement() {
                 <div className="bg-gradient-to-br from-[#4EACAF]/5 to-[#FF8E8E]/5 p-6 rounded-[32px] border border-[#4EACAF]/10 space-y-4">
                   <h4 className="text-sm font-black text-gray-700 uppercase tracking-widest flex items-center gap-2">
                     <BrainCircuit className="w-4 h-4 text-[#4EACAF]" />
-                    Trực quan dải tần âm học & Không gian replay can thiệp
+                    Trá»±c quan dáº£i táº§n Ă¢m há»c & KhĂ´ng gian replay can thiá»‡p
                   </h4>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1250,7 +1145,7 @@ export default function LearningResultManagement() {
                         <div>
                           <p className="text-xs font-black text-gray-700">AudioRecordUrl</p>
                           <p className="text-[11px] text-gray-400 font-medium truncate max-w-[250px]">
-                            {selectedResult.AudioRecordUrl || "Chưa có tệp nộp bài..."}
+                            {selectedResult.AudioRecordUrl || "ChÆ°a cĂ³ tá»‡p ná»™p bĂ i..."}
                           </p>
                         </div>
                       </div>
@@ -1273,7 +1168,7 @@ export default function LearningResultManagement() {
                             <div className="flex-1 space-y-1">
                               <div className="flex items-center justify-between text-[10px] text-gray-400 font-bold font-mono">
                                 <span>{playingAudioId === selectedResult.ResultId ? '00:03' : '00:00'}</span>
-                                <span>00:10 (Mô phỏng)</span>
+                                <span>00:10 (MĂ´ phá»ng)</span>
                               </div>
                               <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                                 <div 
@@ -1285,7 +1180,7 @@ export default function LearningResultManagement() {
                           </div>
                         </div>
                       ) : (
-                        <span className="text-xs text-rose-400 italic">Học sinh chưa hoàn thành nộp bản thu giọng mộc.</span>
+                        <span className="text-xs text-rose-400 italic">Há»c sinh chÆ°a hoĂ n thĂ nh ná»™p báº£n thu giá»ng má»™c.</span>
                       )}
                     </div>
 
@@ -1296,9 +1191,9 @@ export default function LearningResultManagement() {
                           <Tv className="w-5 h-5" />
                         </div>
                         <div>
-                          <p className="text-xs font-black text-gray-700">ReplayDataUrl (Tọa độ môi kính)</p>
+                          <p className="text-xs font-black text-gray-700">ReplayDataUrl (Tá»a Ä‘á»™ mĂ´i kĂ­nh)</p>
                           <p className="text-[11px] text-gray-400 font-medium truncate max-w-[250px]">
-                            {selectedResult.ReplayDataUrl || "Không có tệp replay..."}
+                            {selectedResult.ReplayDataUrl || "KhĂ´ng cĂ³ tá»‡p replay..."}
                           </p>
                         </div>
                       </div>
@@ -1318,18 +1213,18 @@ export default function LearningResultManagement() {
                             {playingReplayId === selectedResult.ResultId ? (
                               <>
                                 <Activity className="w-4 h-4 animate-bounce" />
-                                Đang mô tả Replay 3D...
+                                Äang mĂ´ táº£ Replay 3D...
                               </>
                             ) : (
                               <>
                                 <Play className="w-4 h-4" />
-                                Phát replay tương tác VR
+                                PhĂ¡t replay tÆ°Æ¡ng tĂ¡c VR
                               </>
                             )}
                           </button>
                         </div>
                       ) : (
-                        <span className="text-xs text-rose-400 italic">Game chưa có dải xuất thần tọa độ.</span>
+                        <span className="text-xs text-rose-400 italic">Game chÆ°a cĂ³ dáº£i xuáº¥t tháº§n tá»a Ä‘á»™.</span>
                       )}
                     </div>
 
@@ -1341,17 +1236,17 @@ export default function LearningResultManagement() {
                 <div className="bg-[#FDFCF5] p-5 rounded-[28px] border border-gray-100 grid grid-cols-2 sm:grid-cols-4 gap-6 font-bold text-center">
                   
                   <div className="space-y-1 border-r border-gray-100 last:border-0">
-                    <p className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">Nỗ lực thứ</p>
-                    <p className="text-2xl font-black text-gray-800">Lượt {selectedResult.AttemptNumber}</p>
+                    <p className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">Ná»— lá»±c thá»©</p>
+                    <p className="text-2xl font-black text-gray-800">LÆ°á»£t {selectedResult.AttemptNumber}</p>
                   </div>
 
                   <div className="space-y-1 border-r border-gray-100 last:border-0">
-                    <p className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">Thời gian tương tác</p>
-                    <p className="text-2xl font-black text-gray-800">{selectedResult.DurationSeconds} giây</p>
+                    <p className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">Thá»i gian tÆ°Æ¡ng tĂ¡c</p>
+                    <p className="text-2xl font-black text-gray-800">{selectedResult.DurationSeconds} giĂ¢y</p>
                   </div>
 
                   <div className="space-y-1 border-r border-gray-100 last:border-0">
-                    <p className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">Điểm dải sóng âm</p>
+                    <p className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">Äiá»ƒm dáº£i sĂ³ng Ă¢m</p>
                     <p className={cn(
                       "text-2xl font-black italic",
                       selectedResult.Score >= 90 ? 'text-emerald-500' : selectedResult.Score >= 70 ? 'text-[#4EACAF]' : 'text-[#FF8E8E]'
@@ -1361,9 +1256,9 @@ export default function LearningResultManagement() {
                   </div>
 
                   <div className="space-y-1 border-r border-gray-100 last:border-0">
-                    <p className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">Hoàn thành lúc</p>
+                    <p className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">HoĂ n thĂ nh lĂºc</p>
                     <p className="text-sm font-black text-gray-700 font-mono mt-1 leading-snug">
-                      {selectedResult.CompletedAt || "Chưa gửi nộp"}
+                      {selectedResult.CompletedAt || "ChÆ°a gá»­i ná»™p"}
                     </p>
                   </div>
 
@@ -1373,10 +1268,10 @@ export default function LearningResultManagement() {
                 <div className="space-y-2">
                   <label className="text-xs font-black text-[#264E50] uppercase tracking-widest ml-1 flex items-center gap-1">
                     <FolderOpen className="w-4 h-4 text-[#4EACAF]" />
-                    Interaction Log (Vết logs tương tác vật lý ghi nhận từ ứng dụng VR)
+                    Interaction Log (Váº¿t logs tÆ°Æ¡ng tĂ¡c váº­t lĂ½ ghi nháº­n tá»« á»©ng dá»¥ng VR)
                   </label>
                   <div className="p-4 bg-gray-900 text-slate-100 rounded-2xl font-mono text-xs whitespace-pre-line leading-relaxed shadow-inner border-2 border-slate-800">
-                    {getResultInteractionLog(selectedResult) || "Hệ thống chưa ghi nhận vết log bấm hoặc phát âm ở phiên tập này..."}
+                    {getResultInteractionLog(selectedResult) || "Há»‡ thá»‘ng chÆ°a ghi nháº­n váº¿t log báº¥m hoáº·c phĂ¡t Ă¢m á»Ÿ phiĂªn táº­p nĂ y..."}
                   </div>
                 </div>
 
@@ -1386,12 +1281,12 @@ export default function LearningResultManagement() {
                     <div className="flex items-center gap-2">
                       <MessageSquareShare className="w-5 h-5 text-amber-500" />
                       <span className="text-xs font-black text-[#264E50] uppercase tracking-widest">
-                        Nhận xét đánh giá can thiệp ngôn ngữ học đường
+                        Nháº­n xĂ©t Ä‘Ă¡nh giĂ¡ can thiá»‡p ngĂ´n ngá»¯ há»c Ä‘Æ°á»ng
                       </span>
                     </div>
 
                     {/* If Admin or Teacher: Show Quick Edit toggler */}
-                    {(currentRoleView === 'ADMIN' || currentRoleView === 'TEACHER') && (
+                    {canEditFeedback && (
                       <button
                         type="button"
                         onClick={() => {
@@ -1400,7 +1295,7 @@ export default function LearningResultManagement() {
                         }}
                         className="text-xs text-[#4EACAF] hover:text-[#4EACAF]/85 font-black uppercase tracking-wider flex items-center gap-1 hover:underline"
                       >
-                        {editFeedbackMode ? 'Hủy sửa' : 'Chỉnh sửa nhận xét'}
+                        {editFeedbackMode ? 'Há»§y sá»­a' : 'Chá»‰nh sá»­a nháº­n xĂ©t'}
                       </button>
                     )}
                   </div>
@@ -1412,7 +1307,7 @@ export default function LearningResultManagement() {
                         onChange={(e) => setFeedbackInput(e.target.value)}
                         className="w-full bg-white border-2 border-amber-200 focus:border-[#4EACAF] rounded-2xl p-4 font-bold text-gray-700 outline-none text-sm resize-none"
                         rows={4}
-                        placeholder="Hãy bổ sung bài học can thiệp, bài thu sửa ngọng cụ thể để phụ huynh phối hợp ở nhà..."
+                        placeholder="HĂ£y bá»• sung bĂ i há»c can thiá»‡p, bĂ i thu sá»­a ngá»ng cá»¥ thá»ƒ Ä‘á»ƒ phá»¥ huynh phá»‘i há»£p á»Ÿ nhĂ ..."
                       />
                       <div className="flex items-center justify-end gap-2.5">
                         <button
@@ -1420,26 +1315,26 @@ export default function LearningResultManagement() {
                           onClick={() => setEditFeedbackMode(false)}
                           className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-500 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all"
                         >
-                          Hủy
+                          Há»§y
                         </button>
                         <button
                           type="button"
                           onClick={handleSaveFeedback}
                           className="px-5 py-2.5 bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#4EACAF]/10"
                         >
-                          Cập nhật ngay
+                          Cáº­p nháº­t ngay
                         </button>
                       </div>
                     </div>
                   ) : (
                     <p className="text-gray-700 text-sm italic font-bold leading-relaxed bg-white/60 p-4.5 rounded-2xl border border-[#C5E1E3]/20">
-                      "{selectedResult.FeedbackText || "Chưa có ý kiến đánh giá từ quý nhà trường trong học kỳ này..."}"
+                      "{selectedResult.FeedbackText || "ChÆ°a cĂ³ Ă½ kiáº¿n Ä‘Ă¡nh giĂ¡ tá»« quĂ½ nhĂ  trÆ°á»ng trong há»c ká»³ nĂ y..."}"
                     </p>
                   )}
 
                   <div className="text-[11px] text-gray-400 font-bold flex items-center gap-1.5 pt-1.5">
                     <Info className="w-4 h-4 text-[#4EACAF]" />
-                    <span>Lộ trình rèn luyện hỗ trợ phản xạ phát âm chỉ hiển thị cho phụ huynh khi được giáo viên duyệt kiểm định.</span>
+                    <span>Lá»™ trĂ¬nh rĂ¨n luyá»‡n há»— trá»£ pháº£n xáº¡ phĂ¡t Ă¢m chá»‰ hiá»ƒn thá»‹ cho phá»¥ huynh khi Ä‘Æ°á»£c giĂ¡o viĂªn duyá»‡t kiá»ƒm Ä‘á»‹nh.</span>
                   </div>
                 </div>
 
@@ -1457,7 +1352,7 @@ export default function LearningResultManagement() {
                     onClick={() => setIsDetailModalOpen(false)}
                     className="py-3 px-6 bg-gray-100 hover:bg-gray-200 text-gray-500 font-extrabold text-xs uppercase tracking-wider rounded-2xl transition-all"
                   >
-                    Đóng cửa sổ
+                    ÄĂ³ng cá»­a sá»•
                   </button>
 
                   {/* Simulated Re-exam attempt button if failed */}
@@ -1465,12 +1360,12 @@ export default function LearningResultManagement() {
                     <button
                       type="button"
                       onClick={() => {
-                        showToast(`Đã phát lệnh yêu cầu bé tập lại: "${getExerciseInfo(selectedResult.ExerciseId).ExerciseName}"!`, 'success');
+                        showToast(`ÄĂ£ phĂ¡t lá»‡nh yĂªu cáº§u bĂ© táº­p láº¡i: "${getExerciseInfo(selectedResult.ExerciseId).ExerciseName}"!`, 'success');
                         setIsDetailModalOpen(false);
                       }}
                       className="py-3 px-6 bg-[#FF8E8E] hover:bg-[#FF8E8E]/95 text-white font-black italic text-xs uppercase tracking-widest rounded-2xl transition-all flex items-center gap-1.5 shadow-lg shadow-[#FF8E8E]/10"
                     >
-                      Yêu cầu luyện tập lại
+                      YĂªu cáº§u luyá»‡n táº­p láº¡i
                     </button>
                   )}
                 </div>

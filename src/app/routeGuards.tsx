@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import FirstLoginChangePasswordView from '../features/auth/FirstLoginChangePasswordView';
-import { getCurrentUser } from '../lib/authMock';
+import { getSessionUser } from '../lib/authSession';
 import type { UserRole } from './navigation';
 
 export function getRoleHomePath(role: UserRole) {
@@ -10,7 +10,7 @@ export function getRoleHomePath(role: UserRole) {
 }
 
 export function getAuthenticatedRedirect(userRole: UserRole | null, allowedRole: UserRole) {
-  const currentUser = getCurrentUser();
+  const currentUser = getSessionUser();
 
   if (!userRole || !currentUser) {
     return '/login';
@@ -38,7 +38,7 @@ export function ChangePasswordRoute({
   onSuccess: () => void;
   onLogout: () => void;
 }) {
-  const currentUser = getCurrentUser();
+  const currentUser = getSessionUser();
 
   if (!currentUser) {
     return <Navigate to="/login" replace />;

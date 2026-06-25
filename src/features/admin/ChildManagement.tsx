@@ -889,7 +889,7 @@ export default function ChildManagement() {
         {modalType === 'detail' && selectedChild && (
           <ModalFrame
             title="Chi tiet ho so hoc vien"
-            subtitle="Dong bo tu `GET /api/child-profile/{id}`"
+            subtitle="Dong bo tu `GET /api/child-profiles/{id}`"
             onClose={handleCloseModal}
             accent="purple"
           >
@@ -1024,8 +1024,8 @@ export default function ChildManagement() {
             }
             subtitle={
               formMode === 'create'
-                ? 'Dong bo tu `POST /api/child-profile`'
-                : 'Dong bo tu `PUT /api/child-profile/{id}`'
+                ? 'Dong bo tu `POST /api/child-profiles`'
+                : 'Dong bo tu `PUT /api/child-profiles/{id}`'
             }
             onClose={handleCloseModal}
             accent="teal"
@@ -1142,7 +1142,7 @@ export default function ChildManagement() {
         {modalType === 'delete' && selectedChild && (
           <ModalFrame
             title="Xoa ho so tre"
-            subtitle="Dong bo tu `DELETE /api/child-profile/{id}`"
+            subtitle="Dong bo tu `DELETE /api/child-profiles/{id}`"
             onClose={handleCloseModal}
             accent="rose"
           >

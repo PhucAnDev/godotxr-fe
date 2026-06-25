@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { login } from '../services/authService';
-import type { UserAuthInfo } from '../services/authService';
+import { persistAuthSession } from '../lib/authSession';
 
 export type LoginUserRole = 'PARENT' | 'TEACHER' | 'ADMIN';
 
@@ -17,49 +17,6 @@ export interface UseLoginReturn {
     e: FormEvent,
     onSuccess: (role: LoginUserRole) => void
   ) => Promise<void>;
-}
-
-function mapRoleName(roleName: string): LoginUserRole {
-  const normalized = roleName.trim().toLowerCase();
-
-  if (normalized === 'admin') return 'ADMIN';
-  if (normalized === 'teacher') return 'TEACHER';
-  return 'PARENT';
-}
-
-function persistSession(
-  userInfo: UserAuthInfo,
-  accessToken: string,
-  refreshTokenValue: string
-): LoginUserRole {
-  const role = mapRoleName(userInfo.roleName);
-
-  localStorage.setItem('auth_token', accessToken);
-  localStorage.setItem('refresh_token', refreshTokenValue);
-
-  const compatibleUser = {
-    UserId: String(userInfo.id),
-    RoleId:
-      role === 'ADMIN'
-        ? 'ROL-001'
-        : role === 'TEACHER'
-          ? 'ROL-002'
-          : 'ROL-003',
-    Role: role,
-    FullName: userInfo.fullName || userInfo.username || userInfo.email,
-    Email: userInfo.email,
-    PhoneNumber: userInfo.phone || '',
-    Status: userInfo.isActive ? 'Active' : 'Inactive',
-    MustChangePassword: userInfo.mustChangePassword,
-    Password: '',
-    CreatedAt: '',
-    UpdatedAt: '',
-  };
-
-  localStorage.setItem('current_user', JSON.stringify(compatibleUser));
-  localStorage.setItem('user_role', role);
-
-  return role;
 }
 
 export function useLogin(): UseLoginReturn {
@@ -114,7 +71,7 @@ export function useLogin(): UseLoginReturn {
       return;
     }
 
-    const role = persistSession(user, accessToken, refreshToken);
+    const role = persistAuthSession(user, accessToken, refreshToken);
     onSuccess(role);
   };
 

@@ -33,23 +33,23 @@ async function request<T>(
 
 export const getExerciseTypes = (pageNumber = 1, pageSize = 100) =>
   request<PagedResponse<ExerciseTypeResponse>>(
-    `/api/exercisetypes?pageNumber=${pageNumber}&pageSize=${pageSize}`
+    `/api/exercise-types?pageNumber=${pageNumber}&pageSize=${pageSize}`
   );
 
 export const getExerciseTypeById = (id: number) =>
-  request<ExerciseTypeResponse>(`/api/exercisetypes/${id}`);
+  request<ExerciseTypeResponse>(`/api/exercise-types/${id}`);
 
 export const createExerciseType = (payload: ExerciseTypePayload) =>
-  request<ExerciseTypeResponse>('/api/exercisetypes', {
+  request<ExerciseTypeResponse>('/api/exercise-types', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
 
 export const updateExerciseType = (id: number, payload: ExerciseTypePayload) =>
-  request<ExerciseTypeResponse>(`/api/exercisetypes/${id}`, {
+  request<ExerciseTypeResponse>(`/api/exercise-types/${id}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
   });
 
 export const deleteExerciseType = (id: number) =>
-  request<boolean>(`/api/exercisetypes/${id}`, { method: 'DELETE' });
+  request<boolean>(`/api/exercise-types/${id}`, { method: 'DELETE' });

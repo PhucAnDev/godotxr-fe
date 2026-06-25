@@ -22,7 +22,7 @@ async function request<T>(
 }
 
 export const getEventLogsByResult = (resultId: number) =>
-  request<EventLogResponse[]>(`/api/eventlogs/by-result/${resultId}`);
+  request<EventLogResponse[]>(`/api/event-logs/by-result/${resultId}`);
 
 export const getEventLogsByChild = (childId: number) =>
-  request<EventLogResponse[]>(`/api/eventlogs/by-child/${childId}`);
+  request<EventLogResponse[]>(`/api/event-logs/by-child/${childId}`);

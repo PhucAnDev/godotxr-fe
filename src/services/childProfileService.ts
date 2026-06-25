@@ -42,25 +42,25 @@ async function request<T>(
 
 export const getChildProfiles = (pageNumber = 1, pageSize = 100) =>
   request<PagedResponse<ChildProfileResponse>>(
-    `/api/child-profile?pageNumber=${pageNumber}&pageSize=${pageSize}`
+    `/api/child-profiles?pageNumber=${pageNumber}&pageSize=${pageSize}`
   );
 
 export const getChildProfileById = (id: number) =>
-  request<ChildProfileResponse>(`/api/child-profile/${id}`);
+  request<ChildProfileResponse>(`/api/child-profiles/${id}`);
 
 export const createChildProfile = (payload: ChildProfilePayload) =>
-  request<ChildProfileResponse>('/api/child-profile', {
+  request<ChildProfileResponse>('/api/child-profiles', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
 
 export const updateChildProfile = (id: number, payload: ChildProfilePayload) =>
-  request<ChildProfileResponse>(`/api/child-profile/${id}`, {
+  request<ChildProfileResponse>(`/api/child-profiles/${id}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
   });
 
 export const deleteChildProfile = (id: number) =>
-  request<boolean>(`/api/child-profile/${id}`, {
+  request<boolean>(`/api/child-profiles/${id}`, {
     method: 'DELETE',
   });

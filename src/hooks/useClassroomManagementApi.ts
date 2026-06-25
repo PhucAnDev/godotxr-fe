@@ -1,9 +1,11 @@
 import { useCallback } from 'react';
+import { getChildProfiles as getChildProfilesService } from '../services/childProfileService';
 import {
   createClassroom as createClassroomService,
   getClassrooms as getClassroomsService,
   updateClassroom as updateClassroomService,
 } from '../services/classroomService';
+import { getEnrollments as getEnrollmentsService } from '../services/enrollmentService';
 import { getPrograms as getProgramsService } from '../services/programService';
 import { getSemesters as getSemestersService } from '../services/semesterService';
 import { getUsers as getUsersService } from '../services/userService';
@@ -15,8 +17,19 @@ export function useClassroomManagementApi() {
   const getPrograms = useCallback((...args: Parameters<typeof getProgramsService>) => getProgramsService(...args), []);
   const getSemesters = useCallback((...args: Parameters<typeof getSemestersService>) => getSemestersService(...args), []);
   const getUsers = useCallback((...args: Parameters<typeof getUsersService>) => getUsersService(...args), []);
+  const getEnrollments = useCallback((...args: Parameters<typeof getEnrollmentsService>) => getEnrollmentsService(...args), []);
+  const getChildProfiles = useCallback((...args: Parameters<typeof getChildProfilesService>) => getChildProfilesService(...args), []);
   const createClassroom = useCallback((...args: Parameters<typeof createClassroomService>) => createClassroomService(...args), []);
   const updateClassroom = useCallback((...args: Parameters<typeof updateClassroomService>) => updateClassroomService(...args), []);
 
-  return { getClassrooms, getPrograms, getSemesters, getUsers, createClassroom, updateClassroom };
+  return {
+    getClassrooms,
+    getPrograms,
+    getSemesters,
+    getUsers,
+    getEnrollments,
+    getChildProfiles,
+    createClassroom,
+    updateClassroom,
+  };
 }

@@ -45,14 +45,14 @@ async function request<T>(
 
 export const getExerciseQuestions = (pageNumber = 1, pageSize = 100) =>
   request<PagedResponse<ExerciseQuestionResponse>>(
-    `/api/exercisequestions?pageNumber=${pageNumber}&pageSize=${pageSize}`
+    `/api/exercise-questions?pageNumber=${pageNumber}&pageSize=${pageSize}`
   );
 
 export const getExerciseQuestionById = (id: number) =>
-  request<ExerciseQuestionResponse>(`/api/exercisequestions/${id}`);
+  request<ExerciseQuestionResponse>(`/api/exercise-questions/${id}`);
 
 export const createExerciseQuestion = (payload: ExerciseQuestionPayload) =>
-  request<ExerciseQuestionResponse>('/api/exercisequestions', {
+  request<ExerciseQuestionResponse>('/api/exercise-questions', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -61,10 +61,10 @@ export const updateExerciseQuestion = (
   id: number,
   payload: ExerciseQuestionPayload
 ) =>
-  request<ExerciseQuestionResponse>(`/api/exercisequestions/${id}`, {
+  request<ExerciseQuestionResponse>(`/api/exercise-questions/${id}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
   });
 
 export const deleteExerciseQuestion = (id: number) =>
-  request<boolean>(`/api/exercisequestions/${id}`, { method: 'DELETE' });
+  request<boolean>(`/api/exercise-questions/${id}`, { method: 'DELETE' });

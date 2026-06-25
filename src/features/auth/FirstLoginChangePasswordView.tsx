@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import { Eye, EyeOff, CheckCircle2, KeyRound, Shield } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Logo } from '../public/HomeView';
-import {
-  getCurrentUser,
-  mockLogout,
-  updateCurrentUserPassword,
-} from '../../lib/authMock';
+import { getSessionUser, setSessionUser } from '../../lib/authSession';
 import { useChangePassword } from '../../hooks/useChangePassword';
 
 interface FirstLoginChangePasswordViewProps {
@@ -18,7 +14,7 @@ export default function FirstLoginChangePasswordView({
   onSuccess,
   onLogout,
 }: FirstLoginChangePasswordViewProps) {
-  const currentUser = getCurrentUser();
+  const currentUser = getSessionUser();
   const { changePassword, isChangingPassword } = useChangePassword();
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -31,7 +27,6 @@ export default function FirstLoginChangePasswordView({
   const [isSuccess, setIsSuccess] = useState(false);
 
   const handleLogout = () => {
-    mockLogout();
     onLogout();
   };
 
@@ -76,7 +71,10 @@ export default function FirstLoginChangePasswordView({
       return;
     }
 
-    updateCurrentUserPassword(newPassword);
+    setSessionUser({
+      ...currentUser,
+      MustChangePassword: false,
+    });
     setIsSuccess(true);
     setTimeout(() => onSuccess(), 1200);
   };

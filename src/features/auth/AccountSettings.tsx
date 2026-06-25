@@ -14,7 +14,11 @@ import {
   Shield,
   Smile,
 } from 'lucide-react';
-import { getCurrentUser, getStoredUsers, saveStoredUsers, setCurrentUser, type MockUser } from '../../lib/authMock';
+import {
+  getSessionUser,
+  setSessionUser,
+  type SessionUser,
+} from '../../lib/authSession';
 import { useAccountSettingsApi } from '../../hooks/useAccountSettingsApi';
 
 type UserGender = 'Male' | 'Female' | 'Other';
@@ -36,7 +40,7 @@ export default function AccountSettings() {
     isSavingProfile,
     isChangingPassword,
   } = useAccountSettingsApi();
-  const currentUser = getCurrentUser();
+  const currentUser = getSessionUser();
 
   const [formFullName, setFormFullName] = useState(currentUser?.FullName || '');
   const [formPhoneNumber, setFormPhoneNumber] = useState(currentUser?.PhoneNumber || '');
@@ -71,13 +75,16 @@ export default function AccountSettings() {
         ? 'Giao vien dac biet'
         : 'Phu huynh dong hanh';
 
-  const syncCurrentUserProfile = (user: MockUser, profile: {
-    fullName: string;
-    phone: string;
-    gender: UserGender;
-    specialty?: string;
-  }) => {
-    const nextUser: MockUser = {
+  const syncCurrentUserProfile = (
+    user: SessionUser,
+    profile: {
+      fullName: string;
+      phone: string;
+      gender: UserGender;
+      specialty?: string;
+    }
+  ) => {
+    const nextUser: SessionUser = {
       ...user,
       FullName: profile.fullName,
       PhoneNumber: profile.phone,
@@ -86,14 +93,7 @@ export default function AccountSettings() {
       UpdatedAt: formatNow(),
     };
 
-    const latestUsers = getStoredUsers();
-    const exists = latestUsers.some((item) => item.UserId === user.UserId);
-    const updatedUsers = exists
-      ? latestUsers.map((item) => (item.UserId === user.UserId ? nextUser : item))
-      : [...latestUsers, nextUser];
-
-    saveStoredUsers(updatedUsers);
-    setCurrentUser(nextUser);
+    setSessionUser(nextUser);
   };
 
   useEffect(() => {
@@ -201,22 +201,11 @@ export default function AccountSettings() {
       return;
     }
 
-    const updatedUsers = getStoredUsers().map((user) => {
-      if (user.UserId !== currentUser.UserId) return user;
-      return {
-        ...user,
-        Password: newPassword,
-        MustChangePassword: false,
-        UpdatedAt: formatNow(),
-      };
+    setSessionUser({
+      ...currentUser,
+      MustChangePassword: false,
+      UpdatedAt: formatNow(),
     });
-
-    saveStoredUsers(updatedUsers);
-
-    const updatedMe = updatedUsers.find((user) => user.UserId === currentUser.UserId);
-    if (updatedMe) {
-      setCurrentUser(updatedMe);
-    }
 
     setCurrentPassword('');
     setNewPassword('');

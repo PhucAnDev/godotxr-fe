@@ -24,8 +24,8 @@ async function request<T>(
 
 export const getPronunciationDetailsByResult = (resultId: number) =>
   request<PronunciationDetailResponse[]>(
-    `/api/pronunciationdetails/by-result/${resultId}`
+    `/api/pronunciation-details/by-result/${resultId}`
   );
 
 export const getPronunciationDetailById = (id: number) =>
-  request<PronunciationDetailResponse>(`/api/pronunciationdetails/${id}`);
+  request<PronunciationDetailResponse>(`/api/pronunciation-details/${id}`);

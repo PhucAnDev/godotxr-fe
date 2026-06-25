@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   School, 
@@ -42,6 +42,7 @@ interface Classroom {
   TeacherId: string;
   ProgramId: string;
   SemesterId?: string;
+  EnrollmentCount: number;
   ClassName: string;
   Description: string;
   StartDate: string;
@@ -53,6 +54,7 @@ interface Classroom {
 
 const mapClassroom = (classroom: ClassroomResponse): Classroom => ({
   ClassId: String(classroom.id), TeacherId: String(classroom.userId), ProgramId: String(classroom.programId), SemesterId: String(classroom.semesterId),
+  EnrollmentCount: classroom.enrollmentCount,
   ClassName: classroom.className, Description: classroom.description ?? '',
   StartDate: classroom.startDate.slice(0, 10), EndDate: classroom.endDate.slice(0, 10),
   Status: classroom.status as Classroom['Status'], CreatedAt: classroom.createdAt, UpdatedAt: classroom.updatedAt ?? classroom.createdAt,
@@ -84,155 +86,23 @@ interface EnrolledStudent {
 }
 
 // Mock Data
-const MOCK_TEACHERS: Teacher[] = [
-  { 
-    TeacherId: 'TCH-001', 
-    FullName: 'Trần Thị Hồng (Ms. Johnson)', 
-    Specialty: 'Phát âm cơ bản & Đồng hành rèn luyện VR',
-    Email: 'hong.johnson@godotxr.edu',
-    AvatarSeed: 'Michelle'
-  },
-  { 
-    TeacherId: 'TCH-002', 
-    FullName: 'Lê Hoàng Long', 
-    Specialty: 'Chậm phát âm & Hỗ trợ rèn luyện tập trung',
-    Email: 'long.le@godotxr.edu',
-    AvatarSeed: 'George'
-  },
-  { 
-    TeacherId: 'TCH-003', 
-    FullName: 'Nguyễn Thị Mai', 
-    Specialty: 'Phát triển giao tiếp xã hội & Ghép âm',
-    Email: 'mai.nguyen@godotxr.edu',
-    AvatarSeed: 'Anna'
-  },
-  { 
-    TeacherId: 'TCH-004', 
-    FullName: 'Phạm Tuấn Anh', 
-    Specialty: 'Sửa tật ngọng ngữ âm & Luyện thanh',
-    Email: 'tuananh.pham@godotxr.edu',
-    AvatarSeed: 'Jack'
-  }
-];
-
-const MOCK_PROGRAMS: Program[] = [
-  { 
-    ProgramId: 'PRG-001', 
-    ProgramName: 'Nhận diện âm đơn & Từ vựng căn bản (Level 1)', 
-    Language: 'Tiếng Việt', 
-    TargetAgeFrom: 3, 
-    TargetAgeTo: 5 
-  },
-  { 
-    ProgramId: 'PRG-002', 
-    ProgramName: 'Luyện phát âm âm đôi & Cụm từ thông dụng (Level 2)', 
-    Language: 'Tiếng Việt', 
-    TargetAgeFrom: 4, 
-    TargetAgeTo: 6 
-  },
-  { 
-    ProgramId: 'PRG-003', 
-    ProgramName: 'Kích hoạt phản xạ hội thoại & Kể chuyện 3D (Level 3)', 
-    Language: 'Tiếng Việt', 
-    TargetAgeFrom: 5, 
-    TargetAgeTo: 8 
-  },
-  { 
-    ProgramId: 'PRG-004', 
-    ProgramName: 'Luyện âm tương tác & Sửa ngọng phụ âm gió (Level 4)', 
-    Language: 'Tiếng Việt/Tiếng Anh', 
-    TargetAgeFrom: 6, 
-    TargetAgeTo: 10 
-  }
-];
-
-const INITIAL_CLASSROOMS: Classroom[] = [
-  {
-    ClassId: 'CLS-001',
-    TeacherId: 'TCH-001',
-    ProgramId: 'PRG-002',
-    ClassName: 'Lớp Chồi 1 - Ghép vần thông minh',
-    Description: 'Ứng dụng kính thực tế ảo tăng cường để huấn luyện nâng cao từ kép và phối hợp âm điệu phù hợp cho bé chậm nói.',
-    StartDate: '2026-06-01',
-    EndDate: '2026-09-01',
-    Status: 'Upcoming',
-    CreatedAt: '2026-05-15 10:00',
-    UpdatedAt: '2026-05-15 10:00'
-  },
-  {
-    ClassId: 'CLS-002',
-    TeacherId: 'TCH-003',
-    ProgramId: 'PRG-001',
-    ClassName: 'Lớp Mầm 2 - Nhận biết sinh vật sống',
-    Description: 'Lớp học nhập môn phát âm âm đơn bằng giáo cụ trực quan 3D AR, khơi gợi trí tò mò ngôn ngữ từ thủa sơ khai.',
-    StartDate: '2026-04-10',
-    EndDate: '2026-07-10',
-    Status: 'Active',
-    CreatedAt: '2026-04-01 09:30',
-    UpdatedAt: '2026-04-10 14:00'
-  },
-  {
-    ClassId: 'CLS-003',
-    TeacherId: 'TCH-002',
-    ProgramId: 'PRG-003',
-    ClassName: 'Lớp Lá Phản Xạ Cấp 3',
-    Description: 'Tập trung kích hoạt giao tiếp phản xạ tự do trong môi trường giả lập đại dương và vũ trụ của phần mềm GodotXR.',
-    StartDate: '2026-03-15',
-    EndDate: '2026-06-15',
-    Status: 'Active',
-    CreatedAt: '2026-03-01 11:00',
-    UpdatedAt: '2026-03-15 08:00'
-  },
-  {
-    ClassId: 'CLS-004',
-    TeacherId: 'TCH-004',
-    ProgramId: 'PRG-004',
-    ClassName: 'Lớp Sửa Ngọng S, X nâng cao',
-    Description: 'Sửa đổi khẩu hình miệng khi nói phụ âm gió thông qua visual âm sinh học thời gian thực hỗ trợ điều trị nhi khoa.',
-    StartDate: '2026-01-10',
-    EndDate: '2026-04-10',
-    Status: 'Closed',
-    CreatedAt: '2025-12-25 10:00',
-    UpdatedAt: '2026-04-10 17:00'
-  },
-  {
-    ClassId: 'CLS-005',
-    TeacherId: 'TCH-001',
-    ProgramId: 'PRG-003',
-    ClassName: 'Lớp Chồi 3 - Đọc Truyện 3D',
-    Description: 'Sử dụng công nghệ chiếu lập thể để các em thảo luận nhóm, kể lại nội dung chuyện cổ tích quen thuộc.',
-    StartDate: '2026-05-20',
-    EndDate: '2026-08-20',
-    Status: 'Active',
-    CreatedAt: '2026-05-01 15:30',
-    UpdatedAt: '2026-05-20 09:00'
-  }
-];
-
-// Mock students data mapping for classes to render in students modal
-const MOCK_CHILDREN_IN_CLASS: Record<string, EnrolledStudent[]> = {
-  'CLS-001': [
-    { ChildId: 'CHD-001', FullName: 'Phạm Minh Đức (Leo)', Age: 6, Gender: 'Male', ParentName: 'Phạm Minh Anh', Phone: '0901234567' },
-    { ChildId: 'CHD-003', FullName: 'Nguyễn Đức Huy (Bi)', Age: 5, Gender: 'Male', ParentName: 'Bùi Thị Lan', Phone: '0978123456' }
-  ],
-  'CLS-002': [
-    { ChildId: 'CHD-002', FullName: 'Phạm Ngọc Linh (Mimi)', Age: 4, Gender: 'Female', ParentName: 'Phạm Minh Anh', Phone: '0901234567' },
-    { ChildId: 'CHD-005', FullName: 'Nguyễn Hải Yến (Tép)', Age: 3, Gender: 'Female', ParentName: 'Nguyễn Thanh Sơn', Phone: '0933221100' }
-  ],
-  'CLS-003': [
-    { ChildId: 'CHD-004', FullName: 'Nguyễn Thanh Lâm', Age: 7, Gender: 'Male', ParentName: 'Nguyễn Thanh Sơn', Phone: '0933221100' }
-  ],
-  'CLS-005': [
-    { ChildId: 'CHD-001', FullName: 'Phạm Minh Đức (Leo)', Age: 6, Gender: 'Male', ParentName: 'Phạm Minh Anh', Phone: '0901234567' },
-    { ChildId: 'CHD-004', FullName: 'Nguyễn Thanh Lâm', Age: 7, Gender: 'Male', ParentName: 'Nguyễn Thanh Sơn', Phone: '0933221100' }
-  ]
-};
-
 export default function ClassroomManagement() {
-  const { getClassrooms, getPrograms, getSemesters, getUsers, createClassroom, updateClassroom } = useClassroomManagementApi();
+  const {
+    getClassrooms,
+    getPrograms,
+    getSemesters,
+    getUsers,
+    getEnrollments,
+    getChildProfiles,
+    createClassroom,
+    updateClassroom,
+  } = useClassroomManagementApi();
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [studentsByClassId, setStudentsByClassId] = useState<
+    Record<string, EnrolledStudent[]>
+  >({});
   const [defaultSemesterId, setDefaultSemesterId] = useState('');
   
   // Search & Filter state
@@ -272,14 +142,76 @@ export default function ClassroomManagement() {
   };
 
   useEffect(() => {
-    void Promise.all([getClassrooms(), getUsers(1, 100), getPrograms(), getSemesters()]).then(([classResult, userResult, programResult, semesterResult]) => {
+    void Promise.all([
+      getClassrooms(),
+      getUsers(1, 100),
+      getPrograms(),
+      getSemesters(),
+      getEnrollments(),
+      getChildProfiles(),
+    ]).then(([
+      classResult,
+      userResult,
+      programResult,
+      semesterResult,
+      enrollmentResult,
+      childResult,
+    ]) => {
       if (classResult.success && classResult.data) setClassrooms(classResult.data.items.map(mapClassroom));
       else triggerNotification(classResult.errors.join(' ') || classResult.message, 'warning');
-      if (userResult.data) setTeachers(userResult.data.items.filter(u => u.roleName === 'Teacher').map(u => ({ TeacherId: String(u.id), FullName: u.fullName, Specialty: u.specialty, Email: u.email, AvatarSeed: u.username })));
+      if (userResult.data) {
+        const users = userResult.data.items;
+        setTeachers(users.filter(u => u.roleName === 'Teacher').map(u => ({ TeacherId: String(u.id), FullName: u.fullName, Specialty: u.specialty, Email: u.email, AvatarSeed: u.username })));
+
+        if (enrollmentResult.data && childResult.data) {
+          const parentById = new Map(
+            users.map((user) => [
+              String(user.id),
+              { fullName: user.fullName, phone: user.phone || 'Chua co so dien thoai' },
+            ])
+          );
+          const childById = new Map(
+            childResult.data.items.map((child) => [String(child.id), child])
+          );
+
+          const groupedStudents = enrollmentResult.data.items.reduce<
+            Record<string, EnrolledStudent[]>
+          >((accumulator, enrollment) => {
+            if (enrollment.status === 'Cancelled') {
+              return accumulator;
+            }
+
+            const child = childById.get(String(enrollment.childId));
+            if (!child) {
+              return accumulator;
+            }
+
+            const parent = parentById.get(String(child.userId));
+            const classId = String(enrollment.classId);
+            const current = accumulator[classId] ?? [];
+
+            accumulator[classId] = [
+              ...current,
+              {
+                ChildId: String(child.id),
+                FullName: child.fullName,
+                Age: child.age,
+                Gender: child.gender,
+                ParentName: parent?.fullName || `Parent #${child.userId}`,
+                Phone: parent?.phone || 'Chua co so dien thoai',
+              },
+            ].sort((left, right) => left.FullName.localeCompare(right.FullName));
+
+            return accumulator;
+          }, {});
+
+          setStudentsByClassId(groupedStudents);
+        }
+      }
       if (programResult.data) setPrograms(programResult.data.items.map(p => ({ ProgramId: String(p.id), ProgramName: p.programName, Language: p.language, TargetAgeFrom: p.targetAgeFrom, TargetAgeTo: p.targetAgeTo })));
       if (semesterResult.data) setDefaultSemesterId(String(semesterResult.data.items[0]?.id ?? ''));
     });
-  }, []);
+  }, [getChildProfiles, getClassrooms, getEnrollments, getPrograms, getSemesters, getUsers]);
 
   // KPI calculations
   const totalClasses = classrooms.length;
@@ -340,17 +272,17 @@ export default function ClassroomManagement() {
     e.preventDefault();
 
     if (!formClassName.trim()) {
-      triggerNotification('Vui lòng nhập tên lớp học!', 'warning');
+      triggerNotification('Vui lĂ²ng nháº­p tĂªn lá»›p há»c!', 'warning');
       return;
     }
 
     if (!formStartDate || !formEndDate) {
-      triggerNotification('Vui lòng chọn đầy đủ thời gian bắt đầu và kết thúc!', 'warning');
+      triggerNotification('Vui lĂ²ng chá»n Ä‘áº§y Ä‘á»§ thá»i gian báº¯t Ä‘áº§u vĂ  káº¿t thĂºc!', 'warning');
       return;
     }
 
     if (new Date(formStartDate) >= new Date(formEndDate)) {
-      triggerNotification('Ngày bắt đầu phải trước ngày kết thúc học phần!', 'warning');
+      triggerNotification('NgĂ y báº¯t Ä‘áº§u pháº£i trÆ°á»›c ngĂ y káº¿t thĂºc há»c pháº§n!', 'warning');
       return;
     }
 
@@ -369,8 +301,9 @@ export default function ClassroomManagement() {
         ClassId: `CLS-${String(classrooms.length + 1).padStart(3, '0')}`,
         TeacherId: formTeacherId,
         ProgramId: formProgramId,
+        EnrollmentCount: 0,
         ClassName: formClassName,
-        Description: formDescription || 'Chưa cập nhật mô tả chi tiết lớp học.',
+        Description: formDescription || 'ChÆ°a cáº­p nháº­t mĂ´ táº£ chi tiáº¿t lá»›p há»c.',
         StartDate: formStartDate,
         EndDate: formEndDate,
         Status: formStatus,
@@ -379,7 +312,7 @@ export default function ClassroomManagement() {
       };
 
       setClassrooms([newClass, ...classrooms]);
-      triggerNotification(`Đã kiến tạo thành công lớp học "${formClassName}"!`);
+      triggerNotification(`ÄĂ£ kiáº¿n táº¡o thĂ nh cĂ´ng lá»›p há»c "${formClassName}"!`);
     } else if (modalType === 'edit' && selectedClass) {
       setClassrooms(classrooms.map(c => c.ClassId === selectedClass.ClassId ? {
         ...c,
@@ -393,7 +326,7 @@ export default function ClassroomManagement() {
         UpdatedAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
       } : c));
 
-      triggerNotification(`Cập nhật thông tin lớp học "${formClassName}" thành công!`);
+      triggerNotification(`Cáº­p nháº­t thĂ´ng tin lá»›p há»c "${formClassName}" thĂ nh cĂ´ng!`);
     }
 
     handleCloseModal();
@@ -408,8 +341,8 @@ export default function ClassroomManagement() {
 
     triggerNotification(
       nextStatus === 'Active' 
-        ? `Đã kích hoạt vận hành hoạt động lớp "${cls.ClassName}"!`
-        : `Đã kết thúc và khóa hồ sơ lớp học "${cls.ClassName}"!`,
+        ? `ÄĂ£ kĂ­ch hoáº¡t váº­n hĂ nh hoáº¡t Ä‘á»™ng lá»›p "${cls.ClassName}"!`
+        : `ÄĂ£ káº¿t thĂºc vĂ  khĂ³a há»“ sÆ¡ lá»›p há»c "${cls.ClassName}"!`,
       nextStatus === 'Active' ? 'success' : 'warning'
     );
   };
@@ -489,13 +422,13 @@ export default function ClassroomManagement() {
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             <School className="w-3.5 h-3.5" />
-            Hệ thống quản lý lớp học XR
+            Há»‡ thá»‘ng quáº£n lĂ½ lá»›p há»c XR
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
-            Thiết Lập <span className="text-[#4EACAF]">Lớp Học VR</span>
+            Thiáº¿t Láº­p <span className="text-[#4EACAF]">Lá»›p Há»c VR</span>
           </h1>
           <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed mt-1">
-            Kiến tạo điều phối lớp học, liên kết giáo viên chuyên môn cao và chương trình giảng dạy rèn luyện phát âm thông minh của nền tảng GodotXR.
+            Kiáº¿n táº¡o Ä‘iá»u phá»‘i lá»›p há»c, liĂªn káº¿t giĂ¡o viĂªn chuyĂªn mĂ´n cao vĂ  chÆ°Æ¡ng trĂ¬nh giáº£ng dáº¡y rĂ¨n luyá»‡n phĂ¡t Ă¢m thĂ´ng minh cá»§a ná»n táº£ng GodotXR.
           </p>
         </div>
 
@@ -505,40 +438,40 @@ export default function ClassroomManagement() {
           id="btn-add-classroom"
         >
           <Plus className="w-5 h-5" strokeWidth={2.5} />
-          Khai giảng lớp học mới
+          Khai giáº£ng lá»›p há»c má»›i
         </button>
       </div>
 
       {/* 2. Statistical Dashboard block */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="classroom-statistics">
         <StatItem 
-          title="Tổng lớp học" 
+          title="Tá»•ng lá»›p há»c" 
           value={totalClasses} 
-          subtitle="Nhóm can thiệp âm học" 
+          subtitle="NhĂ³m can thiá»‡p Ă¢m há»c" 
           icon={<School className="w-5 h-5 text-[#4EACAF]" />} 
           bgColor="bg-[#4EACAF]/5"
           borderColor="border-slate-100"
         />
         <StatItem 
-          title="Lớp đang hoạt động" 
+          title="Lá»›p Ä‘ang hoáº¡t Ä‘á»™ng" 
           value={activeClasses} 
-          subtitle="Thực hành VR trực tuyến" 
+          subtitle="Thá»±c hĂ nh VR trá»±c tuyáº¿n" 
           icon={<Activity className="w-5 h-5 text-emerald-600" />} 
           bgColor="bg-emerald-50/70"
           borderColor="border-slate-100"
         />
         <StatItem 
-          title="Lớp sắp kết thúc" 
+          title="Lá»›p sáº¯p káº¿t thĂºc" 
           value={endingSoonClasses} 
-          subtitle="Hoàn thành giáo án đợt 1" 
+          subtitle="HoĂ n thĂ nh giĂ¡o Ă¡n Ä‘á»£t 1" 
           icon={<Clock className="w-5 h-5 text-rose-600" />} 
           bgColor="bg-rose-50/70"
           borderColor="border-slate-100"
         />
         <StatItem 
-          title="Giáo viên phụ trách" 
+          title="GiĂ¡o viĂªn phá»¥ trĂ¡ch" 
           value={totalTeachersAllocated} 
-          subtitle="Điều hợp viên tâm lý học" 
+          subtitle="Äiá»u há»£p viĂªn tĂ¢m lĂ½ há»c" 
           icon={<GraduationCap className="w-5 h-5 text-amber-600" />} 
           bgColor="bg-amber-50/70"
           borderColor="border-slate-100"
@@ -551,7 +484,7 @@ export default function ClassroomManagement() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4.5 h-4.5" />
           <input 
             type="text" 
-            placeholder="Tìm theo tên lớp, tên giáo viên, chương trình..." 
+            placeholder="TĂ¬m theo tĂªn lá»›p, tĂªn giĂ¡o viĂªn, chÆ°Æ¡ng trĂ¬nh..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-11 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-gray-700 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white" 
@@ -574,11 +507,11 @@ export default function ClassroomManagement() {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/45 px-4 py-2.5 rounded-xl font-bold text-gray-750 outline-none cursor-pointer pr-10 text-xs"
             >
-              <option value="ALL">Mọi trạng thái lớp</option>
-              <option value="Active">Đang học</option>
-              <option value="Upcoming">Sắp mở</option>
-              <option value="Inactive">Tạm ngưng</option>
-              <option value="Closed">Đã kết thúc</option>
+              <option value="ALL">Má»i tráº¡ng thĂ¡i lá»›p</option>
+              <option value="Active">Äang há»c</option>
+              <option value="Upcoming">Sáº¯p má»Ÿ</option>
+              <option value="Inactive">Táº¡m ngÆ°ng</option>
+              <option value="Closed">ÄĂ£ káº¿t thĂºc</option>
             </select>
             <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
@@ -589,7 +522,7 @@ export default function ClassroomManagement() {
               onChange={(e) => setFilterProgram(e.target.value)}
               className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/45 px-4 py-2.5 rounded-xl font-bold text-gray-750 outline-none cursor-pointer pr-10 text-xs"
             >
-              <option value="ALL">Mọi chương trình học</option>
+              <option value="ALL">Má»i chÆ°Æ¡ng trĂ¬nh há»c</option>
               {programs.map(prog => (
                 <option key={prog.ProgramId} value={prog.ProgramId}>
                   {prog.ProgramName.slice(0, 32)}...
@@ -605,7 +538,7 @@ export default function ClassroomManagement() {
               onChange={(e) => setFilterTeacher(e.target.value)}
               className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/45 px-4 py-2.5 rounded-xl font-bold text-gray-750 outline-none cursor-pointer pr-10 text-xs"
             >
-              <option value="ALL">Mọi Giáo viên phụ trách</option>
+              <option value="ALL">Má»i GiĂ¡o viĂªn phá»¥ trĂ¡ch</option>
               {teachers.map(tch => (
                 <option key={tch.TeacherId} value={tch.TeacherId}>
                   {tch.FullName}
@@ -621,12 +554,12 @@ export default function ClassroomManagement() {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" id="classroom-records-panel">
         <div className="px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-lg font-bold text-slate-800 leading-none">Danh sách lớp giảng dạy</h3>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-2">Tìm thấy {filteredClassrooms.length} phòng học luyện tập VR</p>
+            <h3 className="text-lg font-bold text-slate-800 leading-none">Danh sĂ¡ch lá»›p giáº£ng dáº¡y</h3>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-2">TĂ¬m tháº¥y {filteredClassrooms.length} phĂ²ng há»c luyá»‡n táº­p VR</p>
           </div>
           <div className="inline-flex items-center gap-2 bg-[#4EACAF]/10 px-4 py-1.5 rounded-full">
             <span className="w-2.5 h-2.5 bg-[#4EACAF] rounded-full animate-pulse" />
-            <span className="text-xs text-[#4EACAF] font-bold uppercase tracking-wider">Hạ tầng điều phối khóa học</span>
+            <span className="text-xs text-[#4EACAF] font-bold uppercase tracking-wider">Háº¡ táº§ng Ä‘iá»u phá»‘i khĂ³a há»c</span>
           </div>
         </div>
 
@@ -635,7 +568,7 @@ export default function ClassroomManagement() {
              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto border-4 border-dashed border-gray-200">
                <School className="w-8 h-8 text-gray-300" />
              </div>
-             <p className="text-xl font-black text-gray-700">Không có lớp học nào đáp ứng bộ lọc tìm kiếm!</p>
+             <p className="text-xl font-black text-gray-700">KhĂ´ng cĂ³ lá»›p há»c nĂ o Ä‘Ă¡p á»©ng bá»™ lá»c tĂ¬m kiáº¿m!</p>
              <button 
                onClick={() => {
                  setSearchQuery('');
@@ -645,7 +578,7 @@ export default function ClassroomManagement() {
                }}
                className="px-5 py-2 hover:bg-gray-100 rounded-xl font-black text-xs text-[#4EACAF] border border-gray-200 uppercase transition-all"
              >
-               Đặt lại bộ lọc
+               Äáº·t láº¡i bá»™ lá»c
              </button>
           </div>
         ) : (
@@ -654,20 +587,20 @@ export default function ClassroomManagement() {
               <table className="w-full text-left border-collapse" id="classroom-table">
                 <thead>
                   <tr className="bg-[#FDFCF5]/50 border-b border-gray-100 text-[#555] font-bold text-xs uppercase tracking-widest">
-                    <th className="py-5 px-10">Mã Lớp</th>
-                    <th className="py-5 px-6">Phòng & Chương trình</th>
-                    <th className="py-5 px-6">Giáo viên hướng dẫn</th>
-                    <th className="py-5 px-6">Thời gian biểu</th>
-                    <th className="py-5 px-6">Học sinh</th>
-                    <th className="py-5 px-6">Trạng thái</th>
-                    <th className="py-5 px-10 text-right">Tùy chọn hành động</th>
+                    <th className="py-5 px-10">MĂ£ Lá»›p</th>
+                    <th className="py-5 px-6">PhĂ²ng & ChÆ°Æ¡ng trĂ¬nh</th>
+                    <th className="py-5 px-6">GiĂ¡o viĂªn hÆ°á»›ng dáº«n</th>
+                    <th className="py-5 px-6">Thá»i gian biá»ƒu</th>
+                    <th className="py-5 px-6">Há»c sinh</th>
+                    <th className="py-5 px-6">Tráº¡ng thĂ¡i</th>
+                    <th className="py-5 px-10 text-right">TĂ¹y chá»n hĂ nh Ä‘á»™ng</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
                   {paginatedClassrooms.map((cls) => {
                     const teacher = teachers.find(t => t.TeacherId === cls.TeacherId);
                     const program = programs.find(p => p.ProgramId === cls.ProgramId);
-                    const studentCount = (MOCK_CHILDREN_IN_CLASS[cls.ClassId] || []).length;
+                    const studentCount = cls.EnrollmentCount;
                     return (
                       <tr 
                         key={cls.ClassId} 
@@ -687,7 +620,7 @@ export default function ClassroomManagement() {
                             </p>
                             <p className="text-xs text-gray-400 font-bold flex items-center gap-1">
                               <BookOpen className="w-3.5 h-3.5" />
-                              {program ? program.ProgramName : 'Chưa định cấu hình Chương trình'}
+                              {program ? program.ProgramName : 'ChÆ°a Ä‘á»‹nh cáº¥u hĂ¬nh ChÆ°Æ¡ng trĂ¬nh'}
                             </p>
                           </div>
                         </td>
@@ -706,18 +639,18 @@ export default function ClassroomManagement() {
                                </div>
                             </div>
                           ) : (
-                            <span className="text-gray-400 italic font-medium">Chưa liên kết</span>
+                            <span className="text-gray-400 italic font-medium">ChÆ°a liĂªn káº¿t</span>
                           )}
                         </td>
                         <td className="py-5 px-6">
                           <div className="space-y-1 text-xs">
                             <p className="font-medium text-gray-500 flex items-center gap-1.5">
                               <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                              Từ: <span className="font-extrabold text-gray-800">{cls.StartDate}</span>
+                              Tá»«: <span className="font-extrabold text-gray-800">{cls.StartDate}</span>
                             </p>
                             <p className="font-medium text-gray-500 flex items-center gap-1.5">
                               <CalendarRange className="w-3.5 h-3.5 text-gray-400" />
-                              Đến: <span className="font-extrabold text-gray-800">{cls.EndDate}</span>
+                              Äáº¿n: <span className="font-extrabold text-gray-800">{cls.EndDate}</span>
                             </p>
                           </div>
                         </td>
@@ -728,7 +661,7 @@ export default function ClassroomManagement() {
                             id={`btn-view-students-${cls.ClassId}`}
                           >
                             <Users className="w-3.5 h-3.5" />
-                            <span className="font-black">{studentCount} trẻ</span>
+                            <span className="font-black">{studentCount} tráº»</span>
                           </button>
                         </td>
                         <td className="py-5 px-6">
@@ -739,10 +672,10 @@ export default function ClassroomManagement() {
                             cls.Status === 'Inactive' ? 'bg-rose-50 text-[#FF8E8E]' :
                             'bg-gray-100 text-gray-500' // Closed
                           )}>
-                            {cls.Status === 'Active' && 'Đang dạy (Active)'}
-                            {cls.Status === 'Upcoming' && 'Sắp mở (Upcoming)'}
-                            {cls.Status === 'Inactive' && 'Tạm dừng (Inactive)'}
-                            {cls.Status === 'Closed' && 'Đã kết thúc (Closed)'}
+                            {cls.Status === 'Active' && 'Äang dáº¡y (Active)'}
+                            {cls.Status === 'Upcoming' && 'Sáº¯p má»Ÿ (Upcoming)'}
+                            {cls.Status === 'Inactive' && 'Táº¡m dá»«ng (Inactive)'}
+                            {cls.Status === 'Closed' && 'ÄĂ£ káº¿t thĂºc (Closed)'}
                           </span>
                         </td>
                         <td className="py-5 px-10 text-right">
@@ -750,7 +683,7 @@ export default function ClassroomManagement() {
                             <button 
                               onClick={() => handleOpenDetail(cls)}
                               className="p-2.5 hover:bg-teal-50 text-teal-600 rounded-xl transition-colors hover:scale-105"
-                              title="Xem chi tiết lớp"
+                              title="Xem chi tiáº¿t lá»›p"
                               id={`action-detail-${cls.ClassId}`}
                             >
                               <Eye className="w-4.5 h-4.5" />
@@ -759,7 +692,7 @@ export default function ClassroomManagement() {
                             <button 
                               onClick={() => handleOpenEdit(cls)}
                               className="p-2.5 hover:bg-sky-50 text-sky-500 rounded-xl transition-colors hover:scale-105"
-                              title="Sửa cấu hình lớp"
+                              title="Sá»­a cáº¥u hĂ¬nh lá»›p"
                               id={`action-edit-${cls.ClassId}`}
                             >
                               <Edit3 className="w-4.5 h-4.5" />
@@ -773,7 +706,7 @@ export default function ClassroomManagement() {
                                   ? 'hover:bg-emerald-50 text-emerald-500' 
                                   : 'hover:bg-rose-50 text-[#FF8E8E]'
                               )}
-                              title={cls.Status === 'Closed' ? "Khởi động lại khóa học" : "Đóng & chấm dứt lớp"}
+                              title={cls.Status === 'Closed' ? "Khá»Ÿi Ä‘á»™ng láº¡i khĂ³a há»c" : "ÄĂ³ng & cháº¥m dá»©t lá»›p"}
                               id={`action-toggle-${cls.ClassId}`}
                             >
                               {cls.Status === 'Closed' ? (
@@ -801,7 +734,7 @@ export default function ClassroomManagement() {
                   setPageSize(size);
                   setCurrentPage(1);
                 }}
-                itemLabel="lớp học"
+                itemLabel="lá»›p há»c"
               />
             </div>
           </>
@@ -813,9 +746,9 @@ export default function ClassroomManagement() {
         <div className="flex items-center gap-4 bg-orange-50/40 p-6 rounded-[32px] border-2 border-orange-100">
           <Smile className="w-10 h-10 text-orange-400 fill-current shrink-0 animate-bounce" />
           <div>
-            <h4 className="font-black text-[#555] text-sm">Giao diện điều phối trẻ nhỏ</h4>
+            <h4 className="font-black text-[#555] text-sm">Giao diá»‡n Ä‘iá»u phá»‘i tráº» nhá»</h4>
             <p className="text-gray-500 text-xs font-bold leading-relaxed">
-              Trải nghiệm lớp học được phân chia theo độ tuổi tối ưu từ 3 đến 10 tuổi để đảm bảo sự phát triển thể trạng não bộ và ngữ âm chính xác nhất.
+              Tráº£i nghiá»‡m lá»›p há»c Ä‘Æ°á»£c phĂ¢n chia theo Ä‘á»™ tuá»•i tá»‘i Æ°u tá»« 3 Ä‘áº¿n 10 tuá»•i Ä‘á»ƒ Ä‘áº£m báº£o sá»± phĂ¡t triá»ƒn thá»ƒ tráº¡ng nĂ£o bá»™ vĂ  ngá»¯ Ă¢m chĂ­nh xĂ¡c nháº¥t.
             </p>
           </div>
         </div>
@@ -823,9 +756,9 @@ export default function ClassroomManagement() {
         <div className="flex items-center gap-4 bg-teal-50/40 p-6 rounded-[32px] border-2 border-teal-100">
           <Sparkles className="w-10 h-10 text-teal-400 shrink-0" />
           <div>
-            <h4 className="font-black text-[#555] text-sm">Chương trình can thiệp XR</h4>
+            <h4 className="font-black text-[#555] text-sm">ChÆ°Æ¡ng trĂ¬nh can thiá»‡p XR</h4>
             <p className="text-gray-500 text-xs font-bold leading-relaxed">
-              Sắp xếp giáo án thông minh giúp các chuyên gia can thiệp nhanh chóng thiết lập khối lượng bài tập tương tác 3D phù hợp cho từng học viên.
+              Sáº¯p xáº¿p giĂ¡o Ă¡n thĂ´ng minh giĂºp cĂ¡c chuyĂªn gia can thiá»‡p nhanh chĂ³ng thiáº¿t láº­p khá»‘i lÆ°á»£ng bĂ i táº­p tÆ°Æ¡ng tĂ¡c 3D phĂ¹ há»£p cho tá»«ng há»c viĂªn.
             </p>
           </div>
         </div>
@@ -856,16 +789,16 @@ export default function ClassroomManagement() {
                     {modalType === 'students' && <Users className="w-6 h-6 text-orange-500" />}
                     {modalType === 'detail' && <Info className="w-6 h-6 text-purple-600" />}
                     
-                    {modalType === 'add' && 'Kiến tạo lớp học mới'}
-                    {modalType === 'edit' && `Chỉnh sửa: Lớp ${selectedClass?.ClassName}`}
-                    {modalType === 'students' && `Học viên lớp ${selectedClass?.ClassName}`}
-                    {modalType === 'detail' && 'Thông tin lớp học rèn luyện'}
+                    {modalType === 'add' && 'Kiáº¿n táº¡o lá»›p há»c má»›i'}
+                    {modalType === 'edit' && `Chá»‰nh sá»­a: Lá»›p ${selectedClass?.ClassName}`}
+                    {modalType === 'students' && `Há»c viĂªn lá»›p ${selectedClass?.ClassName}`}
+                    {modalType === 'detail' && 'ThĂ´ng tin lá»›p há»c rĂ¨n luyá»‡n'}
                   </h2>
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-                    {modalType === 'add' && 'Thiết lập đầy đủ lịch giảng, giáo viên đồng hành và nội dung bài chơi tương tác'}
-                    {modalType === 'edit' && 'Cập nhật lại thời gian biểu, tình trạng giảng dạy phối hợp'}
-                    {modalType === 'students' && 'Danh sách học sinh đang theo học lớp rèn luyện VR trực thuộc'}
-                    {modalType === 'detail' && 'Lược đồ chi tiết về dữ liệu khóa học rèn luyện trực thuộc hệ thống'}
+                    {modalType === 'add' && 'Thiáº¿t láº­p Ä‘áº§y Ä‘á»§ lá»‹ch giáº£ng, giĂ¡o viĂªn Ä‘á»“ng hĂ nh vĂ  ná»™i dung bĂ i chÆ¡i tÆ°Æ¡ng tĂ¡c'}
+                    {modalType === 'edit' && 'Cáº­p nháº­t láº¡i thá»i gian biá»ƒu, tĂ¬nh tráº¡ng giáº£ng dáº¡y phá»‘i há»£p'}
+                    {modalType === 'students' && 'Danh sĂ¡ch há»c sinh Ä‘ang theo há»c lá»›p rĂ¨n luyá»‡n VR trá»±c thuá»™c'}
+                    {modalType === 'detail' && 'LÆ°á»£c Ä‘á»“ chi tiáº¿t vá» dá»¯ liá»‡u khĂ³a há»c rĂ¨n luyá»‡n trá»±c thuá»™c há»‡ thá»‘ng'}
                   </p>
                 </div>
                 <button 
@@ -893,7 +826,7 @@ export default function ClassroomManagement() {
                              </span>
                           </div>
                           <p className="text-gray-400 text-xs uppercase tracking-wider mt-1 font-black">
-                            Chương trình: {programs.find(p => p.ProgramId === selectedClass.ProgramId)?.ProgramName || 'Chưa định nghĩa'}
+                            ChÆ°Æ¡ng trĂ¬nh: {programs.find(p => p.ProgramId === selectedClass.ProgramId)?.ProgramName || 'ChÆ°a Ä‘á»‹nh nghÄ©a'}
                           </p>
                         </div>
                         
@@ -911,40 +844,40 @@ export default function ClassroomManagement() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                      <DetailRow 
-                       label="Tên Lớp (ClassName)" 
+                       label="TĂªn Lá»›p (ClassName)" 
                        value={selectedClass.ClassName} 
                      />
                      <DetailRow 
-                       label="Mã định danh chương trình (ProgramId)" 
-                       value={`${programs.find(p => p.ProgramId === selectedClass.ProgramId)?.ProgramName || 'Không rõ'} (${selectedClass.ProgramId})`}
+                       label="MĂ£ Ä‘á»‹nh danh chÆ°Æ¡ng trĂ¬nh (ProgramId)" 
+                       value={`${programs.find(p => p.ProgramId === selectedClass.ProgramId)?.ProgramName || 'KhĂ´ng rĂµ'} (${selectedClass.ProgramId})`}
                      />
                      <DetailRow 
-                       label="Nhóm tuổi tương thích học phần" 
-                       value={`Từ ${programs.find(p => p.ProgramId === selectedClass.ProgramId)?.TargetAgeFrom || 3} tuổi tới ${programs.find(p => p.ProgramId === selectedClass.ProgramId)?.TargetAgeTo || 10} tuổi`}
+                       label="NhĂ³m tuá»•i tÆ°Æ¡ng thĂ­ch há»c pháº§n" 
+                       value={`Tá»« ${programs.find(p => p.ProgramId === selectedClass.ProgramId)?.TargetAgeFrom || 3} tuá»•i tá»›i ${programs.find(p => p.ProgramId === selectedClass.ProgramId)?.TargetAgeTo || 10} tuá»•i`}
                      />
                      <DetailRow 
-                       label="Ngôn ngữ chính luyện tập" 
-                       value={programs.find(p => p.ProgramId === selectedClass.ProgramId)?.Language || 'Tiếng Việt'}
+                       label="NgĂ´n ngá»¯ chĂ­nh luyá»‡n táº­p" 
+                       value={programs.find(p => p.ProgramId === selectedClass.ProgramId)?.Language || 'Tiáº¿ng Viá»‡t'}
                      />
                      <DetailRow 
-                       label="Chuyên viên phụ trách (Teacher)" 
-                       value={`${teachers.find(t => t.TeacherId === selectedClass.TeacherId)?.FullName || 'Không rỏ'} (${selectedClass.TeacherId})`}
+                       label="ChuyĂªn viĂªn phá»¥ trĂ¡ch (Teacher)" 
+                       value={`${teachers.find(t => t.TeacherId === selectedClass.TeacherId)?.FullName || 'KhĂ´ng rá»'} (${selectedClass.TeacherId})`}
                      />
                      <DetailRow 
-                       label="Chuyên môn giáo dục đồng hành" 
-                       value={teachers.find(t => t.TeacherId === selectedClass.TeacherId)?.Specialty || 'Chưa thiết lập'}
+                       label="ChuyĂªn mĂ´n giĂ¡o dá»¥c Ä‘á»“ng hĂ nh" 
+                       value={teachers.find(t => t.TeacherId === selectedClass.TeacherId)?.Specialty || 'ChÆ°a thiáº¿t láº­p'}
                      />
                      <DetailRow 
-                       label="Thời biểu nộp hồ sơ khóa học" 
-                       value={`Từ ${selectedClass.StartDate} tới ${selectedClass.EndDate}`} 
+                       label="Thá»i biá»ƒu ná»™p há»“ sÆ¡ khĂ³a há»c" 
+                       value={`Tá»« ${selectedClass.StartDate} tá»›i ${selectedClass.EndDate}`} 
                      />
                      <DetailRow 
-                       label="Thời gian cấu tạo lớp học" 
+                       label="Thá»i gian cáº¥u táº¡o lá»›p há»c" 
                        value={selectedClass.CreatedAt} 
                      />
                      
                      <div className="space-y-1.5 p-4 rounded-2xl bg-[#FDFCF5]/60 border border-[#F2ECD8]/40 col-span-1 md:col-span-2">
-                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block font-bold">Mô tả giáo trình & Phương tiện VR (Description)</span>
+                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block font-bold">MĂ´ táº£ giĂ¡o trĂ¬nh & PhÆ°Æ¡ng tiá»‡n VR (Description)</span>
                        <span className="font-bold text-gray-800 text-sm block leading-relaxed italic">
                          "{selectedClass.Description}"
                        </span>
@@ -956,7 +889,7 @@ export default function ClassroomManagement() {
                        onClick={handleCloseModal}
                        className="py-4 px-8 bg-gray-100 hover:bg-gray-200 text-gray-600 font-extrabold rounded-2xl transition-all uppercase text-xs tracking-wider"
                      >
-                       Quay lại
+                       Quay láº¡i
                      </button>
                   </div>
                 </div>
@@ -966,13 +899,13 @@ export default function ClassroomManagement() {
                    <div className="flex items-center gap-4 bg-orange-50 p-5 rounded-3xl border border-orange-100">
                       <Users className="w-10 h-10 text-orange-500 shrink-0" />
                       <div>
-                         <p className="font-black text-gray-800 text-base">Danh sách học sinh lớp can thiệp</p>
-                         <p className="text-xs text-gray-500 font-bold">Hồ sơ trẻ đang kích hoạt học trình trong lớp này.</p>
+                         <p className="font-black text-gray-800 text-base">Danh sĂ¡ch há»c sinh lá»›p can thiá»‡p</p>
+                         <p className="text-xs text-gray-500 font-bold">Há»“ sÆ¡ tráº» Ä‘ang kĂ­ch hoáº¡t há»c trĂ¬nh trong lá»›p nĂ y.</p>
                       </div>
                    </div>
 
                    <div className="space-y-3 max-h-[350px] overflow-y-auto">
-                     {(MOCK_CHILDREN_IN_CLASS[selectedClass.ClassId] || []).map((student) => (
+                     {(studentsByClassId[selectedClass.ClassId] || []).map((student) => (
                         <div 
                           key={student.ChildId} 
                           className="flex items-center justify-between p-4 rounded-2xl border border-gray-100 hover:bg-gray-50/50 transition-colors font-bold text-sm text-gray-700"
@@ -987,7 +920,7 @@ export default function ClassroomManagement() {
                              <div>
                                <p className="text-gray-900 font-extrabold">{student.FullName}</p>
                                <p className="text-xs text-gray-400">
-                                 {student.Age} tuổi • Giới tính: {student.Gender === 'Male' ? 'Nam' : 'Nữ'}
+                                 {student.Age} tuá»•i â€¢ Giá»›i tĂ­nh: {student.Gender === 'Male' ? 'Nam' : 'Ná»¯'}
                                </p>
                              </div>
                           </div>
@@ -999,10 +932,10 @@ export default function ClassroomManagement() {
                         </div>
                      ))}
 
-                     {(!MOCK_CHILDREN_IN_CLASS[selectedClass.ClassId] || MOCK_CHILDREN_IN_CLASS[selectedClass.ClassId].length === 0) && (
+                     {(!studentsByClassId[selectedClass.ClassId] || studentsByClassId[selectedClass.ClassId].length === 0) && (
                         <div className="py-12 text-center text-gray-400 font-bold space-y-2">
                            <Baby className="w-10 h-10 mx-auto text-gray-300" />
-                           <p>Chưa có trẻ nào được gán học tập vào lớp này.</p>
+                           <p>ChÆ°a cĂ³ tráº» nĂ o Ä‘Æ°á»£c gĂ¡n há»c táº­p vĂ o lá»›p nĂ y.</p>
                         </div>
                      )}
                    </div>
@@ -1012,7 +945,7 @@ export default function ClassroomManagement() {
                        onClick={handleCloseModal}
                        className="py-4 px-8 bg-gray-100 hover:bg-gray-200 text-gray-600 font-extrabold rounded-2xl transition-all uppercase text-xs tracking-wider"
                      >
-                       Quay lại
+                       Quay láº¡i
                      </button>
                    </div>
                 </div>
@@ -1023,12 +956,12 @@ export default function ClassroomManagement() {
 
                     <div className="space-y-2 col-span-1 md:col-span-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                        Tên lớp học can thiệp (ClassName) <span className="text-[#FF8E8E]">*</span>
+                        TĂªn lá»›p há»c can thiá»‡p (ClassName) <span className="text-[#FF8E8E]">*</span>
                       </label>
                       <input 
                         type="text" 
                         required
-                        placeholder="Ví dụ: Lớp Chồi 1 - Ghép vần thông minh"
+                        placeholder="VĂ­ dá»¥: Lá»›p Chá»“i 1 - GhĂ©p váº§n thĂ´ng minh"
                         value={formClassName}
                         onChange={(e) => setFormClassName(e.target.value)}
                         className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold outline-none focus:border-[#4EACAF] focus:bg-white transition-all text-gray-700 text-sm" 
@@ -1037,7 +970,7 @@ export default function ClassroomManagement() {
 
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                        Chuyên viên điều trị (TeacherId) <span className="text-[#FF8E8E]">*</span>
+                        ChuyĂªn viĂªn Ä‘iá»u trá»‹ (TeacherId) <span className="text-[#FF8E8E]">*</span>
                       </label>
                       <div className="relative">
                         <select 
@@ -1057,7 +990,7 @@ export default function ClassroomManagement() {
 
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                        Học trình / Chương trình học (ProgramId) <span className="text-[#FF8E8E]">*</span>
+                        Há»c trĂ¬nh / ChÆ°Æ¡ng trĂ¬nh há»c (ProgramId) <span className="text-[#FF8E8E]">*</span>
                       </label>
                       <div className="relative">
                         <select 
@@ -1077,7 +1010,7 @@ export default function ClassroomManagement() {
 
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                        Ngày bắt đầu học phần <span className="text-[#FF8E8E]">*</span>
+                        NgĂ y báº¯t Ä‘áº§u há»c pháº§n <span className="text-[#FF8E8E]">*</span>
                       </label>
                       <input 
                         type="date" 
@@ -1090,7 +1023,7 @@ export default function ClassroomManagement() {
 
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                        Ngày kết thúc dự kiến <span className="text-[#FF8E8E]">*</span>
+                        NgĂ y káº¿t thĂºc dá»± kiáº¿n <span className="text-[#FF8E8E]">*</span>
                       </label>
                       <input 
                         type="date" 
@@ -1103,11 +1036,11 @@ export default function ClassroomManagement() {
 
                     <div className="space-y-2 col-span-1 md:col-span-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                        Khảo cứu chuyên môn / Mô tả lớp học (Description)
+                        Kháº£o cá»©u chuyĂªn mĂ´n / MĂ´ táº£ lá»›p há»c (Description)
                       </label>
                       <textarea 
                         rows={3}
-                        placeholder="Mô tả cấu trúc đồ chơi can thiệp hoặc ghi chú tiến trình đặc thù của lớp học..."
+                        placeholder="MĂ´ táº£ cáº¥u trĂºc Ä‘á»“ chÆ¡i can thiá»‡p hoáº·c ghi chĂº tiáº¿n trĂ¬nh Ä‘áº·c thĂ¹ cá»§a lá»›p há»c..."
                         value={formDescription}
                         onChange={(e) => setFormDescription(e.target.value)}
                         className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold outline-none focus:border-[#4EACAF] focus:bg-white transition-all text-gray-700 text-sm" 
@@ -1116,7 +1049,7 @@ export default function ClassroomManagement() {
 
                     <div className="space-y-2 col-span-1 md:col-span-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                        Trạng thái hoạt động
+                        Tráº¡ng thĂ¡i hoáº¡t Ä‘á»™ng
                       </label>
                       <div className="relative">
                         <select 
@@ -1124,10 +1057,10 @@ export default function ClassroomManagement() {
                           onChange={(e) => setFormStatus(e.target.value as any)}
                           className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 outline-none cursor-pointer appearance-none focus:border-[#4EACAF] text-sm"
                         >
-                          <option value="Upcoming">🟡 Sắp mở khóa học (Upcoming)</option>
-                          <option value="Active">🟢 Đang hoạt động tích cực (Active)</option>
-                          <option value="Inactive">🔴 Tạm ngưng hoạt động (Inactive)</option>
-                          <option value="Closed">⚪ Đã kết thúc & lưu trữ (Closed)</option>
+                          <option value="Upcoming">đŸŸ¡ Sáº¯p má»Ÿ khĂ³a há»c (Upcoming)</option>
+                          <option value="Active">đŸŸ¢ Äang hoáº¡t Ä‘á»™ng tĂ­ch cá»±c (Active)</option>
+                          <option value="Inactive">đŸ”´ Táº¡m ngÆ°ng hoáº¡t Ä‘á»™ng (Inactive)</option>
+                          <option value="Closed">âª ÄĂ£ káº¿t thĂºc & lÆ°u trá»¯ (Closed)</option>
                         </select>
                         <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
                       </div>
@@ -1140,13 +1073,13 @@ export default function ClassroomManagement() {
                        onClick={handleCloseModal}
                        className="flex-1 py-4 border-4 border-gray-100 hover:border-gray-200 text-gray-400 hover:text-gray-600 font-black rounded-2xl transition-all uppercase text-xs tracking-widest"
                      >
-                       Quay lại
+                       Quay láº¡i
                      </button>
                      <button 
                        type="submit"
                        className="flex-1 py-4 bg-[#4EACAF] hover:bg-[#4EACAF]/95 text-white font-black rounded-2xl shadow-xl shadow-[#4EACAF]/10 transition-all active:scale-98 uppercase text-xs tracking-widest"
                      >
-                       Lưu cấu hình lớp
+                       LÆ°u cáº¥u hĂ¬nh lá»›p
                      </button>
                   </div>
                 </form>
