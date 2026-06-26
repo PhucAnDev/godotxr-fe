@@ -297,8 +297,7 @@ export default function TeacherClassDetail({
           return matchedById || matchedByName;
         });
 
-        const nextClassrooms =
-          teacherClassrooms.length > 0 ? teacherClassrooms : allClassrooms;
+        const nextClassrooms = teacherClassrooms;
 
         const childLookup = Object.fromEntries(
           allChildren.map((child) => {

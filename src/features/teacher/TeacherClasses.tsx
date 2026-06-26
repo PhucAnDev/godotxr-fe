@@ -211,8 +211,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
           return matchedById || matchedByName;
         });
 
-        const nextClassrooms =
-          teacherClassrooms.length > 0 ? teacherClassrooms : allClassrooms;
+        const nextClassrooms = teacherClassrooms;
         const classIds = new Set(nextClassrooms.map((classroom) => classroom.id));
         const nextEnrollments = allEnrollments.filter((enrollment) =>
           classIds.has(enrollment.classId)
