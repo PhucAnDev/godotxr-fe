@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
+import CustomSelect from '../../components/common/CustomSelect';
 import { useSemesterManagementApi, type SemesterResponse } from '../../hooks/useSemesterManagementApi';
 
 // DB Interfaces according to specifications
@@ -517,40 +518,35 @@ export default function SemesterManagement() {
         </div>
 
         {/* Dropdown Filters group */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          
+        <div className="flex flex-col sm:flex-row gap-4 items-center">
           {/* Status filter select */}
-          <div className="relative w-full sm:w-56">
-            <select 
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full appearance-none bg-[#FDFCF5] border-2 border-transparent hover:border-[#4EACAF]/20 pl-5 pr-10 py-4 rounded-2xl font-black italic text-xs tracking-wide text-gray-700 outline-none cursor-pointer uppercase focus:bg-white focus:border-[#4EACAF]"
-            >
-              <option value="ALL">Tất cả trạng thái</option>
-              <option value="Active">Đang diễn ra</option>
-              <option value="Upcoming">Sắp diễn ra</option>
-              <option value="Completed">Đã kết thúc</option>
-            </select>
-            <SlidersHorizontal className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
+          <CustomSelect
+            value={filterStatus}
+            onChange={setFilterStatus}
+            variant="filter"
+            className="w-full sm:w-56"
+            options={[
+              { value: 'ALL', label: 'Tất cả trạng thái' },
+              { value: 'Active', label: 'Đang diễn ra' },
+              { value: 'Upcoming', label: 'Sắp diễn ra' },
+              { value: 'Completed', label: 'Đã kết thúc' }
+            ]}
+          />
 
           {/* School year filter select */}
-          <div className="relative w-full sm:w-64">
-            <select 
-              value={filterSchoolYear}
-              onChange={(e) => setFilterSchoolYear(e.target.value)}
-              className="w-full appearance-none bg-[#FDFCF5] border-2 border-transparent hover:border-[#4EACAF]/20 pl-5 pr-10 py-4 rounded-2xl font-black italic text-xs tracking-wide text-gray-700 outline-none cursor-pointer uppercase focus:bg-white focus:border-[#4EACAF]"
-            >
-              <option value="ALL">Tất cả năm học</option>
-              {schoolYears.map(sy => (
-                <option key={sy.SchoolYearId} value={sy.SchoolYearId}>
-                  {sy.SchoolYearName}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
-
+          <CustomSelect
+            value={filterSchoolYear}
+            onChange={setFilterSchoolYear}
+            variant="filter"
+            className="w-full sm:w-64"
+            options={[
+              { value: 'ALL', label: 'Tất cả năm học' },
+              ...schoolYears.map(sy => ({
+                value: sy.SchoolYearId,
+                label: sy.SchoolYearName
+              }))
+            ]}
+          />
         </div>
       </div>
 
@@ -810,20 +806,15 @@ export default function SemesterManagement() {
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
                         Thuộc Niên Khóa chính <span className="text-[#FF8E8E]">*</span>
                       </label>
-                      <div className="relative">
-                        <select 
-                          value={formSchoolYearId}
-                          onChange={(e) => setFormSchoolYearId(e.target.value)}
-                          className="w-full appearance-none bg-[#FDFCF5] border-2 border-transparent rounded-2xl pl-5 pr-10 py-4 font-black italic text-xs tracking-wide text-gray-700 outline-none cursor-pointer uppercase focus:bg-white focus:border-[#4EACAF]"
-                        >
-                          {schoolYears.map(sy => (
-                            <option key={sy.SchoolYearId} value={sy.SchoolYearId}>
-                              {sy.SchoolYearName}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                      </div>
+                      <CustomSelect
+                        value={formSchoolYearId}
+                        onChange={setFormSchoolYearId}
+                        variant="form"
+                        options={schoolYears.map(sy => ({
+                          value: sy.SchoolYearId,
+                          label: sy.SchoolYearName
+                        }))}
+                      />
                     </div>
 
                     <div className="space-y-2">
@@ -849,40 +840,30 @@ export default function SemesterManagement() {
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
                         Giáo viên trưởng khoa phụ trách <span className="text-[#FF8E8E]">*</span>
                       </label>
-                      <div className="relative">
-                        <select 
-                          value={formTeacherId}
-                          onChange={(e) => setFormTeacherId(e.target.value)}
-                          className="w-full appearance-none bg-[#FDFCF5] border-2 border-transparent rounded-2xl pl-5 pr-10 py-4 font-black italic text-[11px] tracking-tight text-gray-700 outline-none cursor-pointer uppercase focus:bg-white focus:border-[#4EACAF]"
-                        >
-                          {teachers.map(tch => (
-                            <option key={tch.TeacherId} value={tch.TeacherId}>
-                              {tch.FullName}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                      </div>
+                      <CustomSelect
+                        value={formTeacherId}
+                        onChange={setFormTeacherId}
+                        variant="form"
+                        options={teachers.map(tch => ({
+                          value: tch.TeacherId,
+                          label: tch.FullName
+                        }))}
+                      />
                     </div>
 
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
                         Giao gán cho lớp học <span className="text-[#FF8E8E]">*</span>
                       </label>
-                      <div className="relative">
-                        <select 
-                          value={formClassId}
-                          onChange={(e) => setFormClassId(e.target.value)}
-                          className="w-full appearance-none bg-[#FDFCF5] border-2 border-transparent rounded-2xl pl-5 pr-10 py-4 font-black italic text-[11px] tracking-tight text-gray-700 outline-none cursor-pointer uppercase focus:bg-white focus:border-[#4EACAF]"
-                        >
-                          {MOCK_CLASSROOMS.map(cls => (
-                            <option key={cls.ClassId} value={cls.ClassId}>
-                              {cls.ClassName}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                      </div>
+                      <CustomSelect
+                        value={formClassId}
+                        onChange={setFormClassId}
+                        variant="form"
+                        options={MOCK_CLASSROOMS.map(cls => ({
+                          value: cls.ClassId,
+                          label: cls.ClassName
+                        }))}
+                      />
                     </div>
 
                   </div>
@@ -935,18 +916,16 @@ export default function SemesterManagement() {
                     <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
                       Trạng thái định đoạt học kỳ <span className="text-[#FF8E8E]">*</span>
                     </label>
-                    <div className="relative">
-                      <select 
-                        value={formStatus}
-                        onChange={(e) => setFormStatus(e.target.value as Semester['Status'])}
-                        className="w-full appearance-none bg-[#FDFCF5] border-2 border-transparent rounded-2xl pl-5 pr-10 py-4 font-black italic text-xs tracking-wide text-gray-700 outline-none cursor-pointer uppercase focus:bg-white focus:border-[#4EACAF]"
-                      >
-                        <option value="Upcoming">Sắp diễn ra (Upcoming)</option>
-                        <option value="Active">Đang diễn ra (Active)</option>
-                        <option value="Completed">Đã kết thúc (Completed)</option>
-                      </select>
-                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    </div>
+                    <CustomSelect
+                      value={formStatus}
+                      onChange={(val) => setFormStatus(val as Semester['Status'])}
+                      variant="form"
+                      options={[
+                        { value: 'Upcoming', label: 'Sắp diễn ra (Upcoming)' },
+                        { value: 'Active', label: 'Đang diễn ra (Active)' },
+                        { value: 'Completed', label: 'Đã kết thúc (Completed)' }
+                      ]}
+                    />
                   </div>
 
                 </div>

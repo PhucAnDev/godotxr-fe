@@ -7,6 +7,7 @@ import {
   createProgram as createProgramService,
   getPrograms as getProgramsService,
   updateProgram as updateProgramService,
+  deleteProgram as deleteProgramService,
 } from '../services/programService';
 
 export type { ProgramResponse } from '../services/programService';
@@ -28,6 +29,8 @@ export function useProgramManagementApi() {
     createProgramService(...args), []);
   const updateProgram = useCallback((...args: Parameters<typeof updateProgramService>) =>
     updateProgramService(...args), []);
+  const deleteProgram = useCallback((...args: Parameters<typeof deleteProgramService>) =>
+    deleteProgramService(...args), []);
 
   return {
     getPrograms,
@@ -35,5 +38,7 @@ export function useProgramManagementApi() {
     getLessonsByProgram,
     createProgram,
     updateProgram,
+    deleteProgram,
   };
 }
+

@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getStoredUsers, saveStoredUsers, MockUser } from '../../lib/authMock';
+import CustomSelect from '../../components/common/CustomSelect';
 
 // Define Child interface
 export interface Child {
@@ -717,15 +718,16 @@ export default function TeacherParentChildManagement() {
 
                       <div className="space-y-1.5">
                         <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider ml-1">Giới tính Phụ huynh</label>
-                        <select
+                        <CustomSelect
                           value={pGender}
-                          onChange={(e) => setPGender(e.target.value as any)}
-                          className="w-full px-3 py-3 bg-white border border-slate-200 rounded-xl font-bold text-gray-700 outline-none cursor-pointer focus:border-[#4EACAF]"
-                        >
-                          <option value="Female">Nữ</option>
-                          <option value="Male">Nam</option>
-                          <option value="Other">Khác</option>
-                        </select>
+                          onChange={(val) => setPGender(val as any)}
+                          variant="form"
+                          options={[
+                            { value: 'Female', label: 'Nữ' },
+                            { value: 'Male', label: 'Nam' },
+                            { value: 'Other', label: 'Khác' }
+                          ]}
+                        />
                       </div>
 
                     </div>
@@ -771,42 +773,45 @@ export default function TeacherParentChildManagement() {
                       
                       <div className="space-y-1.5">
                         <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider ml-1">Giới tính của bé</label>
-                        <select
+                        <CustomSelect
                           value={cGender}
-                          onChange={(e) => setCGender(e.target.value as any)}
-                          className="w-full px-3 py-3 bg-white border border-slate-200 rounded-xl font-bold text-gray-700 outline-none cursor-pointer focus:border-[#4EACAF]"
-                        >
-                          <option value="Male">Nam</option>
-                          <option value="Female">Nữ</option>
-                          <option value="Other">Khác</option>
-                        </select>
+                          onChange={(val) => setCGender(val as any)}
+                          variant="form"
+                          options={[
+                            { value: 'Male', label: 'Nam' },
+                            { value: 'Female', label: 'Nữ' },
+                            { value: 'Other', label: 'Khác' }
+                          ]}
+                        />
                       </div>
 
                       <div className="space-y-1.5">
                         <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider ml-1">Cấp lớp phân bổ</label>
-                        <select
+                        <CustomSelect
                           value={cClassId}
-                          onChange={(e) => setCClassId(e.target.value)}
-                          className="w-full px-3 py-3 bg-white border border-slate-200 rounded-xl font-bold text-gray-700 outline-none cursor-pointer focus:border-[#4EACAF]"
-                        >
-                          <option value="CLS-801">Lớp Sóng Âm CLS-801</option>
-                          <option value="CLS-802">Lớp Hơi Thở CLS-802</option>
-                          <option value="CLS-803">Lớp Từ Vựng CLS-803</option>
-                        </select>
+                          onChange={setCClassId}
+                          variant="form"
+                          options={[
+                            { value: 'CLS-801', label: 'Lớp Sóng Âm CLS-801' },
+                            { value: 'CLS-802', label: 'Lớp Hơi Thở CLS-802' },
+                            { value: 'CLS-803', label: 'Lớp Từ Vựng CLS-803' }
+                          ]}
+                        />
                       </div>
 
                       <div className="space-y-1.5">
                         <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider ml-1 font-mono">Bậc/Cấp độ âm pháp ban đầu</label>
-                        <select
+                        <CustomSelect
                           value={cLevel}
-                          onChange={(e) => setCLevel(e.target.value)}
-                          className="w-full px-3 py-3 bg-white border border-slate-200 rounded-xl font-bold text-gray-700 outline-none cursor-pointer focus:border-[#4EACAF]"
-                        >
-                          <option value="Bậc 1 - Phát âm đơn">Bậc 1 - Phát âm đơn</option>
-                          <option value="Bậc 1 - Sửa ngọng S">Bậc 1 - Sửa ngọng S/X</option>
-                          <option value="Bậc 2 - Âm đôi ghép từ">Bậc 2 - Âm đôi ghép từ</option>
-                          <option value="Bậc 2 - Ghép vần">Bậc 2 - Ghép vần & hỏa hơi</option>
-                        </select>
+                          onChange={setCLevel}
+                          variant="form"
+                          options={[
+                            { value: 'Bậc 1 - Phát âm đơn', label: 'Bậc 1 - Phát âm đơn' },
+                            { value: 'Bậc 1 - Sửa ngọng S', label: 'Bậc 1 - Sửa ngọng S/X' },
+                            { value: 'Bậc 2 - Âm đôi ghép từ', label: 'Bậc 2 - Âm đôi ghép từ' },
+                            { value: 'Bậc 2 - Ghép vần', label: 'Bậc 2 - Ghép vần & hỏa hơi' }
+                          ]}
+                        />
                       </div>
 
                     </div>
@@ -904,15 +909,15 @@ export default function TeacherParentChildManagement() {
                 
                 <div className="space-y-1.5">
                   <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider ml-1">Chọn Phụ huynh sở chủ</label>
-                  <select
+                  <CustomSelect
                     value={selectedParentId}
-                    onChange={(e) => setSelectedParentId(e.target.value)}
-                    className="w-full px-3.5 py-3 bg-[#FFFDF5] border-2 border-transparent focus:border-[#4EACAF] focus:bg-white rounded-xl font-bold text-gray-750 outline-none text-sm cursor-pointer"
-                  >
-                    {parents.map(p => (
-                      <option key={p.UserId} value={p.UserId}>{p.FullName} ({p.Email})</option>
-                    ))}
-                  </select>
+                    onChange={setSelectedParentId}
+                    variant="form"
+                    options={parents.map(p => ({
+                      value: p.UserId,
+                      label: `${p.FullName} (${p.Email})`
+                    }))}
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -945,42 +950,45 @@ export default function TeacherParentChildManagement() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider ml-1">Giới tính</label>
-                    <select
+                    <CustomSelect
                       value={cGender}
-                      onChange={(e) => setCGender(e.target.value as any)}
-                      className="w-full px-3 py-3 bg-[#FFFDF5] border-2 border-transparent focus:border-[#4EACAF] focus:bg-white rounded-xl font-bold text-gray-750 outline-none text-sm cursor-pointer"
-                    >
-                      <option value="Male">Nam</option>
-                      <option value="Female">Nữ</option>
-                      <option value="Other">Khác</option>
-                    </select>
+                      onChange={(val) => setCGender(val as any)}
+                      variant="form"
+                      options={[
+                        { value: 'Male', label: 'Nam' },
+                        { value: 'Female', label: 'Nữ' },
+                        { value: 'Other', label: 'Khác' }
+                      ]}
+                    />
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider ml-1">Lớp học rèn luyện</label>
-                    <select
+                    <CustomSelect
                       value={cClassId}
-                      onChange={(e) => setCClassId(e.target.value)}
-                      className="w-full px-3 py-3 bg-[#FFFDF5] border-2 border-transparent focus:border-[#4EACAF] focus:bg-white rounded-xl font-bold text-gray-750 outline-none text-sm cursor-pointer"
-                    >
-                      <option value="CLS-801">Lớp Sóng Âm CLS-801</option>
-                      <option value="CLS-802">Lớp Hơi Thở CLS-802</option>
-                      <option value="CLS-803">Lớp Từ Vựng CLS-803</option>
-                    </select>
+                      onChange={setCClassId}
+                      variant="form"
+                      options={[
+                        { value: 'CLS-801', label: 'Lớp Sóng Âm CLS-801' },
+                        { value: 'CLS-802', label: 'Lớp Hơi Thở CLS-802' },
+                        { value: 'CLS-803', label: 'Lớp Từ Vựng CLS-803' }
+                      ]}
+                    />
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider ml-1">Bậc độ luyện tập</label>
-                    <select
+                    <CustomSelect
                       value={cLevel}
-                      onChange={(e) => setCLevel(e.target.value)}
-                      className="w-full px-3 py-3 bg-[#FFFDF5] border-2 border-transparent focus:border-[#4EACAF] focus:bg-white rounded-xl font-bold text-gray-750 outline-none text-sm cursor-pointer"
-                    >
-                      <option value="Bậc 1 - Phát âm đơn">Bậc 1 - Phát âm đơn</option>
-                      <option value="Bậc 1 - Sửa ngọng S">Bậc 1 - Sửa ngọng S/X</option>
-                      <option value="Bậc 2 - Âm đôi ghép từ">Bậc 2 - Âm đôi ghép từ</option>
-                      <option value="Bậc 2 - Ghép vần">Bậc 2 - Ghép vần & hỏa hơi</option>
-                    </select>
+                      onChange={setCLevel}
+                      variant="form"
+                      options={[
+                        { value: 'Bậc 1 - Phát âm đơn', label: 'Bậc 1 - Phát âm đơn' },
+                        { value: 'Bậc 1 - Sửa ngọng S', label: 'Bậc 1 - Sửa ngọng S/X' },
+                        { value: 'Bậc 2 - Âm đôi ghép từ', label: 'Bậc 2 - Âm đôi ghép từ' },
+                        { value: 'Bậc 2 - Ghép vần', label: 'Bậc 2 - Ghép vần & hỏa hơi' }
+                      ]}
+                    />
                   </div>
                 </div>
 

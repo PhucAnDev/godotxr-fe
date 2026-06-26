@@ -2,7 +2,7 @@ import { ApiError, apiRequest } from './apiClient';
 
 export interface UserResponse {
   id: number;
-  username: string;
+  username?: string;
   fullName: string;
   email: string;
   phone: string;
@@ -26,7 +26,7 @@ export type UserRoleEnum = 'Admin' | 'Teacher' | 'Parent' | 'Child';
 export type UserGender = 'Male' | 'Female' | 'Other';
 
 export interface CreateUserPayload {
-  username: string;
+  username?: string;
   password: string;
   fullName: string;
   email: string;
@@ -37,7 +37,7 @@ export interface CreateUserPayload {
 }
 
 export interface CreateAccountPayload {
-  username: string;
+  username?: string;
   fullName: string;
   email: string;
   phone?: string;

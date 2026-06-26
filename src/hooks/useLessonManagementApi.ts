@@ -3,6 +3,7 @@ import {
   createLesson as createLessonService,
   getLessons as getLessonsService,
   updateLesson as updateLessonService,
+  deleteLesson as deleteLessonService,
 } from '../services/lessonService';
 import { getPrograms as getProgramsService } from '../services/programService';
 
@@ -17,6 +18,9 @@ export function useLessonManagementApi() {
     createLessonService(...args), []);
   const updateLesson = useCallback((...args: Parameters<typeof updateLessonService>) =>
     updateLessonService(...args), []);
+  const deleteLesson = useCallback((...args: Parameters<typeof deleteLessonService>) =>
+    deleteLessonService(...args), []);
 
-  return { getLessons, getPrograms, createLesson, updateLesson };
+  return { getLessons, getPrograms, createLesson, updateLesson, deleteLesson };
 }
+

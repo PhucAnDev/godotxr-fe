@@ -12,23 +12,23 @@ import {
   Edit3,
   Eye,
   Info,
-  Lock,
   Plus,
   RefreshCw,
   Save,
   Search,
   Trash2,
   TrendingUp,
-  Unlock,
   X,
 } from 'lucide-react';
 import Pagination from '../../components/common/Pagination';
 import { cn } from '../../lib/utils';
+import CustomSelect from '../../components/common/CustomSelect';
 import {
   useChildManagementApi,
   type ChildProfileResponse,
 } from '../../hooks/useChildManagementApi';
 import type { ChildProfilePayload } from '../../services/childProfileService';
+import { getUsers } from '../../services/userService';
 
 interface Child {
   ChildId: string;
@@ -73,7 +73,7 @@ function mapChildProfile(profile: ChildProfileResponse): Child {
     Age: profile.age,
     Gender: profile.gender,
     LearningLevel: profile.learningLevel,
-    Note: profile.note?.trim() || 'Chua co ghi chu bo sung tu he thong.',
+    Note: profile.note?.trim() || 'Chưa có ghi chú bổ sung từ hệ thống.',
     Status: profile.status,
     CreatedAt: profile.createdAt,
     UpdatedAt: profile.updatedAt ?? profile.createdAt,
@@ -88,7 +88,7 @@ function mapChildToForm(child: Child): ChildFormState {
     gender: child.Gender,
     learningLevel: child.LearningLevel,
     note:
-      child.Note === 'Chua co ghi chu bo sung tu he thong.' ? '' : child.Note,
+      child.Note === 'Chưa có ghi chú bổ sung từ hệ thống.' ? '' : child.Note,
     status: child.Status,
   };
 }
@@ -124,16 +124,16 @@ function formatDateTime(value: string) {
 function getGenderLabel(gender: Child['Gender']) {
   switch (gender) {
     case 'Male':
-      return 'Cau be (Nam)';
+      return 'Nam';
     case 'Female':
-      return 'Co be (Nu)';
+      return 'Nữ';
     default:
-      return 'Khac';
+      return 'Khác';
   }
 }
 
 function getStatusLabel(status: Child['Status']) {
-  return status === 'Active' ? 'Dang hoc' : 'Tam ngung';
+  return status === 'Active' ? 'Đang học' : 'Tạm ngưng';
 }
 
 function hasSupportFlag(child: Child) {
@@ -156,6 +156,8 @@ export default function ChildManagement() {
   } = useChildManagementApi();
 
   const [childrenList, setChildrenList] = useState<Child[]>([]);
+  const [parentsMap, setParentsMap] = useState<Record<string, string>>({});
+  const [parentOptions, setParentOptions] = useState<Array<{ value: string; label: string }>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -205,7 +207,7 @@ export default function ChildManagement() {
         triggerNotification(
           result.errors.join(' ') ||
             result.message ||
-            'Khong the tai danh sach ho so tre.',
+            'Không thể tải danh sách hồ sơ trẻ.',
           'warning'
         );
         return;
@@ -227,6 +229,46 @@ export default function ChildManagement() {
   useEffect(() => {
     void fetchChildren();
   }, [fetchChildren]);
+
+  useEffect(() => {
+    const fetchParents = async () => {
+      const result = await getUsers(1, 1000);
+      if (result.success && result.data) {
+        const mapping: Record<string, string> = {};
+        const options: Array<{ value: string; label: string }> = [];
+        result.data.items.forEach((user) => {
+          mapping[String(user.id)] = user.fullName;
+          if (user.roleName === 'Parent') {
+            options.push({
+              value: String(user.id),
+              label: `${user.fullName} (ID: ${user.id})`,
+            });
+          }
+        });
+        setParentsMap(mapping);
+        setParentOptions(options.sort((a, b) => a.label.localeCompare(b.label)));
+      }
+    };
+    void fetchParents();
+  }, []);
+
+  const activeParentOptions = useMemo(() => {
+    const options = [...parentOptions];
+    if (formState.userId && !options.some((opt) => opt.value === formState.userId)) {
+      const parentName = parentsMap[formState.userId] || `Tài khoản #${formState.userId}`;
+      options.push({
+        value: formState.userId,
+        label: `${parentName} (ID: ${formState.userId})`,
+      });
+    }
+    if (!formState.userId) {
+      options.unshift({
+        value: '',
+        label: 'Chọn phụ huynh liên kết...',
+      });
+    }
+    return options;
+  }, [parentOptions, formState.userId, parentsMap]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -256,7 +298,7 @@ export default function ChildManagement() {
         triggerNotification(
           result.errors.join(' ') ||
             result.message ||
-            'Khong the tai chi tiet ho so tre.',
+            'Không thể tải chi tiết hồ sơ trẻ.',
           'warning'
         );
       }
@@ -303,17 +345,18 @@ export default function ChildManagement() {
     value: ChildFormState[K]
   ) => {
     setFormState((current) => ({ ...current, [key]: value }));
+    setFormError('');
   };
 
   const validateForm = () => {
-    if (!formState.userId.trim()) return 'Vui long nhap userId lien ket.';
+    if (!formState.userId.trim()) return 'Vui lòng chọn phụ huynh liên kết.';
     if (Number.isNaN(Number(formState.userId)) || Number(formState.userId) <= 0) {
-      return 'userId phai la so duong hop le.';
+      return 'Mã tài khoản phụ huynh liên kết phải là số dương hợp lệ.';
     }
-    if (!formState.fullName.trim()) return 'Vui long nhap ho ten tre.';
-    if (!formState.age.trim()) return 'Vui long nhap do tuoi.';
+    if (!formState.fullName.trim()) return 'Vui lòng nhập họ tên trẻ.';
+    if (!formState.age.trim()) return 'Vui lòng nhập độ tuổi của trẻ.';
     if (Number.isNaN(Number(formState.age)) || Number(formState.age) <= 0) {
-      return 'Do tuoi phai la so duong hop le.';
+      return 'Độ tuổi phải là số dương hợp lệ.';
     }
 
     return '';
@@ -347,45 +390,12 @@ export default function ChildManagement() {
     handleCloseModal();
     triggerNotification(
       formMode === 'create'
-        ? 'Da tao ho so tre moi tu ChildProfile API.'
-        : 'Da cap nhat ho so tre thanh cong.',
+        ? 'Đã đăng ký hồ sơ trẻ mới thành công.'
+        : 'Đã cập nhật hồ sơ trẻ thành công.',
       'success'
     );
   };
 
-  const handleToggleStatus = async (child: Child) => {
-    const nextStatus = child.Status === 'Active' ? 'Inactive' : 'Active';
-    const payload: ChildProfilePayload = {
-      userId: Number(child.ParentUserId),
-      fullName: child.FullName,
-      age: child.Age,
-      gender: child.Gender,
-      learningLevel: child.LearningLevel,
-      note:
-        child.Note === 'Chua co ghi chu bo sung tu he thong.' ? null : child.Note,
-      status: nextStatus,
-    };
-
-    const result = await updateChildProfile(Number(child.ChildId), payload);
-
-    if (!result.success || !result.data) {
-      triggerNotification(
-        result.errors.join(' ') ||
-          result.message ||
-          'Khong the cap nhat trang thai ho so tre.',
-        'warning'
-      );
-      return;
-    }
-
-    await fetchChildren();
-    triggerNotification(
-      nextStatus === 'Active'
-        ? 'Da mo lai ho so tre.'
-        : 'Da tam khoa ho so tre.',
-      'success'
-    );
-  };
 
   const handleConfirmDelete = async () => {
     if (!selectedChild) return;
@@ -398,7 +408,7 @@ export default function ChildManagement() {
       triggerNotification(
         result.errors.join(' ') ||
           result.message ||
-          'Khong the xoa ho so tre.',
+          'Không thể xóa hồ sơ trẻ.',
         'warning'
       );
       return;
@@ -408,7 +418,7 @@ export default function ChildManagement() {
     setIsDeleting(false);
     const deletedName = selectedChild.FullName;
     handleCloseModal();
-    triggerNotification(`Da xoa ho so tre ${deletedName}.`, 'success');
+    triggerNotification(`Đã xóa hồ sơ trẻ ${deletedName} thành công.`, 'success');
   };
 
   const totalChildren = childrenList.length;
@@ -521,15 +531,13 @@ export default function ChildManagement() {
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             <Baby className="h-3.5 w-3.5" />
-            Ho so hoc tap nhi dong
+            Hồ sơ học tập nhi đồng
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
-            Quan Ly <span className="text-[#4EACAF]">Ho So Tre Em</span>
+            Quản Lý <span className="text-[#4EACAF]">Hồ Sơ Trẻ Em</span>
           </h1>
           <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed mt-1">
-            Quan ly thong tin chi tiet va tien trinh hoc tap cua tre tren he thong
-            GodotXR. FE da map truc tiep CRUD vao ChildProfile API de them, sua,
-            cap nhat trang thai va xoa ho so.
+            Quản lý thông tin chi tiết, hồ sơ cá nhân và theo dõi tiến trình học tập, can thiệp phát triển ngôn ngữ của trẻ em trên hệ thống GodotXR.
           </p>
         </div>
 
@@ -540,7 +548,7 @@ export default function ChildManagement() {
             className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white/60 px-6 py-4 text-sm font-bold text-slate-655 transition-all hover:bg-white/80 cursor-pointer active:scale-95 shrink-0"
           >
             <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
-            Tai lai
+            Tải lại
           </button>
           <button
             type="button"
@@ -548,40 +556,40 @@ export default function ChildManagement() {
             className="bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black italic tracking-tight py-4 px-8 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[#4EACAF]/20 transition-all hover:scale-105 active:scale-95 shrink-0 cursor-pointer"
           >
             <Plus className="w-5 h-5" strokeWidth={2.5} />
-            Dang ky ho so tre em moi
+            Đăng ký hồ sơ trẻ em mới
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatItem
-          title="Tong so tre"
+          title="Tổng số trẻ"
           value={totalChildren}
-          subtitle="Ho so nhi dong dong bo tu API"
+          subtitle="Hồ sơ trẻ em trên hệ thống"
           icon={<Baby className="h-5 w-5 text-[#4EACAF]" />}
           bgColor="bg-[#4EACAF]/5"
           borderColor="border-slate-100"
         />
         <StatItem
-          title="Tre dang hoc"
+          title="Trẻ đang học"
           value={activeChildren}
-          subtitle="Ho so con trang thai Active"
+          subtitle="Hồ sơ trẻ đang hoạt động học tập"
           icon={<Activity className="h-5 w-5 text-emerald-600" />}
           bgColor="bg-emerald-50/70"
           borderColor="border-slate-100"
         />
         <StatItem
-          title="Be can luu y them"
+          title="Bé cần lưu ý thêm"
           value={needSupportChildren}
-          subtitle="Suy luan tu note va do tuoi hien co"
+          subtitle="Trẻ cần theo dõi đặc biệt hoặc dưới 5 tuổi"
           icon={<Brain className="h-5 w-5 text-rose-600" />}
           bgColor="bg-rose-50/70"
           borderColor="border-slate-100"
         />
         <StatItem
-          title="Do tuoi trung binh"
+          title="Độ tuổi trung bình"
           value={averageAge}
-          subtitle="Tinh tu du lieu child profile"
+          subtitle="Tính trên tổng số hồ sơ trẻ"
           icon={<Clock className="h-5 w-5 text-amber-600" />}
           bgColor="bg-amber-50/70"
           borderColor="border-slate-100"
@@ -591,11 +599,9 @@ export default function ChildManagement() {
       <div className="space-y-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
         <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4 text-sm text-amber-800">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0" />
+            <Info className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-600" />
             <p>
-              API hien chua tra ve ten phu huynh, so dien thoai va lich su tien do.
-              Tuy vay FE da dung ChildProfile API that cho danh sach, chi tiet,
-              tao, cap nhat va xoa ho so.
+              Danh sách hiển thị thông tin cơ bản của học viên nhi đồng. Bạn có thể xem chi tiết tiến độ, quản lý thông tin hồ sơ học tập và cập nhật tình trạng học của bé tại đây.
             </p>
           </div>
         </div>
@@ -604,7 +610,7 @@ export default function ChildManagement() {
           <Search className="absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Tim theo ten be, ma ho so hoac ma tai khoan lien ket..."
+            placeholder="Tìm theo tên bé, mã hồ sơ hoặc ID tài khoản phụ huynh..."
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-10 text-sm font-semibold text-gray-700 outline-none transition-all placeholder:text-gray-400 focus:border-[#4EACAF] focus:bg-white"
@@ -624,39 +630,39 @@ export default function ChildManagement() {
             value={filterAge}
             onChange={setFilterAge}
             options={[
-              { value: 'ALL', label: 'Moi Do Tuoi' },
-              { value: 'UNDER_5', label: 'Duoi 5 tuoi' },
-              { value: 'S_5_7', label: 'Tu 5 - 7 tuoi' },
-              { value: 'OVER_7', label: 'Tren 7 tuoi' },
+              { value: 'ALL', label: 'Mọi độ tuổi' },
+              { value: 'UNDER_5', label: 'Dưới 5 tuổi' },
+              { value: 'S_5_7', label: 'Từ 5 - 7 tuổi' },
+              { value: 'OVER_7', label: 'Trên 7 tuổi' },
             ]}
           />
           <SelectField
             value={filterGender}
             onChange={setFilterGender}
             options={[
-              { value: 'ALL', label: 'Moi gioi tinh' },
-              { value: 'Male', label: 'Cau be (Nam)' },
-              { value: 'Female', label: 'Co be (Nu)' },
-              { value: 'Other', label: 'Khac' },
+              { value: 'ALL', label: 'Mọi giới tính' },
+              { value: 'Male', label: 'Nam' },
+              { value: 'Female', label: 'Nữ' },
+              { value: 'Other', label: 'Khác' },
             ]}
           />
           <SelectField
             value={filterLevel}
             onChange={setFilterLevel}
             options={[
-              { value: 'ALL', label: 'Moi cap do hoc' },
-              { value: 'Beginner', label: 'Beginner (Nhap mon)' },
-              { value: 'Intermediate', label: 'Intermediate (Trung cap)' },
-              { value: 'Advanced', label: 'Advanced (Nang cao)' },
+              { value: 'ALL', label: 'Mọi cấp độ học' },
+              { value: 'Beginner', label: 'Sơ cấp (Beginner)' },
+              { value: 'Intermediate', label: 'Trung cấp (Intermediate)' },
+              { value: 'Advanced', label: 'Nâng cao (Advanced)' },
             ]}
           />
           <SelectField
             value={filterStatus}
             onChange={setFilterStatus}
             options={[
-              { value: 'ALL', label: 'Moi trang thai' },
-              { value: 'Active', label: 'Dang hoc' },
-              { value: 'Inactive', label: 'Tam ngung' },
+              { value: 'ALL', label: 'Mọi trạng thái' },
+              { value: 'Active', label: 'Đang học' },
+              { value: 'Inactive', label: 'Tạm ngưng' },
             ]}
           />
         </div>
@@ -666,16 +672,16 @@ export default function ChildManagement() {
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
           <div>
             <h3 className="text-lg font-bold leading-none text-slate-800">
-              Danh sach tre can thiep am
+              Danh sách trẻ cần can thiệp âm
             </h3>
             <p className="mt-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
-              Hien thi {filteredChildren.length} ho so phu hop bo loc
+              Hiển thị {filteredChildren.length} hồ sơ phù hợp bộ lọc
             </p>
           </div>
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 animate-pulse rounded-full bg-[#4EACAF]" />
             <span className="text-xs font-bold uppercase tracking-wider text-[#4EACAF]">
-              ChildProfile API
+              Hệ thống đồng bộ
             </span>
           </div>
         </div>
@@ -687,10 +693,10 @@ export default function ChildManagement() {
             </div>
             <div className="space-y-2">
               <p className="text-lg font-black text-slate-800">
-                Dang tai ho so tre tu API
+                Đang tải hồ sơ trẻ từ hệ thống...
               </p>
               <p className="text-sm text-slate-500">
-                He thong se tu gom toan bo cac trang du lieu tu backend.
+                Hệ thống đang truy xuất danh sách thông tin người dùng.
               </p>
             </div>
           </div>
@@ -701,8 +707,8 @@ export default function ChildManagement() {
             </div>
             <p className="text-xl font-black text-gray-700">
               {isFiltering
-                ? 'Khong tim thay ho so tre em phu hop bo loc.'
-                : 'API chua tra ve ho so tre nao.'}
+                ? 'Không tìm thấy hồ sơ trẻ em phù hợp bộ lọc.'
+                : 'Chưa có hồ sơ trẻ em nào trên hệ thống.'}
             </p>
             <button
               onClick={() => {
@@ -714,7 +720,7 @@ export default function ChildManagement() {
               }}
               className="rounded-xl border border-gray-200 px-5 py-2 text-xs font-black uppercase text-[#4EACAF] transition-all hover:bg-gray-100"
             >
-              Dat lai bo loc
+              Đặt lại bộ lọc
             </button>
           </div>
         ) : (
@@ -723,14 +729,14 @@ export default function ChildManagement() {
               <table className="w-full border-collapse text-left">
                 <thead>
                   <tr className="border-b border-gray-100 bg-[#FDFCF5]/50 text-xs font-bold uppercase tracking-widest text-[#555]">
-                    <th className="px-10 py-5">Ma so</th>
-                    <th className="px-6 py-5">Ho so tre</th>
-                    <th className="px-6 py-5">Do tuoi</th>
-                    <th className="px-6 py-5">Gioi tinh</th>
-                    <th className="px-6 py-5">Tai khoan lien ket</th>
-                    <th className="px-6 py-5">Cap do</th>
-                    <th className="px-6 py-5">Trang thai</th>
-                    <th className="px-10 py-5 text-right">Tuy chon quan tri</th>
+                    <th className="w-[5%] px-6 py-5">Mã số</th>
+                    <th className="w-[25%] px-6 py-5">Hồ sơ trẻ</th>
+                    <th className="w-[10%] px-6 py-5">Độ tuổi</th>
+                    <th className="w-[8%] px-6 py-5">Giới tính</th>
+                    <th className="w-[24%] px-6 py-5">Phụ huynh</th>
+                    <th className="w-[10%] px-6 py-5">Cấp độ</th>
+                    <th className="w-[8%] px-6 py-5">Trạng thái</th>
+                    <th className="w-[10%] px-6 py-5 text-right">Tùy chọn quản trị</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm font-bold text-gray-700">
@@ -739,7 +745,7 @@ export default function ChildManagement() {
                       key={child.ChildId}
                       className="transition-colors hover:bg-gray-50/40"
                     >
-                      <td className="px-10 py-5 font-mono text-xs font-black text-gray-400">
+                      <td className="px-6 py-5 font-mono text-xs font-black text-gray-400">
                         {child.ChildId}
                       </td>
                       <td className="px-6 py-5">
@@ -747,36 +753,28 @@ export default function ChildManagement() {
                           <img
                             src={`https://api.dicebear.com/7.x/bottts/svg?seed=${child.FullName}`}
                             alt={child.FullName}
-                            className="h-10 w-10 rounded-2xl border border-orange-100/30 bg-orange-50/50"
+                            className="h-10 w-10 rounded-2xl border border-orange-100/30 bg-orange-50/50 shrink-0"
                             referrerPolicy="no-referrer"
                           />
-                          <div>
-                            <p className="text-base font-extrabold text-gray-900">
+                          <div className="min-w-0">
+                            <p className="text-base font-extrabold text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis">
                               {child.FullName}
-                            </p>
-                            <p className="pt-0.5 text-xs font-medium text-gray-400">
-                              Tao ngay {formatDateTime(child.CreatedAt)}
                             </p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-5">
-                        <span className="font-extrabold text-gray-900">
-                          {child.Age} tuoi
+                        <span className="font-extrabold text-gray-900 whitespace-nowrap">
+                          {child.Age} tuổi
                         </span>
                       </td>
                       <td className="px-6 py-5 text-gray-600">
                         {getGenderLabel(child.Gender)}
                       </td>
                       <td className="px-6 py-5">
-                        <div className="space-y-0.5">
-                          <p className="font-extrabold text-gray-800">
-                            Tai khoan #{child.ParentUserId}
-                          </p>
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                            userId tu child-profile
-                          </p>
-                        </div>
+                        <p className="font-extrabold text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis">
+                          {parentsMap[child.ParentUserId] || `Tài khoản #${child.ParentUserId}`}
+                        </p>
                       </td>
                       <td className="px-6 py-5">
                         <span
@@ -790,7 +788,11 @@ export default function ChildManagement() {
                           )}
                         >
                           <Award className="h-3.5 w-3.5" />
-                          {child.LearningLevel}
+                          {child.LearningLevel === 'Beginner'
+                            ? 'Sơ cấp'
+                            : child.LearningLevel === 'Intermediate'
+                              ? 'Trung cấp'
+                              : 'Nâng cao'}
                         </span>
                       </td>
                       <td className="px-6 py-5">
@@ -805,12 +807,12 @@ export default function ChildManagement() {
                           {getStatusLabel(child.Status)}
                         </span>
                       </td>
-                      <td className="px-10 py-5 text-right">
+                      <td className="px-6 py-5 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => void handleOpenDetail(child)}
                             className="rounded-xl p-2 text-teal-600 transition-colors hover:bg-teal-50 hover:scale-105"
-                            title="Thong tin chi tiet"
+                            title="Thông tin chi tiết"
                           >
                             <Eye className="h-4.5 w-4.5" />
                           </button>
@@ -818,32 +820,16 @@ export default function ChildManagement() {
                           <button
                             onClick={() => openEditModal(child)}
                             className="rounded-xl p-2 text-sky-500 transition-colors hover:bg-sky-50 hover:scale-105"
-                            title="Chinh sua ho so"
+                            title="Chỉnh sửa hồ sơ"
                           >
                             <Edit3 className="h-4.5 w-4.5" />
                           </button>
 
-                          <button
-                            onClick={() => void handleToggleStatus(child)}
-                            className={cn(
-                              'rounded-xl p-2 transition-colors hover:scale-105',
-                              child.Status === 'Active'
-                                ? 'text-rose-500 hover:bg-rose-50'
-                                : 'text-emerald-500 hover:bg-emerald-50'
-                            )}
-                            title="Cap nhat trang thai"
-                          >
-                            {child.Status === 'Active' ? (
-                              <Lock className="h-4.5 w-4.5" />
-                            ) : (
-                              <Unlock className="h-4.5 w-4.5" />
-                            )}
-                          </button>
 
                           <button
                             onClick={() => openDeleteModal(child)}
                             className="rounded-xl p-2 text-rose-500 transition-colors hover:bg-rose-50 hover:scale-105"
-                            title="Xoa ho so"
+                            title="Xóa hồ sơ"
                           >
                             <Trash2 className="h-4.5 w-4.5" />
                           </button>
@@ -851,12 +837,12 @@ export default function ChildManagement() {
                           <button
                             onClick={() =>
                               triggerNotification(
-                                'Lich su hoc tap se map tiep khi co nhom analytics/detail phu hop.',
+                                'Lịch sử học tập chi tiết sẽ được cập nhật trong phiên bản tiếp theo.',
                                 'warning'
                               )
                             }
                             className="rounded-xl p-2 text-orange-500 transition-colors hover:bg-orange-50 hover:scale-105"
-                            title="Tien do hoc tap"
+                            title="Tiến độ học tập"
                           >
                             <TrendingUp className="h-4.5 w-4.5" />
                           </button>
@@ -878,7 +864,7 @@ export default function ChildManagement() {
                   setPageSize(size);
                   setCurrentPage(1);
                 }}
-                itemLabel="ho so tre"
+                itemLabel="hồ sơ trẻ"
               />
             </div>
           </>
@@ -888,21 +874,20 @@ export default function ChildManagement() {
       <AnimatePresence>
         {modalType === 'detail' && selectedChild && (
           <ModalFrame
-            title="Chi tiet ho so hoc vien"
-            subtitle="Dong bo tu `GET /api/child-profiles/{id}`"
+            title="Chi tiết hồ sơ trẻ em"
+            subtitle="Thông tin lưu trữ trên hệ thống GodotXR"
             onClose={handleCloseModal}
             accent="purple"
           >
             <div className="space-y-8 p-8 md:p-10">
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#4EACAF]/15 bg-[#4EACAF]/5 px-4 py-3 text-sm text-slate-600">
                 <span>
-                  Du lieu dang bam theo contract hien co cua backend, khong dung
-                  mock detail.
+                  Hồ sơ học tập được cập nhật trực tuyến theo thời gian thực.
                 </span>
                 {isDetailLoading && (
                   <span className="inline-flex items-center gap-2 font-bold text-[#4EACAF]">
                     <RefreshCw className="h-4 w-4 animate-spin" />
-                    Dang lam moi chi tiet...
+                    Đang làm mới thông tin...
                   </span>
                 )}
               </div>
@@ -927,7 +912,7 @@ export default function ChildManagement() {
                       </span>
                     </div>
                     <p className="text-gray-400">
-                      Do tuoi: {selectedChild.Age} tuoi | Gioi tinh:{' '}
+                      Độ tuổi: {selectedChild.Age} tuổi | Giới tính:{' '}
                       {getGenderLabel(selectedChild.Gender)}
                     </p>
                   </div>
@@ -943,7 +928,12 @@ export default function ChildManagement() {
                             : 'bg-purple-50 text-purple-600'
                       )}
                     >
-                      Trinh do: {selectedChild.LearningLevel}
+                      Trình độ:{' '}
+                      {selectedChild.LearningLevel === 'Beginner'
+                        ? 'Sơ cấp'
+                        : selectedChild.LearningLevel === 'Intermediate'
+                          ? 'Trung cấp'
+                          : 'Nâng cao'}
                     </span>
 
                     <span
@@ -955,8 +945,8 @@ export default function ChildManagement() {
                       )}
                     >
                       {selectedChild.Status === 'Active'
-                        ? 'Dang hoc tap'
-                        : 'Tam dung bai tap'}
+                        ? 'Đang học tập'
+                        : 'Tạm dừng học'}
                     </span>
                   </div>
                 </div>
@@ -964,29 +954,29 @@ export default function ChildManagement() {
 
               <div className="grid grid-cols-1 gap-6 text-sm md:grid-cols-2">
                 <DetailRow
-                  label="Ten day du tre (fullName)"
+                  label="Họ và tên đầy đủ của trẻ"
                   value={selectedChild.FullName}
                 />
-                <DetailRow
-                  label="Tai khoan lien ket (userId)"
-                  value={selectedChild.ParentUserId}
+                 <DetailRow
+                  label="Phụ huynh liên kết"
+                  value={parentsMap[selectedChild.ParentUserId] || `Tài khoản #${selectedChild.ParentUserId}`}
                 />
-                <DetailRow label="Do tuoi" value={`${selectedChild.Age} tuoi`} />
+                <DetailRow label="Độ tuổi" value={`${selectedChild.Age} tuổi`} />
                 <DetailRow
-                  label="Gioi tinh"
+                  label="Giới tính"
                   value={getGenderLabel(selectedChild.Gender)}
                 />
                 <DetailRow
-                  label="Thoi khac khoi tao ho so"
+                  label="Thời gian đăng ký hồ sơ"
                   value={formatDateTime(selectedChild.CreatedAt)}
                 />
                 <DetailRow
-                  label="Sua doi sau cung"
+                  label="Cập nhật lần cuối"
                   value={formatDateTime(selectedChild.UpdatedAt)}
                 />
                 <div className="col-span-1 space-y-1.5 rounded-2xl border border-[#F2ECD8]/40 bg-[#FDFCF5]/60 p-4 md:col-span-2">
                   <span className="block text-[10px] font-black uppercase tracking-widest text-gray-400">
-                    Chan doan - Luu y lam sang (note)
+                    Chẩn đoán & Lưu ý đặc biệt (Ghi chú)
                   </span>
                   <span className="block text-sm font-bold italic leading-relaxed text-gray-800">
                     "{selectedChild.Note}"
@@ -996,11 +986,9 @@ export default function ChildManagement() {
 
               <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4 text-sm text-amber-800">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0" />
+                  <Info className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-600" />
                   <p>
-                    API chi tiet hien chua tra ve ten phu huynh, so dien thoai va
-                    lich su hoc tap. Khi BE mo rong contract, phan modal nay co the
-                    noi tiep ma khong can quay lai mock data.
+                    Để bảo mật và tối ưu dữ liệu, thông tin liên lạc chi tiết của phụ huynh sẽ được truy cập thông qua mục Quản lý phụ huynh.
                   </p>
                 </div>
               </div>
@@ -1010,7 +998,7 @@ export default function ChildManagement() {
                   onClick={handleCloseModal}
                   className="rounded-2xl bg-gray-100 px-8 py-4 font-black text-gray-600 transition-all hover:bg-gray-200"
                 >
-                  Quay lai
+                  Quay lại
                 </button>
               </div>
             </div>
@@ -1020,51 +1008,51 @@ export default function ChildManagement() {
         {modalType === 'form' && (
           <ModalFrame
             title={
-              formMode === 'create' ? 'Dang ky ho so tre moi' : 'Chinh sua ho so tre'
+              formMode === 'create' ? 'Đăng ký hồ sơ trẻ mới' : 'Chỉnh sửa hồ sơ trẻ'
             }
             subtitle={
               formMode === 'create'
-                ? 'Dong bo tu `POST /api/child-profiles`'
-                : 'Dong bo tu `PUT /api/child-profiles/{id}`'
+                ? 'Vui lòng điền đầy đủ các thông tin dưới đây để đăng ký'
+                : 'Cập nhật lại các thông tin của trẻ'
             }
             onClose={handleCloseModal}
             accent="teal"
           >
             <div className="space-y-6 p-8 md:p-10">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <InputField
-                  label="User ID lien ket"
+                <SelectInputField
+                  label="Phụ huynh liên kết"
                   value={formState.userId}
                   onChange={(value) => handleFormChange('userId', value)}
-                  placeholder="Vi du: 3"
+                  options={activeParentOptions}
                 />
                 <InputField
-                  label="Ho ten tre"
+                  label="Họ tên trẻ"
                   value={formState.fullName}
                   onChange={(value) => handleFormChange('fullName', value)}
-                  placeholder="Nhap ho ten day du"
+                  placeholder="Nhập họ tên đầy đủ của bé"
                 />
                 <InputField
-                  label="Do tuoi"
+                  label="Độ tuổi"
                   value={formState.age}
                   onChange={(value) => handleFormChange('age', value)}
-                  placeholder="Vi du: 7"
+                  placeholder="Ví dụ: 7"
                   inputMode="numeric"
                 />
                 <SelectInputField
-                  label="Gioi tinh"
+                  label="Giới tính"
                   value={formState.gender}
                   onChange={(value) =>
                     handleFormChange('gender', value as Child['Gender'])
                   }
                   options={[
-                    { value: 'Male', label: 'Male' },
-                    { value: 'Female', label: 'Female' },
-                    { value: 'Other', label: 'Other' },
+                    { value: 'Male', label: 'Nam' },
+                    { value: 'Female', label: 'Nữ' },
+                    { value: 'Other', label: 'Khác' },
                   ]}
                 />
                 <SelectInputField
-                  label="Cap do hoc"
+                  label="Cấp độ học"
                   value={formState.learningLevel}
                   onChange={(value) =>
                     handleFormChange(
@@ -1073,27 +1061,27 @@ export default function ChildManagement() {
                     )
                   }
                   options={[
-                    { value: 'Beginner', label: 'Beginner' },
-                    { value: 'Intermediate', label: 'Intermediate' },
-                    { value: 'Advanced', label: 'Advanced' },
+                    { value: 'Beginner', label: 'Sơ cấp (Beginner)' },
+                    { value: 'Intermediate', label: 'Trung cấp (Intermediate)' },
+                    { value: 'Advanced', label: 'Nâng cao (Advanced)' },
                   ]}
                 />
                 <SelectInputField
-                  label="Trang thai"
+                  label="Trạng thái"
                   value={formState.status}
                   onChange={(value) =>
                     handleFormChange('status', value as Child['Status'])
                   }
                   options={[
-                    { value: 'Active', label: 'Active' },
-                    { value: 'Inactive', label: 'Inactive' },
+                    { value: 'Active', label: 'Đang học (Active)' },
+                    { value: 'Inactive', label: 'Tạm ngưng (Inactive)' },
                   ]}
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-500">
-                  Ghi chu
+                  Ghi chú / Lưu ý lâm sàng
                 </label>
                 <textarea
                   value={formState.note}
@@ -1101,7 +1089,7 @@ export default function ChildManagement() {
                     handleFormChange('note', event.target.value)
                   }
                   rows={4}
-                  placeholder="Nhap ghi chu neu co..."
+                  placeholder="Nhập chẩn đoán hoặc ghi chú hỗ trợ cho bé..."
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
                 />
               </div>
@@ -1117,7 +1105,7 @@ export default function ChildManagement() {
                   onClick={handleCloseModal}
                   className="rounded-2xl bg-gray-100 px-6 py-3 text-sm font-black text-gray-600 transition-all hover:bg-gray-200"
                 >
-                  Huy
+                  Hủy
                 </button>
                 <button
                   onClick={() => void handleSubmitForm()}
@@ -1132,7 +1120,7 @@ export default function ChildManagement() {
                   ) : (
                     <Save className="h-4 w-4" />
                   )}
-                  {formMode === 'create' ? 'Tao ho so' : 'Luu thay doi'}
+                  {formMode === 'create' ? 'Tạo hồ sơ' : 'Lưu thay đổi'}
                 </button>
               </div>
             </div>
@@ -1141,20 +1129,20 @@ export default function ChildManagement() {
 
         {modalType === 'delete' && selectedChild && (
           <ModalFrame
-            title="Xoa ho so tre"
-            subtitle="Dong bo tu `DELETE /api/child-profiles/{id}`"
+            title="Xóa hồ sơ trẻ"
+            subtitle="Hành động này sẽ xóa vĩnh viễn hồ sơ khỏi hệ thống"
             onClose={handleCloseModal}
             accent="rose"
           >
             <div className="space-y-6 p-8 md:p-10">
               <div className="rounded-2xl border border-rose-100 bg-rose-50/70 p-5 text-sm text-rose-700">
                 <p className="font-semibold">
-                  Ban sap xoa ho so <strong>{selectedChild.FullName}</strong> (ID:{' '}
+                  Bạn sắp xóa hồ sơ trẻ <strong>{selectedChild.FullName}</strong> (ID:{' '}
                   {selectedChild.ChildId}).
                 </p>
                 <p className="mt-2">
-                  Hanh dong nay khong the hoan tac. Vui long xac nhan neu day la ho
-                  so can xoa khoi he thong.
+                  Hành động này không thể hoàn tác. Vui lòng xác nhận nếu đây là hồ
+                  sơ bạn thực sự muốn xóa.
                 </p>
               </div>
 
@@ -1163,7 +1151,7 @@ export default function ChildManagement() {
                   onClick={handleCloseModal}
                   className="rounded-2xl bg-gray-100 px-6 py-3 text-sm font-black text-gray-600 transition-all hover:bg-gray-200"
                 >
-                  Huy
+                  Hủy
                 </button>
                 <button
                   onClick={() => void handleConfirmDelete()}
@@ -1178,7 +1166,7 @@ export default function ChildManagement() {
                   ) : (
                     <Trash2 className="h-4 w-4" />
                   )}
-                  Xac nhan xoa
+                  Xác nhận xóa
                 </button>
               </div>
             </div>
@@ -1199,20 +1187,12 @@ function SelectField({
   options: Array<{ value: string; label: string }>;
 }) {
   return (
-    <div className="relative">
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-xs font-bold text-gray-700 outline-none hover:border-[#4EACAF]/45"
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-    </div>
+    <CustomSelect
+      value={value}
+      onChange={onChange}
+      options={options}
+      variant="filter"
+    />
   );
 }
 
@@ -1265,7 +1245,9 @@ function ModalFrame({
             <X className="h-6 w-6 text-gray-500" />
           </button>
         </div>
-        {children}
+        <div className="max-h-[calc(100vh-160px)] overflow-y-auto">
+          {children}
+        </div>
       </motion.div>
     </div>
   );
@@ -1316,17 +1298,12 @@ function SelectInputField({
       <label className="block text-xs font-black uppercase tracking-wider text-slate-500">
         {label}
       </label>
-      <select
+      <CustomSelect
         value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+        onChange={onChange}
+        options={options}
+        variant="form"
+      />
     </div>
   );
 }

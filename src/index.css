@@ -318,3 +318,16 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Fix styled option inheriting italic/color/weight/transform from select parent */
+select option {
+  font-style: normal !important;
+  font-weight: 500 !important;
+  background-color: #ffffff !important;
+  color: #334155 !important;
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif !important;
+  text-transform: none !important;
+  font-size: 0.875rem !important;
+  letter-spacing: normal !important;
+}
+

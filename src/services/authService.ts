@@ -32,7 +32,7 @@ export interface UserAuthInfo {
   id: number;
   email: string;
   fullName: string;
-  username: string;
+  username?: string;
   phone: string;
   roleName: string;
   isActive: boolean;

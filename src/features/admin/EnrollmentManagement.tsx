@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
+import CustomSelect from '../../components/common/CustomSelect';
 import { useEnrollmentManagementApi, type EnrollmentResponse } from '../../hooks/useEnrollmentManagementApi';
 
 // DB Interfaces
@@ -205,7 +206,7 @@ export default function EnrollmentManagement() {
   }, [searchQuery, filterStatus, filterClass, filterLevel]);
 
   // Modal Setup
-  const [modalType, setModalType] = useState<'add' | 'edit' | 'detail' | 'transfer' | null>(null);
+  const [modalType, setModalType] = useState<'add' | 'edit' | 'detail' | 'transfer' | 'cancel_confirm' | null>(null);
   const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null);
   const [alertConfig, setAlertConfig] = useState<{ message: string; type: 'success' | 'warning' } | null>(null);
 
@@ -270,6 +271,11 @@ export default function EnrollmentManagement() {
     setSelectedEnrollment(enrollment);
     setFormClassId(enrollment.ClassId);
     setModalType('transfer');
+  };
+
+  const handleOpenCancelConfirm = (enrollment: Enrollment) => {
+    setSelectedEnrollment(enrollment);
+    setModalType('cancel_confirm');
   };
 
   const handleCloseModal = () => {
@@ -562,48 +568,35 @@ export default function EnrollmentManagement() {
 
         {/* Filters Group */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="relative">
-            <select 
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/45 px-4 py-2.5 rounded-xl font-bold text-gray-750 outline-none cursor-pointer pr-10 text-xs"
-            >
-              <option value="ALL">Mọi trạng thái ghi danh</option>
-              <option value="Active">Đang học</option>
-              <option value="Pending">Chờ duyệt</option>
-              <option value="Completed">Đã hoàn thành</option>
-              <option value="Cancelled">Đã hủy bỏ</option>
-            </select>
-            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
-
-          <div className="relative">
-            <select 
-              value={filterClass}
-              onChange={(e) => setFilterClass(e.target.value)}
-              className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/45 px-4 py-2.5 rounded-xl font-bold text-gray-750 outline-none cursor-pointer pr-10 text-xs"
-            >
-              <option value="ALL">Mọi lớp học</option>
-              {classrooms.map(cls => (
-                <option key={cls.ClassId} value={cls.ClassId}>{cls.ClassName}</option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
-
-          <div className="relative">
-            <select 
-              value={filterLevel}
-              onChange={(e) => setFilterLevel(e.target.value)}
-              className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/45 px-4 py-2.5 rounded-xl font-bold text-gray-750 outline-none cursor-pointer pr-10 text-xs"
-            >
-              <option value="ALL">Mọi cấp độ học</option>
-              <option value="Beginner">Beginner (Mới học)</option>
-              <option value="Intermediate">Intermediate (Cơ bản)</option>
-              <option value="Advanced">Advanced (Nâng cao)</option>
-            </select>
-            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
+          <CustomSelect
+            value={filterStatus}
+            onChange={setFilterStatus}
+            options={[
+              { value: 'ALL', label: 'Mọi trạng thái ghi danh' },
+              { value: 'Active', label: 'Đang học' },
+              { value: 'Pending', label: 'Chờ duyệt' },
+              { value: 'Completed', label: 'Đã hoàn thành' },
+              { value: 'Cancelled', label: 'Đã hủy bỏ' }
+            ]}
+          />
+          <CustomSelect
+            value={filterClass}
+            onChange={setFilterClass}
+            options={[
+              { value: 'ALL', label: 'Mọi lớp học' },
+              ...classrooms.map(cls => ({ value: cls.ClassId, label: cls.ClassName }))
+            ]}
+          />
+          <CustomSelect
+            value={filterLevel}
+            onChange={setFilterLevel}
+            options={[
+              { value: 'ALL', label: 'Mọi cấp độ học' },
+              { value: 'Beginner', label: 'Beginner (Mới học)' },
+              { value: 'Intermediate', label: 'Intermediate (Cơ bản)' },
+              { value: 'Advanced', label: 'Advanced (Nâng cao)' }
+            ]}
+          />
         </div>
       </div>
 
@@ -644,13 +637,13 @@ export default function EnrollmentManagement() {
               <table className="w-full text-left border-collapse" id="enrollment-table">
                 <thead>
                   <tr className="bg-[#FDFCF5]/50 border-b border-gray-100 text-[#555] font-bold text-xs uppercase tracking-widest">
-                    <th className="py-5 px-10">Mã Lập Hồ Sơ</th>
-                    <th className="py-5 px-6">Em bé điều trị</th>
-                    <th className="py-5 px-6">Lớp tiếp nhận</th>
-                    <th className="py-5 px-6">Cấp độ phát âm</th>
-                    <th className="py-5 px-6">Ngày Nhập Lớp</th>
-                    <th className="py-5 px-6">Trạng thái ghi danh</th>
-                    <th className="py-5 px-10 text-right">Quản lý thao tác</th>
+                    <th className="py-5 px-10 w-[5%] whitespace-nowrap">ID</th>
+                    <th className="py-5 px-6 w-[18%] whitespace-nowrap">Em bé điều trị</th>
+                    <th className="py-5 px-6 w-[22%] whitespace-nowrap">Lớp tiếp nhận</th>
+                    <th className="py-5 px-6 w-[15%] whitespace-nowrap">Cấp độ phát âm</th>
+                    <th className="py-5 px-6 w-[12%] whitespace-nowrap">Ngày Nhập Lớp</th>
+                    <th className="py-5 px-6 w-[13%] whitespace-nowrap">Trạng thái ghi danh</th>
+                    <th className="py-5 px-10 text-right w-[15%] whitespace-nowrap">Quản lý thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
@@ -660,10 +653,10 @@ export default function EnrollmentManagement() {
 
                     return (
                       <tr key={enrollment.EnrollmentId} className="hover:bg-gray-50/40 transition-colors">
-                        <td className="py-5 px-10 font-mono text-gray-400 font-black text-xs">
+                        <td className="py-5 px-10 font-mono text-gray-400 font-black text-xs whitespace-nowrap">
                           {enrollment.EnrollmentId}
                         </td>
-                        <td className="py-5 px-6">
+                        <td className="py-5 px-6 whitespace-nowrap">
                           <div className="flex items-center gap-3">
                             <img 
                               src={`https://api.dicebear.com/7.x/bottts/svg?seed=${child?.FullName || enrollment.ChildId}`} 
@@ -672,25 +665,25 @@ export default function EnrollmentManagement() {
                               referrerPolicy="no-referrer"
                             />
                             <div>
-                              <p className="font-extrabold text-gray-900 leading-tight">{child?.FullName || 'Chưa rõ thông tin'}</p>
-                              <p className="text-[10px] text-gray-400 font-bold mt-0.5">{child?.ChildId}</p>
+                              <p className="font-extrabold text-gray-900 leading-tight whitespace-nowrap">{child?.FullName || 'Chưa rõ thông tin'}</p>
+                              <p className="text-[10px] text-gray-400 font-bold mt-0.5 whitespace-nowrap">{child?.ChildId}</p>
                             </div>
                           </div>
                         </td>
                         <td className="py-5 px-6">
                           {classroom ? (
-                            <div className="space-y-0.5 max-w-xs">
-                              <p className="text-gray-800 font-extrabold line-clamp-1">{classroom.ClassName}</p>
+                            <div className="space-y-0.5 max-w-[200px]">
+                              <p className="text-gray-800 font-extrabold truncate" title={classroom.ClassName}>{classroom.ClassName}</p>
                               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{classroom.ClassId}</p>
                             </div>
                           ) : (
-                            <span className="text-[#FF8E8E] italic text-xs">Bị lỗi lớp học</span>
+                            <span className="text-[#FF8E8E] italic text-xs whitespace-nowrap">Bị lỗi lớp học</span>
                           )}
                         </td>
-                        <td className="py-5 px-6">
+                        <td className="py-5 px-6 whitespace-nowrap">
                           {child ? (
                             <span className={cn(
-                              "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider",
+                              "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap",
                               child.LearningLevel === 'Beginner' ? 'bg-sky-50 text-sky-600 border border-sky-100' :
                               child.LearningLevel === 'Intermediate' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
                               'bg-purple-50 text-purple-600 border border-purple-100'
@@ -702,15 +695,15 @@ export default function EnrollmentManagement() {
                             <span className="text-gray-300">-</span>
                           )}
                         </td>
-                        <td className="py-5 px-6 font-medium text-gray-500">
-                          <div className="flex items-center gap-1.5 font-bold text-gray-700">
+                        <td className="py-5 px-6 font-medium text-gray-500 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5 font-bold text-gray-700 whitespace-nowrap">
                             <Calendar className="w-4 h-4 text-gray-400" />
                             {enrollment.EnrollmentDate}
                           </div>
                         </td>
-                        <td className="py-5 px-6">
+                        <td className="py-5 px-6 whitespace-nowrap">
                           <span className={cn(
-                            "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider",
+                            "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap",
                             enrollment.Status === 'Active' ? 'bg-emerald-50 text-emerald-600' :
                             enrollment.Status === 'Completed' ? 'bg-indigo-50 text-indigo-600' :
                             enrollment.Status === 'Cancelled' ? 'bg-rose-50 text-rose-500' :
@@ -722,12 +715,12 @@ export default function EnrollmentManagement() {
                             {enrollment.Status === 'Pending' && '⏳ Chờ duyệt'}
                           </span>
                         </td>
-                        <td className="py-5 px-10 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
+                        <td className="py-5 px-10 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
                             {enrollment.Status === 'Pending' && (
                               <button 
                                 onClick={() => handleApproveEnrollment(enrollment)}
-                                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 duration-150 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1"
+                                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 duration-150 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1 whitespace-nowrap"
                                 title="Duyệt hồ sơ nhanh"
                               >
                                 <Check className="w-3.5 h-3.5" />
@@ -762,7 +755,7 @@ export default function EnrollmentManagement() {
                                 </button>
 
                                 <button 
-                                  onClick={() => handleCancelEnrollment(enrollment)}
+                                  onClick={() => handleOpenCancelConfirm(enrollment)}
                                   className="p-2.5 hover:bg-rose-50 text-rose-500 rounded-xl transition-colors hover:scale-105"
                                   title="Hủy bỏ ghi danh"
                                 >
@@ -823,7 +816,8 @@ export default function EnrollmentManagement() {
                 "px-8 py-6 flex items-center justify-between border-b",
                 modalType === 'add' ? 'bg-[#4EACAF]/10 border-[#4EACAF]/10 text-gray-900' :
                 modalType === 'edit' ? 'bg-sky-50 border-sky-100 text-gray-900' :
-                modalType === 'transfer' ? 'bg-indigo-50 border-indigo-100 text-gray-900' : 'bg-purple-50 border-purple-100 text-gray-900'
+                modalType === 'transfer' ? 'bg-indigo-50 border-indigo-100 text-gray-900' :
+                modalType === 'cancel_confirm' ? 'bg-rose-50 border-rose-100 text-gray-900 bg-rose-50' : 'bg-purple-50 border-purple-100 text-gray-900'
               )}>
                 <div>
                   <h2 className="text-2xl font-black italic tracking-tight flex items-center gap-2">
@@ -831,17 +825,20 @@ export default function EnrollmentManagement() {
                     {modalType === 'edit' && <Edit3 className="w-6 h-6 text-sky-500" />}
                     {modalType === 'transfer' && <ArrowRightLeft className="w-6 h-6 text-indigo-500" />}
                     {modalType === 'detail' && <Info className="w-6 h-6 text-purple-600" />}
+                    {modalType === 'cancel_confirm' && <AlertTriangle className="w-6 h-6 text-rose-500" />}
                     
                     {modalType === 'add' && 'Ghi danh học viên mới'}
                     {modalType === 'edit' && `Chỉnh sửa: Ghi danh ${selectedEnrollment?.EnrollmentId}`}
                     {modalType === 'transfer' && `Chuyển lớp: Bé ${children.find(c => c.ChildId === selectedEnrollment?.ChildId)?.FullName}`}
                     {modalType === 'detail' && 'Chi tiết thông tin ghi danh'}
+                    {modalType === 'cancel_confirm' && 'Xác nhận hủy bỏ ghi danh'}
                   </h2>
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
                     {modalType === 'add' && 'Ghi danh bé nhập học và phân cấp lớp theo học lý tưởng'}
                     {modalType === 'edit' && 'Cập nhật thời hạn nhập lớp hoặc trạng thái can thiệp học trình'}
                     {modalType === 'transfer' && 'Dịch chuyển trẻ sang lớp mới có khung thời gian thích hợp hơn'}
                     {modalType === 'detail' && 'Liên kết chéo thông tin học viên, lớp giảng dạy và ngày lập học bạ'}
+                    {modalType === 'cancel_confirm' && 'Hành động này sẽ hủy quá trình học của bé tại lớp học hiện tại'}
                   </p>
                 </div>
                 <button 
@@ -946,6 +943,67 @@ export default function EnrollmentManagement() {
               ) : modalType === 'transfer' && selectedEnrollment ? (
                 /* Modal Body: TRANSFER CLASS */
                 <form onSubmit={handleTransferClassSubmit} className="app-modal-body p-8 md:p-10 space-y-6" id="transfer-form">
+              ) : modalType === 'cancel_confirm' && selectedEnrollment ? (
+                /* Modal Body: CANCEL CONFIRMATION */
+                <div className="app-modal-body p-8 md:p-10 space-y-6" id="modal-cancel-confirm">
+                  {(() => {
+                    const child = children.find(c => c.ChildId === selectedEnrollment.ChildId);
+                    const classroom = classrooms.find(cls => cls.ClassId === selectedEnrollment.ClassId);
+
+                    return (
+                      <div className="space-y-6 font-bold">
+                        <div className="flex items-center gap-4 bg-rose-50 p-5 rounded-3xl border border-rose-100 text-rose-700">
+                          <AlertTriangle className="w-10 h-10 shrink-0 text-rose-500 animate-pulse" />
+                          <div>
+                            <p className="font-extrabold text-sm uppercase tracking-wider">Cảnh báo hủy ghi danh</p>
+                            <p className="text-xs text-rose-600/80 font-bold mt-1">
+                              Bạn có chắc chắn muốn hủy bỏ ghi danh của bé <strong className="text-rose-900">{child?.FullName}</strong> tại lớp học <strong className="text-rose-900">{classroom?.ClassName}</strong> không?
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="bg-[#FDFCF5]/60 border border-[#F2ECD8]/40 rounded-2xl p-5 space-y-3 text-sm">
+                          <div className="flex justify-between border-b border-gray-100 pb-2 font-bold">
+                            <span className="text-gray-400 font-bold text-xs uppercase tracking-wider">Học sinh:</span>
+                            <span className="text-gray-800 font-extrabold">{child?.FullName || 'Không rõ'} ({child?.ChildId})</span>
+                          </div>
+                          <div className="flex justify-between border-b border-gray-100 pb-2 font-bold">
+                            <span className="text-gray-400 font-bold text-xs uppercase tracking-wider">Lớp tiếp nhận:</span>
+                            <span className="text-gray-800 font-extrabold">{classroom?.ClassName || 'Không rõ'}</span>
+                          </div>
+                          <div className="flex justify-between font-bold">
+                            <span className="text-gray-400 font-bold text-xs uppercase tracking-wider">Ngày nhập lớp:</span>
+                            <span className="text-gray-850 font-extrabold">{selectedEnrollment.EnrollmentDate}</span>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-slate-500 font-medium italic">
+                          * Lưu ý: Hành động này sẽ chuyển trạng thái ghi danh sang "Đã hủy" (Cancelled) và bé sẽ không thể tham gia các bài học của lớp này nữa.
+                        </p>
+
+                        <div className="app-modal-actions pt-6 border-t border-gray-150 flex gap-4">
+                           <button 
+                             type="button"
+                             onClick={handleCloseModal}
+                             className="flex-1 py-4 border-4 border-gray-100 hover:border-gray-200 text-gray-450 hover:text-gray-600 font-extrabold rounded-2xl transition-all uppercase text-xs tracking-wider"
+                           >
+                             Quay lại
+                           </button>
+                           <button 
+                             type="button"
+                             onClick={async () => {
+                               await handleCancelEnrollment(selectedEnrollment);
+                               handleCloseModal();
+                             }}
+                             className="flex-1 py-4 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-2xl shadow-xl shadow-rose-600/15 transition-all text-sm uppercase tracking-wider"
+                           >
+                             Xác nhận hủy
+                           </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
                   {(() => {
                     const currentClass = classrooms.find(c => c.ClassId === selectedEnrollment.ClassId);
                     const child = children.find(c => c.ChildId === selectedEnrollment.ChildId);
@@ -966,20 +1024,15 @@ export default function EnrollmentManagement() {
                           <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
                             Chọn môn học / Lớp học mới muốn chuyển sang <span className="text-[#FF8E8E]">*</span>
                           </label>
-                          <div className="relative">
-                            <select 
-                              value={formClassId}
-                              onChange={(e) => setFormClassId(e.target.value)}
-                              className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 outline-none cursor-pointer appearance-none focus:border-indigo-500 text-sm focus:bg-white"
-                            >
-                              {classrooms.filter(c => c.ClassId !== selectedEnrollment.ClassId && c.Status === 'Active').map(cls => (
-                                <option key={cls.ClassId} value={cls.ClassId}>
-                                  {cls.ClassName} ({cls.ClassId})
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                          </div>
+                          <CustomSelect
+                            value={formClassId}
+                            onChange={setFormClassId}
+                            variant="form"
+                            options={classrooms.filter(c => c.ClassId !== selectedEnrollment.ClassId && c.Status === 'Active').map(cls => ({
+                              value: cls.ClassId,
+                              label: `${cls.ClassName} (${cls.ClassId})`
+                            }))}
+                          />
                           <span className="text-xs text-gray-400 font-semibold italic mt-1 block">
                             * Chỉ hiển thị các lớp học đang hoạt động (Active status) của hệ thống GodotXR.
                           </span>
@@ -1013,46 +1066,37 @@ export default function EnrollmentManagement() {
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
                         Chọn học viên nhi đồng (ChildId) <span className="text-[#FF8E8E]">*</span>
                       </label>
-                      <div className="relative">
-                        <select 
-                          value={formChildId}
-                          disabled={modalType === 'edit'}
-                          onChange={(e) => setFormChildId(e.target.value)}
-                          className={cn(
-                            "w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 outline-none cursor-pointer appearance-none text-sm",
-                            modalType === 'edit' ? 'bg-gray-100 cursor-not-allowed text-gray-400' : 'focus:border-[#4EACAF]'
-                          )}
-                        >
-                          <option value="">-- Chọn một em bé --</option>
-                          {children.map(c => (
-                            <option key={c.ChildId} value={c.ChildId}>
-                              {c.FullName} ({c.ChildId} - {c.Age} tuổi) [{c.Status === 'Active' ? 'Hoạt động' : 'Tạm ngưng'}]
-                            </option>
-                          ))}
-                        </select>
-                        {modalType !== 'edit' && <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />}
-                      </div>
+                      <CustomSelect
+                        value={formChildId}
+                        onChange={setFormChildId}
+                        disabled={modalType === 'edit'}
+                        variant="form"
+                        options={[
+                          { value: '', label: '-- Chọn một em bé --' },
+                          ...children.map(c => ({
+                            value: c.ChildId,
+                            label: `${c.FullName} (${c.ChildId} - ${c.Age} tuổi) [${c.Status === 'Active' ? 'Hoạt động' : 'Tạm ngưng'}]`
+                          }))
+                        ]}
+                      />
                     </div>
 
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
                         Chọn lớp học tiếp nhận (ClassId) <span className="text-[#FF8E8E]">*</span>
                       </label>
-                      <div className="relative">
-                        <select 
-                          value={formClassId}
-                          onChange={(e) => setFormClassId(e.target.value)}
-                          className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 outline-none cursor-pointer appearance-none focus:border-[#4EACAF] text-sm"
-                        >
-                          <option value="">-- Chọn một lớp học --</option>
-                          {classrooms.map(cls => (
-                            <option key={cls.ClassId} value={cls.ClassId}>
-                              {cls.ClassName} ({cls.ClassId})
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                      </div>
+                      <CustomSelect
+                        value={formClassId}
+                        onChange={setFormClassId}
+                        variant="form"
+                        options={[
+                          { value: '', label: '-- Chọn một lớp học --' },
+                          ...classrooms.map(cls => ({
+                            value: cls.ClassId,
+                            label: `${cls.ClassName} (${cls.ClassId})`
+                          }))
+                        ]}
+                      />
                     </div>
 
                     <div className="space-y-2">
@@ -1072,19 +1116,17 @@ export default function EnrollmentManagement() {
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
                         Trạng thái học tập
                       </label>
-                      <div className="relative">
-                        <select 
-                          value={formStatus}
-                          onChange={(e) => setFormStatus(e.target.value as any)}
-                          className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 outline-none cursor-pointer appearance-none focus:border-[#4EACAF] text-sm"
-                        >
-                          <option value="Active">🟢 Đang học tập chính khóa</option>
-                          <option value="Pending">⏳ Chờ kiểm duyệt hồ sơ</option>
-                          <option value="Completed">🎓 Đã hoàn thành khóa can thiệp</option>
-                          <option value="Cancelled">🔴 Đã hủy bỏ ghi danh</option>
-                        </select>
-                        <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                      </div>
+                      <CustomSelect
+                        value={formStatus}
+                        onChange={(val) => setFormStatus(val as any)}
+                        variant="form"
+                        options={[
+                          { value: 'Active', label: '🟢 Đang học tập chính khóa' },
+                          { value: 'Pending', label: '⏳ Chờ kiểm duyệt hồ sơ' },
+                          { value: 'Completed', label: '🎓 Đã hoàn thành khóa can thiệp' },
+                          { value: 'Cancelled', label: '🔴 Đã hủy bỏ ghi danh' }
+                        ]}
+                      />
                     </div>
                   </div>
 

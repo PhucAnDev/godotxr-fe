@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4EACAF" />
+      <stop offset="100%" stop-color="#2D7B7D" />
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="24" fill="url(#grad)" />
+  <!-- VR Glasses / Headset shape -->
+  <path d="M25 45 C25 42 28 35 38 35 C42 35 46 38 50 40 C54 38 58 35 62 35 C72 35 75 42 75 45 C75 52 70 58 60 58 C55 58 52 56 50 54 C48 56 45 58 40 58 C30 58 25 52 25 45 Z" fill="white" />
+  <!-- Lens/Details on VR -->
+  <circle cx="38" cy="46" r="4" fill="#4EACAF" />
+  <circle cx="62" cy="46" r="4" fill="#4EACAF" />
+  <!-- Speech wave below the glasses -->
+  <rect x="35" y="68" width="6" height="10" rx="3" fill="white" />
+  <rect x="47" y="65" width="6" height="16" rx="3" fill="white" />
+  <rect x="59" y="68" width="6" height="10" rx="3" fill="white" />
+</svg>

@@ -24,6 +24,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import Pagination from '../../components/common/Pagination';
 import { cn } from '../../lib/utils';
+import CustomSelect from '../../components/common/CustomSelect';
 import {
   getUsers,
   updateUser,
@@ -67,7 +68,7 @@ const PAGE_CONFIG: Record<PageVariant, PageConfig> = {
       'Theo dõi đầy đủ danh sách giáo viên đã được tạo tài khoản, kiểm tra thông tin liên hệ và tình trạng hoạt động ngay trên một màn hình.',
     note:
       'Tài khoản giáo viên được tạo trong mục Quản lý người dùng. Trang này chỉ hiển thị riêng nhóm giáo viên để tiện theo dõi và cập nhật.',
-    searchPlaceholder: 'Tìm theo tên giáo viên, email, tên đăng nhập...',
+    searchPlaceholder: 'Tìm theo tên giáo viên, email, số điện thoại...',
     specialtyLabel: 'Chuyên môn',
     specialtyPlaceholder: 'Ví dụ: Trị liệu ngôn ngữ',
     emptyTitle: 'Chưa có giáo viên phù hợp',
@@ -327,7 +328,6 @@ export default function RoleUserManagementPage({
         query.length === 0 ||
         user.fullName.toLowerCase().includes(query) ||
         user.email.toLowerCase().includes(query) ||
-        user.username.toLowerCase().includes(query) ||
         user.phone.toLowerCase().includes(query) ||
         user.specialty.toLowerCase().includes(query);
 
@@ -594,39 +594,31 @@ export default function RoleUserManagementPage({
           )}
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <div className="relative">
-            <select
-              value={genderFilter}
-              onChange={(event) =>
-                setGenderFilter(
-                  event.target.value as 'ALL' | 'Male' | 'Female' | 'Other'
-                )
-              }
-              className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-xs font-bold text-gray-700 outline-none transition-all hover:border-[#4EACAF]/45 sm:w-44"
-            >
-              <option value="ALL">Tất cả giới tính</option>
-              <option value="Male">Nam</option>
-              <option value="Female">Nữ</option>
-              <option value="Other">Khác</option>
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          </div>
+        <div className="flex flex-col gap-3 sm:flex-row items-center">
+          <CustomSelect
+            value={genderFilter}
+            onChange={(val) => setGenderFilter(val as 'ALL' | 'Male' | 'Female' | 'Other')}
+            variant="filter"
+            className="w-full sm:w-44"
+            options={[
+              { value: 'ALL', label: 'Tất cả giới tính' },
+              { value: 'Male', label: 'Nam' },
+              { value: 'Female', label: 'Nữ' },
+              { value: 'Other', label: 'Khác' }
+            ]}
+          />
 
-          <div className="relative">
-            <select
-              value={statusFilter}
-              onChange={(event) =>
-                setStatusFilter(event.target.value as 'ALL' | 'Active' | 'Locked')
-              }
-              className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-xs font-bold text-gray-700 outline-none transition-all hover:border-[#4EACAF]/45 sm:w-44"
-            >
-              <option value="ALL">Tất cả trạng thái</option>
-              <option value="Active">Hoạt động</option>
-              <option value="Locked">Đã khóa</option>
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          </div>
+          <CustomSelect
+            value={statusFilter}
+            onChange={(val) => setStatusFilter(val as 'ALL' | 'Active' | 'Locked')}
+            variant="filter"
+            className="w-full sm:w-44"
+            options={[
+              { value: 'ALL', label: 'Tất cả trạng thái' },
+              { value: 'Active', label: 'Hoạt động' },
+              { value: 'Locked', label: 'Đã khóa' }
+            ]}
+          />
         </div>
       </div>
 
@@ -683,22 +675,17 @@ export default function RoleUserManagementPage({
               <table className="w-full border-collapse text-left">
                 <thead>
                   <tr className="border-b border-gray-100 bg-[#FDFCF5]/50 text-xs font-bold uppercase tracking-widest text-[#555]">
-                    <th className="px-8 py-5">Mã người dùng</th>
-                    <th className="px-6 py-5">
+                    <th className="w-[10%] min-w-[110px] px-8 py-5">Mã người dùng</th>
+                    <th className="w-[23%] min-w-[200px] px-6 py-5">
                       {variant === 'teacher' ? 'Giáo viên' : 'Phụ huynh'}
                     </th>
-                    <th className="px-6 py-5">Email</th>
-                    <th className="px-6 py-5">
+                    <th className="w-[27%] min-w-[240px] px-6 py-5">Email</th>
+                    <th className="w-[18%] min-w-[160px] px-6 py-5">
                       {variant === 'teacher' ? config.specialtyLabel : 'Số điện thoại'}
                     </th>
-                    <th className="px-6 py-5">
-                      {variant === 'teacher' ? 'Giới tính' : config.specialtyLabel}
-                    </th>
-                    <th className="px-6 py-5">
-                      {variant === 'teacher' ? 'Tên đăng nhập' : 'Giới tính'}
-                    </th>
-                    <th className="px-6 py-5">Trạng thái</th>
-                    <th className="px-8 py-5 text-right">Tùy chọn</th>
+                    <th className="w-[8%] min-w-[80px] px-6 py-5">Giới tính</th>
+                    <th className="w-[9%] min-w-[100px] px-6 py-5">Trạng thái</th>
+                    <th className="w-[5%] min-w-[110px] px-8 py-5 text-right">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm font-bold text-gray-700">
@@ -736,14 +723,7 @@ export default function RoleUserManagementPage({
                         )}
                       </td>
                       <td className="px-6 py-5 font-semibold text-slate-700">
-                        {variant === 'teacher'
-                          ? getGenderLabel(user.gender)
-                          : user.specialty || config.defaultSpecialty}
-                      </td>
-                      <td className="px-6 py-5 font-semibold text-slate-700">
-                        {variant === 'teacher'
-                          ? user.username
-                          : getGenderLabel(user.gender)}
+                        {getGenderLabel(user.gender)}
                       </td>
                       <td className="px-6 py-5">
                         <span
@@ -858,8 +838,7 @@ export default function RoleUserManagementPage({
                 <div className="app-modal-body grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
                   <DetailField label="Mã người dùng" value={formatUserCode(selectedUser.id)} />
                   <DetailField label="Họ và tên" value={selectedUser.fullName} />
-                  <DetailField label="Tên đăng nhập" value={selectedUser.username} />
-                  <DetailField label="Email" value={selectedUser.email} />
+                  <DetailField label="Email" value={selectedUser.email} className="sm:col-span-2" />
                   <DetailField
                     label="Số điện thoại"
                     value={selectedUser.phone || 'Chưa cập nhật'}
@@ -916,20 +895,16 @@ export default function RoleUserManagementPage({
                     </FormField>
 
                     <FormField label="Giới tính">
-                      <div className="relative">
-                        <select
-                          value={formGender}
-                          onChange={(event) =>
-                            setFormGender(event.target.value as UserGender)
-                          }
-                          className="w-full appearance-none rounded-2xl border-2 border-transparent bg-[#FDFCF5] px-5 py-4 pr-10 text-sm font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white"
-                        >
-                          <option value="Male">Nam</option>
-                          <option value="Female">Nữ</option>
-                          <option value="Other">Khác</option>
-                        </select>
-                        <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                      </div>
+                      <CustomSelect
+                        value={formGender}
+                        onChange={(val) => setFormGender(val as UserGender)}
+                        variant="form"
+                        options={[
+                          { value: 'Male', label: 'Nam' },
+                          { value: 'Female', label: 'Nữ' },
+                          { value: 'Other', label: 'Khác' }
+                        ]}
+                      />
                     </FormField>
 
                     <FormField label={config.specialtyLabel}>
@@ -943,19 +918,15 @@ export default function RoleUserManagementPage({
                     </FormField>
 
                     <FormField label="Trạng thái">
-                      <div className="relative">
-                        <select
-                          value={formIsActive ? 'Active' : 'Locked'}
-                          onChange={(event) =>
-                            setFormIsActive(event.target.value === 'Active')
-                          }
-                          className="w-full appearance-none rounded-2xl border-2 border-transparent bg-[#FDFCF5] px-5 py-4 pr-10 text-sm font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white"
-                        >
-                          <option value="Active">Hoạt động</option>
-                          <option value="Locked">Đã khóa</option>
-                        </select>
-                        <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                      </div>
+                      <CustomSelect
+                        value={formIsActive ? 'Active' : 'Locked'}
+                        onChange={(val) => setFormIsActive(val === 'Active')}
+                        variant="form"
+                        options={[
+                          { value: 'Active', label: 'Hoạt động' },
+                          { value: 'Locked', label: 'Đã khóa' }
+                        ]}
+                      />
                     </FormField>
                   </div>
 
@@ -1008,12 +979,14 @@ function FormField({
 function DetailField({
   label,
   value,
+  className,
 }: {
   label: string;
   value: string;
+  className?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+    <div className={cn("rounded-2xl border border-slate-100 bg-slate-50/70 p-4", className)}>
       <p className="text-xs font-black uppercase tracking-widest text-slate-400">
         {label}
       </p>

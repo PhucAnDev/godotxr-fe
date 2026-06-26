@@ -202,8 +202,7 @@ export function useUserManagement(): UseUserManagementReturn {
     const matchesSearch =
       user.fullName.toLowerCase().includes(query) ||
       user.email.toLowerCase().includes(query) ||
-      user.phone.toLowerCase().includes(query) ||
-      user.username.toLowerCase().includes(query);
+      user.phone.toLowerCase().includes(query);
 
     const matchesRole =
       filterRole === 'ALL' ||
@@ -269,11 +268,6 @@ export function useUserManagement(): UseUserManagementReturn {
       return;
     }
 
-    if (!formUsername.trim() && modalType === 'add') {
-      triggerNotification('Vui lòng nhập tên đăng nhập.', 'warning');
-      return;
-    }
-
     const resolvedSpecialty =
       formSpecialty.trim() || getDefaultSpecialty(formRoleName);
 
@@ -295,7 +289,6 @@ export function useUserManagement(): UseUserManagementReturn {
       }
 
       const result = await createAccount({
-        username: formUsername.trim(),
         fullName: formFullName.trim(),
         email: formEmail.trim(),
         phone: formPhone.trim() || undefined,

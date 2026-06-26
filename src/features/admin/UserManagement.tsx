@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
+import CustomSelect from '../../components/common/CustomSelect';
 import { useUserManagement, type UserResponse } from '../../hooks/useUserManagement';
 
 type CreateAccountRole = 'Teacher' | 'Parent';
@@ -289,35 +290,32 @@ export default function UserManagement() {
 
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Filter theo role */}
-          <div className="relative">
-            <select
-              value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
-              className="lg:w-48 w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/45 px-4 py-2.5 rounded-xl font-bold text-gray-700 outline-none cursor-pointer pr-10 text-xs uppercase"
-            >
-              <option value="ALL">Tất cả Vai trò</option>
-              {roles.map((role) => (
-                <option key={role.id} value={role.roleName}>
-                  {getRoleDisplayName(role.roleName)}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
+          <CustomSelect
+            value={filterRole}
+            onChange={setFilterRole}
+            variant="filter"
+            className="lg:w-48 w-full"
+            options={[
+              { value: 'ALL', label: 'Tất cả Vai trò' },
+              ...roles.map((role) => ({
+                value: role.roleName,
+                label: getRoleDisplayName(role.roleName),
+              })),
+            ]}
+          />
 
           {/* Filter theo trạng thái */}
-          <div className="relative">
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="lg:w-48 w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/45 px-4 py-2.5 rounded-xl font-bold text-gray-700 outline-none cursor-pointer pr-10 text-xs uppercase"
-            >
-              <option value="ALL">Tất cả Trạng thái</option>
-              <option value="Active">Hoạt động</option>
-              <option value="Locked">Đã khóa</option>
-            </select>
-            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
+          <CustomSelect
+            value={filterStatus}
+            onChange={setFilterStatus}
+            variant="filter"
+            className="lg:w-48 w-full"
+            options={[
+              { value: 'ALL', label: 'Tất cả Trạng thái' },
+              { value: 'Active', label: 'Hoạt động' },
+              { value: 'Locked', label: 'Đã khóa' },
+            ]}
+          />
         </div>
       </div>
 
@@ -695,28 +693,23 @@ export default function UserManagement() {
                           </button>
                         </div>
                       ) : (
-                        <div className="relative">
-                          <select
-                            value={formRoleName}
-                            onChange={(e) => setFormRoleName(e.target.value as any)}
-                            className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 outline-none cursor-pointer appearance-none focus:border-[#4EACAF]"
-                          >
-                            {roleOptions.length > 0 ? (
-                              roleOptions.map((role) => (
-                                <option key={role.id} value={role.roleName}>
-                                  {getRoleDisplayName(role.roleName)} — {role.description.slice(0, 40)}...
-                                </option>
-                              ))
-                            ) : (
-                              <>
-                                <option value="Admin">Quản trị viên</option>
-                                <option value="Teacher">Giáo viên</option>
-                                <option value="Parent">Phụ huynh</option>
-                              </>
-                            )}
-                          </select>
-                          <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                        </div>
+                        <CustomSelect
+                          value={formRoleName}
+                          onChange={(val) => setFormRoleName(val as any)}
+                          variant="form"
+                          options={
+                            roleOptions.length > 0
+                              ? roleOptions.map((role) => ({
+                                  value: role.roleName,
+                                  label: `${getRoleDisplayName(role.roleName)} — ${role.description.slice(0, 40)}...`,
+                                }))
+                              : [
+                                  { value: 'Admin', label: 'Quản trị viên' },
+                                  { value: 'Teacher', label: 'Giáo viên' },
+                                  { value: 'Parent', label: 'Phụ huynh' },
+                                ]
+                          }
+                        />
                       )}
                     </div>
 
@@ -725,18 +718,16 @@ export default function UserManagement() {
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
                         Giới tính <span className="text-[#FF8E8E]">*</span>
                       </label>
-                      <div className="relative">
-                        <select
-                          value={formGender}
-                          onChange={(e) => setFormGender(e.target.value as 'Male' | 'Female' | 'Other')}
-                          className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none cursor-pointer appearance-none focus:border-[#4EACAF]"
-                        >
-                          <option value="Female">Nữ</option>
-                          <option value="Male">Nam</option>
-                          <option value="Other">Khác</option>
-                        </select>
-                        <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                      </div>
+                      <CustomSelect
+                        value={formGender}
+                        onChange={(val) => setFormGender(val as 'Male' | 'Female' | 'Other')}
+                        variant="form"
+                        options={[
+                          { value: 'Female', label: 'Nữ' },
+                          { value: 'Male', label: 'Nam' },
+                          { value: 'Other', label: 'Khác' },
+                        ]}
+                      />
                     </div>
 
                     <div className="space-y-2">
@@ -759,21 +750,6 @@ export default function UserManagement() {
                       )}
                     </div>
 
-                    {modalType === 'add' && (
-                      <div className="space-y-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
-                          Tên đăng nhập <span className="text-[#FF8E8E]">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="Tên đăng nhập hệ thống"
-                          value={formUsername}
-                          onChange={(e) => setFormUsername(e.target.value)}
-                          className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold outline-none focus:border-[#4EACAF] focus:bg-white transition-all text-gray-700"
-                        />
-                      </div>
-                    )}
 
                     {/* Trạng thái — chỉ hiện khi Edit */}
                     {isAccountInviteFlow && (
@@ -887,7 +863,6 @@ function DetailModalBody({
                 ID: USR-{String(user.id).padStart(3, '0')}
               </span>
             </div>
-            <p className="text-gray-400 font-bold">@{user.username}</p>
             <p className="text-gray-400 font-bold text-sm">{user.email}</p>
           </div>
 

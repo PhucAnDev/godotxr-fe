@@ -41,6 +41,7 @@ import {
   FileSpreadsheet
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import CustomSelect from '../../components/common/CustomSelect';
 
 // DB Interfaces according to project specification
 interface Child {
@@ -521,24 +522,21 @@ export default function ProgressAnalysis() {
         </div>
 
         {/* Dynamic Selector Dropdown element */}
-        <div className="relative min-w-[240px] w-full md:w-auto">
-          <select
-            value={selectedChildId}
-            onChange={(e) => {
-              setSelectedChildId(e.target.value);
-              showToast(`Đã tải dải dữ liệu của học viên: ${e.target.value === 'ALL' ? 'Tất cả học viên' : getChildDetails(e.target.value).FullName}`, 'success');
-            }}
-            className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/45 pl-4 pr-10 py-2.5 rounded-xl font-bold text-xs text-slate-605 text-slate-600 outline-none cursor-pointer uppercase focus:bg-white focus:border-[#4EACAF] transition-colors"
-          >
-            <option value="ALL">🌟 TẤT CẢ HỌC SINH MẦM NON</option>
-            {getRoleFilteredChildren.map((kd) => (
-              <option key={kd.ChildId} value={kd.ChildId}>
-                👶 {kd.FullName} ({kd.Age}t) - {kd.LearningLevel}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-        </div>
+        <CustomSelect
+          value={selectedChildId}
+          onChange={(val) => {
+            setSelectedChildId(val);
+            showToast(`Đã tải dải dữ liệu của học viên: ${val === 'ALL' ? 'Tất cả học viên' : getChildDetails(val).FullName}`, 'success');
+          }}
+          options={[
+            { value: 'ALL', label: '🌟 TẤT CẢ HỌC SINH MẦM NON' },
+            ...getRoleFilteredChildren.map((kd) => ({
+              value: kd.ChildId,
+              label: `👶 ${kd.FullName} (${kd.Age}t) - ${kd.LearningLevel}`
+            }))
+          ]}
+          className="min-w-[240px] w-full md:w-auto font-black"
+        />
 
       </div>
 
@@ -801,19 +799,17 @@ export default function ProgressAnalysis() {
         </div>
 
         {/* Progress level dropdown selector */}
-        <div className="relative w-full md:w-56">
-          <select
-            value={filterProgressLevel}
-            onChange={(e) => setFilterProgressLevel(e.target.value)}
-            className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/30 pl-4 pr-10 py-2.5 rounded-lg font-bold text-xs text-slate-600 outline-none cursor-pointer uppercase focus:bg-white focus:border-[#4EACAF] transition-colors"
-          >
-            <option value="ALL">MỨC TIẾN TRÌNH (TẤT CẢ)</option>
-            <option value="Improving">ĐANG TIẾN BỘ</option>
-            <option value="Stable">ỔN ĐỊNH</option>
-            <option value="Need Support">CẦN HỖ TRỢ</option>
-          </select>
-          <SlidersHorizontal className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-        </div>
+        <CustomSelect
+          value={filterProgressLevel}
+          onChange={setFilterProgressLevel}
+          options={[
+            { value: 'ALL', label: 'MỨC TIẾN TRÌNH (TẤT CẢ)' },
+            { value: 'Improving', label: 'ĐANG TIẾN BỘ' },
+            { value: 'Stable', label: 'ỔN ĐỊNH' },
+            { value: 'Need Support', label: 'CẦN HỖ TRỢ' }
+          ]}
+          className="w-full md:w-56"
+        />
 
         {/* Refresh parameters */}
         {(searchQuery || filterProgressLevel !== 'ALL') && (

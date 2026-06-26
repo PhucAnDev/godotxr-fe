@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   BookOpen, 
@@ -23,10 +23,13 @@ import {
   Bookmark,
   TrendingUp,
   Workflow,
-  Sparkle
+  Sparkle,
+  Trash2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
+import CustomSelect from '../../components/common/CustomSelect';
+import { parseNumberInput, toNumberInputValue } from '../../lib/numberInput';
 import {
   useProgramManagementApi,
   type LessonResponse,
@@ -54,29 +57,33 @@ interface Lesson {
   VrInteractiveMode: string;
 }
 
-const mapProgram = (program: ProgramResponse): Program => ({
-  ProgramId: String(program.id),
-  ProgramName: program.programName,
-  Description: program.description ?? '',
-  TargetAgeFrom: program.targetAgeFrom,
-  TargetAgeTo: program.targetAgeTo,
-  Language: program.language,
-  Status: program.status,
-  CreatedAt: program.createdAt,
-  UpdatedAt: program.updatedAt ?? program.createdAt,
-});
+const mapProgram = (program: ProgramResponse): Program => {
+  const rawLang = (program.language || '').trim().toLowerCase();
+  const normalizedLanguage = (rawLang === 'english' || rawLang === 'en') ? 'English' : 'Vietnamese';
+  return {
+    ProgramId: String(program.id),
+    ProgramName: program.programName,
+    Description: program.description ?? '',
+    TargetAgeFrom: program.targetAgeFrom,
+    TargetAgeTo: program.targetAgeTo,
+    Language: normalizedLanguage,
+    Status: program.status,
+    CreatedAt: program.createdAt,
+    UpdatedAt: program.updatedAt ?? program.createdAt,
+  };
+};
 
 const mapLesson = (lesson: LessonResponse): Lesson => ({
   LessonId: String(lesson.id),
   LessonName: lesson.lessonName,
-  Description: lesson.description ?? 'Chua co mo ta bai hoc.',
+  Description: lesson.description ?? 'Chưa có mô tả bài học.',
   DurationMinutes: lesson.estimatedDuration,
-  VrInteractiveMode: lesson.targetSkill?.trim() || 'Tuong tac VR',
+  VrInteractiveMode: lesson.targetSkill?.trim() || 'Tương tác VR',
 });
 
 // Mock Programs
 export default function ProgramManagement() {
-  const { getPrograms, getLessons, getLessonsByProgram, createProgram, updateProgram } =
+  const { getPrograms, getLessons, getLessonsByProgram, createProgram, updateProgram, deleteProgram } =
     useProgramManagementApi();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [lessonsByProgramId, setLessonsByProgramId] = useState<
@@ -100,15 +107,15 @@ export default function ProgramManagement() {
   }, [searchQuery, filterLanguage, filterAge, filterStatus]);
 
   // Modal forms
-  const [modalType, setModalType] = useState<'add' | 'edit' | 'lessons' | null>(null);
+  const [modalType, setModalType] = useState<'add' | 'edit' | 'lessons' | 'delete' | null>(null);
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
   const [alertConfig, setAlertConfig] = useState<{ message: string; type: 'success' | 'warning' } | null>(null);
 
   // Form Fields
   const [formName, setFormName] = useState('');
   const [formDesc, setFormDesc] = useState('');
-  const [formAgeFrom, setFormAgeFrom] = useState<number>(4);
-  const [formAgeTo, setFormAgeTo] = useState<number>(8);
+  const [formAgeFrom, setFormAgeFrom] = useState('4');
+  const [formAgeTo, setFormAgeTo] = useState('8');
   const [formLang, setFormLang] = useState<'Vietnamese' | 'English'>('Vietnamese');
   const [formStatus, setFormStatus] = useState<'Active' | 'Inactive'>('Active');
 
@@ -191,8 +198,8 @@ export default function ProgramManagement() {
   const handleOpenAdd = () => {
     setFormName('');
     setFormDesc('');
-    setFormAgeFrom(4);
-    setFormAgeTo(8);
+    setFormAgeFrom('4');
+    setFormAgeTo('8');
     setFormLang('Vietnamese');
     setFormStatus('Active');
     setSelectedProgram(null);
@@ -203,8 +210,8 @@ export default function ProgramManagement() {
     setSelectedProgram(prog);
     setFormName(prog.ProgramName);
     setFormDesc(prog.Description);
-    setFormAgeFrom(prog.TargetAgeFrom);
-    setFormAgeTo(prog.TargetAgeTo);
+    setFormAgeFrom(toNumberInputValue(prog.TargetAgeFrom));
+    setFormAgeTo(toNumberInputValue(prog.TargetAgeTo));
     setFormLang(prog.Language);
     setFormStatus(prog.Status);
     setModalType('edit');
@@ -237,27 +244,57 @@ export default function ProgramManagement() {
     setSelectedProgram(null);
   };
 
+  const handleOpenDelete = (prog: Program) => {
+    setSelectedProgram(prog);
+    setModalType('delete');
+  };
+
+  const handleDeleteProgram = async () => {
+    if (!selectedProgram) return;
+    const result = await deleteProgram(Number(selectedProgram.ProgramId));
+    if (result.success) {
+      setPrograms(current => current.filter(p => p.ProgramId !== selectedProgram.ProgramId));
+      triggerToast(result.message || 'Xóa chương trình học thành công.');
+      handleCloseModal();
+    } else {
+      triggerToast(result.errors.join(' ') || result.message || 'Xóa chương trình học thất bại.', 'warning');
+    }
+  };
+
   const handleSaveProgram = async (e: React.FormEvent) => {
     e.preventDefault();
+    const targetAgeFrom = parseNumberInput(formAgeFrom);
+    const targetAgeTo = parseNumberInput(formAgeTo);
 
     if (!formName.trim()) {
-      triggerToast('Vui lĂ²ng Ä‘iá»n tĂªn chÆ°Æ¡ng trĂ¬nh há»c!', 'warning');
+      triggerToast('Vui lòng điền tên chương trình học!', 'warning');
       return;
     }
     if (!formDesc.trim()) {
-      triggerToast('Vui lĂ²ng nháº­p mĂ´ táº£ tĂ³m táº¯t cho tráº»!', 'warning');
+      triggerToast('Vui lòng nhập mô tả tóm tắt cho trẻ!', 'warning');
       return;
     }
-    if (formAgeFrom <= 0 || formAgeTo <= 0) {
-      triggerToast('Äá»™ tuá»•i má»¥c tiĂªu pháº£i lĂ  sá»‘ dÆ°Æ¡ng lá»›n hÆ¡n 0!', 'warning');
+    if (targetAgeFrom === null || targetAgeTo === null) {
+      triggerToast('Vui lòng nhập đầy đủ độ tuổi bắt đầu và độ tuổi tối đa!', 'warning');
       return;
     }
-    if (formAgeFrom > formAgeTo) {
-      triggerToast('Äá»™ tuá»•i báº¯t Ä‘áº§u khĂ´ng Ä‘Æ°á»£c lá»›n hÆ¡n Ä‘á»™ tuá»•i káº¿t thĂºc!', 'warning');
+    if (targetAgeFrom <= 0 || targetAgeTo <= 0) {
+      triggerToast('Độ tuổi mục tiêu phải là số dương lớn hơn 0!', 'warning');
+      return;
+    }
+    if (targetAgeFrom > targetAgeTo) {
+      triggerToast('Độ tuổi bắt đầu không được lớn hơn độ tuổi kết thúc!', 'warning');
       return;
     }
 
-    const payload = { programName: formName.trim(), description: formDesc.trim(), targetAgeFrom: formAgeFrom, targetAgeTo: formAgeTo, language: formLang, status: formStatus };
+    const payload = {
+      programName: formName.trim(),
+      description: formDesc.trim(),
+      targetAgeFrom,
+      targetAgeTo,
+      language: formLang,
+      status: formStatus,
+    };
     const result = modalType === 'add'
       ? await createProgram(payload)
       : selectedProgram ? await updateProgram(Number(selectedProgram.ProgramId), payload) : null;
@@ -352,13 +389,13 @@ export default function ProgramManagement() {
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             <BookOpen className="w-3.5 h-3.5" />
-            GiĂ¡o há»c phĂ¡p VR tÆ°Æ¡ng tĂ¡c
+            Giáo học pháp VR tương tác
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
-            Quáº£n LĂ½ <span className="text-[#4EACAF]">ChÆ°Æ¡ng TrĂ¬nh Há»c</span>
+            Quản Lý <span className="text-[#4EACAF]">Chương Trình Học</span>
           </h1>
           <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed mt-1">
-            XĂ¢y dá»±ng chÆ°Æ¡ng trĂ¬nh luyá»‡n nĂ³i phĂ¹ há»£p vá»›i tráº» tá»« 7 Ä‘áº¿n 11 tuá»•i, Ä‘á»“ng thá»i tinh chá»‰nh cĂ¡c há»c liá»‡u 3D, phĂ²ng phĂ¡t Ă¢m tÆ°Æ¡ng tĂ¡c Ä‘á»™c quyá»n cho ná»n táº£ng kĂ­nh VR.
+            Xây dựng chương trình luyện nói phù hợp với trẻ từ 7 đến 11 tuổi, đồng thời tinh chỉnh các học liệu 3D, phòng phát âm tương tác độc quyền cho nền tảng kính VR.
           </p>
         </div>
 
@@ -368,40 +405,40 @@ export default function ProgramManagement() {
           id="add-program-btn"
         >
           <Plus className="w-5 h-5" strokeWidth={2.5} />
-          ThĂªm chÆ°Æ¡ng trĂ¬nh
+          Thêm chương trình
         </button>
       </div>
 
       {/* 2. Kid-friendly stats cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatItem 
-          title="Tá»•ng ChÆ°Æ¡ng TrĂ¬nh" 
+          title="Tổng Chương Trình" 
           value={totalCount} 
-          subtitle="Há»‡ Ä‘Ă o táº¡o hiá»‡n cĂ³ há»‡ thá»‘ng" 
+          subtitle="Hệ đào tạo hiện có hệ thống" 
           icon={<BookOpen className="w-6 h-6 text-[#4EACAF]" />} 
           bgColor="bg-teal-50"
           borderColor="border-teal-100"
         />
         <StatItem 
-          title="Äang Hoáº¡t Äá»™ng" 
+          title="Đang Hoạt Động" 
           value={activeCount} 
-          subtitle="Sáºµn sĂ ng gĂ¡n lá»›p VR má»›i" 
+          subtitle="Sẵn sàng gán lớp VR mới" 
           icon={<Smile className="w-6 h-6 text-emerald-500" />} 
           bgColor="bg-emerald-50"
           borderColor="border-emerald-100"
         />
         <StatItem 
-          title="Tiáº¿ng Viá»‡t" 
+          title="Tiếng Việt" 
           value={vnCount} 
-          subtitle="NgĂ´n ngá»¯ máº¹ Ä‘áº» báº£n xá»©" 
+          subtitle="Ngôn ngữ mẹ đẻ bản xứ" 
           icon={<Languages className="w-6 h-6 text-indigo-500" />} 
           bgColor="bg-indigo-50"
           borderColor="border-indigo-100"
         />
         <StatItem 
-          title="Tiáº¿ng Anh" 
+          title="Tiếng Anh" 
           value={enCount} 
-          subtitle="KĂ­ch hoáº¡t pháº£n xáº¡ ngoáº¡i ngá»¯" 
+          subtitle="Kích hoạt phản xạ ngoại ngữ" 
           icon={<Sparkles className="w-6 h-6 text-rose-400" />} 
           bgColor="bg-rose-50"
           borderColor="border-rose-100"
@@ -415,7 +452,7 @@ export default function ProgramManagement() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input 
             type="text" 
-            placeholder="TĂ¬m kiáº¿m chÆ°Æ¡ng trĂ¬nh theo tĂªn hoáº·c mĂ£ Ä‘á»‹nh danh..." 
+            placeholder="Tìm kiếm chương trình theo tên hoặc mã định danh..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-slate-50 border border-slate-200 font-semibold text-slate-700 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs" 
@@ -432,45 +469,34 @@ export default function ProgramManagement() {
 
         {/* Filters Group */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="relative">
-            <select 
-              value={filterLanguage}
-              onChange={(e) => setFilterLanguage(e.target.value)}
-              className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/20 px-3 py-2 rounded-lg font-bold text-xs text-slate-600 outline-none cursor-pointer pr-10 uppercase focus:bg-white focus:border-[#4EACAF] transition-colors"
-            >
-              <option value="ALL">Má»i ngĂ´n ngá»¯</option>
-              <option value="Vietnamese">Vietnamese (Tiáº¿ng Viá»‡t)</option>
-              <option value="English">English (Tiáº¿ng Anh)</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
-
-          <div className="relative">
-            <select 
-              value={filterAge}
-              onChange={(e) => setFilterAge(e.target.value)}
-              className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/20 px-3 py-2 rounded-lg font-bold text-xs text-slate-600 outline-none cursor-pointer pr-10 uppercase focus:bg-white focus:border-[#4EACAF] transition-colors"
-            >
-              <option value="ALL">Má»i lá»©a tuá»•i</option>
-              <option value="3-5">Táº§m tuá»•i: 3 - 5 tuá»•i</option>
-              <option value="5-7">Táº§m tuá»•i: 5 - 7 tuá»•i</option>
-              <option value="7-11">Táº§m tuá»•i: 7 - 11 tuá»•i</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
-
-          <div className="relative">
-            <select 
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/20 px-3 py-2 rounded-lg font-bold text-xs text-slate-600 outline-none cursor-pointer pr-10 uppercase focus:bg-white focus:border-[#4EACAF] transition-colors"
-            >
-              <option value="ALL">Má»i tráº¡ng thĂ¡i</option>
-              <option value="Active">Hoáº¡t Ä‘á»™ng (Active)</option>
-              <option value="Inactive">Táº¡m ngÆ°ng (Inactive)</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
+          <CustomSelect
+            value={filterLanguage}
+            onChange={setFilterLanguage}
+            options={[
+              { value: 'ALL', label: 'Mọi ngôn ngữ' },
+              { value: 'Vietnamese', label: 'Vietnamese (Tiếng Việt)' },
+              { value: 'English', label: 'English (Tiếng Anh)' }
+            ]}
+          />
+          <CustomSelect
+            value={filterAge}
+            onChange={setFilterAge}
+            options={[
+              { value: 'ALL', label: 'Mọi lứa tuổi' },
+              { value: '3-5', label: 'Tầm tuổi: 3 - 5 tuổi' },
+              { value: '5-7', label: 'Tầm tuổi: 5 - 7 tuổi' },
+              { value: '7-11', label: 'Tầm tuổi: 7 - 11 tuổi' }
+            ]}
+          />
+          <CustomSelect
+            value={filterStatus}
+            onChange={setFilterStatus}
+            options={[
+              { value: 'ALL', label: 'Mọi trạng thái' },
+              { value: 'Active', label: 'Hoạt động (Active)' },
+              { value: 'Inactive', label: 'Tạm ngưng (Inactive)' }
+            ]}
+          />
         </div>
       </div>
 
@@ -478,11 +504,11 @@ export default function ProgramManagement() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-2xl font-black text-gray-950 italic">Há»c liá»‡u can thiá»‡p ({filteredPrograms.length})</h3>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Cáº¥u trĂºc hĂ³a bento thĂ¢n thiá»‡n vá»›i tráº» nhá»</p>
+            <h3 className="text-2xl font-black text-gray-950 italic">Học liệu can thiệp ({filteredPrograms.length})</h3>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Cấu trúc hóa bento thân thiện với trẻ nhỏ</p>
           </div>
           <div className="text-xs bg-[#4EACAF]/10 px-4 py-1.5 rounded-full text-[#4EACAF] font-bold">
-            TrĂ¡ch nhiá»‡m: Quáº£n trá»‹ viĂªn
+            Trách nhiệm: Quản trị viên
           </div>
         </div>
 
@@ -491,7 +517,7 @@ export default function ProgramManagement() {
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto border-4 border-dashed border-gray-100 animate-pulse">
               <BookOpen className="w-8 h-8 text-gray-300" />
             </div>
-            <p className="text-xl font-black text-gray-700 text-center">KhĂ´ng tĂ¬m tháº¥y giĂ¡o Ă¡n Ä‘Ă o táº¡o nĂ o trĂ¹ng khá»›p!</p>
+            <p className="text-xl font-black text-gray-700 text-center">Không tìm thấy giáo án đào tạo nào trùng khớp!</p>
             <button 
               onClick={() => {
                 setSearchQuery('');
@@ -501,7 +527,7 @@ export default function ProgramManagement() {
               }}
               className="px-6 py-2.5 bg-[#4EACAF]/10 hover:bg-[#4EACAF]/20 duration-200 text-xs font-black uppercase text-[#4EACAF] rounded-xl border border-transparent"
             >
-              XĂ³a cĂ i dáº·t lá»c
+              Xóa cài đặt lọc
             </button>
           </div>
         ) : (
@@ -529,7 +555,7 @@ export default function ProgramManagement() {
                             <Baby className="w-4 h-4" />
                           </span>
                           <span className="text-gray-900 font-extrabold text-xs">
-                            {prog.TargetAgeFrom} - {prog.TargetAgeTo} tuá»•i
+                            {prog.TargetAgeFrom} - {prog.TargetAgeTo} tuổi
                           </span>
                         </div>
 
@@ -538,7 +564,7 @@ export default function ProgramManagement() {
                           prog.Language === 'Vietnamese' ? 'bg-sky-50 text-sky-600 border border-sky-100' : 'bg-[#FF8E8E]/10 text-[#FF8E8E] border border-[#FF8E8E]/20'
                         )}>
                           <Languages className="w-3 h-3" />
-                          {prog.Language === 'Vietnamese' ? 'VN-Tiáº¿ng Viá»‡t' : 'EN-English'}
+                          {prog.Language === 'Vietnamese' ? 'VN-Tiếng Việt' : 'EN-English'}
                         </span>
                       </div>
 
@@ -559,7 +585,7 @@ export default function ProgramManagement() {
                       <div className="flex items-center justify-between text-xs font-bold text-gray-400">
                         <div className="flex items-center gap-1">
                           <Bookmark className="w-3.5 h-3.5 text-gray-400" />
-                          <span>{lessonCount} phĂ²ng 3D thá»±c hĂ nh</span>
+                          <span>{lessonCount} phòng 3D thực hành</span>
                         </div>
                         <span className="font-mono text-[10px]">{prog.ProgramId}</span>
                       </div>
@@ -569,7 +595,7 @@ export default function ProgramManagement() {
                           <button 
                             onClick={() => handleToggleStatus(prog.ProgramId)}
                             className="p-1 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
-                            title="Báº­t táº¯t tráº¡ng thĂ¡i nhanh"
+                            title="Bật tắt trạng thái nhanh"
                           >
                             {prog.Status === 'Active' ? (
                               <ToggleRight className="w-8 h-8 text-[#4EACAF]" />
@@ -581,7 +607,7 @@ export default function ProgramManagement() {
                             "text-[10px] font-black uppercase tracking-widest",
                             prog.Status === 'Active' ? 'text-emerald-500' : 'text-gray-400'
                           )}>
-                            {prog.Status === 'Active' ? 'Hoáº¡t Ä‘á»™ng' : 'Táº¡m khĂ³a'}
+                            {prog.Status === 'Active' ? 'Hoạt động' : 'Tạm khóa'}
                           </span>
                         </div>
 
@@ -589,18 +615,26 @@ export default function ProgramManagement() {
                           <button 
                             onClick={() => handleOpenLessons(prog)}
                             className="px-3.5 py-2.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-colors"
-                            title="Xem bĂ i há»c"
+                            title="Xem bài học"
                           >
                             <Play className="w-3.5 h-3.5" />
-                            Xem bĂ i há»c
+                            Xem bài học
                           </button>
 
                           <button 
                             onClick={() => handleOpenEdit(prog)}
                             className="p-3 bg-gray-50 hover:bg-[#4EACAF]/10 hover:text-[#4EACAF] text-gray-500 rounded-xl transition-colors"
-                            title="Chá»‰nh sá»­a thĂ´ng sá»‘"
+                            title="Chỉnh sửa thông số"
                           >
                             <Edit3 className="w-4 h-4" />
+                          </button>
+
+                          <button 
+                            onClick={() => handleOpenDelete(prog)}
+                            className="p-3 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-xl transition-colors"
+                            title="Xóa chương trình học"
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
@@ -608,7 +642,7 @@ export default function ProgramManagement() {
 
                     {/* Created At footer ribbon */}
                     <div className="text-[9px] text-gray-300 font-extrabold uppercase tracking-wide self-end">
-                      Táº¡o láº­p: {prog.CreatedAt}
+                      Tạo lập: {prog.CreatedAt}
                     </div>
                   </motion.div>
                 );
@@ -625,7 +659,7 @@ export default function ProgramManagement() {
                   setPageSize(size);
                   setCurrentPage(1);
                 }}
-                itemLabel="chÆ°Æ¡ng trĂ¬nh"
+                itemLabel="chương trình"
               />
             </div>
           </>
@@ -647,22 +681,26 @@ export default function ProgramManagement() {
               <div className={cn(
                 "px-8 py-6 flex items-center justify-between border-b",
                 modalType === 'add' ? 'bg-[#4EACAF]/10 border-[#4EACAF]/10 text-gray-900' :
-                modalType === 'edit' ? 'bg-sky-50 border-sky-100 text-gray-900' : 'bg-indigo-50 border-indigo-100 text-gray-900'
+                modalType === 'edit' ? 'bg-sky-50 border-sky-100 text-gray-900' :
+                modalType === 'delete' ? 'bg-rose-50 border-rose-100 text-gray-900' : 'bg-indigo-50 border-indigo-100 text-gray-900'
               )}>
                 <div>
                   <h2 className="text-2xl font-black italic tracking-tight flex items-center gap-2">
                     {modalType === 'add' && <Plus className="w-6 h-6 text-[#4EACAF]" />}
                     {modalType === 'edit' && <Edit3 className="w-6 h-6 text-sky-500" />}
                     {modalType === 'lessons' && <BookOpen className="w-6 h-6 text-indigo-500" />}
+                    {modalType === 'delete' && <Trash2 className="w-6 h-6 text-rose-500" />}
                     
-                    {modalType === 'add' && 'ThĂªm chÆ°Æ¡ng trĂ¬nh há»c chuáº©n'}
-                    {modalType === 'edit' && `Cáº¥u hĂ¬nh thĂ´ng sá»‘: ${selectedProgram?.ProgramId}`}
-                    {modalType === 'lessons' && `BĂ i há»c trong: ${selectedProgram?.ProgramName}`}
+                    {modalType === 'add' && 'Thêm chương trình học chuẩn'}
+                    {modalType === 'edit' && `Cấu hình thông số: ${selectedProgram?.ProgramId}`}
+                    {modalType === 'lessons' && `Bài học trong: ${selectedProgram?.ProgramName}`}
+                    {modalType === 'delete' && 'Xác nhận xóa chương trình'}
                   </h2>
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-                    {modalType === 'add' && 'Cung cáº¥p tĂ i nguyĂªn can thiá»‡p má»›i vĂ o há»‡ sinh thĂ¡i VR'}
-                    {modalType === 'edit' && 'Cáº­p nháº­t Ä‘iá»u chá»‰nh thang má»©c Ä‘á»™ tuá»•i, ngĂ´n ngá»¯ giáº£ng dáº¡y'}
-                    {modalType === 'lessons' && 'Danh sĂ¡ch Ä‘á»‹nh hĂ¬nh cĂ¡c phĂ¢n cáº£nh VR tÆ°Æ¡ng tĂ¡c phá»¥ huynh & tráº»'}
+                    {modalType === 'add' && 'Cung cấp tài nguyên can thiệp mới vào hệ sinh thái VR'}
+                    {modalType === 'edit' && 'Cập nhật điều chỉnh thang mức độ tuổi, ngôn ngữ giảng dạy'}
+                    {modalType === 'lessons' && 'Danh sách định hình các phân cảnh VR tương tác phụ huynh & trẻ'}
+                    {modalType === 'delete' && 'Hành động này không thể khôi phục và có thể ảnh hưởng liên kết'}
                   </p>
                 </div>
                 <button 
@@ -680,9 +718,9 @@ export default function ProgramManagement() {
                   <div className="bg-indigo-50 p-5 rounded-3xl border border-indigo-100 flex items-center gap-4 text-indigo-700">
                     <GraduationCap className="w-10 h-10 shrink-0" />
                     <div>
-                      <h4 className="font-extrabold text-sm uppercase tracking-wider text-indigo-900">Chi tiáº¿t lá»™ trĂ¬nh huáº¥n luyá»‡n</h4>
+                      <h4 className="font-extrabold text-sm uppercase tracking-wider text-indigo-900">Chi tiết lộ trình huấn luyện</h4>
                       <p className="text-xs font-bold text-indigo-600/95 mt-1 leading-relaxed">
-                        ChÆ°Æ¡ng trĂ¬nh cĂ³ <strong className="text-indigo-900">{(lessonsByProgramId[selectedProgram.ProgramId] || []).length}</strong> phĂ²ng thá»±c chiáº¿n VR. CĂ¡c bĂ i táº­p Ä‘Æ°á»£c xĂ¢y dá»±ng tuáº§n tá»± Ä‘á»ƒ tráº» sá»­a cĂ¡c khuyáº¿t Ä‘iá»ƒm vá» phĂ¡t Ă¢m tá»± nhiĂªn.
+                        Chương trình có <strong className="text-indigo-900">{(lessonsByProgramId[selectedProgram.ProgramId] || []).length}</strong> phòng thực chiến VR. Các bài tập được xây dựng tuần tự để trẻ sửa các khuyết điểm về phát âm tự nhiên.
                       </p>
                     </div>
                   </div>
@@ -693,14 +731,14 @@ export default function ProgramManagement() {
                       if (isLessonsLoading) {
                         return (
                           <div className="text-center py-10 font-bold text-gray-400 italic">
-                            Dang tai bai hoc tu Lesson API...
+                            Đang tải danh sách bài học...
                           </div>
                         );
                       }
                       if (lessons.length === 0) {
                         return (
                           <div className="text-center py-10 font-bold text-gray-400 italic">
-                            ChÆ°a cáº­p nháº­t bĂ i há»c thá»±c hĂ nh cho chÆ°Æ¡ng trĂ¬nh nĂ y.
+                            Chưa cập nhật bài học thực hành cho chương trình này.
                           </div>
                         );
                       }
@@ -719,7 +757,7 @@ export default function ProgramManagement() {
                             <p className="text-xs font-bold text-gray-400 leading-relaxed line-clamp-2">{les.Description}</p>
                             <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-extrabold uppercase">
                               <Volume2 className="w-3.5 h-3.5 text-indigo-500" />
-                              Thá»i lÆ°á»£ng kĂ­nh: {les.DurationMinutes} phĂºt â€¢ MĂ£ sá»‘: {les.LessonId}
+                              Thời lượng kính: {les.DurationMinutes} phút • Mã số: {les.LessonId}
                             </div>
                           </div>
                         </div>
@@ -732,7 +770,36 @@ export default function ProgramManagement() {
                       onClick={handleCloseModal}
                       className="py-4 px-8 bg-gray-100 hover:bg-gray-200 text-gray-600 font-extrabold rounded-2xl transition-all uppercase text-xs tracking-wider"
                     >
-                      ÄĂ³ng Há»c Pháº§n
+                      Đóng Học Phần
+                    </button>
+                  </div>
+                </div>
+              ) : modalType === 'delete' && selectedProgram ? (
+                <div className="app-modal-body p-8 md:p-10 space-y-6" id="modal-delete-confirm">
+                  <div className="bg-rose-50 p-5 rounded-3xl border border-rose-100 flex items-center gap-4 text-rose-700 animate-in fade-in duration-300">
+                    <AlertTriangle className="w-10 h-10 shrink-0 text-rose-500" />
+                    <div>
+                      <h4 className="font-extrabold text-sm uppercase tracking-wider text-rose-900">Xác nhận xóa chương trình</h4>
+                      <p className="text-xs font-bold text-rose-600/95 mt-1 leading-relaxed">
+                        Bạn có chắc chắn muốn xóa chương trình học <strong className="text-rose-900">"{selectedProgram.ProgramName}"</strong>? Hành động này không thể hoàn tác và có thể ảnh hưởng đến bài học và lớp học liên kết.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="app-modal-actions pt-6 border-t border-gray-150 flex gap-4">
+                    <button 
+                      type="button"
+                      onClick={handleCloseModal}
+                      className="flex-1 py-4 border-4 border-gray-100 hover:border-gray-200 text-gray-400 hover:text-gray-600 font-extrabold rounded-2xl transition-all uppercase text-xs tracking-wider cursor-pointer"
+                    >
+                      Hủy bỏ
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={handleDeleteProgram}
+                      className="flex-1 py-4 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-2xl shadow-xl shadow-rose-500/15 transition-all text-sm uppercase tracking-wider cursor-pointer"
+                    >
+                      Xác nhận xóa
                     </button>
                   </div>
                 </div>
@@ -744,12 +811,12 @@ export default function ProgramManagement() {
                     {/* Program Name */}
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                        TĂªn chÆ°Æ¡ng trĂ¬nh há»c <span className="text-[#FF8E8E]">*</span>
+                        Tên chương trình học <span className="text-[#FF8E8E]">*</span>
                       </label>
                       <input 
                         type="text" 
                         required
-                        placeholder="VĂ­ dá»¥: Luyá»‡n Ă¢m Ä‘Ă´i, thĂ¡m hiá»ƒm Äáº£o Khá»§ng Long VR..." 
+                        placeholder="Ví dụ: Luyện âm đôi, thám hiểm Đảo Khủng Long VR..." 
                         value={formName}
                         onChange={(e) => setFormName(e.target.value)}
                         className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 placeholder-gray-300 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
@@ -759,12 +826,12 @@ export default function ProgramManagement() {
                     {/* Description */}
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                        MĂ´ táº£ chÆ°Æ¡ng trĂ¬nh can thiá»‡p ngĂ´n ngá»¯ <span className="text-[#FF8E8E]">*</span>
+                        Mô tả chương trình can thiệp ngôn ngữ <span className="text-[#FF8E8E]">*</span>
                       </label>
                       <textarea 
                         required
                         rows={4}
-                        placeholder="HĂ£y tĂ³m táº¯t ká»‹ch báº£n tÆ°Æ¡ng tĂ¡c vĂ  lá»—i phĂ¡t Ă¢m tráº» sáº½ sá»­a táº¡i chÆ°Æ¡ng trĂ¬nh..." 
+                        placeholder="Hãy tóm tắt kịch bản tương tác và lỗi phát âm trẻ sẽ sửa tại chương trình..." 
                         value={formDesc}
                         onChange={(e) => setFormDesc(e.target.value)}
                         className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 placeholder-gray-300 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
@@ -776,15 +843,15 @@ export default function ProgramManagement() {
                       {/* Age range From */}
                       <div className="space-y-2">
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                          Äá»™ tuá»•i báº¯t Ä‘áº§u (TargetAgeFrom) <span className="text-[#FF8E8E]">*</span>
+                          Độ tuổi bắt đầu (TargetAgeFrom) <span className="text-[#FF8E8E]">*</span>
                         </label>
                         <input 
-                          type="number" 
+                          type="text"
                           required
-                          min={1}
-                          max={18}
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                           value={formAgeFrom}
-                          onChange={(e) => setFormAgeFrom(parseInt(e.target.value) || 0)}
+                          onChange={(e) => setFormAgeFrom(e.target.value.replace(/\D/g, ''))}
                           className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
                         />
                       </div>
@@ -792,15 +859,15 @@ export default function ProgramManagement() {
                       {/* Age range To */}
                       <div className="space-y-2">
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                          Äá»™ tuá»•i tá»‘i Ä‘a (TargetAgeTo) <span className="text-[#FF8E8E]">*</span>
+                          Độ tuổi tối đa (TargetAgeTo) <span className="text-[#FF8E8E]">*</span>
                         </label>
                         <input 
-                          type="number" 
+                          type="text"
                           required
-                          min={1}
-                          max={18}
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                           value={formAgeTo}
-                          onChange={(e) => setFormAgeTo(parseInt(e.target.value) || 0)}
+                          onChange={(e) => setFormAgeTo(e.target.value.replace(/\D/g, ''))}
                           className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
                         />
                       </div>
@@ -808,37 +875,33 @@ export default function ProgramManagement() {
                       {/* Language Selection */}
                       <div className="space-y-2">
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                          NgĂ´n ngá»¯ Ä‘Ă o táº¡o <span className="text-[#FF8E8E]">*</span>
+                          Ngôn ngữ đào tạo <span className="text-[#FF8E8E]">*</span>
                         </label>
-                        <div className="relative">
-                          <select 
-                            value={formLang}
-                            onChange={(e) => setFormLang(e.target.value as 'Vietnamese' | 'English')}
-                            className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 outline-none cursor-pointer appearance-none focus:border-[#4EACAF] text-sm"
-                          >
-                            <option value="Vietnamese">Vietnamese (Tiáº¿ng Viá»‡t)</option>
-                            <option value="English">English (Tiáº¿ng Anh)</option>
-                          </select>
-                          <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                        </div>
+                        <CustomSelect
+                          value={formLang}
+                          onChange={(val) => setFormLang(val as 'Vietnamese' | 'English')}
+                          variant="form"
+                          options={[
+                            { value: 'Vietnamese', label: 'Vietnamese (Tiếng Việt)' },
+                            { value: 'English', label: 'English (Tiếng Anh)' }
+                          ]}
+                        />
                       </div>
 
                       {/* Status select only when edit */}
                       <div className="space-y-2">
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                          Tráº¡ng thĂ¡i hoáº¡t Ä‘á»™ng <span className="text-[#FF8E8E]">*</span>
+                          Trạng thái hoạt động <span className="text-[#FF8E8E]">*</span>
                         </label>
-                        <div className="relative">
-                          <select 
-                            value={formStatus}
-                            onChange={(e) => setFormStatus(e.target.value as 'Active' | 'Inactive')}
-                            className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 outline-none cursor-pointer appearance-none focus:border-[#4EACAF] text-sm"
-                          >
-                            <option value="Active">Hoáº¡t Ä‘á»™ng (Active)</option>
-                            <option value="Inactive">Táº¡m ngÆ°ng (Inactive)</option>
-                          </select>
-                          <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                        </div>
+                        <CustomSelect
+                          value={formStatus}
+                          onChange={(val) => setFormStatus(val as 'Active' | 'Inactive')}
+                          variant="form"
+                          options={[
+                            { value: 'Active', label: 'Hoạt động (Active)' },
+                            { value: 'Inactive', label: 'Tạm ngưng (Inactive)' }
+                          ]}
+                        />
                       </div>
 
                     </div>
@@ -850,14 +913,14 @@ export default function ProgramManagement() {
                       onClick={handleCloseModal}
                       className="flex-1 py-4 border-4 border-gray-100 hover:border-gray-200 text-gray-400 hover:text-gray-600 font-extrabold rounded-2xl transition-all uppercase text-xs tracking-wider"
                     >
-                      Há»§y thao tĂ¡c
+                      Hủy thao tác
                     </button>
                     <button 
                       type="submit"
                       className="flex-1 py-4 bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black rounded-2xl shadow-xl shadow-[#4EACAF]/15 transition-all text-sm uppercase tracking-wider"
                       id="program-submit-save"
                     >
-                      XĂ¡c nháº­n lÆ°u trá»¯
+                      Xác nhận lưu trữ
                     </button>
                   </div>
                 </form>

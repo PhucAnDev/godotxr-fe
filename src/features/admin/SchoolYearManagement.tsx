@@ -22,6 +22,7 @@ import {
   Info
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import CustomSelect from '../../components/common/CustomSelect';
 import { useSchoolYearManagementApi, type SchoolYearResponse } from '../../hooks/useSchoolYearManagementApi';
 
 // DB Interface according to database architecture
@@ -397,19 +398,18 @@ export default function SchoolYearManagement() {
         </div>
 
         {/* State dropdown */}
-        <div className="relative w-full md:w-64">
-          <select 
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="w-full appearance-none bg-[#FDFCF5] border-2 border-transparent hover:border-[#4EACAF]/20 pl-5 pr-10 py-4 rounded-2xl font-black italic text-xs tracking-wide text-gray-700 outline-none cursor-pointer uppercase focus:bg-white focus:border-[#4EACAF]"
-          >
-            <option value="ALL">Tất cả trạng thái</option>
-            <option value="Active">Đang hoạt động</option>
-            <option value="Upcoming">Sắp diễn ra</option>
-            <option value="Completed">Đã kết thúc</option>
-          </select>
-          <SlidersHorizontal className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-        </div>
+        <CustomSelect
+          value={filterStatus}
+          onChange={setFilterStatus}
+          variant="filter"
+          className="w-full md:w-64"
+          options={[
+            { value: 'ALL', label: 'Tất cả trạng thái' },
+            { value: 'Active', label: 'Đang hoạt động' },
+            { value: 'Upcoming', label: 'Sắp diễn ra' },
+            { value: 'Completed', label: 'Đã kết thúc' }
+          ]}
+        />
       </div>
 
       {/* 4. Elegant School Year Table list view */}
@@ -645,18 +645,16 @@ export default function SchoolYearManagement() {
                     <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
                       Trạng thái hiện tại của niên khóa <span className="text-[#FF8E8E]">*</span>
                     </label>
-                    <div className="relative">
-                      <select 
+                      <CustomSelect
                         value={formStatus}
-                        onChange={(e) => setFormStatus(e.target.value as SchoolYear['Status'])}
-                        className="w-full appearance-none bg-[#FDFCF5] border-2 border-transparent rounded-2xl pl-5 pr-10 py-4 font-black italic text-xs tracking-wide text-gray-700 outline-none cursor-pointer uppercase focus:bg-white focus:border-[#4EACAF]"
-                      >
-                        <option value="Upcoming">Sắp diễn ra (Upcoming)</option>
-                        <option value="Active">Đang hoạt động (Active)</option>
-                        <option value="Completed">Đã kết thúc (Completed)</option>
-                      </select>
-                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    </div>
+                        onChange={(val) => setFormStatus(val as SchoolYear['Status'])}
+                        variant="form"
+                        options={[
+                          { value: 'Upcoming', label: 'Sắp diễn ra (Upcoming)' },
+                          { value: 'Active', label: 'Đang hoạt động (Active)' },
+                          { value: 'Completed', label: 'Đã kết thúc (Completed)' }
+                        ]}
+                      />
                   </div>
 
                   {/* Little helper warning */}

@@ -24,10 +24,12 @@ import {
   Clock,
   ExternalLink,
   ChevronRight,
-  Sparkle
+  Sparkle,
+  Trash2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
+import CustomSelect from '../../components/common/CustomSelect';
 import { useLessonManagementApi, type LessonResponse } from '../../hooks/useLessonManagementApi';
 
 // DB Interfaces
@@ -43,7 +45,7 @@ interface Lesson {
   LessonName: string;
   LessonOrder: number;
   Description: string;
-  TargetSkill: 'Pronunciation' | 'Vocabulary' | 'Oral Motor' | 'Communication';
+  TargetSkill: string;
   EstimatedDuration: number; // minutes
   Status: 'Active' | 'Inactive';
   CreatedAt: string;
@@ -174,9 +176,8 @@ const MOCK_EXERCISES_BY_LESSON: Record<string, Exercise[]> = {
     { ExerciseId: 'EXE-602', ExerciseName: 'Đố vui tên động vật nông trại VR', ExerciseType: 'Bouncing Match', ScoreToPass: 80 }
   ]
 };
-
 export default function LessonManagement() {
-  const { getLessons, getPrograms, createLesson, updateLesson } = useLessonManagementApi();
+  const { getLessons, getPrograms, createLesson, updateLesson, deleteLesson } = useLessonManagementApi();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
 
@@ -195,7 +196,7 @@ export default function LessonManagement() {
   }, [searchQuery, filterProgram, filterStatus]);
 
   // Modal systems
-  const [modalType, setModalType] = useState<'add' | 'edit' | 'exercises' | null>(null);
+  const [modalType, setModalType] = useState<'add' | 'edit' | 'exercises' | 'delete' | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [alertConfig, setAlertConfig] = useState<{ message: string; type: 'success' | 'warning' } | null>(null);
 
@@ -207,6 +208,20 @@ export default function LessonManagement() {
   const [formTargetSkill, setFormTargetSkill] = useState<Lesson['TargetSkill']>('Pronunciation');
   const [formDuration, setFormDuration] = useState<number>(15);
   const [formStatus, setFormStatus] = useState<'Active' | 'Inactive'>('Active');
+
+  // Target skill options memo for the CustomSelect input
+  const targetSkillOptions = useMemo(() => {
+    const defaultOptions = [
+      { value: 'Pronunciation', label: 'Pronunciation (Phát âm)' },
+      { value: 'Vocabulary', label: 'Vocabulary (Từ vựng)' },
+      { value: 'Oral Motor', label: 'Oral Motor (Hàm miệng)' },
+      { value: 'Communication', label: 'Communication (Giao tiếp)' }
+    ];
+    if (formTargetSkill && !defaultOptions.some(opt => opt.value === formTargetSkill)) {
+      return [...defaultOptions, { value: formTargetSkill, label: formTargetSkill }];
+    }
+    return defaultOptions;
+  }, [formTargetSkill]);
 
   // Sparkle alert trigger helper
   const triggerToast = (message: string, type: 'success' | 'warning' = 'success') => {
@@ -281,6 +296,23 @@ export default function LessonManagement() {
   const handleCloseModal = () => {
     setModalType(null);
     setSelectedLesson(null);
+  };
+
+  const handleOpenDelete = (les: Lesson) => {
+    setSelectedLesson(les);
+    setModalType('delete');
+  };
+
+  const handleDeleteLesson = async () => {
+    if (!selectedLesson) return;
+    const result = await deleteLesson(Number(selectedLesson.LessonId));
+    if (result.success) {
+      setLessons(current => current.filter(l => l.LessonId !== selectedLesson.LessonId));
+      triggerToast(result.message || 'Xóa bài học thành công.');
+      handleCloseModal();
+    } else {
+      triggerToast(result.errors.join(' ') || result.message || 'Xóa bài học thất bại.', 'warning');
+    }
   };
 
   const handleSaveLesson = async (e: React.FormEvent) => {
@@ -469,34 +501,23 @@ export default function LessonManagement() {
 
         {/* Filters bar */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="relative">
-            <select 
-              value={filterProgram}
-              onChange={(e) => setFilterProgram(e.target.value)}
-              className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/20 px-3 py-2 rounded-lg font-bold text-xs text-slate-600 outline-none cursor-pointer pr-10 uppercase focus:bg-white focus:border-[#4EACAF] transition-colors"
-            >
-              <option value="ALL">Mọi chương trình học</option>
-              {programs.map(prog => (
-                <option key={prog.ProgramId} value={prog.ProgramId}>
-                  {prog.ProgramName}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
-
-          <div className="relative">
-            <select 
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/20 px-3 py-2 rounded-lg font-bold text-xs text-slate-600 outline-none cursor-pointer pr-10 uppercase focus:bg-white focus:border-[#4EACAF] transition-colors"
-            >
-              <option value="ALL">Mọi trạng thái giáo án</option>
-              <option value="Active">Đang thông qua (Active)</option>
-              <option value="Inactive">Bảo lưu / Đóng (Inactive)</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
+          <CustomSelect
+            value={filterProgram}
+            onChange={setFilterProgram}
+            options={[
+              { value: 'ALL', label: 'Mọi chương trình học' },
+              ...programs.map(p => ({ value: p.ProgramId, label: p.ProgramName }))
+            ]}
+          />
+          <CustomSelect
+            value={filterStatus}
+            onChange={setFilterStatus}
+            options={[
+              { value: 'ALL', label: 'Mọi trạng thái giáo án' },
+              { value: 'Active', label: 'Đang thông qua (Active)' },
+              { value: 'Inactive', label: 'Bảo lưu / Đóng (Inactive)' }
+            ]}
+          />
         </div>
       </div>
 
@@ -535,14 +556,14 @@ export default function LessonManagement() {
               <table className="w-full text-left border-collapse" id="lessons-table-body">
                 <thead>
                   <tr className="bg-[#FDFCF5]/50 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
-                    <th className="py-5 px-10">Mã Số</th>
-                    <th className="py-5 px-6">Thứ tự</th>
-                    <th className="py-5 px-6">Tiêu đề bài học</th>
-                    <th className="py-5 px-6">Chương trình liên đới</th>
-                    <th className="py-5 px-6">Mục Tiêu Kỹ Năng</th>
-                    <th className="py-5 px-6">Thời Lượng Quy Định</th>
-                    <th className="py-5 px-6">Trạng Thái</th>
-                    <th className="py-5 px-10 text-right">Hành Động</th>
+                    <th className="w-[5%] py-5 px-4">Mã Số</th>
+                    <th className="w-[5%] py-5 px-2">Thứ tự</th>
+                    <th className="w-[28%] py-5 px-4">Tiêu đề bài học</th>
+                    <th className="w-[18%] py-5 px-4">Chương trình liên đới</th>
+                    <th className="w-[15%] py-5 px-4">Mục Tiêu Kỹ Năng</th>
+                    <th className="w-[8%] py-5 px-4">Thời Lượng Quy Định</th>
+                    <th className="w-[8%] py-5 px-4">Trạng Thái</th>
+                    <th className="w-[13%] py-5 px-4 text-right">Hành Động</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
@@ -551,22 +572,22 @@ export default function LessonManagement() {
 
                     return (
                       <tr key={lesson.LessonId} className="hover:bg-gray-50/40 transition-colors">
-                        <td className="py-5 px-10 font-mono text-gray-400 font-extrabold text-xs">
+                        <td className="py-5 px-4 font-mono text-gray-400 font-extrabold text-xs">
                           {lesson.LessonId}
                         </td>
-                        <td className="py-5 px-6 font-black italic text-[#4EACAF] text-lg">
+                        <td className="py-5 px-2 font-black italic text-[#4EACAF] text-lg">
                           #{lesson.LessonOrder}
                         </td>
-                        <td className="py-5 px-6">
-                          <div className="max-w-xs font-bold space-y-1">
+                        <td className="py-5 px-4">
+                          <div className="max-w-md font-bold space-y-1">
                             <p className="text-gray-900 font-extrabold leading-snug line-clamp-1">{lesson.LessonName}</p>
                             <p className="text-xs text-gray-400 font-medium line-clamp-2 leading-relaxed">{lesson.Description}</p>
                           </div>
                         </td>
-                        <td className="py-5 px-6">
+                        <td className="py-5 px-4">
                           {program ? (
                             <div className="font-bold space-y-0.5">
-                              <p className="text-gray-800 font-extrabold max-w-xs line-clamp-1">{program.ProgramName}</p>
+                              <p className="text-gray-800 font-extrabold max-w-sm line-clamp-1">{program.ProgramName}</p>
                               <span className="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold">
                                 {program.Language}
                               </span>
@@ -575,16 +596,16 @@ export default function LessonManagement() {
                             <span className="text-red-500 font-bold italic text-xs">Chương trình bị xóa</span>
                           )}
                         </td>
-                        <td className="py-5 px-6">
+                        <td className="py-5 px-4">
                           <SkillBadge skill={lesson.TargetSkill} />
                         </td>
-                        <td className="py-5 px-6 font-extrabold text-gray-800">
+                        <td className="py-5 px-4 font-extrabold text-gray-800">
                           <div className="flex items-center gap-1.5 font-bold">
                             <Clock className="w-4 h-4 text-gray-400" />
                             <span>{lesson.EstimatedDuration} phút</span>
                           </div>
                         </td>
-                        <td className="py-5 px-6">
+                        <td className="py-5 px-4">
                           <span className={cn(
                             "inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
                             lesson.Status === 'Active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-gray-100 text-gray-400 border border-transparent'
@@ -592,7 +613,7 @@ export default function LessonManagement() {
                             {lesson.Status === 'Active' ? '● Hoạt động' : '○ Tạm ngưng'}
                           </span>
                         </td>
-                        <td className="py-5 px-10 text-right">
+                        <td className="py-5 px-4 text-right">
                           <div className="flex items-center justify-end gap-1 px-1">
                             <button 
                               onClick={() => handleToggleStatus(lesson.LessonId)}
@@ -608,11 +629,10 @@ export default function LessonManagement() {
 
                             <button 
                               onClick={() => handleOpenExercises(lesson)}
-                              className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-700 text-indigo-600 text-xs font-black uppercase tracking-wider rounded-xl transition-all flex items-center gap-1 shrink-0"
+                              className="p-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-all shrink-0"
                               title="Xem chi tiết các bài thực hành"
                             >
-                              <Play className="w-3.5 h-3.5" />
-                              Bài tập
+                              <Play className="w-4 h-4" />
                             </button>
 
                             <button 
@@ -621,6 +641,14 @@ export default function LessonManagement() {
                               title="Cập nhật thông số bài học"
                             >
                               <Edit3 className="w-4.5 h-4.5" />
+                            </button>
+
+                            <button 
+                              onClick={() => handleOpenDelete(lesson)}
+                              className="p-2.5 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-xl transition-all duration-150 hover:scale-105 shrink-0"
+                              title="Xóa bài học"
+                            >
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
@@ -674,22 +702,26 @@ export default function LessonManagement() {
               <div className={cn(
                 "px-8 py-6 flex items-center justify-between border-b",
                 modalType === 'add' ? 'bg-[#4EACAF]/10 border-[#4EACAF]/10 text-gray-900' :
-                modalType === 'edit' ? 'bg-sky-50 border-sky-100 text-gray-900' : 'bg-indigo-50 border-indigo-100 text-gray-900'
+                modalType === 'edit' ? 'bg-sky-50 border-sky-100 text-gray-900' :
+                modalType === 'delete' ? 'bg-rose-50 border-rose-100 text-gray-900' : 'bg-indigo-50 border-indigo-100 text-gray-900'
               )}>
                 <div>
                   <h2 className="text-2xl font-black italic tracking-tight flex items-center gap-2">
                     {modalType === 'add' && <Plus className="w-6 h-6 text-[#4EACAF]" />}
                     {modalType === 'edit' && <Edit3 className="w-6 h-6 text-sky-500" />}
                     {modalType === 'exercises' && <BookOpen className="w-6 h-6 text-indigo-500" />}
+                    {modalType === 'delete' && <Trash2 className="w-6 h-6 text-rose-500" />}
                     
                     {modalType === 'add' && 'Tạo phân cảnh bài học mới'}
                     {modalType === 'edit' && `Sửa thông số bài học: ${selectedLesson?.LessonId}`}
                     {modalType === 'exercises' && 'Thực nghiệm game tương tác'}
+                    {modalType === 'delete' && 'Xác nhận xóa bài học'}
                   </h2>
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
                     {modalType === 'add' && 'Thiết lập nội dung và gán lớp kỹ năng rèn nói cho bài học'}
                     {modalType === 'edit' && 'Cập nhật lại thông tin thứ tự và thời lượng can thiệp của bài giảng'}
                     {modalType === 'exercises' && 'Chi tiết các trò chơi tương tác ảo đi kèm bài giảng'}
+                    {modalType === 'delete' && 'Hành động này không thể khôi phục và có thể ảnh hưởng đến kết quả học tập'}
                   </p>
                 </div>
                 <button 
@@ -701,7 +733,7 @@ export default function LessonManagement() {
                 </button>
               </div>
 
-              {/* Modal: EXERCISES sub list rendering */}
+              {/* Modal Body conditional rendering */}
               {modalType === 'exercises' && selectedLesson ? (
                 <div className="app-modal-body p-8 md:p-10 space-y-6" id="modal-exercises-view">
                   <div className="bg-indigo-50 p-5 rounded-3xl border border-indigo-100 flex items-center gap-4 text-indigo-700">
@@ -756,6 +788,35 @@ export default function LessonManagement() {
                     </button>
                   </div>
                 </div>
+              ) : modalType === 'delete' && selectedLesson ? (
+                <div className="app-modal-body p-8 md:p-10 space-y-6" id="modal-delete-confirm">
+                  <div className="bg-rose-50 p-5 rounded-3xl border border-rose-100 flex items-center gap-4 text-rose-700 animate-in fade-in duration-300">
+                    <AlertTriangle className="w-10 h-10 shrink-0 text-rose-500" />
+                    <div>
+                      <h4 className="font-extrabold text-sm uppercase tracking-wider text-rose-900">Xác nhận xóa bài học</h4>
+                      <p className="text-xs font-bold text-rose-600/95 mt-1 leading-relaxed">
+                        Bạn có chắc chắn muốn xóa bài học <strong className="text-rose-900">"{selectedLesson.LessonName}"</strong>? Hành động này không thể hoàn tác và có thể ảnh hưởng đến các lớp học đang liên kết.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="app-modal-actions pt-6 border-t border-gray-150 flex gap-4">
+                    <button 
+                      type="button"
+                      onClick={handleCloseModal}
+                      className="flex-1 py-4 border-4 border-gray-100 hover:border-gray-200 text-gray-400 hover:text-gray-600 font-extrabold rounded-2xl transition-all uppercase text-xs tracking-wider cursor-pointer"
+                    >
+                      Hủy bỏ
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={handleDeleteLesson}
+                      className="flex-1 py-4 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-2xl shadow-xl shadow-rose-500/15 transition-all text-sm uppercase tracking-wider cursor-pointer"
+                    >
+                      Xác nhận xóa
+                    </button>
+                  </div>
+                </div>
               ) : (
                 /* Modal Body: ADD OR EDIT FORM rendering */
                 <form onSubmit={handleSaveLesson} className="app-modal-body p-8 md:p-10 space-y-6" id="lesson-add-edit-form">
@@ -766,20 +827,15 @@ export default function LessonManagement() {
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
                         Chương trình học trực thuộc <span className="text-[#FF8E8E]">*</span>
                       </label>
-                      <div className="relative">
-                        <select 
-                          value={formProgramId}
-                          onChange={(e) => setFormProgramId(e.target.value)}
-                          className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 outline-none cursor-pointer appearance-none focus:border-[#4EACAF] text-sm"
-                        >
-                          {programs.map(p => (
-                            <option key={p.ProgramId} value={p.ProgramId}>
-                              {p.ProgramName} ({p.ProgramId})
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                      </div>
+                      <CustomSelect
+                        value={formProgramId}
+                        onChange={setFormProgramId}
+                        variant="form"
+                        options={programs.map(p => ({
+                          value: p.ProgramId,
+                          label: `${p.ProgramName} (${p.ProgramId})`
+                        }))}
+                      />
                     </div>
 
                     <div className="app-modal-form-grid grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -839,19 +895,12 @@ export default function LessonManagement() {
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
                           Kỹ năng bổ trợ <span className="text-[#FF8E8E]">*</span>
                         </label>
-                        <div className="relative">
-                          <select 
-                            value={formTargetSkill}
-                            onChange={(e) => setFormTargetSkill(e.target.value as Lesson['TargetSkill'])}
-                            className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 outline-none cursor-pointer appearance-none focus:border-[#4EACAF] text-sm"
-                          >
-                            <option value="Pronunciation">Pronunciation (Phát âm)</option>
-                            <option value="Vocabulary">Vocabulary (Từ vựng)</option>
-                            <option value="Oral Motor">Oral Motor (Hàm miệng)</option>
-                            <option value="Communication">Communication (Giao tiếp)</option>
-                          </select>
-                          <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                        </div>
+                        <CustomSelect
+                          value={formTargetSkill}
+                          onChange={(val) => setFormTargetSkill(val)}
+                          variant="form"
+                          options={targetSkillOptions}
+                        />
                       </div>
 
                       {/* Estimated Duration */}
@@ -875,17 +924,15 @@ export default function LessonManagement() {
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
                           Trạng thái giáo trình <span className="text-[#FF8E8E]">*</span>
                         </label>
-                        <div className="relative">
-                          <select 
-                            value={formStatus}
-                            onChange={(e) => setFormStatus(e.target.value as 'Active' | 'Inactive')}
-                            className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 outline-none cursor-pointer appearance-none focus:border-[#4EACAF] text-sm"
-                          >
-                            <option value="Active">Hoạt động (Active)</option>
-                            <option value="Inactive">Tạm khóa (Inactive)</option>
-                          </select>
-                          <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                        </div>
+                        <CustomSelect
+                          value={formStatus}
+                          onChange={(val) => setFormStatus(val as 'Active' | 'Inactive')}
+                          variant="form"
+                          options={[
+                            { value: 'Active', label: 'Hoạt động (Active)' },
+                            { value: 'Inactive', label: 'Tạm khóa (Inactive)' }
+                          ]}
+                        />
                       </div>
 
                     </div>
@@ -947,20 +994,33 @@ function StatCard({ title, value, subtitle, icon, bgColor, borderColor }: StatCa
 }
 
 // Skill Badge category selector
-function SkillBadge({ skill }: { skill: Lesson['TargetSkill'] }) {
+function SkillBadge({ skill }: { skill: string }) {
+  if (!skill) return null;
+
+  const isPronunciation = skill === 'Pronunciation';
+  const isVocabulary = skill === 'Vocabulary';
+  const isOralMotor = skill === 'Oral Motor';
+  const isCommunication = skill === 'Communication';
+
+  const badgeClass = isPronunciation 
+    ? 'bg-[#4EACAF]/10 text-[#4EACAF] border border-[#4EACAF]/15' :
+    isVocabulary ? 'bg-sky-50 text-sky-600 border border-sky-100' :
+    isOralMotor ? 'bg-orange-50 text-orange-600 border border-orange-100' :
+    'bg-purple-50 text-purple-600 border border-purple-100';
+
+  const label = isPronunciation ? 'Phát âm' :
+    isVocabulary ? 'Từ vựng' :
+    isOralMotor ? 'Cơ môi miệng' :
+    isCommunication ? 'Giao tiếp' :
+    skill;
+
   return (
     <span className={cn(
-      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider",
-      skill === 'Pronunciation' ? 'bg-[#4EACAF]/10 text-[#4EACAF] border border-[#4EACAF]/15' :
-      skill === 'Vocabulary' ? 'bg-sky-50 text-sky-600 border border-sky-100' :
-      skill === 'Oral Motor' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
-      'bg-purple-50 text-purple-600 border border-purple-100'
+      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap",
+      badgeClass
     )}>
       <Award className="w-3.5 h-3.5" />
-      {skill === 'Pronunciation' && 'Phát âm'}
-      {skill === 'Vocabulary' && 'Từ vựng'}
-      {skill === 'Oral Motor' && 'Cơ môi miệng'}
-      {skill === 'Communication' && 'Giao tiếp'}
+      {label}
     </span>
   );
 }

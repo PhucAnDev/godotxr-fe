@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import Pagination from '../../components/common/Pagination';
 import { cn } from '../../lib/utils';
+import CustomSelect from '../../components/common/CustomSelect';
 import {
   useExerciseManagementApi,
   type ExerciseQuestionResponse,
@@ -1015,6 +1016,7 @@ export default function ExerciseManagement() {
           <SelectField
             value={filterLesson}
             onChange={setFilterLesson}
+            variant="filter"
             options={[
               { value: 'ALL', label: 'Mọi bài học' },
               ...lessons.map((item) => ({
@@ -1026,6 +1028,7 @@ export default function ExerciseManagement() {
           <SelectField
             value={filterType}
             onChange={setFilterType}
+            variant="filter"
             options={[
               { value: 'ALL', label: 'Mọi loại bài tập' },
               ...exerciseTypes.map((item) => ({
@@ -1037,6 +1040,7 @@ export default function ExerciseManagement() {
           <SelectField
             value={filterDifficulty}
             onChange={setFilterDifficulty}
+            variant="filter"
             options={[
               { value: 'ALL', label: 'Độ khó: tất cả' },
               { value: 'Easy', label: 'Dễ (Easy)' },
@@ -1047,6 +1051,7 @@ export default function ExerciseManagement() {
           <SelectField
             value={filterLanguage}
             onChange={setFilterLanguage}
+            variant="filter"
             options={[
               { value: 'ALL', label: 'Mọi ngôn ngữ' },
               { value: 'Vietnamese', label: 'Vietnamese' },
@@ -1056,6 +1061,7 @@ export default function ExerciseManagement() {
           <SelectField
             value={filterStatus}
             onChange={setFilterStatus}
+            variant="filter"
             options={[
               { value: 'ALL', label: 'Mọi trạng thái' },
               { value: 'Active', label: 'Đang hoạt động' },
@@ -1858,26 +1864,20 @@ function SelectField({
   value,
   onChange,
   options,
+  variant = 'form',
 }: {
   value: string;
   onChange: (value: string) => void;
   options: Array<{ value: string; label: string }>;
+  variant?: 'filter' | 'form';
 }) {
   return (
-    <div className="relative">
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full appearance-none rounded-2xl border-2 border-transparent bg-[#FDFCF5] px-4 py-3 pr-10 text-xs font-bold text-slate-600 outline-none transition-colors hover:border-[#4EACAF]/20 focus:border-[#4EACAF] focus:bg-white"
-      >
-        {options.map((item) => (
-          <option key={item.value} value={item.value}>
-            {item.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-    </div>
+    <CustomSelect
+      value={value}
+      onChange={onChange}
+      options={options}
+      variant={variant}
+    />
   );
 }
 

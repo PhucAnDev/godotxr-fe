@@ -22,6 +22,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import CustomSelect from '../../components/common/CustomSelect';
 import { useRoleManagement, type RoleResponse, type UserRoleEnum } from '../../hooks/useRoleManagement';
 
 // Các giá trị enum được phép gửi lên BE
@@ -139,18 +140,17 @@ export default function RoleManagement() {
             </button>
           )}
         </div>
-        <div className="relative shrink-0">
-          <select
-            value={filterActive}
-            onChange={(e) => setFilterActive(e.target.value)}
-            className="w-full sm:w-56 appearance-none bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/45 px-4 py-2.5 rounded-xl font-bold text-gray-700 outline-none cursor-pointer pr-10 text-xs"
-          >
-            <option value="ALL">Tất cả Trạng thái</option>
-            <option value="ACTIVE">Hoạt động</option>
-            <option value="INACTIVE">Trạng thái tắt</option>
-          </select>
-          <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-        </div>
+        <CustomSelect
+          value={filterActive}
+          onChange={setFilterActive}
+          variant="filter"
+          className="w-full sm:w-56"
+          options={[
+            { value: 'ALL', label: 'Tất cả Trạng thái' },
+            { value: 'ACTIVE', label: 'Hoạt động' },
+            { value: 'INACTIVE', label: 'Trạng thái tắt' }
+          ]}
+        />
       </div>
 
       {/* 4. Danh sách role */}
@@ -248,19 +248,12 @@ export default function RoleManagement() {
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
                         Tên vai trò (RoleName) <span className="text-[#FF8E8E]">*</span>
                       </label>
-                      <div className="relative">
-                        <select
-                          required
-                          value={formRoleName}
-                          onChange={(e) => setFormRoleName(e.target.value as UserRoleEnum)}
-                          className="w-full appearance-none bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold outline-none focus:border-[#4EACAF] focus:bg-white transition-all text-gray-700 pr-10 cursor-pointer"
-                        >
-                          {ROLE_NAME_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                      </div>
+                      <CustomSelect
+                        value={formRoleName}
+                        onChange={(val) => setFormRoleName(val as UserRoleEnum)}
+                        variant="form"
+                        options={ROLE_NAME_OPTIONS}
+                      />
                       <p className="text-[10px] text-gray-400 font-bold ml-1">
                         BE chỉ chấp nhận các giá trị enum cố định: Admin, Teacher, Parent, Child.
                       </p>
