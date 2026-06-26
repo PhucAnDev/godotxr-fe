@@ -29,6 +29,7 @@ import {
 } from '../../hooks/useChildManagementApi';
 import type { ChildProfilePayload } from '../../services/childProfileService';
 import { getUsers } from '../../services/userService';
+import { getSessionRole } from '../../lib/authSession';
 
 interface Child {
   ChildId: string;
@@ -232,6 +233,10 @@ export default function ChildManagement() {
 
   useEffect(() => {
     const fetchParents = async () => {
+      const role = getSessionRole();
+      if (role !== 'ADMIN') {
+        return;
+      }
       const result = await getUsers(1, 1000);
       if (result.success && result.data) {
         const mapping: Record<string, string> = {};
@@ -1020,12 +1025,22 @@ export default function ChildManagement() {
           >
             <div className="space-y-6 p-8 md:p-10">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <SelectInputField
-                  label="Phụ huynh liên kết"
-                  value={formState.userId}
-                  onChange={(value) => handleFormChange('userId', value)}
-                  options={activeParentOptions}
-                />
+                {getSessionRole() === 'ADMIN' ? (
+                  <SelectInputField
+                    label="Phụ huynh liên kết"
+                    value={formState.userId}
+                    onChange={(value) => handleFormChange('userId', value)}
+                    options={activeParentOptions}
+                  />
+                ) : (
+                  <InputField
+                    label="ID Phụ huynh liên kết"
+                    value={formState.userId}
+                    onChange={(value) => handleFormChange('userId', value)}
+                    placeholder="Nhập ID tài khoản phụ huynh (ví dụ: 3)"
+                    inputMode="numeric"
+                  />
+                )}
                 <InputField
                   label="Họ tên trẻ"
                   value={formState.fullName}
