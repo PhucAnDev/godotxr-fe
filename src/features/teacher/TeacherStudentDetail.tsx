@@ -447,7 +447,7 @@ export default function TeacherStudentDetail({
         setApiError(
           error instanceof Error
             ? error.message
-            : 'Khong the tai du lieu hoc sinh tu API.'
+            : 'Không thể tải dữ liệu học sinh từ API.'
         );
       } finally {
         if (!cancelled) {
@@ -495,19 +495,19 @@ export default function TeacherStudentDetail({
         bg: 'bg-[#F2FAF4] text-[#34A853] border-emerald-100',
         dot: 'bg-emerald-500',
         text: 'text-emerald-600',
-        label: 'Tien bo vuot bac',
+        label: 'Tiến bộ vượt bậc',
       },
       Stable: {
         bg: 'bg-[#F2FAFB] text-[#20D0D4] border-cyan-100',
         dot: 'bg-[#20D0D4]',
         text: 'text-cyan-600',
-        label: 'Tien do on dinh',
+        label: 'Tiến độ ổn định',
       },
       'Need Support': {
         bg: 'bg-[#FFF2F2] text-[#FF8E8E] border-rose-100',
         dot: 'bg-rose-500',
         text: 'text-rose-600',
-        label: 'Can tiep suc',
+        label: 'Cần tiếp sức',
       },
     };
     return choices[level] || choices.Stable;
@@ -519,7 +519,7 @@ export default function TeacherStudentDetail({
     setIsDownloading(true);
     setDownloadProgress(20);
     showToast(
-      `Dang trich ghep bao cao tien trinh cua be ${child.FullName}...`,
+      `Đang trích ghép báo cáo tiến trình của bé ${child.FullName}...`,
       'info'
     );
 
@@ -530,7 +530,7 @@ export default function TeacherStudentDetail({
           setTimeout(() => {
             setIsDownloading(false);
             setDownloadProgress(0);
-            showToast('Da tao bao cao tien trinh thanh cong!', 'success');
+            showToast('Đã tạo báo cáo tiến trình thành công!', 'success');
           }, 350);
           return 100;
         }
@@ -541,7 +541,7 @@ export default function TeacherStudentDetail({
 
   const simulatePlayReplay = (expect: string, actual: string, score: number) => {
     showToast(
-      `Dang tai dung so sanh am [${expect}] va am thuc te [${actual}] (${score} diem)...`,
+      `Đang tải so sánh âm [${expect}] và âm thực tế [${actual}] (${score} điểm)...`,
       'success'
     );
   };
@@ -602,7 +602,7 @@ export default function TeacherStudentDetail({
               if (onNavigate) {
                 onNavigate('TEACHER_CLASSES');
               } else {
-                showToast('Dang chuyen ve khu vuc lop hoc...', 'info');
+                showToast('Đang chuyển về khu vực lớp học...', 'info');
               }
             }}
             className="inline-flex items-center gap-2 text-xs font-black text-[#4EACAF] uppercase tracking-wider hover:underline"
@@ -617,11 +617,11 @@ export default function TeacherStudentDetail({
               Teacher workspace
             </div>
             <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
-              Ho so hoc sinh <span className="text-[#4EACAF]">chi tiet</span>
+              Hồ sơ học sinh <span className="text-[#4EACAF]">chi tiết</span>
             </h1>
             <p className="text-gray-500 font-bold max-w-2xl text-sm">
-              Theo doi ket qua luyen tap, loi phat am va goi y can thiep dua tren
-              du lieu thuc tu backend.
+              Theo dõi kết quả luyện tập, lỗi phát âm và gợi ý can thiệp dựa trên
+              dữ liệu thực từ backend.
             </p>
           </div>
         </div>
@@ -631,7 +631,7 @@ export default function TeacherStudentDetail({
             value={child?.ChildId ?? ''}
             onChange={(event) => {
               setCurrentChildId(event.target.value);
-              showToast('Da chuyen hoc sinh dang theo doi.', 'info');
+              showToast('Đã chuyển học sinh đang theo dõi.', 'info');
             }}
             className="w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none"
           >
@@ -650,12 +650,12 @@ export default function TeacherStudentDetail({
             {isDownloading ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                Dang tao bao cao {downloadProgress}%
+                Đang tạo báo cáo {downloadProgress}%
               </>
             ) : (
               <>
                 <FileSpreadsheet className="w-4 h-4" />
-                Xuat bao cao
+                Xuất báo cáo
               </>
             )}
           </button>
@@ -670,7 +670,7 @@ export default function TeacherStudentDetail({
 
       {isLoading || !child ? (
         <div className="bg-white rounded-[36px] border border-gray-100 p-12 text-center text-gray-500 font-bold">
-          Dang tai ho so hoc sinh va ket qua luyen tap tu API...
+          Đang tải hồ sơ học sinh và kết quả luyện tập từ API...
         </div>
       ) : (
         <>
@@ -684,7 +684,7 @@ export default function TeacherStudentDetail({
                   {analysis.TotalExercises}
                 </p>
                 <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">
-                  Tong luot luyen
+                  Tổng lượt luyện
                 </p>
               </div>
             </div>
@@ -698,7 +698,7 @@ export default function TeacherStudentDetail({
                   {analysis.AverageScore}đ
                 </p>
                 <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">
-                  Diem trung binh
+                  Điểm trung bình
                 </p>
               </div>
             </div>
@@ -712,7 +712,7 @@ export default function TeacherStudentDetail({
                   {analysis.TotalPracticeTime}p
                 </p>
                 <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">
-                  Tong thoi gian luyen
+                  Tổng thời gian luyện
                 </p>
               </div>
             </div>
@@ -726,7 +726,7 @@ export default function TeacherStudentDetail({
                   {analysis.CompletedExercises}/{analysis.TotalExercises}
                 </p>
                 <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">
-                  Bai hoan tat
+                  Bài hoàn tất
                 </p>
               </div>
             </div>
@@ -743,7 +743,7 @@ export default function TeacherStudentDetail({
                     {child.FullName}
                   </h2>
                   <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
-                    Hoc mam: {child.ChildId}
+                    Học mầm: {child.ChildId}
                   </p>
                   <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-wider text-[#4EACAF] border-[#4EACAF]/20 bg-[#4EACAF]/5">
                     <span
@@ -762,17 +762,17 @@ export default function TeacherStudentDetail({
                   <div className="flex items-center gap-2 text-[#4EACAF]">
                     <UserCheck className="w-4 h-4" />
                     <span className="text-xs font-black uppercase tracking-widest">
-                      Ho so hoc sinh
+                      Hồ sơ học sinh
                     </span>
                   </div>
                   <p className="text-sm font-bold text-gray-700">
-                    {child.Age} tuoi, {child.Gender === 'Female' ? 'Nu' : child.Gender === 'Other' ? 'Khac' : 'Nam'}
+                    {child.Age} tuổi, {child.Gender === 'Female' ? 'Nữ' : child.Gender === 'Other' ? 'Khác' : 'Nam'}
                   </p>
                   <p className="text-sm font-bold text-gray-700">
-                    Trinh do: {child.LearningLevel}
+                    Trình độ: {child.LearningLevel}
                   </p>
                   <p className="text-sm text-gray-500 leading-relaxed">
-                    {child.Note || 'Chua co ghi chu bo sung cho hoc sinh nay.'}
+                    {child.Note || 'Chưa có ghi chú bổ sung cho học sinh này.'}
                   </p>
                 </div>
 
@@ -780,17 +780,17 @@ export default function TeacherStudentDetail({
                   <div className="flex items-center gap-2 text-[#FF8E8E]">
                     <Mail className="w-4 h-4" />
                     <span className="text-xs font-black uppercase tracking-widest">
-                      Thong tin phu huynh
+                      Thông tin phụ huynh
                     </span>
                   </div>
                   <p className="text-sm font-bold text-gray-700">{parent.FullName}</p>
                   <p className="text-sm font-bold text-gray-700 flex items-center gap-2">
                     <Phone className="w-4 h-4 text-gray-400" />
-                    {parent.PhoneNumber || 'Chua co so dien thoai'}
+                    {parent.PhoneNumber || 'Chưa có số điện thoại'}
                   </p>
                   <p className="text-sm font-bold text-gray-700 flex items-center gap-2">
                     <Mail className="w-4 h-4 text-gray-400" />
-                    {parent.Email || 'Chua co email'}
+                    {parent.Email || 'Chưa có email'}
                   </p>
                 </div>
               </div>
@@ -799,11 +799,11 @@ export default function TeacherStudentDetail({
 
           <div className="bg-white rounded-[32px] p-2 border border-gray-100 hover:shadow-inner flex flex-col sm:flex-row gap-1">
             {[
-              { tab: 'OVERVIEW', label: 'Tong quan', icon: Smile },
-              { tab: 'HISTORY', label: 'Lich su', icon: Activity },
-              { tab: 'ERRORS', label: 'Loi phat am', icon: Volume2 },
-              { tab: 'PROGRESS', label: 'Tien trinh', icon: TrendingUp },
-              { tab: 'RECOMMENDATIONS', label: 'De xuat', icon: Sparkles },
+              { tab: 'OVERVIEW', label: 'Tổng quan', icon: Smile },
+              { tab: 'HISTORY', label: 'Lịch sử', icon: Activity },
+              { tab: 'ERRORS', label: 'Lỗi phát âm', icon: Volume2 },
+              { tab: 'PROGRESS', label: 'Tiến trình', icon: TrendingUp },
+              { tab: 'RECOMMENDATIONS', label: 'Đề xuất', icon: Sparkles },
             ].map((item) => {
               const Icon = item.icon;
               return (
@@ -811,7 +811,7 @@ export default function TeacherStudentDetail({
                   key={item.tab}
                   onClick={() => {
                     setActiveTab(item.tab as typeof activeTab);
-                    showToast(`Da chuyen sang tab ${item.label}.`, 'info');
+                    showToast(`Đã chuyển sang tab ${item.label}.`, 'info');
                   }}
                   className={cn(
                     'px-5 py-4.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 flex-1 cursor-pointer border border-transparent',
@@ -833,7 +833,7 @@ export default function TeacherStudentDetail({
                 <div className="bg-white p-8 rounded-[36px] border border-gray-150 relative space-y-4">
                   <h3 className="text-xl font-black text-emerald-600 uppercase tracking-tight flex items-center gap-2">
                     <ThumbsUp className="w-5.5 h-5.5 text-emerald-500" />
-                    Diem manh noi bat
+                    Điểm mạnh nổi bật
                   </h3>
                   <div className="space-y-3 pt-2">
                     {analysis.Strengths.map((item, index) => (
@@ -851,7 +851,7 @@ export default function TeacherStudentDetail({
                 <div className="bg-white p-8 rounded-[36px] border border-gray-150 relative space-y-4">
                   <h3 className="text-xl font-black text-rose-500 uppercase tracking-tight flex items-center gap-2">
                     <ThumbsDown className="w-5.5 h-5.5 text-rose-400" />
-                    Diem can luu y
+                    Điểm cần lưu ý
                   </h3>
                   <div className="space-y-3 pt-2">
                     {analysis.Weaknesses.map((item, index) => (
@@ -873,14 +873,14 @@ export default function TeacherStudentDetail({
                 <div className="px-10 py-8 border-b border-gray-50 flex justify-between items-center bg-white/50">
                   <div>
                     <h3 className="text-2xl font-black text-gray-900 leading-none italic">
-                      Nhat trinh luyen tap
+                      Nhật trình luyện tập
                     </h3>
                     <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-2">
-                      Ket qua tung luot luyen tap cua hoc sinh
+                      Kết quả từng lượt luyện tập của học sinh
                     </p>
                   </div>
                   <span className="text-xs font-black text-gray-400 uppercase">
-                    Ma so: {child.ChildId}
+                    Mã số: {child.ChildId}
                   </span>
                 </div>
 
@@ -888,12 +888,12 @@ export default function TeacherStudentDetail({
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="bg-[#FDFCF5]/60 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
-                        <th className="py-5 px-10">Ma phien</th>
-                        <th className="py-5 px-6">Bai tap</th>
-                        <th className="py-5 px-6 text-center">Lan thu</th>
-                        <th className="py-5 px-6 text-center">Trang thai</th>
-                        <th className="py-5 px-6 text-center">Thoi luong</th>
-                        <th className="py-5 px-6 text-center">Diem</th>
+                        <th className="py-5 px-10">Mã phiên</th>
+                        <th className="py-5 px-6">Bài tập</th>
+                        <th className="py-5 px-6 text-center">Lần thứ</th>
+                        <th className="py-5 px-6 text-center">Trạng thái</th>
+                        <th className="py-5 px-6 text-center">Thời lượng</th>
+                        <th className="py-5 px-6 text-center">Điểm</th>
                         <th className="py-5 px-10 text-right">Replay</th>
                       </tr>
                     </thead>
@@ -904,7 +904,7 @@ export default function TeacherStudentDetail({
                             colSpan={7}
                             className="py-12 text-center text-gray-400 italic font-semibold"
                           >
-                            Chua co ket qua luyen tap cho hoc sinh nay.
+                            Chưa có kết quả luyện tập cho học sinh này.
                           </td>
                         </tr>
                       ) : (
@@ -920,7 +920,7 @@ export default function TeacherStudentDetail({
                               {result.ExerciseName}
                             </td>
                             <td className="py-5 px-6 text-center font-mono text-gray-500">
-                              Lan {result.AttemptNumber}
+                              Lần {result.AttemptNumber}
                             </td>
                             <td className="py-5 px-6 text-center">
                               <span
@@ -932,12 +932,12 @@ export default function TeacherStudentDetail({
                                 )}
                               >
                                 {result.CompletionStatus === 'Completed'
-                                  ? 'Hoan tat'
-                                  : 'Chua xong'}
+                                  ? 'Hoàn tất'
+                                  : 'Chưa xong'}
                               </span>
                             </td>
                             <td className="py-5 px-6 text-center font-mono text-gray-500">
-                              {result.DurationSeconds} giay
+                              {result.DurationSeconds} giây
                             </td>
                             <td className="py-5 px-6 text-center">
                               <strong
@@ -978,10 +978,10 @@ export default function TeacherStudentDetail({
               <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden">
                 <div className="px-10 py-8 border-b border-gray-50 bg-white/50">
                   <h3 className="text-2xl font-black text-gray-900 leading-none italic">
-                    Chi tiet loi phat am
+                    Chi tiết lỗi phát âm
                   </h3>
                   <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-2">
-                    Tung am tiet backend ghi nhan cho hoc sinh
+                    Từng âm tiết backend ghi nhận cho học sinh
                   </p>
                 </div>
 
@@ -989,12 +989,12 @@ export default function TeacherStudentDetail({
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="bg-[#FDFCF5]/60 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
-                        <th className="py-5 px-10">Ma loi</th>
-                        <th className="py-5 px-6 text-center">Am chuan</th>
-                        <th className="py-5 px-6 text-center">Am thuc te</th>
-                        <th className="py-5 px-6 text-center">Do chinh xac</th>
-                        <th className="py-5 px-6">Loai loi</th>
-                        <th className="py-5 px-10 text-right">Phat lai</th>
+                        <th className="py-5 px-10">Mã lỗi</th>
+                        <th className="py-5 px-6 text-center">Âm chuẩn</th>
+                        <th className="py-5 px-6 text-center">Âm thực tế</th>
+                        <th className="py-5 px-6 text-center">Độ chính xác</th>
+                        <th className="py-5 px-6">Loại lỗi</th>
+                        <th className="py-5 px-10 text-right">Phát lại</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
@@ -1004,7 +1004,7 @@ export default function TeacherStudentDetail({
                             colSpan={6}
                             className="py-12 text-center text-gray-400 italic"
                           >
-                            Chua co chi tiet phat am cho hoc sinh nay.
+                            Chưa có chi tiết phát âm cho học sinh này.
                           </td>
                         </tr>
                       ) : (
@@ -1057,7 +1057,7 @@ export default function TeacherStudentDetail({
                                 }
                                 className="px-3.5 py-1.5 bg-[#4EACAF]/10 hover:bg-[#4EACAF] text-[#4EACAF] hover:text-white rounded-xl text-xs font-black tracking-wider uppercase transition-all cursor-pointer"
                               >
-                                Phat pho am
+                                Phát phổ âm
                               </button>
                             </td>
                           </tr>
@@ -1073,10 +1073,10 @@ export default function TeacherStudentDetail({
               <div className="bg-white rounded-[40px] p-8 md:p-10 shadow-sm border border-gray-100 space-y-8">
                 <div className="space-y-2">
                   <h3 className="text-2xl font-black text-[#4EACAF] italic">
-                    Tong hop tien trinh
+                    Tổng hợp tiến trình
                   </h3>
                   <p className="text-xs text-gray-405 font-bold uppercase tracking-wider">
-                    Chi so duoc tinh tu ket qua va chi tiet phat am cua hoc sinh
+                    Chỉ số được tính từ kết quả và chi tiết phát âm của học sinh
                   </p>
                 </div>
 
@@ -1084,13 +1084,13 @@ export default function TeacherStudentDetail({
                   <Sparkles className="w-7 h-7 text-amber-500 shrink-0" />
                   <div className="space-y-1">
                     <strong className="text-sm font-black text-gray-800 block">
-                      Tong ket nhanh cho giao vien:
+                      Tổng kết nhanh cho giáo viên:
                     </strong>
                     <p className="text-xs font-bold text-gray-500 leading-relaxed">
-                      Hoc sinh da hoan thanh {analysis.CompletedExercises}/
-                      {analysis.TotalExercises} bai, diem trung binh hiện tại là{' '}
-                      {analysis.AverageScore}đ. Nhom loi noi bat se duoc uu tien
-                      trong cac buoi luyen tiep theo.
+                      Học sinh đã hoàn thành {analysis.CompletedExercises}/
+                      {analysis.TotalExercises} bài, điểm trung bình hiện tại là{' '}
+                      {analysis.AverageScore}đ. Nhóm lỗi nổi bật sẽ được ưu tiên
+                      trong các buổi luyện tiếp theo.
                     </p>
                   </div>
                 </div>
@@ -1098,23 +1098,23 @@ export default function TeacherStudentDetail({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-gray-50">
                   <div className="bg-slate-50 p-5 rounded-2xl">
                     <span className="text-[10px] text-gray-400 font-bold block mb-1">
-                      Muc do tiep thu hien tai
+                      Mức độ tiếp thu hiện tại
                     </span>
                     <strong className="text-[#264E50]">
                       {analysis.ProgressLevel === 'Improving'
-                        ? 'On dinh va dang tien bo'
+                        ? 'Ổn định và đang tiến bộ'
                         : analysis.ProgressLevel === 'Stable'
-                          ? 'Can them nhịp luyen deu'
-                          : 'Can bo sung can thiep sat hon'}
+                          ? 'Cần thêm nhịp luyện đều'
+                          : 'Cần bổ sung can thiệp sát hơn'}
                     </strong>
                   </div>
 
                   <div className="bg-slate-50 p-5 rounded-2xl">
                     <span className="text-[10px] text-gray-400 font-bold block mb-1">
-                      Danh gia tu du lieu API
+                      Đánh giá từ dữ liệu API
                     </span>
                     <strong className="text-[#FF8E8E]">
-                      Cap nhat luc {analysis.LastAnalyzedAt}
+                      Cập nhật lúc {analysis.LastAnalyzedAt}
                     </strong>
                   </div>
                 </div>
@@ -1125,10 +1125,10 @@ export default function TeacherStudentDetail({
               <div className="bg-white rounded-[40px] p-8 md:p-10 shadow-sm border border-gray-100 space-y-6">
                 <div className="space-y-2">
                   <h3 className="text-2xl font-black text-[#FF8E8E] italic">
-                    De xuat can thiep
+                    Đề xuất can thiệp
                   </h3>
                   <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">
-                    Goi y tong hop tu ket qua luyen va loi phat am hien tai
+                    Gợi ý tổng hợp từ kết quả luyện và lỗi phát âm hiện tại
                   </p>
                 </div>
 
@@ -1138,11 +1138,11 @@ export default function TeacherStudentDetail({
 
                 <div className="bg-slate-50 p-5 rounded-2xl text-xs font-bold text-gray-500 leading-relaxed block text-left">
                   <strong className="text-gray-800 uppercase text-[10px] block mb-2 font-black">
-                    Goi y phoi hop giao vien va phu huynh:
+                    Gợi ý phối hợp giáo viên và phụ huynh:
                   </strong>
-                  1. Chon lai cac bai co diem thap de luyen ngan nhung deu.<br />
-                  2. Uu tien nhom loi xuat hien nhieu trong bang chi tiet phat am.<br />
-                  3. Theo doi them phan hoi va muc hoan thanh o cac buoi tiep theo.
+                  1. Chọn lại các bài có điểm thấp để luyện ngắn nhưng đều.<br />
+                  2. Ưu tiên nhóm lỗi xuất hiện nhiều trong bảng chi tiết phát âm.<br />
+                  3. Theo dõi thêm phản hồi và mức hoàn thành ở các buổi tiếp theo.
                 </div>
               </div>
             )}
