@@ -391,7 +391,8 @@ export default function TeacherClassDetail({
             const result = await getResultsByChild(Number(child.ChildId));
 
             if (!result.success || !result.data) {
-              throw new Error(result.errors.join(' ') || result.message);
+              // Ignore failure for individual child results to prevent 403 from crashing the page
+              return [child.ChildId, [] as Result[]] as const;
             }
 
             return [

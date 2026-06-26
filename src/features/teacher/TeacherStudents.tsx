@@ -209,7 +209,8 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
             const result = await getResultsByChild(childId);
 
             if (!result.success || !result.data) {
-              throw new Error(result.errors.join(' ') || result.message);
+              // Ignore failure for individual child results to prevent 403 from crashing the page
+              return [childId, [] as ResultResponse[]] as const;
             }
 
             return [childId, result.data] as const;

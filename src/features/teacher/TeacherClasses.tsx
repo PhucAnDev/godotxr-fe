@@ -237,7 +237,8 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
             const result = await getResultsByChild(Number(childId));
 
             if (!result.success || !result.data) {
-              throw new Error(result.errors.join(' ') || result.message);
+              // Ignore failure for individual child results to prevent 403 from crashing the page
+              return [childId, [] as Result[]] as const;
             }
 
             return [
