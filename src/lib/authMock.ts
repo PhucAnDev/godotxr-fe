@@ -200,3 +200,94 @@ export function mockLogin(email: string, password: string, fallbackRole?: 'PAREN
 export function mockLogout(): void {
   setCurrentUser(null);
 }
+
+export interface Child {
+  ChildId: string;
+  ParentUserId: string;
+  FullName: string;
+  Age: number;
+  Gender: 'Male' | 'Female' | 'Other';
+  LearningLevel: string;
+  Note: string;
+  Status: 'Active' | 'Inactive';
+  CreatedAt: string;
+  UpdatedAt: string;
+  ProgressLevel: 'Improving' | 'Stable' | 'Need Support';
+  ClassId?: string;
+}
+
+const DEFAULT_CHILDREN: Child[] = [
+  { 
+    ChildId: 'CHD-001', 
+    ParentUserId: 'USR-P1', 
+    FullName: 'Nguyễn Tiến Minh (Leo)', 
+    Age: 8, 
+    Gender: 'Male', 
+    LearningLevel: 'Bậc 1 - Phát âm đơn', 
+    Note: 'Bé thông minh nhưng thỉnh thoảng mất tập trung giữa buổi chơi. Thích trò chơi Nông trại 3D. Cần hỗ trợ phụ âm trượt sóng.',
+    Status: 'Active',
+    ProgressLevel: 'Improving',
+    CreatedAt: '2026-01-10',
+    UpdatedAt: '2026-05-30',
+    ClassId: 'CLS-801'
+  },
+  { 
+    ChildId: 'CHD-002', 
+    ParentUserId: 'USR-P2', 
+    FullName: 'Trần Thảo Linh (Sophia)', 
+    Age: 9, 
+    Gender: 'Female', 
+    LearningLevel: 'Bậc 2 - Âm đôi ghép từ', 
+    Note: 'Phản xạ phát âm nhạy bén, lực hơi khá tốt. Thỉnh thoảng bị mỏi hàm khi uốn cụm âm kép ngắn.',
+    Status: 'Active',
+    ProgressLevel: 'Stable',
+    CreatedAt: '2026-01-12',
+    UpdatedAt: '2026-05-29',
+    ClassId: 'CLS-802'
+  },
+  { 
+    ChildId: 'CHD-003', 
+    ParentUserId: 'USR-P3', 
+    FullName: 'Phạm Minh Khang', 
+    Age: 7, 
+    Gender: 'Male', 
+    LearningLevel: 'Bậc 1 - Sửa ngọng S', 
+    Note: 'Bé rụt rè trước micro mộc. Phát hơi dẹt lưỡi, đặc biệt là dải âm gió S và X. Điểm luyện tập gần đây thấp, cần giáo viên hỗ trợ thêm.',
+    Status: 'Active',
+    ProgressLevel: 'Need Support',
+    CreatedAt: '2026-02-15',
+    UpdatedAt: '2026-05-28',
+    ClassId: 'CLS-801'
+  },
+  { 
+    ChildId: 'CHD-004', 
+    ParentUserId: 'USR-P4', 
+    FullName: 'Hoàng Anh Thư', 
+    Age: 10, 
+    Gender: 'Female', 
+    LearningLevel: 'Bậc 2 - Ghép vần', 
+    Note: 'Phát âm tròn chữ nhưng âm lượng tương đối nhỏ. Họng khỏe nhưng lưỡi hơi thụ động về sau.',
+    Status: 'Active',
+    ProgressLevel: 'Stable',
+    CreatedAt: '2026-02-20',
+    UpdatedAt: '2026-05-31',
+    ClassId: 'CLS-803'
+  }
+];
+
+export function getStoredChildren(): Child[] {
+  const data = localStorage.getItem('godot_children');
+  if (!data) {
+    localStorage.setItem('godot_children', JSON.stringify(DEFAULT_CHILDREN));
+    return DEFAULT_CHILDREN;
+  }
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    return DEFAULT_CHILDREN;
+  }
+}
+
+export function saveStoredChildren(children: Child[]) {
+  localStorage.setItem('godot_children', JSON.stringify(children));
+}

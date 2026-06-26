@@ -13,6 +13,7 @@ import RoleManagement from '../features/admin/RoleManagement';
 import TeacherManagement from '../features/admin/TeacherManagement';
 import ParentManagement from '../features/admin/ParentManagement';
 import ChildManagement from '../features/admin/ChildManagement';
+import AnalyzeManagement from '../features/admin/AnalyzeManagement';
 import ClassroomManagement from '../features/admin/ClassroomManagement';
 import EnrollmentManagement from '../features/admin/EnrollmentManagement';
 import SchoolYearManagement from '../features/admin/SchoolYearManagement';
@@ -22,7 +23,6 @@ import TeacherClasses from '../features/teacher/TeacherClasses';
 import TeacherClassDetail from '../features/teacher/TeacherClassDetail';
 import TeacherStudents from '../features/teacher/TeacherStudents';
 import TeacherStudentDetail from '../features/teacher/TeacherStudentDetail';
-import TeacherParentChildManagement from '../features/teacher/TeacherParentChildManagement';
 import DifficultySettings from '../features/teacher/DifficultySettings';
 import ParentDashboard from '../features/parent/ParentDashboard';
 import ParentChildClass from '../features/parent/ParentChildClass';
@@ -137,7 +137,10 @@ export function AppRoutes() {
             <Route path="dashboard" element={<TeacherDashboard />} />
             <Route path="students" element={<TeacherStudents onNavigate={(screen) => handleTeacherNavigation(screen, navigate)} />} />
             <Route path="student/:childId" element={<TeacherStudentDetailRouteWrapper onNavigate={(screen) => handleTeacherNavigation(screen, navigate)} />} />
-            <Route path="parents-children" element={<TeacherParentChildManagement />} />
+            <Route path="parents" element={<ParentManagement />} />
+            <Route path="children" element={<ChildManagement />} />
+            <Route path="analyzes" element={<AnalyzeManagement />} />
+            <Route path="parents-children" element={<Navigate to="../parents" replace />} />
             <Route path="classes" element={<TeacherClasses onNavigate={(screen) => handleTeacherNavigation(screen, navigate)} />} />
             <Route path="class/:classId" element={<TeacherClassDetailRouteWrapper onNavigate={(screen) => handleTeacherNavigation(screen, navigate)} />} />
             <Route path="results" element={<LearningResultManagement />} />
@@ -165,6 +168,7 @@ export function AppRoutes() {
             <Route path="teachers" element={<TeacherManagement />} />
             <Route path="parents" element={<ParentManagement />} />
             <Route path="children" element={<ChildManagement />} />
+            <Route path="analyzes" element={<AnalyzeManagement />} />
             <Route path="classrooms" element={<ClassroomManagement />} />
             <Route path="enrollments" element={<EnrollmentManagement />} />
             <Route path="programs" element={<ProgramManagement />} />

@@ -64,3 +64,6 @@ export const deleteChildProfile = (id: number) =>
   request<boolean>(`/api/child-profiles/${id}`, {
     method: 'DELETE',
   });
+
+export const getMyChildProfiles = () =>
+  request<ChildProfileResponse[]>('/api/child-profiles/my-children');

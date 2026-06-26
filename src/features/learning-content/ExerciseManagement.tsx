@@ -35,10 +35,12 @@ import {
   type ExerciseTypeResponse,
 } from '../../hooks/useExerciseManagementApi';
 import type { LessonResponse } from '../../services/lessonService';
+import { getUsers } from '../../services/userService';
 
 interface Lesson {
   LessonId: string;
   LessonName: string;
+  Status?: string;
 }
 
 interface ExerciseType {
@@ -84,8 +86,8 @@ interface ExerciseQuestion {
 }
 
 const FALLBACK_LESSONS: Lesson[] = [
-  { LessonId: '1', LessonName: 'Bài học mẫu số 1' },
-  { LessonId: '2', LessonName: 'Bài học mẫu số 2' },
+  { LessonId: '1', LessonName: 'Bài học mẫu số 1', Status: 'Active' },
+  { LessonId: '2', LessonName: 'Bài học mẫu số 2', Status: 'Active' },
 ];
 
 const FALLBACK_TYPES: ExerciseType[] = [
@@ -138,6 +140,7 @@ const FALLBACK_QUESTIONS: ExerciseQuestion[] = [
 const mapLesson = (lesson: LessonResponse): Lesson => ({
   LessonId: String(lesson.id),
   LessonName: lesson.lessonName,
+  Status: lesson.status,
 });
 
 const mapExerciseType = (item: ExerciseTypeResponse): ExerciseType => ({
@@ -189,16 +192,43 @@ function getCurrentUserId() {
   }
 }
 
-function getDifficultyClass(level: Exercise['DifficultyLevel']) {
-  switch (level) {
-    case 'Easy':
+function getDifficultyClass(level: string) {
+  switch (level?.toUpperCase()) {
+    case 'EASY':
       return 'bg-emerald-50 text-emerald-600 border border-emerald-100';
-    case 'Medium':
+    case 'MEDIUM':
       return 'bg-amber-50 text-amber-600 border border-amber-100';
-    case 'Hard':
+    case 'HARD':
       return 'bg-rose-50 text-rose-600 border border-rose-100';
+    case 'FOUNDATION':
+      return 'bg-slate-50 text-slate-600 border border-slate-200';
+    case 'GUIDED':
+      return 'bg-sky-50 text-sky-600 border border-sky-200';
+    case 'INDEPENDENT':
+      return 'bg-purple-50 text-purple-600 border border-purple-200';
     default:
       return 'bg-gray-100 text-gray-500 border border-gray-200';
+  }
+}
+
+function translateTypeName(name: string) {
+  if (!name) return '';
+  const upper = name.toUpperCase();
+  if (upper === 'AUDITORY DISCRIMINATION') return 'Phân biệt âm';
+  if (upper === 'MODELING AND IMITATION') return 'Bắt chước âm';
+  if (upper === 'MINIMAL PAIRS') return 'Cặp tối thiểu';
+  return name;
+}
+
+function translateDifficulty(level: string) {
+  switch (level?.toUpperCase()) {
+    case 'FOUNDATION': return 'Nền tảng';
+    case 'GUIDED': return 'Hướng dẫn';
+    case 'INDEPENDENT': return 'Độc lập';
+    case 'EASY': return 'Dễ';
+    case 'MEDIUM': return 'Vừa';
+    case 'HARD': return 'Khó';
+    default: return level;
   }
 }
 
@@ -229,6 +259,7 @@ export default function ExerciseManagement() {
   } = useExerciseManagementApi();
 
   const [lessons, setLessons] = useState<Lesson[]>(FALLBACK_LESSONS);
+  const [teachers, setTeachers] = useState<{ id: number; fullName: string }[]>([]);
   const [exerciseTypes, setExerciseTypes] =
     useState<ExerciseType[]>(FALLBACK_TYPES);
   const [exercises, setExercises] = useState<Exercise[]>(FALLBACK_EXERCISES);
@@ -249,8 +280,19 @@ export default function ExerciseManagement() {
   const [questionPageSize, setQuestionPageSize] = useState(5);
 
   const [activeModal, setActiveModal] = useState<
-    'exercise' | 'question' | 'preview' | null
+    | 'exercise'
+    | 'question'
+    | 'preview'
+    | 'delete_exercise'
+    | 'delete_question'
+    | null
   >(null);
+  const [deletingExercise, setDeletingExercise] = useState<Exercise | null>(
+    null
+  );
+  const [deletingQuestion, setDeletingQuestion] = useState<ExerciseQuestion | null>(
+    null
+  );
   const [exerciseModalMode, setExerciseModalMode] = useState<'add' | 'edit'>(
     'add'
   );
@@ -274,6 +316,7 @@ export default function ExerciseManagement() {
   } | null>(null);
 
   const [exFormLessonId, setExFormLessonId] = useState('');
+  const [exFormTeacherId, setExFormTeacherId] = useState('');
   const [exFormTypeId, setExFormTypeId] = useState('');
   const [exFormName, setExFormName] = useState('');
   const [exFormInstruction, setExFormInstruction] = useState('');
@@ -354,6 +397,17 @@ export default function ExerciseManagement() {
         `${lessonResult.message || 'Không thể tải lessons.'} Đang giữ dữ liệu mẫu.`,
         'warning'
       );
+    }
+
+    const userRole = localStorage.getItem('user_role');
+    if (userRole === 'ADMIN') {
+      const userResult = await getUsers(1, 100);
+      if (userResult.success && userResult.data) {
+        const teacherList = userResult.data.items
+          .filter((u) => u.roleName === 'Teacher')
+          .map((u) => ({ id: u.id, fullName: u.fullName }));
+        setTeachers(teacherList);
+      }
     }
 
     if (typeResult.success) {
@@ -523,7 +577,13 @@ export default function ExerciseManagement() {
     setExFormTargetSkill('Pronunciation');
     setExFormLanguage('Vietnamese');
     setExFormDuration(120);
-    setExFormStatus('Active');
+    setExFormStatus('Inactive');
+    const userRole = localStorage.getItem('user_role');
+    if (userRole === 'ADMIN') {
+      setExFormTeacherId(teachers[0]?.id.toString() || getCurrentUserId().toString());
+    } else {
+      setExFormTeacherId(getCurrentUserId().toString());
+    }
     setActiveModal('exercise');
   };
 
@@ -551,6 +611,7 @@ export default function ExerciseManagement() {
     setExFormLanguage(latest.Language);
     setExFormDuration(latest.DurationLimit);
     setExFormStatus(latest.Status);
+    setExFormTeacherId(latest.TeacherId);
     setActiveModal('exercise');
   };
 
@@ -621,6 +682,8 @@ export default function ExerciseManagement() {
     setPreviewQuestion(null);
     setPlayingAudioId(null);
     setAudioTimer(0);
+    setDeletingExercise(null);
+    setDeletingQuestion(null);
   };
 
   const handleSubmitExerciseForm = async (event: React.FormEvent) => {
@@ -641,7 +704,7 @@ export default function ExerciseManagement() {
 
     setIsSaving(true);
     const payload = {
-      teacherId: getCurrentUserId(),
+      teacherId: Number(exFormTeacherId) || getCurrentUserId(),
       lessonId: Number(exFormLessonId),
       typeId: Number(exFormTypeId),
       exerciseName: exFormName.trim(),
@@ -707,9 +770,12 @@ export default function ExerciseManagement() {
     }
 
     setIsSaving(true);
+    const selectedEx = exercises.find(
+      (item) => item.ExerciseId === qstFormExerciseId
+    );
     const payload = {
       exerciseId: Number(qstFormExerciseId),
-      teacherId: getCurrentUserId(),
+      teacherId: selectedEx ? Number(selectedEx.TeacherId) : getCurrentUserId(),
       instruction:
         qstFormInstruction.trim() ||
         'Lắng nghe giáo viên ảo hướng dẫn và hoàn thành bài luyện tập nhé!',
@@ -803,11 +869,14 @@ export default function ExerciseManagement() {
     );
   };
 
-  const handleDeleteExercise = async (exerciseId: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa bài tập ${exerciseId} không?`)) {
-      return;
-    }
+  const handleOpenDeleteExercise = (exercise: Exercise) => {
+    setDeletingExercise(exercise);
+    setActiveModal('delete_exercise');
+  };
 
+  const handleConfirmDeleteExercise = async () => {
+    if (!deletingExercise) return;
+    const exerciseId = deletingExercise.ExerciseId;
     const result = await deleteExercise(Number(exerciseId));
     if (result.success) {
       setExercises((current) =>
@@ -820,6 +889,7 @@ export default function ExerciseManagement() {
         setSelectedExercise(null);
       }
       triggerToast(`Đã xóa bài tập ${exerciseId}`, 'warning');
+      handleCloseModal();
       return;
     }
 
@@ -829,17 +899,21 @@ export default function ExerciseManagement() {
     );
   };
 
-  const handleDeleteQuestion = async (questionId: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa câu hỏi ${questionId} không?`)) {
-      return;
-    }
+  const handleOpenDeleteQuestion = (question: ExerciseQuestion) => {
+    setDeletingQuestion(question);
+    setActiveModal('delete_question');
+  };
 
+  const handleConfirmDeleteQuestion = async () => {
+    if (!deletingQuestion) return;
+    const questionId = deletingQuestion.QuestionId;
     const result = await deleteExerciseQuestion(Number(questionId));
     if (result.success) {
       setQuestions((current) =>
         current.filter((item) => item.QuestionId !== questionId)
       );
       triggerToast(`Đã xóa câu hỏi ${questionId}`, 'warning');
+      handleCloseModal();
       return;
     }
 
@@ -1100,15 +1174,15 @@ export default function ExerciseManagement() {
               <table className="w-full border-collapse text-left font-sans text-slate-700">
                 <thead>
                   <tr className="border-b border-gray-150 bg-[#FDFCF5]/50 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                    <th className="px-8 py-5">Mã bài</th>
-                    <th className="px-6 py-5">Tên bài luyện nói</th>
-                    <th className="px-6 py-5">Bài học</th>
-                    <th className="px-6 py-5">Loại</th>
-                    <th className="px-6 py-5">Độ khó</th>
-                    <th className="px-6 py-5">Kỹ năng</th>
-                    <th className="px-6 py-5">Trạng thái</th>
-                    <th className="px-6 py-5">Số câu hỏi</th>
-                    <th className="px-8 py-5 text-right">Thao tác</th>
+                    <th className="px-8 py-5 w-[5%] min-w-[55px]">Mã bài</th>
+                    <th className="px-6 py-5 w-[27%] min-w-[220px]">Tên bài luyện nói</th>
+                    <th className="px-6 py-5 w-[12%] min-w-[110px]">Bài học</th>
+                    <th className="px-6 py-5 w-[9%] min-w-[90px]">Loại</th>
+                    <th className="px-6 py-5 w-[13%] min-w-[110px]">Độ khó</th>
+                    <th className="px-6 py-5 w-[16%] min-w-[140px]">Kỹ năng</th>
+                    <th className="px-6 py-5 w-[10%] min-w-[95px]">Trạng thái</th>
+                    <th className="px-6 py-5 w-[4%] min-w-[50px]">Số câu hỏi</th>
+                    <th className="px-3 py-5 text-right w-[4%] min-w-[90px]">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-xs font-bold text-gray-600 md:text-sm">
@@ -1161,7 +1235,7 @@ export default function ExerciseManagement() {
                         </td>
                         <td className="px-6 py-5">
                           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-slate-600">
-                            {type?.TypeName || 'Unknown'}
+                            {translateTypeName(type?.TypeName || 'Unknown')}
                           </span>
                         </td>
                         <td className="px-6 py-5">
@@ -1171,7 +1245,7 @@ export default function ExerciseManagement() {
                               getDifficultyClass(exercise.DifficultyLevel)
                             )}
                           >
-                            {exercise.DifficultyLevel}
+                            {translateDifficulty(exercise.DifficultyLevel)}
                           </span>
                         </td>
                         <td className="px-6 py-5">
@@ -1188,7 +1262,7 @@ export default function ExerciseManagement() {
                                 : 'border border-transparent bg-gray-100 text-gray-400'
                             )}
                           >
-                            {exercise.Status === 'Active' ? '● Hoạt động' : '○ Tạm ngưng'}
+                            {exercise.Status === 'Active' ? 'Hoạt động' : 'Tạm ngưng'}
                           </span>
                         </td>
                         <td className="px-6 py-5 text-center font-mono">
@@ -1200,14 +1274,14 @@ export default function ExerciseManagement() {
                                 : 'bg-gray-100 text-gray-400'
                             )}
                           >
-                            {questionCount} câu
+                            {questionCount}
                           </span>
                         </td>
                         <td
-                          className="px-8 py-5 text-right"
+                          className="px-3 py-5 text-right"
                           onClick={(event) => event.stopPropagation()}
                         >
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex flex-wrap items-center justify-end gap-1 max-w-[72px] ml-auto">
                             <button
                               onClick={() => setSelectedExercise(exercise)}
                               className={cn(
@@ -1218,22 +1292,7 @@ export default function ExerciseManagement() {
                             >
                               <Eye className="w-4 h-4" />
                             </button>
-                            <button
-                              onClick={() =>
-                                void handleToggleExerciseStatus(
-                                  exercise,
-                                  exercise.Status === 'Active' ? 'Inactive' : 'Active'
-                                )
-                              }
-                              className="rounded-xl p-2 text-[#4EACAF] transition-colors hover:bg-slate-50"
-                              title="Bật/Tắt bài tập"
-                            >
-                              {exercise.Status === 'Active' ? (
-                                <ToggleRight className="w-5.5 h-5.5 text-[#4EACAF]" />
-                              ) : (
-                                <ToggleLeft className="w-5.5 h-5.5 text-gray-300" />
-                              )}
-                            </button>
+
                             <button
                               onClick={() => void handleOpenEditExercise(exercise)}
                               className="rounded-xl p-2 text-sky-500 transition-colors hover:bg-sky-50"
@@ -1249,7 +1308,7 @@ export default function ExerciseManagement() {
                               <Plus className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => void handleDeleteExercise(exercise.ExerciseId)}
+                              onClick={() => handleOpenDeleteExercise(exercise)}
                               className="rounded-xl p-2 text-rose-500 transition-colors hover:bg-rose-50"
                               title="Xóa bài tập"
                             >
@@ -1329,13 +1388,13 @@ export default function ExerciseManagement() {
               <table className="w-full border-collapse text-left font-sans text-slate-700">
                 <thead>
                   <tr className="border-b border-gray-150 bg-[#FDFCF5]/50 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                    <th className="px-8 py-5">Mã câu hỏi</th>
-                    <th className="px-6 py-5">Nội dung câu luyện nói</th>
-                    <th className="px-6 py-5">Câu trả lời mẫu</th>
-                    <th className="px-6 py-5">Đầu vào</th>
-                    <th className="px-6 py-5">Hình ảnh</th>
-                    <th className="px-6 py-5">Âm thanh</th>
-                    <th className="px-8 py-5 text-right">Thao tác</th>
+                    <th className="px-8 py-5 w-[10%] min-w-[90px]">Mã câu hỏi</th>
+                    <th className="px-6 py-5 w-[28%] min-w-[240px]">Nội dung câu luyện nói</th>
+                    <th className="px-6 py-5 w-[20%] min-w-[160px]">Câu trả lời mẫu</th>
+                    <th className="px-6 py-5 w-[14%] min-w-[110px]">Đầu vào</th>
+                    <th className="px-6 py-5 w-[8%] min-w-[70px]">Hình ảnh</th>
+                    <th className="px-6 py-5 w-[10%] min-w-[90px]">Âm thanh</th>
+                    <th className="px-8 py-5 text-right w-[10%] min-w-[90px]">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-xs font-bold text-gray-600 md:text-sm">
@@ -1438,7 +1497,7 @@ export default function ExerciseManagement() {
                               <Edit3 className="h-4 w-4" />
                             </button>
                             <button
-                              onClick={() => void handleDeleteQuestion(question.QuestionId)}
+                              onClick={() => handleOpenDeleteQuestion(question)}
                               className="rounded-xl p-2 text-rose-500 hover:bg-rose-50"
                               title="Xóa câu hỏi"
                             >
@@ -1483,10 +1542,12 @@ export default function ExerciseManagement() {
                 className={cn(
                   'shrink-0 border-b px-6 py-5 md:px-8',
                   activeModal === 'exercise'
-                    ? 'border-[#4EACAF]/10 bg-[#4EACAF]/10'
+                    ? 'border-[#4EACAF]/10 bg-[#4EACAF]/10 text-gray-900'
                     : activeModal === 'question'
-                      ? 'border-sky-100 bg-sky-50'
-                      : 'border-amber-100 bg-amber-50'
+                      ? 'border-sky-100 bg-sky-50 text-gray-900'
+                      : (activeModal === 'delete_exercise' || activeModal === 'delete_question')
+                        ? 'border-rose-100 bg-rose-50 text-gray-900'
+                        : 'border-amber-100 bg-amber-50 text-gray-900'
                 )}
               >
                 <div className="flex items-center justify-between gap-4">
@@ -1522,6 +1583,18 @@ export default function ExerciseManagement() {
                           Preview câu hỏi VR
                         </>
                       )}
+                      {activeModal === 'delete_exercise' && (
+                        <>
+                          <Trash2 className="w-6 h-6 text-rose-500" />
+                          Xác nhận xóa bài tập
+                        </>
+                      )}
+                      {activeModal === 'delete_question' && (
+                        <>
+                          <Trash2 className="w-6 h-6 text-rose-500" />
+                          Xác nhận xóa câu hỏi
+                        </>
+                      )}
                     </h2>
                     <p className="mt-1 text-[11px] font-black uppercase tracking-wider text-gray-400">
                       {activeModal === 'exercise' &&
@@ -1530,6 +1603,8 @@ export default function ExerciseManagement() {
                         'Đồng bộ với API exercisequestions'}
                       {activeModal === 'preview' &&
                         'Xem nội dung, hình ảnh và audio gắn với câu hỏi'}
+                      {(activeModal === 'delete_exercise' || activeModal === 'delete_question') &&
+                        'Hành động này không thể khôi phục và có thể ảnh hưởng đến kết quả học tập'}
                     </p>
                   </div>
                   <button
@@ -1541,20 +1616,96 @@ export default function ExerciseManagement() {
                 </div>
               </div>
 
-              {activeModal === 'exercise' ? (
+              {activeModal === 'delete_exercise' && deletingExercise ? (
+                <div className="space-y-6 p-6 md:p-8">
+                  <div className="flex items-center gap-4 rounded-3xl border border-rose-100 bg-rose-50 p-5 text-rose-700 animate-in fade-in duration-300">
+                    <AlertTriangle className="h-10 w-10 shrink-0 text-rose-500" />
+                    <div>
+                      <h4 className="text-sm font-black uppercase tracking-wider text-rose-950">
+                        Xác nhận xóa bài tập
+                      </h4>
+                      <p className="mt-1 text-xs font-bold text-rose-700 leading-relaxed">
+                        Bạn có chắc chắn muốn xóa bài tập <strong className="text-rose-950">"{deletingExercise.ExerciseName}"</strong>? Hành động này không thể hoàn tác và có thể ảnh hưởng đến kết quả học tập.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4 border-t border-gray-150 pt-6">
+                    <button
+                      type="button"
+                      onClick={handleCloseModal}
+                      className="flex-1 cursor-pointer rounded-2xl border-4 border-gray-100 py-4 text-xs font-black uppercase tracking-wider text-gray-400 transition-all hover:border-gray-200 hover:text-gray-600"
+                    >
+                      Hủy bỏ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleConfirmDeleteExercise()}
+                      className="flex-1 cursor-pointer rounded-2xl bg-rose-500 py-4 text-sm font-black uppercase tracking-wider text-white shadow-xl shadow-rose-500/15 transition-all hover:bg-rose-600"
+                    >
+                      Xác nhận xóa
+                    </button>
+                  </div>
+                </div>
+              ) : activeModal === 'delete_question' && deletingQuestion ? (
+                <div className="space-y-6 p-6 md:p-8">
+                  <div className="flex items-center gap-4 rounded-3xl border border-rose-100 bg-rose-50 p-5 text-rose-700 animate-in fade-in duration-300">
+                    <AlertTriangle className="h-10 w-10 shrink-0 text-rose-500" />
+                    <div>
+                      <h4 className="text-sm font-black uppercase tracking-wider text-rose-950">
+                        Xác nhận xóa câu hỏi
+                      </h4>
+                      <p className="mt-1 text-xs font-bold text-rose-700 leading-relaxed">
+                        Bạn có chắc chắn muốn xóa câu hỏi <strong className="text-rose-950">"{deletingQuestion.QuestionSentence}"</strong>? Hành động này không thể hoàn tác và có thể ảnh hưởng đến kết quả học tập.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4 border-t border-gray-150 pt-6">
+                    <button
+                      type="button"
+                      onClick={handleCloseModal}
+                      className="flex-1 cursor-pointer rounded-2xl border-4 border-gray-100 py-4 text-xs font-black uppercase tracking-wider text-gray-400 transition-all hover:border-gray-200 hover:text-gray-600"
+                    >
+                      Hủy bỏ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleConfirmDeleteQuestion()}
+                      className="flex-1 cursor-pointer rounded-2xl bg-rose-500 py-4 text-sm font-black uppercase tracking-wider text-white shadow-xl shadow-rose-500/15 transition-all hover:bg-rose-600"
+                    >
+                      Xác nhận xóa
+                    </button>
+                  </div>
+                </div>
+              ) : activeModal === 'exercise' ? (
                 <form
                   onSubmit={(event) => void handleSubmitExerciseForm(event)}
                   className="space-y-6 overflow-y-auto p-6 md:p-8"
                 >
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    {localStorage.getItem('user_role') === 'ADMIN' && (
+                      <FormField label="Giáo viên phụ trách">
+                        <SelectField
+                          value={exFormTeacherId}
+                          onChange={setExFormTeacherId}
+                          options={teachers.map((t) => ({
+                            value: t.id.toString(),
+                            label: t.fullName,
+                          }))}
+                        />
+                      </FormField>
+                    )}
                     <FormField label="Bài học liên kết">
                       <SelectField
                         value={exFormLessonId}
                         onChange={setExFormLessonId}
-                        options={lessons.map((item) => ({
-                          value: item.LessonId,
-                          label: item.LessonName,
-                        }))}
+                        options={lessons
+                          .filter((item) => item.Status === 'Active' || item.LessonId === exFormLessonId)
+                          .map((item) => ({
+                            value: item.LessonId,
+                            label: item.LessonName,
+                          }))}
                       />
                     </FormField>
 
@@ -1639,8 +1790,8 @@ export default function ExerciseManagement() {
                           setExFormStatus(value as Exercise['Status'])
                         }
                         options={[
-                          { value: 'Active', label: 'Active' },
-                          { value: 'Inactive', label: 'Inactive' },
+                          { value: 'Active', label: 'Hoạt động' },
+                          { value: 'Inactive', label: 'Tạm ngưng' },
                         ]}
                       />
                     </FormField>

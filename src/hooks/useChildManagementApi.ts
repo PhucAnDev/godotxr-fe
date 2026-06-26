@@ -5,6 +5,7 @@ import {
   getChildProfileById as getChildProfileByIdService,
   getChildProfiles as getChildProfilesService,
   updateChildProfile as updateChildProfileService,
+  getMyChildProfiles as getMyChildProfilesService,
 } from '../services/childProfileService';
 
 export type { ChildProfileResponse } from '../services/childProfileService';
@@ -40,11 +41,18 @@ export function useChildManagementApi() {
     []
   );
 
+  const getMyChildProfiles = useCallback(
+    (...args: Parameters<typeof getMyChildProfilesService>) =>
+      getMyChildProfilesService(...args),
+    []
+  );
+
   return {
     getChildProfiles,
     getChildProfileById,
     createChildProfile,
     updateChildProfile,
     deleteChildProfile,
+    getMyChildProfiles,
   };
 }

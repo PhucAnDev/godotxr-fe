@@ -135,13 +135,13 @@ function buildStudentPerformance(results: Result[]): StudentPerformance {
   const completionRate =
     totalAttempts > 0 ? Math.round((completedCount / totalAttempts) * 100) : 0;
 
-  let keyFocus = 'Can tiep tuc duy tri nhiet do luyen tap deu dan.';
+  let keyFocus = 'Cần tiếp tục duy trì tiến độ luyện tập đều đặn.';
   if (avgScore >= 85 && completionRate >= 80) {
-    keyFocus = 'San sang tang do kho va mo rong them bai tap phan xa.';
+    keyFocus = 'Sẵn sàng tăng độ khó và mở rộng thêm bài tập phản xạ.';
   } else if (avgScore < 60 || completionRate < 50) {
-    keyFocus = 'Can giao vien theo sat va chia nho muc tieu tung buoc.';
+    keyFocus = 'Cần giáo viên theo sát và chia nhỏ mục tiêu từng bước.';
   } else if (completionRate >= 70) {
-    keyFocus = 'Can cung co do chinh xac va lap lai co trong tam.';
+    keyFocus = 'Cần củng cố độ chính xác và lặp lại có trọng tâm.';
   }
 
   return {
@@ -257,7 +257,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
         setErrorMessage(
           error instanceof Error
             ? error.message
-            : 'Khong the tai du lieu teacher classes.'
+            : 'Không thể tải dữ liệu lớp học của giáo viên.'
         );
       } finally {
         if (isMounted) {
@@ -343,7 +343,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
     setIsGeneratingReport(true);
     setGenerationProgress(10);
     showToast(
-      `Dang tong hop bao cao lop ${selectedClass.className} tu du lieu API.`,
+      `Đang tổng hợp báo cáo lớp ${selectedClass.className} từ dữ liệu hệ thống.`,
       'info'
     );
 
@@ -355,7 +355,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
             setIsGeneratingReport(false);
             setGenerationProgress(0);
             showToast(
-              `Da tao xong khung bao cao cho lop ${selectedClass.className}.`,
+              `Đã tạo xong khung báo cáo cho lớp ${selectedClass.className}.`,
               'success'
             );
           }, 300);
@@ -374,22 +374,22 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
       Active: {
         bg: 'bg-[#F2FAF4] text-[#34A853] border-emerald-100',
         dot: 'bg-[#34A853]',
-        label: 'Dang mo',
+        label: 'Đang hoạt động',
       },
       Inactive: {
         bg: 'bg-gray-100 text-gray-500 border-gray-200',
         dot: 'bg-gray-400',
-        label: 'Khong hoat dong',
+        label: 'Không hoạt động',
       },
       Completed: {
         bg: 'bg-[#F2FAFB] text-[#20D0D4] border-cyan-100',
         dot: 'bg-[#20D0D4]',
-        label: 'Da ket thuc',
+        label: 'Đã kết thúc',
       },
       Upcoming: {
         bg: 'bg-[#FFF9EE] text-[#FFA800] border-amber-100',
         dot: 'bg-[#FFA800]',
-        label: 'Sap dien ra',
+        label: 'Sắp diễn ra',
       },
     };
 
@@ -407,7 +407,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
         <div className="flex items-center gap-3 text-slate-600">
           <Activity className="h-5 w-5 animate-pulse text-[#4EACAF]" />
           <span className="font-semibold">
-            Dang tai teacher classes tu classrooms, enrollments va results...
+            Đang tải danh sách lớp học từ hệ thống...
           </span>
         </div>
       </div>
@@ -462,15 +462,14 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full bg-[#4EACAF]/10 px-4 py-1.5 text-xs font-black uppercase tracking-widest leading-none text-[#4EACAF]">
             <GraduationCap className="h-3.5 w-3.5" />
-            Giam sat su pham lop hoc VR
+            Giám sát sư phạm lớp học VR
           </div>
           <h1 className="pt-1 text-4xl font-black leading-none tracking-tight text-gray-900 md:text-5xl">
-            Lop Hoc <span className="text-[#4EACAF]">Cua Toi</span>
+            Lớp Học <span className="text-[#4EACAF]">Của Tôi</span>
           </h1>
           <p className="max-w-2xl text-sm font-bold leading-relaxed text-gray-500 md:text-base">
-            Danh sach nay da map truc tiep tu BE. Giao vien co the xem lop, si so,
-            ket qua luyen tap va dieu huong sang class detail ma khong con phu
-            thuoc mock id.
+            Danh sách này đã được đồng bộ trực tiếp từ hệ thống. Giáo viên có thể xem lớp, sĩ số,
+            kết quả luyện tập và điều hướng sang chi tiết lớp học.
           </p>
         </div>
 
@@ -493,12 +492,12 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
         <Info className="mt-0.5 h-5 w-5 shrink-0 text-[#4EACAF]" />
         <div className="space-y-0.5">
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-700">
-            Trang thai dong bo:
+            Trạng thái đồng bộ:
           </p>
           <span>
-            TeacherClasses dang dung `classrooms + enrollments + results`. Cac chi
-            so ket qua lop duoc suy ra tu ket qua cua hoc sinh dang ghi danh trong
-            lop.
+            Hệ thống đang sử dụng dữ liệu từ 'lớp học + học viên ghi danh + kết quả'. Các chỉ
+            số kết quả lớp được tổng hợp từ kết quả của các học sinh đang ghi danh trong
+            lớp.
           </span>
         </div>
       </div>
@@ -520,14 +519,14 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
             )}
             <div className="space-y-2">
               <p className="font-semibold">
-                {errorMessage || 'Dang dong bo them ket qua luyen tap cua hoc sinh...'}
+                {errorMessage || 'Đang đồng bộ thêm kết quả luyện tập của học sinh...'}
               </p>
               {errorMessage && (
                 <button
                   onClick={() => setReloadSeed((value) => value + 1)}
                   className="rounded-xl bg-white px-3 py-2 text-xs font-black uppercase tracking-wider text-rose-600 transition-colors hover:bg-rose-100"
                 >
-                  Tai lai du lieu
+                  Tải lại dữ liệu
                 </button>
               )}
             </div>
@@ -546,7 +545,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                 {stats.totalClassesOwned}
               </p>
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Tong so lop
+                Tổng số lớp
               </p>
             </div>
           </div>
@@ -562,7 +561,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                 {stats.activeClassesOwned}
               </p>
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Lop dang hoat dong
+                Lớp đang hoạt động
               </p>
             </div>
           </div>
@@ -578,7 +577,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                 {stats.uniqueChildrenCount}
               </p>
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Hoc sinh dang quan ly
+                Học sinh đang quản lý
               </p>
             </div>
           </div>
@@ -594,7 +593,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                 {stats.totalResultsRecorded}
               </p>
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Luot ket qua ghi nhan
+                Lượt kết quả ghi nhận
               </p>
             </div>
           </div>
@@ -609,7 +608,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
               type="text"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Tim theo ten lop, chuong trinh, hoc ky hoac ma lop"
+              placeholder="Tìm theo tên lớp, chương trình, học kỳ hoặc mã lớp"
               className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-10 text-sm font-semibold text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
             />
             {searchQuery && (
@@ -627,11 +626,11 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
             onChange={(event) => setFilterStatus(event.target.value)}
             className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
           >
-            <option value="ALL">Tat ca trang thai</option>
-            <option value="Active">Dang mo</option>
-            <option value="Upcoming">Sap dien ra</option>
-            <option value="Completed">Da ket thuc</option>
-            <option value="Inactive">Khong hoat dong</option>
+            <option value="ALL">Tất cả trạng thái</option>
+            <option value="Active">Đang hoạt động</option>
+            <option value="Upcoming">Sắp diễn ra</option>
+            <option value="Completed">Đã kết thúc</option>
+            <option value="Inactive">Không hoạt động</option>
           </select>
 
           <select
@@ -639,9 +638,9 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
             onChange={(event) => setFilterLanguage(event.target.value)}
             className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
           >
-            <option value="ALL">Tat ca ngon ngu</option>
-            <option value="Tiếng Việt">Tieng Viet</option>
-            <option value="Tiếng Anh">Tieng Anh</option>
+            <option value="ALL">Tất cả ngôn ngữ</option>
+            <option value="Tiếng Việt">Tiếng Việt</option>
+            <option value="Tiếng Anh">Tiếng Anh</option>
           </select>
         </div>
       </div>
@@ -649,10 +648,10 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
       {teacherClassesList.length === 0 ? (
         <div className="rounded-[32px] border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm">
           <p className="text-lg font-black text-slate-700">
-            Khong co lop hoc nao phu hop bo loc hien tai.
+            Không có lớp học nào phù hợp với bộ lọc hiện tại.
           </p>
           <p className="mt-2 text-sm font-semibold text-slate-400">
-            Thu doi tu khoa, trang thai hoac ngon ngu de hien thi lai danh sach.
+            Thử thay đổi từ khóa, trạng thái hoặc ngôn ngữ để hiển thị lại danh sách.
           </p>
         </div>
       ) : (
@@ -680,7 +679,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                 <div className="space-y-5 p-8">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-md bg-slate-100 px-3 py-1 text-[10px] font-mono font-black uppercase text-slate-500">
-                      Ma lop: {classroom.id}
+                      Mã lớp: {classroom.id}
                     </span>
                     <span className="rounded-md bg-[#4EACAF]/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#4EACAF]">
                       API_DATABASE
@@ -701,22 +700,22 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                       {classroom.className}
                     </h3>
                     <p className="min-h-[40px] text-sm font-semibold text-gray-500 line-clamp-2">
-                      {classroom.description || 'Chua co mo ta cho lop hoc nay.'}
+                      {classroom.description || 'Chưa có mô tả cho lớp học này.'}
                     </p>
                   </div>
 
                   <div className="space-y-2 rounded-2xl border border-yellow-50 bg-[#FDFCF5] p-4">
                     <div className="flex items-center gap-2 text-xs font-black text-amber-600">
                       <Sparkles className="h-4.5 w-4.5 text-[#FFA800]" />
-                      Chuong trinh: "{classroom.programName}"
+                      Chương trình: "{classroom.programName}"
                     </div>
                     <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] font-bold text-gray-500">
                       <span className="flex items-center gap-1">
                         <Globe className="h-3.5 w-3.5 text-gray-400" />
-                        Ngon ngu: {classroom.programLanguage}
+                        Ngôn ngữ: {classroom.programLanguage}
                       </span>
                       <span>
-                        Do tuoi: {classroom.targetAgeFrom} - {classroom.targetAgeTo}
+                        Độ tuổi: {classroom.targetAgeFrom} - {classroom.targetAgeTo}
                       </span>
                     </div>
                   </div>
@@ -724,7 +723,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                   <div className="grid grid-cols-2 gap-4 border-t border-gray-50 pt-5">
                     <div className="space-y-1">
                       <span className="block text-[9px] font-black uppercase tracking-wider text-gray-400">
-                        Bat dau
+                        Bắt đầu
                       </span>
                       <span className="flex items-center gap-1.5 text-xs font-bold text-gray-600">
                         <Calendar className="h-3.5 w-3.5 text-[#4EACAF]" />
@@ -734,17 +733,17 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
 
                     <div className="space-y-1">
                       <span className="block text-[9px] font-black uppercase tracking-wider text-gray-400">
-                        Si so
+                        Sĩ số
                       </span>
                       <span className="flex items-center gap-1.5 text-xs font-extrabold text-gray-700">
                         <Baby className="h-3.5 w-3.5 text-[#FF8E8E]" />
-                        {enrolledStudents.length} hoc sinh
+                        {enrolledStudents.length} học sinh
                       </span>
                     </div>
 
                     <div className="space-y-1">
                       <span className="block text-[9px] font-black uppercase tracking-wider text-gray-400">
-                        Hoc ky
+                        Học kỳ
                       </span>
                       <span className="text-xs font-bold text-gray-600">
                         {classroom.semesterName}
@@ -753,7 +752,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
 
                     <div className="space-y-1">
                       <span className="block text-[9px] font-black uppercase tracking-wider text-gray-400">
-                        Diem trung binh
+                        Điểm trung bình
                       </span>
                       <span className="text-xs font-extrabold text-gray-700">
                         {averageScore}/100
@@ -775,31 +774,31 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                     className="flex items-center justify-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs font-black text-gray-600 transition-all hover:bg-gray-100"
                   >
                     <Eye className="h-3.5 w-3.5" />
-                    Xem chi tiet
+                    Xem chi tiết
                   </button>
 
                   <button
                     onClick={() => {
                       setSelectedClass(classroom);
                       setModalType('STUDENTS');
-                      showToast(`Dang mo danh sach hoc sinh lop ${classroom.className}.`);
+                      showToast(`Đang mở danh sách học sinh lớp ${classroom.className}.`);
                     }}
                     className="flex items-center justify-center gap-1.5 rounded-xl bg-[#4EACAF]/10 px-3 py-2.5 text-xs font-black text-[#4EACAF] transition-all hover:bg-[#4EACAF] hover:text-white"
                   >
                     <Users className="h-3.5 w-3.5" />
-                    Xem hoc sinh
+                    Xem học sinh
                   </button>
 
                   <button
                     onClick={() => {
                       setSelectedClass(classroom);
                       setModalType('PERFORMANCE');
-                      showToast(`Dang tong hop ket qua cho lop #${classroom.id}.`, 'info');
+                      showToast(`Đang tổng hợp kết quả cho lớp #${classroom.id}.`, 'info');
                     }}
                     className="flex items-center justify-center gap-1.5 rounded-xl bg-indigo-50 px-3 py-2.5 text-xs font-black text-indigo-500 transition-all hover:bg-indigo-500 hover:text-white"
                   >
                     <TrendingUp className="h-3.5 w-3.5" />
-                    Xem ket qua
+                    Xem kết quả
                   </button>
 
                   <button
@@ -810,7 +809,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                     className="col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-rose-50 px-3 py-2.5 text-xs font-black text-[#FF8E8E] transition-all hover:bg-[#FF8E8E] hover:text-white sm:col-span-1"
                   >
                     <FileSpreadsheet className="h-3.5 w-3.5" />
-                    Tao bao cao
+                    Tạo báo cáo
                   </button>
                 </div>
               </motion.div>
@@ -831,10 +830,10 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
               <div className="flex items-center justify-between border-b border-[#C5E1E3] bg-[#E2F2F3] px-8 py-6 text-gray-900">
                 <div className="space-y-1">
                   <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#4EACAF] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
-                    {modalType === 'DETAILS' && 'Thong tin lop hoc'}
-                    {modalType === 'STUDENTS' && 'Danh sach hoc sinh'}
-                    {modalType === 'PERFORMANCE' && 'Phan tich ket qua'}
-                    {modalType === 'REPORT' && 'Xuat bao cao'}
+                    {modalType === 'DETAILS' && 'Thông tin lớp học'}
+                    {modalType === 'STUDENTS' && 'Danh sách học sinh'}
+                    {modalType === 'PERFORMANCE' && 'Phân tích kết quả'}
+                    {modalType === 'REPORT' && 'Xuất báo cáo'}
                   </span>
                   <h2 className="text-xl font-black leading-tight">
                     {selectedClass.className}
@@ -857,17 +856,17 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                 <div className="space-y-6 p-8 text-left">
                   <div className="space-y-2">
                     <h4 className="text-xs font-black uppercase tracking-wider text-gray-400">
-                      Mo ta lop hoc
+                      Mô tả lớp học
                     </h4>
                     <p className="rounded-2xl border bg-slate-50 p-5 text-sm font-bold leading-relaxed text-gray-700">
-                      {selectedClass.description || 'Chua co mo ta chi tiet cho lop hoc nay.'}
+                      {selectedClass.description || 'Chưa có mô tả chi tiết cho lớp học này.'}
                     </p>
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="rounded-xl border bg-[#FDFCF5] p-4.5">
                       <span className="block text-[10px] font-bold uppercase text-gray-400">
-                        Chuong trinh
+                        Chương trình
                       </span>
                       <strong className="text-[#264E50]">
                         {selectedClass.programName}
@@ -876,17 +875,17 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
 
                     <div className="rounded-xl border bg-[#FDFCF5] p-4.5">
                       <span className="block text-[10px] font-bold uppercase text-gray-400">
-                        Thoi gian
+                        Thời gian
                       </span>
                       <span className="mt-1 block text-xs font-black text-gray-600">
-                        Tu {formatDate(selectedClass.startDate)} den{' '}
+                        Từ {formatDate(selectedClass.startDate)} đến{' '}
                         {formatDate(selectedClass.endDate)}
                       </span>
                     </div>
 
                     <div className="rounded-xl border bg-[#FDFCF5] p-4.5">
                       <span className="block text-[10px] font-bold uppercase text-gray-400">
-                        Ngon ngu
+                        Ngôn ngữ
                       </span>
                       <strong className="text-[#FF8E8E]">
                         {selectedClass.programLanguage}
@@ -895,7 +894,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
 
                     <div className="rounded-xl border bg-[#FDFCF5] p-4.5">
                       <span className="block text-[10px] font-bold uppercase text-gray-400">
-                        Hoc ky
+                        Học kỳ
                       </span>
                       <span className="mt-1 block text-xs font-black text-gray-600">
                         {selectedClass.semesterName}
@@ -908,13 +907,13 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
               {modalType === 'STUDENTS' && (
                 <div className="max-h-[50vh] space-y-4 overflow-y-auto p-8">
                   <div className="flex items-center justify-between border-b pb-3 text-xs font-black uppercase text-gray-400">
-                    <span>Hoc sinh ghi danh</span>
-                    <span>Trang thai va ngay vao lop</span>
+                    <span>Học sinh ghi danh</span>
+                    <span>Trạng thái và ngày vào lớp</span>
                   </div>
 
                   {selectedClassEnrollments.length === 0 ? (
                     <p className="py-12 text-center text-sm font-semibold italic text-gray-400">
-                      Khong co hoc sinh nao dang ghi danh lop nay.
+                      Không có học sinh nào đang ghi danh lớp này.
                     </p>
                   ) : (
                     selectedClassEnrollments.map((enrollment) => (
@@ -931,7 +930,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                               {enrollment.childFullName}
                             </span>
                             <span className="mt-1 inline-block rounded bg-[#4EACAF]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#4EACAF]">
-                              Muc tap: {enrollment.childLearningLevel}
+                              Mức tập: {enrollment.childLearningLevel}
                             </span>
                           </div>
                         </div>
@@ -954,7 +953,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                 <div className="max-h-[50vh] space-y-6 overflow-y-auto p-8 text-left">
                   {selectedClassEnrollments.length === 0 ? (
                     <p className="py-12 text-center text-sm font-semibold italic text-gray-400">
-                      Chua co du lieu hoc sinh de tong hop ket qua.
+                      Chưa có dữ liệu học sinh để tổng hợp kết quả.
                     </p>
                   ) : (
                     selectedClassEnrollments.map((enrollment) => {
@@ -972,7 +971,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                               {enrollment.childFullName}
                             </span>
                             <span className="font-black text-[#4EACAF]">
-                              {performance.avgScore}/100 diem trung binh
+                              {performance.avgScore}/100 điểm trung bình
                             </span>
                           </div>
 
@@ -994,11 +993,11 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
 
                           <div className="flex items-center justify-between gap-3 text-[10px] font-bold text-gray-400">
                             <span>
-                              Hoan thanh: {performance.completionRate}% ·{' '}
-                              {performance.totalAttempts} lan ghi nhan
+                              Hoàn thành: {performance.completionRate}% ·{' '}
+                              {performance.totalAttempts} lần ghi nhận
                             </span>
                             <span className="max-w-[280px] truncate italic">
-                              Trong tam: {performance.keyFocus}
+                              Trọng tâm: {performance.keyFocus}
                             </span>
                           </div>
                         </div>
@@ -1016,37 +1015,37 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
 
                   <div className="mx-auto max-w-md space-y-2">
                     <h4 className="text-base font-black text-gray-800">
-                      Khoi tao khung bao cao lop hoc
+                      Khởi tạo khung báo cáo lớp học
                     </h4>
                     <p className="text-xs text-gray-400">
-                      He thong se tong hop si so, luot luyen tap va chat luong ket
-                      qua cua hoc sinh trong lop tu du lieu API hien tai.
+                      Hệ thống sẽ tổng hợp sĩ số, lượt luyện tập và chất lượng kết
+                      quả của học sinh trong lớp từ dữ liệu hệ thống hiện tại.
                     </p>
                   </div>
 
                   <div className="block rounded-2xl border border-yellow-100 bg-[#FFFDF5] p-4.5 text-left text-xs font-semibold text-gray-600">
                     <strong className="mb-1 block text-[10px] font-extrabold uppercase text-gray-800">
-                      Bao gom:
+                      Bao gồm:
                     </strong>
-                    - Tong quan lop va chuong trinh.<br />
-                    - Danh sach hoc sinh dang ghi danh.<br />
-                    - Tong hop ket qua luyen tap theo hoc sinh.
+                    - Tổng quan lớp và chương trình.<br />
+                    - Danh sách học sinh đang ghi danh.<br />
+                    - Tổng hợp kết quả luyện tập theo học sinh.
                   </div>
 
                   <div className="rounded-2xl border bg-slate-50 p-4 text-left">
                     <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                      Tong quan nhanh
+                      Tổng quan nhanh
                     </p>
                     <p className="mt-2 text-sm font-semibold text-slate-700">
-                      {selectedClassEnrollments.length} hoc sinh ·{' '}
-                      {selectedClassResults.length} ket qua ghi nhan
+                      {selectedClassEnrollments.length} học sinh ·{' '}
+                      {selectedClassResults.length} kết quả ghi nhận
                     </p>
                   </div>
 
                   {isGeneratingReport && (
                     <div className="space-y-2 animate-pulse">
                       <div className="flex justify-between text-[11px] font-black uppercase tracking-wider text-[#4EACAF]">
-                        <span>Dang xu ly bao cao...</span>
+                        <span>Đang xử lý báo cáo...</span>
                         <span>{generationProgress}%</span>
                       </div>
                       <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
@@ -1064,7 +1063,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                       className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#4EACAF] py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-sm transition-all hover:bg-[#4EACAF]/90"
                     >
                       <FileDown className="h-4 w-4" />
-                      Yeu cau ket xuat
+                      Yêu cầu kết xuất
                     </button>
                   )}
                 </div>
@@ -1080,7 +1079,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                   }}
                   className="rounded-2xl bg-[#264E50] px-5 py-2.5 text-xs font-black text-white transition-colors hover:bg-[#1E3B3D]"
                 >
-                  Dong lai
+                  Đóng lại
                 </button>
               </div>
             </motion.div>

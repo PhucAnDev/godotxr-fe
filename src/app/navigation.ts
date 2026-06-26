@@ -40,6 +40,7 @@ export type Screen =
   | 'TEACHER_MANAGEMENT'
   | 'PARENT_MANAGEMENT'
   | 'CHILD_MANAGEMENT'
+  | 'ANALYZE_MANAGEMENT'
   | 'CLASSROOM_MANAGEMENT'
   | 'ENROLLMENT_MANAGEMENT'
   | 'PROGRAM_MANAGEMENT'
@@ -161,10 +162,22 @@ export const teacherSidebarItems: SidebarItem[] = [
     path: '/teacher/students',
   },
   {
-    id: 'TEACHER_PARENTS_CHILDREN',
-    label: 'Phụ huynh và trẻ',
-    icon: Users,
-    path: '/teacher/parents-children',
+    id: 'PARENT_MANAGEMENT',
+    label: 'Quản lý phụ huynh',
+    icon: Heart,
+    path: '/teacher/parents',
+  },
+  {
+    id: 'CHILD_MANAGEMENT',
+    label: 'Quản lý hồ sơ trẻ',
+    icon: Baby,
+    path: '/teacher/children',
+  },
+  {
+    id: 'ANALYZE_MANAGEMENT',
+    label: 'Đánh giá trẻ',
+    icon: FileText,
+    path: '/teacher/analyzes',
   },
   {
     id: 'LEARNING_RESULT_MANAGEMENT',
@@ -246,6 +259,12 @@ const userManagementChildren: SidebarItem[] = [
     label: 'Quản lý hồ sơ trẻ',
     icon: Baby,
     path: '/admin/children',
+  },
+  {
+    id: 'ANALYZE_MANAGEMENT',
+    label: 'Đánh giá trẻ',
+    icon: FileText,
+    path: '/admin/analyzes',
   },
 ];
 

@@ -28,12 +28,14 @@ import CustomSelect from '../../components/common/CustomSelect';
 import {
   getUsers,
   updateUser,
+  createAccount,
   type UserGender,
   type UserResponse,
 } from '../../services/userService';
+import { getCurrentUser } from '../../lib/authMock';
 
 type PageVariant = 'teacher' | 'parent';
-type ModalMode = 'detail' | 'edit' | null;
+type ModalMode = 'detail' | 'edit' | 'add' | null;
 
 interface ToastConfig {
   message: string;
@@ -246,6 +248,7 @@ export default function RoleUserManagementPage({
 }) {
   const navigate = useNavigate();
   const config = PAGE_CONFIG[variant];
+  const currentUser = getCurrentUser();
 
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -385,12 +388,19 @@ export default function RoleUserManagementPage({
     setSelectedUser(null);
   };
 
+  const handleOpenAdd = () => {
+    setFormFullName('');
+    setFormEmail('');
+    setFormPhone('');
+    setFormGender('Female');
+    setFormSpecialty(config.defaultSpecialty);
+    setFormIsActive(true);
+    setSelectedUser(null);
+    setModalMode('add');
+  };
+
   const handleSave = async (event: FormEvent) => {
     event.preventDefault();
-
-    if (!selectedUser) {
-      return;
-    }
 
     if (!formFullName.trim() || !formEmail.trim()) {
       triggerNotification('Vui lòng nhập đầy đủ họ tên và email.', 'warning');
@@ -412,29 +422,57 @@ export default function RoleUserManagementPage({
     }
 
     setIsSaving(true);
-    const result = await updateUser(selectedUser.id, {
-      fullName: formFullName.trim(),
-      email: formEmail.trim(),
-      phone: formPhone.trim() || undefined,
-      gender: formGender,
-      specialty: resolvedSpecialty,
-      roleName: config.roleName,
-      isActive: formIsActive,
-    });
-    setIsSaving(false);
 
-    if (!result.success || !result.data) {
-      const message =
-        result.errors.length > 0 ? result.errors.join(' ') : result.message;
-      triggerNotification(message || 'Cập nhật thông tin thất bại.', 'warning');
-      return;
+    if (modalMode === 'add') {
+      const result = await createAccount({
+        fullName: formFullName.trim(),
+        email: formEmail.trim(),
+        phone: formPhone.trim() || undefined,
+        gender: formGender,
+        specialty: resolvedSpecialty,
+        roleName: config.roleName,
+      });
+      setIsSaving(false);
+
+      if (!result.success || !result.data) {
+        const message =
+          result.errors.length > 0 ? result.errors.join(' ') : result.message;
+        triggerNotification(message || 'Tạo tài khoản thất bại.', 'warning');
+        return;
+      }
+
+      triggerNotification(`Đã tạo tài khoản ${config.itemLabel} mới thành công.`);
+      handleCloseModal();
+      void fetchUsersByRole();
+    } else {
+      if (!selectedUser) {
+        setIsSaving(false);
+        return;
+      }
+      const result = await updateUser(selectedUser.id, {
+        fullName: formFullName.trim(),
+        email: formEmail.trim(),
+        phone: formPhone.trim() || undefined,
+        gender: formGender,
+        specialty: resolvedSpecialty,
+        roleName: config.roleName,
+        isActive: formIsActive,
+      });
+      setIsSaving(false);
+
+      if (!result.success || !result.data) {
+        const message =
+          result.errors.length > 0 ? result.errors.join(' ') : result.message;
+        triggerNotification(message || 'Cập nhật thông tin thất bại.', 'warning');
+        return;
+      }
+
+      setUsers((currentUsers) =>
+        currentUsers.map((user) => (user.id === result.data!.id ? result.data! : user))
+      );
+      triggerNotification(`Đã cập nhật thông tin ${config.itemLabel} thành công.`);
+      handleCloseModal();
     }
-
-    setUsers((currentUsers) =>
-      currentUsers.map((user) => (user.id === result.data!.id ? result.data! : user))
-    );
-    triggerNotification(`Đã cập nhật thông tin ${config.itemLabel} thành công.`);
-    handleCloseModal();
   };
 
   const handleToggleLock = async (user: UserResponse) => {
@@ -523,11 +561,17 @@ export default function RoleUserManagementPage({
           </button>
           <button
             type="button"
-            onClick={() => navigate('/admin/users')}
+            onClick={() => {
+              if (currentUser?.Role === 'TEACHER') {
+                handleOpenAdd();
+              } else {
+                navigate('/admin/users');
+              }
+            }}
             className="bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black italic tracking-tight py-4 px-8 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[#4EACAF]/20 transition-all hover:scale-105 active:scale-95 shrink-0 cursor-pointer"
           >
             <Users className="h-5 w-5" strokeWidth={2.5} />
-            {config.buttonLabel}
+            {currentUser?.Role === 'TEACHER' ? 'Thêm phụ huynh mới' : config.buttonLabel}
           </button>
         </div>
       </div>
@@ -793,7 +837,7 @@ export default function RoleUserManagementPage({
       </div>
 
       <AnimatePresence>
-        {modalMode && selectedUser && (
+        {modalMode && (modalMode === 'add' || selectedUser) && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -808,21 +852,29 @@ export default function RoleUserManagementPage({
             >
               <div className={cn(
                 'px-8 py-6 flex items-center justify-between border-b',
-                modalMode === 'edit' ? 'bg-sky-50 border-sky-100' : 'bg-purple-50 border-purple-100'
+                modalMode === 'edit'
+                  ? 'bg-sky-50 border-sky-100'
+                  : modalMode === 'add'
+                    ? 'bg-[#E2F2F3] border-[#C5E1E3]'
+                    : 'bg-purple-50 border-purple-100'
               )}>
                 <div>
                   <h2 className="text-2xl font-black italic tracking-tight flex items-center gap-2 text-gray-900">
                     {modalMode === 'edit' ? (
                       <Edit3 className="w-6 h-6 text-sky-500" />
+                    ) : modalMode === 'add' ? (
+                      <Users className="w-6 h-6 text-[#4EACAF]" />
                     ) : (
                       <Eye className="w-6 h-6 text-purple-600" />
                     )}
                     {modalMode === 'edit'
                       ? `Chỉnh sửa ${config.itemLabel}`
-                      : `Chi tiết ${config.itemLabel}`}
+                      : modalMode === 'add'
+                        ? `Thêm ${config.itemLabel} mới`
+                        : `Chi tiết ${config.itemLabel}`}
                   </h2>
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-                    {selectedUser.fullName}
+                    {modalMode === 'add' ? 'Khởi tạo tài khoản mới' : selectedUser?.fullName}
                   </p>
                 </div>
                 <button
@@ -907,27 +959,31 @@ export default function RoleUserManagementPage({
                       />
                     </FormField>
 
-                    <FormField label={config.specialtyLabel}>
-                      <input
-                        type="text"
-                        value={formSpecialty}
-                        onChange={(event) => setFormSpecialty(event.target.value)}
-                        placeholder={config.specialtyPlaceholder}
-                        className="w-full rounded-2xl border-2 border-transparent bg-[#FDFCF5] px-5 py-4 text-sm font-bold text-gray-700 outline-none transition-all placeholder:text-gray-400 focus:border-[#4EACAF] focus:bg-white"
-                      />
-                    </FormField>
+                    {modalMode === 'edit' && (
+                      <>
+                        <FormField label={config.specialtyLabel}>
+                          <input
+                            type="text"
+                            value={formSpecialty}
+                            onChange={(event) => setFormSpecialty(event.target.value)}
+                            placeholder={config.specialtyPlaceholder}
+                            className="w-full rounded-2xl border-2 border-transparent bg-[#FDFCF5] px-5 py-4 text-sm font-bold text-gray-700 outline-none transition-all placeholder:text-gray-400 focus:border-[#4EACAF] focus:bg-white"
+                          />
+                        </FormField>
 
-                    <FormField label="Trạng thái">
-                      <CustomSelect
-                        value={formIsActive ? 'Active' : 'Locked'}
-                        onChange={(val) => setFormIsActive(val === 'Active')}
-                        variant="form"
-                        options={[
-                          { value: 'Active', label: 'Hoạt động' },
-                          { value: 'Locked', label: 'Đã khóa' }
-                        ]}
-                      />
-                    </FormField>
+                        <FormField label="Trạng thái">
+                          <CustomSelect
+                            value={formIsActive ? 'Active' : 'Locked'}
+                            onChange={(val) => setFormIsActive(val === 'Active')}
+                            variant="form"
+                            options={[
+                              { value: 'Active', label: 'Hoạt động' },
+                              { value: 'Locked', label: 'Đã khóa' }
+                            ]}
+                          />
+                        </FormField>
+                      </>
+                    )}
                   </div>
 
                   <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">

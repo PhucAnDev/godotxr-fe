@@ -272,7 +272,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
         setErrorMessage(
           error instanceof Error
             ? error.message
-            : 'Khong the tai danh sach hoc sinh.'
+            : 'Không thể tải danh sách học sinh.'
         );
       } finally {
         if (isMounted) {
@@ -349,8 +349,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
         <div className="flex items-center gap-3 text-slate-600">
           <TrendingUp className="h-5 w-5 animate-pulse text-[#4EACAF]" />
           <span className="font-semibold">
-            Dang tai danh sach hoc sinh tu classrooms, enrollments, child-profile va
-            results...
+            Đang tải danh sách học sinh từ hệ thống...
           </span>
         </div>
       </div>
@@ -364,15 +363,14 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
         <div className="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#4EACAF]/20 bg-[#4EACAF]/10 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-[#4EACAF]">
-              <Baby className="h-4 w-4" /> Danh sach hoc sinh cua toi
+              <Baby className="h-4 w-4" /> Danh sách học sinh của tôi
             </div>
             <h1 className="text-4xl font-black tracking-tighter text-gray-900">
-              Quan Ly <span className="text-[#4EACAF]">Hoc Vien</span>
+              Quản Lý <span className="text-[#4EACAF]">Học Viên</span>
             </h1>
             <p className="max-w-xl text-sm font-bold text-gray-500">
-              Man nay da duoc map bang du lieu that theo cac lop ma giao vien dang
-              phu trach, de flow teacher tu list sang student detail duoc dong bo
-              hoan toan.
+              Màn hình này đã được đồng bộ dữ liệu theo các lớp học mà giáo viên đang
+              phụ trách, giúp quy trình chuyển tiếp từ danh sách sang chi tiết học sinh được đồng bộ hoàn toàn.
             </p>
           </div>
 
@@ -386,7 +384,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                   {stats.total}
                 </div>
                 <div className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-                  Tong hoc vien
+                  Tổng học viên
                 </div>
               </div>
             </div>
@@ -404,7 +402,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                 onClick={() => setReloadSeed((value) => value + 1)}
                 className="rounded-xl bg-white px-3 py-2 text-xs font-black uppercase tracking-wider text-rose-600 transition-colors hover:bg-rose-100"
               >
-                Tai lai du lieu
+                Tải lại dữ liệu
               </button>
             </div>
           </div>
@@ -421,10 +419,10 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
           </div>
           <div>
             <h4 className="text-2xl font-black text-gray-900">
-              {stats.total} Hoc sinh
+              {stats.total} Học sinh
             </h4>
             <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
-              Lop toi phu trach
+              Lớp tôi phụ trách
             </p>
           </div>
         </motion.div>
@@ -438,10 +436,10 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
           </div>
           <div>
             <h4 className="text-2xl font-black text-gray-900">
-              {stats.averageAge} Tuoi
+              {stats.averageAge} Tuổi
             </h4>
             <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
-              Do tuoi trung binh
+              Độ tuổi trung bình
             </p>
           </div>
         </motion.div>
@@ -454,9 +452,9 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
             <Sparkles className="h-8 w-8" />
           </div>
           <div>
-            <h4 className="text-2xl font-black text-gray-900">{stats.boys} Be trai</h4>
+            <h4 className="text-2xl font-black text-gray-900">{stats.boys} Bé trai</h4>
             <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
-              Gioi tinh nam
+              Giới tính nam
             </p>
           </div>
         </motion.div>
@@ -469,9 +467,9 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
             <Heart className="h-8 w-8" />
           </div>
           <div>
-            <h4 className="text-2xl font-black text-gray-900">{stats.girls} Be gai</h4>
+            <h4 className="text-2xl font-black text-gray-900">{stats.girls} Bé gái</h4>
             <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
-              Gioi tinh nu
+              Giới tính nữ
             </p>
           </div>
         </motion.div>
@@ -482,7 +480,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
           <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Tim theo ten hoc sinh, ID, trinh do hoac ten phu huynh..."
+            placeholder="Tìm theo tên học sinh, ID, trình độ hoặc tên phụ huynh..."
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             className="w-full rounded-[20px] border-2 border-slate-50 bg-slate-50 py-4 pl-14 pr-5 text-sm font-bold text-gray-800 outline-none transition-all placeholder:text-gray-400 focus:border-[#4EACAF] focus:bg-white"
@@ -502,7 +500,13 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                     : 'text-gray-500 hover:bg-slate-100/60 hover:text-gray-800'
                 )}
               >
-                {gender === 'All' ? 'Tat ca gioi tinh' : gender}
+                {gender === 'All'
+                  ? 'Tất cả giới tính'
+                  : gender === 'Male'
+                    ? 'Nam'
+                    : gender === 'Female'
+                      ? 'Nữ'
+                      : 'Khác'}
               </button>
             ))}
           </div>
@@ -516,7 +520,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
             >
               {levelOptions.map((level) => (
                 <option key={level} value={level}>
-                  {level === 'All' ? 'Tat ca trinh do' : level}
+                  {level === 'All' ? 'Tất cả trình độ' : level}
                 </option>
               ))}
             </select>
@@ -528,11 +532,11 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
         <div className="rounded-[40px] border-2 border-dashed border-slate-200 bg-white px-6 py-16 text-center">
           <AlertCircle className="mx-auto mb-4 h-14 w-14 animate-pulse text-orange-400" />
           <h3 className="mb-2 text-xl font-bold text-slate-800">
-            Khong tim thay thong tin phu hop
+            Không tìm thấy thông tin phù hợp
           </h3>
           <p className="mx-auto max-w-sm text-sm font-bold text-slate-400">
-            He thong khong tim thay hoc vien nao khop voi bo loc hoac tu khoa tim
-            kiem cua ban.
+            Hệ thống không tìm thấy học viên nào khớp với bộ lọc hoặc từ khóa tìm
+            kiếm của bạn.
           </p>
         </div>
       ) : (
@@ -560,17 +564,17 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                         </span>
                         {child.ProgressLevel === 'Improving' && (
                           <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-600">
-                            Dang tien bo
+                            Đang tiến bộ
                           </span>
                         )}
                         {child.ProgressLevel === 'Stable' && (
                           <span className="rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-[10px] font-bold text-indigo-600">
-                            On dinh
+                            Ổn định
                           </span>
                         )}
                         {child.ProgressLevel === 'Need Support' && (
                           <span className="flex items-center gap-1 rounded-full border border-rose-100 bg-rose-50 px-2.5 py-1 text-[10px] font-bold text-rose-600">
-                            <AlertCircle className="h-3.5 w-3.5" /> Can ho tro
+                            <AlertCircle className="h-3.5 w-3.5" /> Cần hỗ trợ
                           </span>
                         )}
                       </div>
@@ -597,10 +601,10 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                           )}
                         >
                           {child.Gender === 'Male'
-                            ? 'M'
+                            ? 'N'
                             : child.Gender === 'Female'
-                              ? 'F'
-                              : 'O'}
+                              ? 'Nữ'
+                              : 'K'}
                         </div>
                       </div>
 
@@ -610,14 +614,14 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                         </h3>
                         <div className="flex items-center gap-3 text-xs font-bold text-slate-500">
                           <span>
-                            Tuoi: <strong className="text-slate-800">{child.Age}</strong>
+                            Tuổi: <strong className="text-slate-800">{child.Age}</strong>
                           </span>
                           <div className="h-1.5 w-1.5 rounded-full bg-slate-300" />
                           <span className="flex items-center gap-1">
-                            Trang thai:
+                            Trạng thái:
                             <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 font-extrabold text-emerald-600">
                               <CheckCircle2 className="h-3 w-3" />
-                              {child.Status === 'Active' ? 'Tich cuc' : 'Tam dung'}
+                              {child.Status === 'Active' ? 'Tích cực' : 'Tạm dừng'}
                             </span>
                           </span>
                         </div>
@@ -628,7 +632,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                       <div className="space-y-2 rounded-2xl border border-orange-100/50 bg-orange-50/50 p-4 text-xs">
                         <div className="flex items-center gap-2 font-black text-slate-700">
                           <Heart className="h-4 w-4 fill-orange-400 text-orange-400" />
-                          <span>Phu huynh: {parent.FullName}</span>
+                          <span>Phụ huynh: {parent.FullName}</span>
                         </div>
                         <div className="grid grid-cols-1 gap-2 font-bold text-[#777] sm:grid-cols-2">
                           <div className="flex items-center gap-2">
@@ -652,7 +656,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
 
                   <div className="mt-6 flex items-center justify-between border-t border-gray-50 pt-6">
                     <span className="text-[11px] font-bold uppercase text-gray-400">
-                      Cap nhat: {child.UpdatedAt || child.CreatedAt}
+                      Cập nhật: {child.UpdatedAt || child.CreatedAt}
                     </span>
 
                     <motion.button
@@ -663,7 +667,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                       }
                       className="inline-flex cursor-pointer items-center gap-1.5 rounded-2xl bg-[#4EACAF] px-5 py-3 text-xs font-black text-white shadow-md shadow-[#4EACAF]/10 transition-all hover:bg-[#5ec4c7] hover:shadow-lg"
                     >
-                      Xem chi tiet hoc ba
+                      Xem chi tiết học bạ
                       <ChevronRight className="h-4 w-4" />
                     </motion.button>
                   </div>
@@ -682,7 +686,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                 setPageSize(size);
                 setCurrentPage(1);
               }}
-              itemLabel="hoc sinh"
+              itemLabel="học sinh"
             />
           </div>
         </div>
