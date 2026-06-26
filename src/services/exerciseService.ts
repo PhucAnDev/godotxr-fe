@@ -47,10 +47,10 @@ async function request<T>(
   }
 }
 
-export const getExercises = (pageNumber = 1, pageSize = 100) =>
-  request<PagedResponse<ExerciseResponse>>(
-    `/api/exercises?pageNumber=${pageNumber}&pageSize=${pageSize}`
-  );
+export const getExercises = (pageNumber = 1, pageSize = 100, lessonId?: number) => {
+  const url = `/api/exercises?pageNumber=${pageNumber}&pageSize=${pageSize}${lessonId ? `&lessonId=${lessonId}` : ''}`;
+  return request<PagedResponse<ExerciseResponse>>(url);
+};
 
 export const getExerciseById = (id: number) =>
   request<ExerciseResponse>(`/api/exercises/${id}`);

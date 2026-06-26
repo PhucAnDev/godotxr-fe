@@ -25,12 +25,14 @@ import {
   ExternalLink,
   ChevronRight,
   Sparkle,
-  Trash2
+  Trash2,
+  RefreshCw
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
 import CustomSelect from '../../components/common/CustomSelect';
 import { useLessonManagementApi, type LessonResponse } from '../../hooks/useLessonManagementApi';
+import { getExercises, type ExerciseResponse } from '../../services/exerciseService';
 
 // DB Interfaces
 interface Program {
@@ -180,6 +182,8 @@ export default function LessonManagement() {
   const { getLessons, getPrograms, createLesson, updateLesson, deleteLesson } = useLessonManagementApi();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [exercises, setExercises] = useState<ExerciseResponse[]>([]);
+  const [isExercisesLoading, setIsExercisesLoading] = useState(false);
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
@@ -288,9 +292,17 @@ export default function LessonManagement() {
     setModalType('edit');
   };
 
-  const handleOpenExercises = (les: Lesson) => {
+  const handleOpenExercises = async (les: Lesson) => {
     setSelectedLesson(les);
     setModalType('exercises');
+    setIsExercisesLoading(true);
+    const result = await getExercises(1, 100, Number(les.LessonId));
+    if (result.success && result.data) {
+      setExercises(result.data.items);
+    } else {
+      setExercises([]);
+    }
+    setIsExercisesLoading(false);
   };
 
   const handleCloseModal = () => {
@@ -748,15 +760,52 @@ export default function LessonManagement() {
 
                   <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
                     {(() => {
-                      const exercises = MOCK_EXERCISES_BY_LESSON[selectedLesson.LessonId] || [];
-                      if (exercises.length === 0) {
+                      if (isExercisesLoading) {
+                        return (
+                          <div className="flex justify-center items-center py-10 text-gray-450">
+                            <RefreshCw className="w-6 h-6 animate-spin text-[#4EACAF]" />
+                            <span className="ml-2.5 font-bold text-sm text-slate-500">Đang tải danh sách bài tập...</span>
+                          </div>
+                        );
+                      }
+
+                      const dbExercises = exercises.length > 0 
+                        ? exercises 
+                        : (MOCK_EXERCISES_BY_LESSON[selectedLesson.LessonId] || []);
+
+                      if (dbExercises.length === 0) {
                         return (
                           <div className="text-center py-10 text-gray-400 italic font-bold">
                             Chưa cập nhật dữ liệu game tương tác VR cho học phần này!
                           </div>
                         );
                       }
-                      return exercises.map((exe) => (
+
+                      const normalized = dbExercises.map(exe => {
+                        if ('ExerciseId' in exe) {
+                          return exe as Exercise;
+                        }
+                        const realExe = exe as ExerciseResponse;
+                        const typeLabel = 
+                          realExe.typeId === 1 ? 'Speech Recognition' :
+                          realExe.typeId === 2 ? 'Interactive Card' :
+                          realExe.typeId === 3 ? 'Pronunciation Guide' :
+                          realExe.typeId === 4 ? 'Bouncing Match' : 'Speech Recognition';
+                          
+                        const score = 
+                          realExe.difficultyLevel === 'Easy' ? 80 :
+                          realExe.difficultyLevel === 'Medium' ? 85 :
+                          realExe.difficultyLevel === 'Hard' ? 90 : 80;
+                          
+                        return {
+                          ExerciseId: `EXE-${realExe.id}`,
+                          ExerciseName: realExe.exerciseName,
+                          ExerciseType: typeLabel as Exercise['ExerciseType'],
+                          ScoreToPass: score
+                        };
+                      });
+
+                      return normalized.map((exe) => (
                         <div key={exe.ExerciseId} className="bg-[#FDFCF5] p-5 rounded-3xl border border-gray-100 flex items-start justify-between gap-4">
                           <div className="space-y-1.5 flex-1 min-w-0">
                             <p className="font-extrabold text-sm text-gray-900 leading-snug">{exe.ExerciseName}</p>
