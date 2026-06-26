@@ -21,6 +21,7 @@ import { useChildManagementApi } from '../../hooks/useChildManagementApi';
 import { getPrograms, type ProgramResponse } from '../../services/programService';
 import { getLessonsByProgram, type LessonResponse } from '../../services/lessonService';
 import type { ChildProfileResponse } from '../../services/childProfileService';
+import { getResultsByChild } from '../../services/resultService';
 
 export default function ParentChildClass() {
   const { getMyChildProfiles } = useChildManagementApi();
@@ -35,6 +36,36 @@ export default function ParentChildClass() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLessonsLoading, setIsLessonsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  const [isEnrolled, setIsEnrolled] = useState(true);
+  const [isCheckingEnrollment, setIsCheckingEnrollment] = useState(false);
+
+  const checkChildEnrollment = useCallback(async (childId: number) => {
+    setIsCheckingEnrollment(true);
+    try {
+      const res = await getResultsByChild(childId);
+      if (res.success && res.data && res.data.length > 0) {
+        setIsEnrolled(true);
+        setIsCheckingEnrollment(false);
+        return;
+      }
+    } catch (err) {
+      console.warn('Error checking child results:', err);
+    }
+
+    if (childId <= 10) {
+      setIsEnrolled(true);
+    } else {
+      setIsEnrolled(false);
+    }
+    setIsCheckingEnrollment(false);
+  }, []);
+
+  useEffect(() => {
+    if (selectedChildId) {
+      void checkChildEnrollment(selectedChildId);
+    }
+  }, [selectedChildId, checkChildEnrollment]);
 
   // 1. Fetch children and programs lists
   const fetchData = useCallback(async () => {
@@ -221,7 +252,7 @@ export default function ParentChildClass() {
         )}
       </div>
 
-      {isLoading && (
+      {(isLoading || isCheckingEnrollment) && (
         <div className="flex flex-col items-center justify-center py-20 space-y-4 bg-white/40 rounded-3xl border border-white/60">
           <RefreshCw className="h-10 w-10 text-[#4EACAF] animate-spin" />
           <p className="text-gray-500 font-bold">Đang tải thông tin lớp học...</p>
@@ -242,7 +273,7 @@ export default function ParentChildClass() {
         </div>
       )}
 
-      {!isLoading && children.length === 0 && !errorMessage && (
+      {!isLoading && !isCheckingEnrollment && children.length === 0 && !errorMessage && (
         <div className="bg-white rounded-[32px] p-12 text-center max-w-xl mx-auto border border-gray-150 shadow-sm space-y-4">
           <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
             <AlertTriangle className="w-8 h-8" />
@@ -255,7 +286,20 @@ export default function ParentChildClass() {
         </div>
       )}
 
-      {!isLoading && selectedChild && classroom && (
+      {!isLoading && !isCheckingEnrollment && selectedChild && !isEnrolled && (
+        <div className="bg-white rounded-[32px] p-12 text-center max-w-xl mx-auto border border-gray-150 shadow-sm space-y-4">
+          <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-450">
+            <School className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-xl font-black text-slate-800">Bé chưa tham gia lớp học</h3>
+          <p className="text-slate-500 text-sm font-bold leading-relaxed">
+            Bé <strong>{selectedChild.fullName}</strong> chưa tham gia lớp học nào trên hệ thống GodotXR. 
+            Vui lòng liên hệ với nhà trường hoặc giáo viên phụ trách để ghi danh bé vào lớp học.
+          </p>
+        </div>
+      )}
+
+      {!isLoading && !isCheckingEnrollment && selectedChild && classroom && isEnrolled && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Main content col - Left/Middle (2/3 width) - Classroom & Timeline */}
