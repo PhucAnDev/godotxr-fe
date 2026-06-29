@@ -237,12 +237,6 @@ export const teacherSidebarItems: SidebarItem[] = [
 
 const userManagementChildren: SidebarItem[] = [
   {
-    id: 'ROLE_MANAGEMENT',
-    label: 'Quản lý vai trò',
-    icon: KeyRound,
-    path: '/admin/roles',
-  },
-  {
     id: 'TEACHER_MANAGEMENT',
     label: 'Quản lý giáo viên',
     icon: GraduationCap,
@@ -266,6 +260,12 @@ const userManagementChildren: SidebarItem[] = [
     icon: FileText,
     path: '/admin/analyzes',
   },
+  {
+    id: 'ROLE_MANAGEMENT',
+    label: 'Quản lý vai trò',
+    icon: KeyRound,
+    path: '/admin/roles',
+  },
 ];
 
 export const adminSidebarItems: SidebarItem[] = [
@@ -274,24 +274,6 @@ export const adminSidebarItems: SidebarItem[] = [
     label: 'Bảng điều khiển',
     icon: LayoutDashboard,
     path: '/admin/dashboard',
-  },
-  {
-    id: 'LEARNING_RESULT_MANAGEMENT',
-    label: 'Kết quả luyện tập',
-    icon: GraduationCap,
-    path: '/admin/results',
-  },
-  {
-    id: 'PROGRESS_ANALYSIS',
-    label: 'Phân tích tiến độ',
-    icon: TrendingUp,
-    path: '/admin/progress',
-  },
-  {
-    id: 'PRONUNCIATION_DETAIL_PAGE',
-    label: 'Chi tiết phát âm',
-    icon: Volume2,
-    path: '/admin/pronunciation',
   },
   {
     id: 'USER_MANAGEMENT',
@@ -311,6 +293,18 @@ export const adminSidebarItems: SidebarItem[] = [
     label: 'Quản lý ghi danh',
     icon: FileText,
     path: '/admin/enrollments',
+  },
+  {
+    id: 'SEMESTER_MANAGEMENT',
+    label: 'Quản lý học kỳ',
+    icon: FolderOpen,
+    path: '/admin/semesters',
+  },
+  {
+    id: 'SCHOOL_YEAR_MANAGEMENT',
+    label: 'Quản lý năm học',
+    icon: Calendar,
+    path: '/admin/school-years',
   },
   {
     id: 'PROGRAM_MANAGEMENT',
@@ -337,16 +331,22 @@ export const adminSidebarItems: SidebarItem[] = [
     path: '/admin/exercise-types',
   },
   {
-    id: 'SCHOOL_YEAR_MANAGEMENT',
-    label: 'Quản lý năm học',
-    icon: Calendar,
-    path: '/admin/school-years',
+    id: 'LEARNING_RESULT_MANAGEMENT',
+    label: 'Kết quả luyện tập',
+    icon: GraduationCap,
+    path: '/admin/results',
   },
   {
-    id: 'SEMESTER_MANAGEMENT',
-    label: 'Quản lý học kỳ',
-    icon: FolderOpen,
-    path: '/admin/semesters',
+    id: 'PROGRESS_ANALYSIS',
+    label: 'Phân tích tiến độ',
+    icon: TrendingUp,
+    path: '/admin/progress',
+  },
+  {
+    id: 'PRONUNCIATION_DETAIL_PAGE',
+    label: 'Chi tiết phát âm',
+    icon: Volume2,
+    path: '/admin/pronunciation',
   },
   {
     id: 'REPORTS',
