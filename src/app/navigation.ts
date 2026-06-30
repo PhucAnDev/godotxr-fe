@@ -105,34 +105,10 @@ export const parentSidebarItems: SidebarItem[] = [
     path: '/parent/history',
   },
   {
-    id: 'LESSON_REVIEW',
-    label: 'Xem lại buổi học',
-    icon: PlayCircle,
-    path: '/parent/lesson-review',
-  },
-  {
-    id: 'LEARNING_RESULT_MANAGEMENT',
-    label: 'Kết quả luyện tập',
-    icon: GraduationCap,
-    path: '/parent/results',
-  },
-  {
     id: 'PROGRESS_ANALYSIS',
     label: 'Phân tích tiến độ',
     icon: TrendingUp,
     path: '/parent/progress',
-  },
-  {
-    id: 'PRONUNCIATION_DETAIL_PAGE',
-    label: 'Chi tiết phát âm',
-    icon: Volume2,
-    path: '/parent/pronunciation',
-  },
-  {
-    id: 'REPORTS',
-    label: 'Báo cáo tiến độ',
-    icon: BarChart3,
-    path: '/parent/reports',
   },
   {
     id: 'PARENT_SETTINGS',

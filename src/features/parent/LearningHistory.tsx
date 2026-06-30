@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, ChevronDown, Eye, Filter } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 
 const historyData = [
@@ -10,6 +11,8 @@ const historyData = [
 ];
 
 export default function LearningHistory() {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex items-center justify-between">
@@ -52,7 +55,11 @@ export default function LearningHistory() {
                    <StatusBadge status={item.status} />
                 </td>
                 <td className="px-8 py-6 text-right">
-                  <button className="flex items-center gap-2 px-6 py-2 bg-[#C5E1A5] hover:bg-[#B5D195] text-[#33691E] font-bold rounded-full transition-all disabled:opacity-50 disabled:bg-gray-100 disabled:text-gray-400" disabled={item.status !== 'Hoàn thành'}>
+                  <button 
+                    onClick={() => navigate('/parent/lesson-review')}
+                    className="flex items-center gap-2 px-6 py-2 bg-[#C5E1A5] hover:bg-[#B5D195] text-[#33691E] font-bold rounded-full transition-all disabled:opacity-50 disabled:bg-gray-100 disabled:text-gray-400" 
+                    disabled={item.status !== 'Hoàn thành'}
+                  >
                     <Eye className="w-4 h-4" />
                     Xem lại
                   </button>
