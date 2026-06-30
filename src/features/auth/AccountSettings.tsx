@@ -60,8 +60,8 @@ export default function AccountSettings() {
     return (
       <div className="max-w-lg mx-auto rounded-3xl border border-red-100 bg-white p-8 text-center">
         <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-rose-500" />
-        <h2 className="text-xl font-bold text-gray-800">Khong tim thay thong tin tai khoan</h2>
-        <p className="mt-2 text-sm text-gray-500">Vui long dang nhap lai he thong.</p>
+        <h2 className="text-xl font-bold text-gray-800">Không tìm thấy thông tin tài khoản</h2>
+        <p className="mt-2 text-sm text-gray-500">Vui lòng đăng nhập lại hệ thống.</p>
       </div>
     );
   }
@@ -70,10 +70,10 @@ export default function AccountSettings() {
   const userId = Number(currentUser.UserId.replace(/\D/g, ''));
   const roleLabel =
     currentUser.Role === 'ADMIN'
-      ? 'Quan tri vien'
+      ? 'Quản trị viên'
       : currentUser.Role === 'TEACHER'
-        ? 'Giao vien dac biet'
-        : 'Phu huynh dong hanh';
+        ? 'Giáo viên đặc biệt'
+        : 'Phụ huynh đồng hành';
 
   const syncCurrentUserProfile = (
     user: SessionUser,
@@ -133,17 +133,17 @@ export default function AccountSettings() {
     setUSuccess(null);
 
     if (!canEditProfile) {
-      setUError('Backend hien chi cho phep Admin cap nhat ho so qua API nay. Giao vien va phu huynh dang o che do chi doc cho phan thong tin ca nhan.');
+      setUError('Backend hiện chỉ cho phép Admin cập nhật hồ sơ qua API này. Giáo viên và phụ huynh đang ở chế độ chỉ đọc cho phần thông tin cá nhân.');
       return;
     }
 
     if (!formFullName.trim()) {
-      setUError('Ho va ten khong duoc de trong.');
+      setUError('Họ và tên không được để trống.');
       return;
     }
 
     if (!userId) {
-      setUError('Khong xac dinh duoc ma nguoi dung de cap nhat.');
+      setUError('Không xác định được mã người dùng để cập nhật.');
       return;
     }
 
@@ -166,7 +166,7 @@ export default function AccountSettings() {
       specialty: result.data.specialty,
     });
 
-    setUSuccess('Cap nhat thong tin ca nhan thanh cong!');
+    setUSuccess('Cập nhật thông tin cá nhân thành công!');
     setTimeout(() => setUSuccess(null), 3000);
   };
 
@@ -176,22 +176,22 @@ export default function AccountSettings() {
     setPSuccess(null);
 
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setPError('Vui long dien day du tat ca cac truong mat khau.');
+      setPError('Vui lòng điền đầy đủ tất cả các trường mật khẩu.');
       return;
     }
 
     if (newPassword.length < 8) {
-      setPError('Mat khau moi phai co toi thieu 8 ky tu.');
+      setPError('Mật khẩu mới phải có tối thiểu 8 ký tự.');
       return;
     }
 
     if (newPassword === currentPassword) {
-      setPError('Mat khau moi khong duoc giong mat khau cu.');
+      setPError('Mật khẩu mới không được giống mật khẩu cũ.');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setPError('Mat khau xac nhan khong chinh xac.');
+      setPError('Mật khẩu xác nhận không chính xác.');
       return;
     }
 
@@ -210,7 +210,7 @@ export default function AccountSettings() {
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
-    setPSuccess('Thay doi mat khau thanh cong!');
+    setPSuccess('Thay đổi mật khẩu thành công!');
     setTimeout(() => setPSuccess(null), 3000);
   };
 
@@ -251,16 +251,16 @@ export default function AccountSettings() {
               <Smile className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-800">Thong tin ca nhan</h3>
-              <p className="text-xs font-semibold uppercase text-slate-400">Dong bo va cap nhat ho so</p>
+              <h3 className="text-lg font-bold text-slate-800">Thông tin cá nhân</h3>
+              <p className="text-xs font-semibold uppercase text-slate-400">Đồng bộ và cập nhật hồ sơ</p>
             </div>
           </div>
 
           <form onSubmit={handleUpdateProfile} className="space-y-5">
             {!canEditProfile && (
               <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-xs font-bold leading-normal text-amber-800">
-                Ho so dang duoc doc tu BE, nhung API hien tai chi cho phep <code>Admin</code> cap nhat thong tin ca nhan.
-                Giao vien va phu huynh van co the doi mat khau o khung ben phai.
+                Hồ sơ đang được đọc từ BE, nhưng API hiện tại chỉ cho phép <code>Admin</code> cập nhật thông tin cá nhân.
+                Giáo viên và phụ huynh vẫn có thể đổi mật khẩu ở khung bên phải.
               </div>
             )}
 
@@ -279,7 +279,7 @@ export default function AccountSettings() {
 
             <div className="space-y-1.5">
               <label className="ml-1 text-[10px] font-extrabold uppercase tracking-widest text-gray-400">
-                Email dang nhap
+                Email đăng nhập
               </label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-gray-300" />
@@ -291,13 +291,13 @@ export default function AccountSettings() {
                 />
               </div>
               <span className="block px-1 text-[10px] font-semibold text-slate-400">
-                Email duoc giu co dinh theo tai khoan da xac thuc.
+                Email được giữ cố định theo tài khoản đã xác thực.
               </span>
             </div>
 
             <div className="space-y-1.5">
               <label className="ml-1 text-[10px] font-extrabold uppercase tracking-widest text-gray-400">
-                Ho va ten day du
+                Họ và tên đầy đủ
               </label>
               <input
                 type="text"
@@ -305,7 +305,7 @@ export default function AccountSettings() {
                 disabled={!canEditProfile}
                 value={formFullName}
                 onChange={(e) => setFormFullName(e.target.value)}
-                placeholder="Vi du: Nguyen Van Minh"
+                placeholder="Ví dụ: Nguyễn Văn Minh"
                 className="w-full rounded-xl border-2 border-transparent bg-[#FDFCF5] px-4 py-3 text-sm font-bold uppercase text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
               />
             </div>
@@ -313,7 +313,7 @@ export default function AccountSettings() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label className="ml-1 text-[10px] font-extrabold uppercase tracking-widest text-gray-400">
-                  So dien thoai
+                  Số điện thoại
                 </label>
                 <div className="relative">
                   <Phone className="absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-gray-300" />
@@ -322,7 +322,7 @@ export default function AccountSettings() {
                     disabled={!canEditProfile}
                     value={formPhoneNumber}
                     onChange={(e) => setFormPhoneNumber(e.target.value)}
-                    placeholder="Lien he di dong"
+                    placeholder="Liên hệ di động"
                     className="w-full rounded-xl border-2 border-transparent bg-[#FDFCF5] py-3 pl-11 pr-4 text-sm font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                   />
                 </div>
@@ -330,7 +330,7 @@ export default function AccountSettings() {
 
               <div className="space-y-1.5">
                 <label className="ml-1 text-[10px] font-extrabold uppercase tracking-widest text-gray-400">
-                  Gioi tinh
+                  Giới tính
                 </label>
                 <select
                   disabled={!canEditProfile}
@@ -339,8 +339,8 @@ export default function AccountSettings() {
                   className="w-full cursor-pointer rounded-xl border-2 border-transparent bg-[#FDFCF5] px-3.5 py-3 text-sm font-bold text-gray-700 outline-none focus:border-[#4EACAF] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                 >
                   <option value="Male">Nam</option>
-                  <option value="Female">Nu</option>
-                  <option value="Other">Khac</option>
+                  <option value="Female">Nữ</option>
+                  <option value="Other">Khác</option>
                 </select>
               </div>
             </div>
@@ -348,7 +348,7 @@ export default function AccountSettings() {
             {currentUser.Role === 'TEACHER' && (
               <div className="space-y-1.5">
                 <label className="ml-1 text-[10px] font-extrabold uppercase tracking-widest text-gray-400">
-                  Chuyen mon giao vien
+                  Chuyên môn giáo viên
                 </label>
                 <div className="relative">
                   <Briefcase className="absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-gray-300" />
@@ -357,7 +357,7 @@ export default function AccountSettings() {
                     disabled={!canEditProfile}
                     value={formSpecialty}
                     onChange={(e) => setFormSpecialty(e.target.value)}
-                    placeholder="Vi du: Am hoc cham noi"
+                    placeholder="Ví dụ: Âm học chậm nói"
                     className="w-full rounded-xl border-2 border-transparent bg-[#FDFCF5] py-3 pl-11 pr-4 text-sm font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                   />
                 </div>
@@ -370,7 +370,7 @@ export default function AccountSettings() {
                 disabled={!canEditProfile || isSavingProfile || isLoadingProfile}
                 className="w-full cursor-pointer rounded-xl bg-[#4EACAF] px-6 py-3.5 text-center text-sm font-bold text-white shadow-md transition-all active:scale-95 hover:bg-[#3d8c8e] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
               >
-                {isLoadingProfile ? 'Dang dong bo ho so...' : isSavingProfile ? 'Dang cap nhat...' : 'Cap nhat thong tin ca nhan'}
+                {isLoadingProfile ? 'Đang đồng bộ hồ sơ...' : isSavingProfile ? 'Đang cập nhật...' : 'Cập nhật thông tin cá nhân'}
               </button>
             </div>
           </form>
@@ -382,8 +382,8 @@ export default function AccountSettings() {
               <KeyRound className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-800">Dat lai mat khau</h3>
-              <p className="text-xs font-semibold uppercase text-slate-400">Dam bao bao mat tai khoan</p>
+              <h3 className="text-lg font-bold text-slate-800">Đặt lại mật khẩu</h3>
+              <p className="text-xs font-semibold uppercase text-slate-400">Đảm bảo bảo mật tài khoản</p>
             </div>
           </div>
 
@@ -403,7 +403,7 @@ export default function AccountSettings() {
 
             <div className="space-y-1.5">
               <label className="ml-1 text-[10px] font-extrabold uppercase tracking-widest text-gray-400">
-                Mat khau hien tai
+                Mật khẩu hiện tại
               </label>
               <input
                 type="password"
@@ -417,7 +417,7 @@ export default function AccountSettings() {
 
             <div className="space-y-1.5">
               <label className="ml-1 text-[10px] font-extrabold uppercase tracking-widest text-gray-400">
-                Mat khau moi
+                Mật khẩu mới
               </label>
               <input
                 type="password"
@@ -431,7 +431,7 @@ export default function AccountSettings() {
 
             <div className="space-y-1.5">
               <label className="ml-1 text-[10px] font-extrabold uppercase tracking-widest text-gray-400">
-                Xac nhan mat khau moi
+                Xác nhận mật khẩu mới
               </label>
               <input
                 type="password"
@@ -449,7 +449,7 @@ export default function AccountSettings() {
                 disabled={isChangingPassword}
                 className="w-full cursor-pointer rounded-xl bg-[#FF8E8E] px-6 py-3.5 text-center text-sm font-bold text-white shadow-md transition-all active:scale-95 hover:bg-[#e87f7f] disabled:cursor-not-allowed disabled:bg-rose-300 disabled:shadow-none"
               >
-                {isChangingPassword ? 'Dang cap nhat mat khau...' : 'Cap nhat mat khau moi'}
+                {isChangingPassword ? 'Đang cập nhật mật khẩu...' : 'Cập nhật mật khẩu mới'}
               </button>
             </div>
           </form>

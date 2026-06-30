@@ -162,22 +162,10 @@ export const teacherSidebarItems: SidebarItem[] = [
     path: '/teacher/students',
   },
   {
-    id: 'PARENT_MANAGEMENT',
-    label: 'Quản lý phụ huynh',
-    icon: Heart,
-    path: '/teacher/parents',
-  },
-  {
     id: 'CHILD_MANAGEMENT',
     label: 'Quản lý hồ sơ trẻ',
     icon: Baby,
     path: '/teacher/children',
-  },
-  {
-    id: 'ANALYZE_MANAGEMENT',
-    label: 'Đánh giá trẻ',
-    icon: FileText,
-    path: '/teacher/analyzes',
   },
   {
     id: 'LEARNING_RESULT_MANAGEMENT',
@@ -186,16 +174,28 @@ export const teacherSidebarItems: SidebarItem[] = [
     path: '/teacher/results',
   },
   {
+    id: 'PRONUNCIATION_DETAIL_PAGE',
+    label: 'Chi tiết phát âm',
+    icon: Volume2,
+    path: '/teacher/pronunciation',
+  },
+  {
     id: 'PROGRESS_ANALYSIS',
     label: 'Phân tích tiến độ',
     icon: TrendingUp,
     path: '/teacher/progress',
   },
   {
-    id: 'PRONUNCIATION_DETAIL_PAGE',
-    label: 'Chi tiết phát âm',
-    icon: Volume2,
-    path: '/teacher/pronunciation',
+    id: 'ANALYZE_MANAGEMENT',
+    label: 'Đánh giá trẻ',
+    icon: FileText,
+    path: '/teacher/analyzes',
+  },
+  {
+    id: 'PARENT_MANAGEMENT',
+    label: 'Quản lý phụ huynh',
+    icon: Heart,
+    path: '/teacher/parents',
   },
   {
     id: 'LESSON_MANAGEMENT',
