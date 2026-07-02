@@ -456,7 +456,7 @@ export default function PronunciationDetailPage() {
         setApiError(
           error instanceof Error
             ? error.message
-            : 'Khong the tai du lieu phat am tu API.'
+            : 'Không thể tải dữ liệu phát âm từ API.'
         );
       } finally {
         if (!cancelled) {

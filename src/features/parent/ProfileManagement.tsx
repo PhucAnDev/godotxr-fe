@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Plus, Edit2, X, Check, Trash2, AlertTriangle, RefreshCw, ChevronDown } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn, resolveAvatarUrl } from '../../lib/utils';
 import { useChildManagementApi } from '../../hooks/useChildManagementApi';
 import type { ChildProfileResponse } from '../../services/childProfileService';
 import { getSessionUser } from '../../lib/authSession';
@@ -22,6 +22,7 @@ interface FormState {
   gender: 'Male' | 'Female' | 'Other';
   learningLevel: 'Beginner' | 'Intermediate' | 'Advanced';
   note: string;
+  avatar: string | null;
 }
 
 const EMPTY_FORM: FormState = {
@@ -30,6 +31,7 @@ const EMPTY_FORM: FormState = {
   gender: 'Male',
   learningLevel: 'Beginner',
   note: '',
+  avatar: null,
 };
 
 export default function ProfileManagement() {
@@ -107,6 +109,7 @@ export default function ProfileManagement() {
       gender: child.gender,
       learningLevel: child.learningLevel,
       note: child.note || '',
+      avatar: child.avatar || 'default',
     });
     setFormError('');
     setModalType('form');
@@ -160,6 +163,7 @@ export default function ProfileManagement() {
       learningLevel: formState.learningLevel,
       note: formState.note.trim() || null,
       status: 'Active' as const,
+      avatar: formState.avatar || 'default',
     };
 
     const result =
@@ -288,7 +292,7 @@ export default function ProfileManagement() {
                 <div className="flex items-start gap-5" onClick={(e) => openEditModal(child, e)}>
                   <div className="w-20 h-20 bg-white/40 rounded-[28px] p-2 backdrop-blur-md overflow-hidden relative border-4 border-white/50 shrink-0">
                     <img 
-                      src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${child.fullName}`} 
+                      src={resolveAvatarUrl(child.avatar, child.fullName, 'adventurer')} 
                       alt={child.fullName} 
                       className="w-full h-full object-cover" 
                       referrerPolicy="no-referrer" 
@@ -424,14 +428,53 @@ export default function ProfileManagement() {
               </div>
 
               {/* Right panel: Profile image preview and action buttons */}
-              <div className="flex flex-col items-center justify-center gap-8 w-full md:w-64">
-                <div className="w-48 h-48 bg-orange-100 rounded-full border-8 border-gray-50 shadow-inner overflow-hidden relative group">
-                  <img 
-                    src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${formState.fullName || 'default'}`} 
-                    alt="profile preview" 
-                    className="w-full h-full object-cover" 
-                    referrerPolicy="no-referrer" 
-                  />
+              <div className="flex flex-col items-center justify-center gap-6 w-full md:w-80 shrink-0">
+                <div className="text-center space-y-2">
+                  <div className="w-36 h-36 bg-orange-100 rounded-full border-8 border-gray-50 shadow-inner overflow-hidden mx-auto relative group">
+                    <img 
+                      src={resolveAvatarUrl(formState.avatar, formState.fullName || 'default', 'adventurer')} 
+                      alt="profile preview" 
+                      className="w-full h-full object-cover" 
+                      referrerPolicy="no-referrer" 
+                    />
+                  </div>
+                  <span className="text-xs font-black text-gray-400 uppercase tracking-widest block">Ảnh đại diện preview</span>
+                </div>
+
+                {/* Avatar selector list */}
+                <div className="space-y-2 w-full">
+                  <span className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 block text-left">Chọn từ danh sách avatar</span>
+                  <div className="grid grid-cols-5 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                    {/* Default dynamic option */}
+                    <button
+                      type="button"
+                      onClick={() => handleFormChange('avatar', 'default')}
+                      className={cn(
+                        "w-10 h-10 rounded-xl bg-white border-2 flex items-center justify-center text-[10px] font-black text-slate-500 hover:border-sky-400 transition-all cursor-pointer",
+                        (!formState.avatar || formState.avatar === 'default') ? "border-sky-500 bg-sky-50 ring-2 ring-sky-100" : "border-slate-100"
+                      )}
+                      title="Mặc định"
+                    >
+                      MĐ
+                    </button>
+                    {/* 10 downloaded avatars */}
+                    {Array.from({ length: 10 }).map((_, idx) => {
+                      const avPath = `/avatars/avatar-${idx + 1}.svg`;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleFormChange('avatar', avPath)}
+                          className={cn(
+                            "w-10 h-10 rounded-xl overflow-hidden border-2 hover:border-sky-400 transition-all bg-white p-0.5 cursor-pointer",
+                            formState.avatar === avPath ? "border-sky-500 ring-2 ring-sky-100" : "border-slate-100"
+                          )}
+                        >
+                          <img src={avPath} alt={`Avatar ${idx + 1}`} className="w-full h-full object-cover" />
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
                 
                 <div className="flex gap-4 w-full">

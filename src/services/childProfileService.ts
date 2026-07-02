@@ -15,6 +15,7 @@ export interface ChildProfileResponse {
   learningLevel: 'Beginner' | 'Intermediate' | 'Advanced';
   note: string | null;
   status: 'Active' | 'Inactive';
+  avatar: string | null;
   createdAt: string;
   updatedAt: string | null;
 }
@@ -27,6 +28,7 @@ export interface ChildProfilePayload {
   learningLevel: 'Beginner' | 'Intermediate' | 'Advanced';
   note?: string | null;
   status: 'Active' | 'Inactive';
+  avatar?: string | null;
 }
 
 async function request<T>(

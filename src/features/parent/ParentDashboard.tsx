@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Flame, Play, RefreshCw, AlertTriangle } from 'lucide-react';
 import CustomSelect from '../../components/common/CustomSelect';
-import { cn } from '../../lib/utils';
+import { cn, resolveAvatarUrl } from '../../lib/utils';
 import { useChildManagementApi } from '../../hooks/useChildManagementApi';
 import { getResultsByChild } from '../../services/resultService';
 import type { ChildProfileResponse } from '../../services/childProfileService';
@@ -280,7 +280,7 @@ export default function ParentDashboard() {
                 )}
                 <div className="w-24 h-24 bg-orange-100 rounded-[28px] border-4 border-[#FDFCF5] shadow-md flex-shrink-0 overflow-hidden relative">
                   <img 
-                    src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${selectedChild.fullName}`} 
+                    src={resolveAvatarUrl(selectedChild.avatar, selectedChild.fullName, 'adventurer')} 
                     alt={selectedChild.fullName} 
                     className="w-full h-full object-cover" 
                     referrerPolicy="no-referrer" 

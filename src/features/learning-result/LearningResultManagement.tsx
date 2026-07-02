@@ -389,7 +389,7 @@ export default function LearningResultManagement() {
         setApiError(
           error instanceof Error
             ? error.message
-            : 'Khong the tai du lieu ket qua tu API.'
+            : 'Không thể tải dữ liệu kết quả từ API.'
         );
       } finally {
         if (!cancelled) {

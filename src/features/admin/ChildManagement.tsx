@@ -21,7 +21,7 @@ import {
   X,
 } from 'lucide-react';
 import Pagination from '../../components/common/Pagination';
-import { cn } from '../../lib/utils';
+import { cn, resolveAvatarUrl } from '../../lib/utils';
 import CustomSelect from '../../components/common/CustomSelect';
 import {
   useChildManagementApi,
@@ -40,6 +40,7 @@ interface Child {
   LearningLevel: 'Beginner' | 'Intermediate' | 'Advanced';
   Note: string;
   Status: 'Active' | 'Inactive';
+  Avatar: string | null;
   CreatedAt: string;
   UpdatedAt: string;
 }
@@ -52,6 +53,7 @@ interface ChildFormState {
   learningLevel: Child['LearningLevel'];
   note: string;
   status: Child['Status'];
+  avatar: string | null;
 }
 
 const API_PAGE_SIZE = 100;
@@ -64,6 +66,7 @@ const EMPTY_FORM: ChildFormState = {
   learningLevel: 'Beginner',
   note: '',
   status: 'Active',
+  avatar: null,
 };
 
 function mapChildProfile(profile: ChildProfileResponse): Child {
@@ -76,6 +79,7 @@ function mapChildProfile(profile: ChildProfileResponse): Child {
     LearningLevel: profile.learningLevel,
     Note: profile.note?.trim() || 'Chưa có ghi chú bổ sung từ hệ thống.',
     Status: profile.status,
+    Avatar: profile.avatar || null,
     CreatedAt: profile.createdAt,
     UpdatedAt: profile.updatedAt ?? profile.createdAt,
   };
@@ -91,6 +95,7 @@ function mapChildToForm(child: Child): ChildFormState {
     note:
       child.Note === 'Chưa có ghi chú bổ sung từ hệ thống.' ? '' : child.Note,
     status: child.Status,
+    avatar: child.Avatar || null,
   };
 }
 
@@ -103,6 +108,7 @@ function mapFormToPayload(form: ChildFormState): ChildProfilePayload {
     learningLevel: form.learningLevel,
     note: form.note.trim() || null,
     status: form.status,
+    avatar: form.avatar || 'default',
   };
 }
 
@@ -756,7 +762,7 @@ export default function ChildManagement() {
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-4">
                           <img
-                            src={`https://api.dicebear.com/7.x/bottts/svg?seed=${child.FullName}`}
+                            src={resolveAvatarUrl(child.Avatar, child.FullName, 'bottts')}
                             alt={child.FullName}
                             className="h-10 w-10 rounded-2xl border border-orange-100/30 bg-orange-50/50 shrink-0"
                             referrerPolicy="no-referrer"
@@ -900,7 +906,7 @@ export default function ChildManagement() {
               <div className="flex flex-col items-start gap-8 border-b border-gray-50 pb-6 font-bold md:flex-row">
                 <div className="mx-auto flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl border border-purple-100 bg-purple-50 p-3 md:mx-0">
                   <img
-                    src={`https://api.dicebear.com/7.x/bottts/svg?seed=${selectedChild.FullName}`}
+                    src={resolveAvatarUrl(selectedChild.Avatar, selectedChild.FullName, 'bottts')}
                     alt="Detail Avatar"
                     className="h-full w-full object-cover"
                     referrerPolicy="no-referrer"
@@ -1092,6 +1098,56 @@ export default function ChildManagement() {
                     { value: 'Inactive', label: 'Tạm ngưng (Inactive)' },
                   ]}
                 />
+              </div>
+
+              {/* Avatar Preview & Selection */}
+              <div className="flex flex-col md:flex-row gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100 items-center">
+                <div className="text-center space-y-2 shrink-0">
+                  <div className="w-24 h-24 bg-orange-100 rounded-full border-4 border-white shadow-inner overflow-hidden mx-auto relative group">
+                    <img 
+                      src={resolveAvatarUrl(formState.avatar, formState.fullName || 'default', 'bottts')} 
+                      alt="profile preview" 
+                      className="w-full h-full object-cover" 
+                      referrerPolicy="no-referrer" 
+                    />
+                  </div>
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Ảnh đại diện</span>
+                </div>
+
+                <div className="flex-1 space-y-2 w-full">
+                  <span className="text-xs font-black text-gray-500 uppercase tracking-wider block text-left">Chọn ảnh đại diện cho bé</span>
+                  <div className="grid grid-cols-6 sm:grid-cols-11 gap-1.5 bg-white p-2.5 rounded-xl border border-slate-150">
+                    {/* Default dynamic option */}
+                    <button
+                      type="button"
+                      onClick={() => handleFormChange('avatar', null)}
+                      className={cn(
+                        "w-8 h-8 rounded-lg bg-slate-50 border flex items-center justify-center text-[8px] font-black text-slate-500 hover:border-[#4EACAF] transition-all cursor-pointer",
+                        formState.avatar === null ? "border-[#4EACAF] bg-[#4EACAF]/10 ring-2 ring-[#4EACAF]/10" : "border-slate-100"
+                      )}
+                      title="Mặc định"
+                    >
+                      MĐ
+                    </button>
+                    {/* 10 downloaded avatars */}
+                    {Array.from({ length: 10 }).map((_, idx) => {
+                      const avPath = `/avatars/avatar-${idx + 1}.svg`;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleFormChange('avatar', avPath)}
+                          className={cn(
+                            "w-8 h-8 rounded-lg overflow-hidden border hover:border-[#4EACAF] transition-all bg-white p-0.5 cursor-pointer",
+                            formState.avatar === avPath ? "border-[#4EACAF] ring-2 ring-[#4EACAF]/10" : "border-slate-100"
+                          )}
+                        >
+                          <img src={avPath} alt={`Avatar ${idx + 1}`} className="w-full h-full object-cover" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">

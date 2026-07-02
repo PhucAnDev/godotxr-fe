@@ -20,6 +20,7 @@ import {
   type SessionUser,
 } from '../../lib/authSession';
 import { useAccountSettingsApi } from '../../hooks/useAccountSettingsApi';
+import { resolveAvatarUrl } from '../../lib/utils';
 
 type UserGender = 'Male' | 'Female' | 'Other';
 
@@ -232,7 +233,7 @@ export default function AccountSettings() {
 
         <div className="bg-[#E2F2F3] border border-[#C5E1E3] p-4 rounded-[24px] flex items-center gap-4 shadow-sm self-start lg:self-center shrink-0">
           <img
-            src={`https://api.dicebear.com/7.x/open-peeps/svg?seed=${currentUser.FullName}`}
+            src={resolveAvatarUrl(currentUser.Avatar, currentUser.FullName, 'open-peeps')}
             alt="My Avatar"
             className="h-12 w-12 rounded-full border bg-white shadow-xs shrink-0"
             referrerPolicy="no-referrer"

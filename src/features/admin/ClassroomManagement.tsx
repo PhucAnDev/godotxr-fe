@@ -32,7 +32,7 @@ import {
   Activity,
   Heart
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn, resolveAvatarUrl } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
 import CustomSelect from '../../components/common/CustomSelect';
 import { useClassroomManagementApi, type ClassroomResponse } from '../../hooks/useClassroomManagementApi';
@@ -67,6 +67,7 @@ interface Teacher {
   Specialty: string;
   Email?: string;
   AvatarSeed?: string;
+  Avatar?: string | null;
 }
 
 interface Program {
@@ -84,6 +85,7 @@ interface EnrolledStudent {
   Gender: 'Male' | 'Female' | 'Other';
   ParentName: string;
   Phone: string;
+  Avatar?: string | null;
 }
 
 // Mock Data
@@ -162,7 +164,7 @@ export default function ClassroomManagement() {
       else triggerNotification(classResult.errors.join(' ') || classResult.message, 'warning');
       if (userResult.data) {
         const users = userResult.data.items;
-        setTeachers(users.filter(u => u.roleName === 'Teacher').map(u => ({ TeacherId: String(u.id), FullName: u.fullName, Specialty: u.specialty, Email: u.email, AvatarSeed: u.fullName })));
+        setTeachers(users.filter(u => u.roleName === 'Teacher').map(u => ({ TeacherId: String(u.id), FullName: u.fullName, Specialty: u.specialty, Email: u.email, AvatarSeed: u.fullName, Avatar: u.avatar || null })));
 
         if (enrollmentResult.data && childResult.data) {
           const parentById = new Map(
@@ -200,6 +202,7 @@ export default function ClassroomManagement() {
                 Gender: child.gender,
                 ParentName: parent?.fullName || `Parent #${child.userId}`,
                 Phone: parent?.phone || 'Chưa có số điện thoại',
+                Avatar: child.avatar || null,
               },
             ].sort((left, right) => left.FullName.localeCompare(right.FullName));
 
@@ -621,7 +624,7 @@ export default function ClassroomManagement() {
                           {teacher ? (
                             <div className="flex items-center gap-3">
                                <img 
-                                 src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${teacher.AvatarSeed}`} 
+                                 src={resolveAvatarUrl(teacher.Avatar, teacher.FullName, 'adventurer')} 
                                  alt="Teacher Avatar" 
                                  className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-100/40"
                                  referrerPolicy="no-referrer"
@@ -905,7 +908,7 @@ export default function ClassroomManagement() {
                         >
                           <div className="flex items-center gap-3">
                              <img 
-                               src={`https://api.dicebear.com/7.x/bottts/svg?seed=${student.FullName}`} 
+                               src={resolveAvatarUrl(student.Avatar, student.FullName, 'bottts')} 
                                alt="Child avatar" 
                                className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100/35"
                                referrerPolicy="no-referrer"

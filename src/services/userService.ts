@@ -10,6 +10,7 @@ export interface UserResponse {
   isActive: boolean;
   gender: string;
   specialty: string;
+  avatar: string | null;
   createdAt: string;
   updatedAt: string | null;
 }
@@ -65,6 +66,7 @@ export interface UserWithChildrenProfileResponse extends UserResponse {
     learningLevel: string;
     note: string | null;
     status: string;
+    avatar: string | null;
     createdAt: string;
     updatedAt: string | null;
   }>;
@@ -78,6 +80,7 @@ export interface UpdateUserPayload {
   isActive?: boolean;
   gender?: UserGender;
   specialty?: string;
+  avatar?: string | null;
 }
 
 export interface UserServiceResult<T = void> {

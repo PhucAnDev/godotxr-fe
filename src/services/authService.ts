@@ -37,6 +37,7 @@ export interface UserAuthInfo {
   roleName: string;
   isActive: boolean;
   mustChangePassword: boolean;
+  avatar: string | null;
 }
 
 export interface TokenModel {

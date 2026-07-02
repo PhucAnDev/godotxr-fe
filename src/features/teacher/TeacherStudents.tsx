@@ -15,7 +15,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { cn } from '../../lib/utils';
+import { cn, resolveAvatarUrl } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
 import { getCurrentUser } from '../../lib/authMock';
 import {
@@ -46,6 +46,7 @@ export interface Child {
   LearningLevel: string;
   Note: string;
   Status: 'Active' | 'Inactive';
+  Avatar: string | null;
   CreatedAt: string;
   UpdatedAt: string;
   ProgressLevel: 'Improving' | 'Stable' | 'Need Support';
@@ -82,6 +83,7 @@ function mapChildRecord(child: ChildProfileResponse): Omit<Child, 'ProgressLevel
     LearningLevel: child.learningLevel,
     Note: child.note ?? '',
     Status: child.status === 'Inactive' ? 'Inactive' : 'Active',
+    Avatar: child.avatar || null,
     CreatedAt: formatDateTime(child.createdAt),
     UpdatedAt: formatDateTime(child.updatedAt),
   };
@@ -136,9 +138,8 @@ async function loadAllPages<T>(
   return items;
 }
 
-function getAvatarUrl(id: string) {
-  const seed = id.toLowerCase();
-  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&backgroundColor=c0aede`;
+function getAvatarUrl(child: Child) {
+  return resolveAvatarUrl(child.Avatar, child.FullName, 'avataaars');
 }
 
 export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
@@ -585,7 +586,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                       <div className="relative shrink-0">
                         <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-[28px] border-4 border-white bg-sky-100 shadow-xl">
                           <img
-                            src={getAvatarUrl(child.ChildId)}
+                            src={getAvatarUrl(child)}
                             alt={child.FullName}
                             className="h-full w-full object-cover"
                             referrerPolicy="no-referrer"

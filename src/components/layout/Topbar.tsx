@@ -1,5 +1,5 @@
 import { Bell, Menu } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn, resolveAvatarUrl } from '../../lib/utils';
 import { getCurrentUser } from '../../lib/authMock';
 import type { UserRole } from '../../app/navigation';
 
@@ -92,7 +92,7 @@ export function Topbar({
           isAdmin ? 'border-slate-800' : isTeacher ? 'border-[#D2E0DC]' : 'border-[#E5DFCA]'
         )}>
           <img
-            src={`https://api.dicebear.com/7.x/open-peeps/svg?seed=${avatarSeed}&backgroundColor=transparent`}
+            src={resolveAvatarUrl((currentUser as any)?.Avatar || (currentUser as any)?.avatar, avatarSeed, 'open-peeps')}
             alt="My avatar"
             referrerPolicy="no-referrer"
             className={cn(

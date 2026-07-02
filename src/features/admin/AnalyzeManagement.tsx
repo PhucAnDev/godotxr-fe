@@ -20,7 +20,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import Pagination from '../../components/common/Pagination';
-import { cn } from '../../lib/utils';
+import { cn, resolveAvatarUrl } from '../../lib/utils';
 import CustomSelect from '../../components/common/CustomSelect';
 import { useAnalyzeApi, type AnalyzeResponse } from '../../hooks/useAnalyzeApi';
 import { useChildManagementApi } from '../../hooks/useChildManagementApi';
@@ -30,6 +30,7 @@ interface AnalyzeItem {
   Id: number;
   ChildId: number;
   ChildFullName: string;
+  ChildAvatar?: string | null;
   SpeechLevel: 'Mild' | 'Moderate' | 'Severe' | string;
   Diagnosis: string;
   Difficulties: string;
@@ -111,6 +112,7 @@ function mapAnalyzeResponse(item: AnalyzeResponse, childName?: string): AnalyzeI
     Id: item.id,
     ChildId: item.childId,
     ChildFullName: childName || `Trẻ em #${item.childId}`,
+    ChildAvatar: null,
     SpeechLevel: item.speechLevel || 'Mild',
     Diagnosis: item.diagnosis || '',
     Difficulties: item.difficulties || '',
@@ -290,9 +292,11 @@ export default function AnalyzeManagement() {
       }
     }
     const childMap = new Map<number, string>((list || []).map((c: any) => [c.id, c.fullName]));
+    const avatarMap = new Map<number, string | null>((list || []).map((c: any) => [c.id, c.avatar || null]));
     const mapped = loadedList.map(item => ({
       ...item,
-      ChildFullName: childMap.get(item.ChildId) || `Trẻ em #${item.ChildId}`
+      ChildFullName: childMap.get(item.ChildId) || `Trẻ em #${item.ChildId}`,
+      ChildAvatar: avatarMap.get(item.ChildId) || null
     }));
 
     setAnalyzeList(mapped);
@@ -631,7 +635,7 @@ export default function AnalyzeManagement() {
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
                             <img
-                              src={`https://api.dicebear.com/7.x/bottts/svg?seed=${item.ChildFullName}`}
+                              src={resolveAvatarUrl(item.ChildAvatar, item.ChildFullName, 'bottts')}
                               alt="Child Avatar"
                               className="h-full w-full object-cover"
                               referrerPolicy="no-referrer"
@@ -748,7 +752,7 @@ export default function AnalyzeManagement() {
               <div className="flex flex-col items-start gap-8 border-b border-gray-50 pb-6 font-bold md:flex-row">
                 <div className="mx-auto flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl border border-purple-100 bg-purple-50 p-3 md:mx-0">
                   <img
-                    src={`https://api.dicebear.com/7.x/bottts/svg?seed=${selectedAnalyze.ChildFullName}`}
+                    src={resolveAvatarUrl(selectedAnalyze.ChildAvatar, selectedAnalyze.ChildFullName, 'bottts')}
                     alt="Detail Avatar"
                     className="h-full w-full object-cover"
                     referrerPolicy="no-referrer"

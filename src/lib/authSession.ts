@@ -14,6 +14,7 @@ export interface SessionUser {
   Status: 'Active' | 'Inactive' | 'Locked';
   MustChangePassword: boolean;
   Password: string;
+  Avatar: string | null;
   CreatedAt: string;
   UpdatedAt: string;
 }
@@ -45,6 +46,7 @@ export function buildSessionUser(userInfo: UserAuthInfo): SessionUser {
     Status: userInfo.isActive ? 'Active' : 'Inactive',
     MustChangePassword: userInfo.mustChangePassword,
     Password: '',
+    Avatar: userInfo.avatar || null,
     CreatedAt: '',
     UpdatedAt: '',
   };

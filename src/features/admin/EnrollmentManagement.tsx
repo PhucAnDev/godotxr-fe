@@ -29,7 +29,7 @@ import {
   Info,
   ExternalLink
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn, resolveAvatarUrl } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
 import CustomSelect from '../../components/common/CustomSelect';
 import { useEnrollmentManagementApi, type EnrollmentResponse } from '../../hooks/useEnrollmentManagementApi';
@@ -42,6 +42,7 @@ interface Child {
   Gender: 'Male' | 'Female' | 'Other';
   LearningLevel: 'Beginner' | 'Intermediate' | 'Advanced';
   Status: 'Active' | 'Inactive';
+  Avatar?: string | null;
 }
 
 interface Classroom {
@@ -228,7 +229,7 @@ export default function EnrollmentManagement() {
     void Promise.all([getEnrollments(), getChildProfiles(), getClassrooms()]).then(([enrollmentResult, childResult, classResult]) => {
       if (enrollmentResult.success && enrollmentResult.data) setEnrollments(enrollmentResult.data.items.map(mapEnrollment));
       else triggerNotification(enrollmentResult.errors.join(' ') || enrollmentResult.message, 'warning');
-      if (childResult.data) setChildren(childResult.data.items.map(c => ({ ChildId: String(c.id), FullName: c.fullName, Age: c.age, Gender: c.gender, LearningLevel: c.learningLevel, Status: c.status })));
+      if (childResult.data) setChildren(childResult.data.items.map(c => ({ ChildId: String(c.id), FullName: c.fullName, Age: c.age, Gender: c.gender, LearningLevel: c.learningLevel, Status: c.status, Avatar: c.avatar || null })));
       if (classResult.data) setClassrooms(classResult.data.items.map(c => ({ ClassId: String(c.id), ClassName: c.className, TeacherId: String(c.userId), TeacherName: c.teacherName, ProgramId: String(c.programId), ProgramName: c.programName, Status: c.status as Classroom['Status'] })));
     });
   }, []);
@@ -659,7 +660,7 @@ export default function EnrollmentManagement() {
                         <td className="py-5 px-6 whitespace-nowrap">
                           <div className="flex items-center gap-3">
                             <img 
-                              src={`https://api.dicebear.com/7.x/bottts/svg?seed=${child?.FullName || enrollment.ChildId}`} 
+                              src={resolveAvatarUrl(child?.Avatar, child?.FullName || enrollment.ChildId, 'bottts')} 
                               alt="Baby avatar" 
                               className="w-9 h-9 rounded-xl bg-orange-100/50 border border-orange-200/20"
                               referrerPolicy="no-referrer"
@@ -862,7 +863,7 @@ export default function EnrollmentManagement() {
                         <div className="flex flex-col md:flex-row gap-6 items-start pb-6 border-b border-gray-50 font-bold">
                            <div className="w-20 h-20 rounded-3xl bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0 mx-auto md:mx-0 p-2">
                               <img 
-                                src={`https://api.dicebear.com/7.x/bottts/svg?seed=${child?.FullName || selectedEnrollment.ChildId}`} 
+                                src={resolveAvatarUrl(child?.Avatar, child?.FullName || selectedEnrollment.ChildId, 'bottts')} 
                                 alt="Detail Avatar" 
                                 className="w-full h-full object-cover"
                                 referrerPolicy="no-referrer"

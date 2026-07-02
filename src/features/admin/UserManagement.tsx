@@ -22,7 +22,7 @@ import {
   Info,
   Loader2,
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn, resolveAvatarUrl } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
 import CustomSelect from '../../components/common/CustomSelect';
 import { useUserManagement, type UserResponse } from '../../hooks/useUserManagement';
@@ -395,7 +395,7 @@ export default function UserManagement() {
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3">
                           <img
-                            src={`https://api.dicebear.com/7.x/open-peeps/svg?seed=${user.fullName}`}
+                            src={resolveAvatarUrl(user.avatar, user.fullName, 'open-peeps')}
                             alt={user.fullName}
                             className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200"
                             referrerPolicy="no-referrer"
@@ -849,7 +849,7 @@ function DetailModalBody({
       <div className="flex flex-col md:flex-row gap-8 items-start pb-6 border-b border-gray-50">
         <div className="w-24 h-24 rounded-3xl bg-purple-50 border border-purple-100 flex items-center justify-center p-3 shrink-0 mx-auto md:mx-0">
           <img
-            src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${user.fullName}`}
+            src={resolveAvatarUrl(user.avatar, user.fullName, 'adventurer')}
             alt="Detail Avatar"
             className="w-full h-full object-cover"
             referrerPolicy="no-referrer"
