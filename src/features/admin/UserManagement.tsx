@@ -21,6 +21,9 @@ import {
   AlertTriangle,
   Info,
   Loader2,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
 } from 'lucide-react';
 import { cn, resolveAvatarUrl } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
@@ -126,6 +129,53 @@ export default function UserManagement() {
 
   const [selectedCreateRole, setSelectedCreateRole] =
     React.useState<CreateAccountRole | null>(null);
+
+  const [sortColumn, setSortColumn] = React.useState<keyof UserResponse | null>(null);
+  const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc' | null>(null);
+
+  const handleSort = (column: keyof UserResponse) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortColumn(null);
+        setSortDirection(null);
+      } else {
+        setSortDirection('asc');
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedUsers = React.useMemo(() => {
+    if (!sortColumn || !sortDirection) {
+      return filteredUsers;
+    }
+    return [...filteredUsers].sort((a, b) => {
+      const valA = a[sortColumn];
+      const valB = b[sortColumn];
+
+      if (sortColumn === 'id') {
+        return sortDirection === 'asc' ? a.id - b.id : b.id - a.id;
+      }
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortDirection === 'asc'
+          ? valA.localeCompare(valB, 'vi-VN')
+          : valB.localeCompare(valA, 'vi-VN');
+      }
+
+      if (typeof valA === 'boolean' && typeof valB === 'boolean') {
+        return sortDirection === 'asc'
+          ? (valA ? 1 : 0) - (valB ? 1 : 0)
+          : (valB ? 1 : 0) - (valA ? 1 : 0);
+      }
+
+      return 0;
+    });
+  }, [filteredUsers, sortColumn, sortDirection]);
 
   const isCreateMode = modalType === 'add';
   const isChoosingCreateRole = isCreateMode && selectedCreateRole === null;
@@ -374,25 +424,103 @@ export default function UserManagement() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-500 font-bold text-xs uppercase tracking-wider">
-                    <th className="py-4 px-6">Mã ID</th>
-                    <th className="py-4 px-6">Tên đầy đủ</th>
-                    <th className="py-4 px-6">Liên hệ</th>
-                    <th className="py-4 px-6">Vai trò</th>
-                    <th className="py-4 px-6">Trạng thái</th>
-                    <th className="py-4 px-6">Ngày tham gia</th>
-                    <th className="py-4 px-6 text-right">Tùy chọn</th>
+                    <th
+                      onClick={() => handleSort('id')}
+                      className="py-4 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Mã ID"
+                    >
+                      <div className="flex items-center gap-1">
+                        Mã ID
+                        {sortColumn === 'id' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-[#4EACAF]" /> : <ArrowDown className="w-3.5 h-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="w-3.5 h-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('fullName')}
+                      className="py-4 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Họ tên"
+                    >
+                      <div className="flex items-center gap-1">
+                        Tên đầy đủ
+                        {sortColumn === 'fullName' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-[#4EACAF]" /> : <ArrowDown className="w-3.5 h-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="w-3.5 h-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('email')}
+                      className="py-4 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Email liên hệ"
+                    >
+                      <div className="flex items-center gap-1">
+                        Liên hệ
+                        {sortColumn === 'email' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-[#4EACAF]" /> : <ArrowDown className="w-3.5 h-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="w-3.5 h-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('roleName')}
+                      className="py-4 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Vai trò"
+                    >
+                      <div className="flex items-center gap-1">
+                        Vai trò
+                        {sortColumn === 'roleName' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-[#4EACAF]" /> : <ArrowDown className="w-3.5 h-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="w-3.5 h-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('isActive')}
+                      className="py-4 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Trạng thái"
+                    >
+                      <div className="flex items-center gap-1">
+                        Trạng thái
+                        {sortColumn === 'isActive' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-[#4EACAF]" /> : <ArrowDown className="w-3.5 h-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="w-3.5 h-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('createdAt')}
+                      className="py-4 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Ngày tham gia"
+                    >
+                      <div className="flex items-center gap-1">
+                        Ngày tham gia
+                        {sortColumn === 'createdAt' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-[#4EACAF]" /> : <ArrowDown className="w-3.5 h-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="w-3.5 h-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="py-4 px-6 text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium text-sm text-slate-700">
-                  {filteredUsers.map((user) => (
+                  {sortedUsers.map((user) => (
                     <tr key={user.id} className="hover:bg-slate-50/40 transition-colors">
                       {/* ID */}
-                      <td className="py-4 px-6 font-mono text-slate-400 font-bold text-xs">
+                      <td className="py-4 px-[5px] font-mono text-slate-400 font-bold text-xs">
                         USR-{String(user.id).padStart(3, '0')}
                       </td>
 
                       {/* Tên & Email */}
-                      <td className="py-4 px-6">
+                      <td className="py-4 px-[5px]">
                         <div className="flex items-center gap-3">
                           <img
                             src={resolveAvatarUrl(user.avatar, user.fullName, 'open-peeps')}
@@ -408,12 +536,12 @@ export default function UserManagement() {
                       </td>
 
                       {/* Số điện thoại */}
-                      <td className="py-4 px-6 text-xs">
+                      <td className="py-4 px-[5px] text-xs">
                         <p className="text-slate-700 font-semibold">{user.phone || '—'}</p>
                       </td>
 
                       {/* Role badge */}
-                      <td className="py-4 px-6">
+                      <td className="py-4 px-[5px]">
                         <span className={cn(
                           'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase',
                           getRoleBadgeClass(user.roleName)
@@ -423,7 +551,7 @@ export default function UserManagement() {
                       </td>
 
                       {/* Status badge */}
-                      <td className="py-4 px-6">
+                      <td className="py-4 px-[5px]">
                         <span className={cn(
                           'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold uppercase tracking-wide',
                           getStatusBadgeClass(user.isActive)
@@ -433,7 +561,7 @@ export default function UserManagement() {
                       </td>
 
                       {/* Ngày tham gia */}
-                      <td className="py-4 px-6 text-slate-400 text-xs">
+                      <td className="py-4 px-[5px] text-slate-400 text-xs">
                         <div className="flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5 text-slate-350" />
                           {user.createdAt.slice(0, 10)}
@@ -441,7 +569,7 @@ export default function UserManagement() {
                       </td>
 
                       {/* Action buttons */}
-                      <td className="py-5 px-6 text-right">
+                      <td className="py-5 px-[5px] text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleOpenDetail(user)}

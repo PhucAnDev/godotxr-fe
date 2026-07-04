@@ -638,13 +638,13 @@ export default function EnrollmentManagement() {
               <table className="w-full text-left border-collapse" id="enrollment-table">
                 <thead>
                   <tr className="bg-[#FDFCF5]/50 border-b border-gray-100 text-[#555] font-bold text-xs uppercase tracking-widest">
-                    <th className="py-5 px-10 w-[5%] whitespace-nowrap">ID</th>
-                    <th className="py-5 px-6 w-[18%] whitespace-nowrap">Em bé điều trị</th>
-                    <th className="py-5 px-6 w-[22%] whitespace-nowrap">Lớp tiếp nhận</th>
-                    <th className="py-5 px-6 w-[15%] whitespace-nowrap">Cấp độ phát âm</th>
-                    <th className="py-5 px-6 w-[12%] whitespace-nowrap">Ngày Nhập Lớp</th>
-                    <th className="py-5 px-6 w-[13%] whitespace-nowrap">Trạng thái ghi danh</th>
-                    <th className="py-5 px-10 text-right w-[15%] whitespace-nowrap">Quản lý thao tác</th>
+                    <th className="py-5 px-[5px] w-[5%] whitespace-nowrap">ID</th>
+                    <th className="py-5 px-[5px] w-[18%] whitespace-nowrap">Em bé điều trị</th>
+                    <th className="py-5 px-[5px] w-[22%] whitespace-nowrap">Lớp tiếp nhận</th>
+                    <th className="py-5 px-[5px] w-[15%] whitespace-nowrap">Cấp độ phát âm</th>
+                    <th className="py-5 px-[5px] w-[12%] whitespace-nowrap">Ngày Nhập Lớp</th>
+                    <th className="py-5 px-[5px] w-[13%] whitespace-nowrap">Trạng thái ghi danh</th>
+                    <th className="py-5 px-[5px] text-right w-[15%] whitespace-nowrap">Quản lý thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
@@ -654,10 +654,10 @@ export default function EnrollmentManagement() {
 
                     return (
                       <tr key={enrollment.EnrollmentId} className="hover:bg-gray-50/40 transition-colors">
-                        <td className="py-5 px-10 font-mono text-gray-400 font-black text-xs whitespace-nowrap">
+                        <td className="py-5 px-[5px] font-mono text-gray-400 font-black text-xs whitespace-nowrap">
                           {enrollment.EnrollmentId}
                         </td>
-                        <td className="py-5 px-6 whitespace-nowrap">
+                        <td className="py-5 px-[5px] whitespace-nowrap">
                           <div className="flex items-center gap-3">
                             <img 
                               src={resolveAvatarUrl(child?.Avatar, child?.FullName || enrollment.ChildId, 'bottts')} 
@@ -671,7 +671,7 @@ export default function EnrollmentManagement() {
                             </div>
                           </div>
                         </td>
-                        <td className="py-5 px-6">
+                        <td className="py-5 px-[5px]">
                           {classroom ? (
                             <div className="space-y-0.5 max-w-[200px]">
                               <p className="text-gray-800 font-extrabold truncate" title={classroom.ClassName}>{classroom.ClassName}</p>
@@ -681,7 +681,7 @@ export default function EnrollmentManagement() {
                             <span className="text-[#FF8E8E] italic text-xs whitespace-nowrap">Bị lỗi lớp học</span>
                           )}
                         </td>
-                        <td className="py-5 px-6 whitespace-nowrap">
+                        <td className="py-5 px-[5px] whitespace-nowrap">
                           {child ? (
                             <span className={cn(
                               "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap",
@@ -696,13 +696,13 @@ export default function EnrollmentManagement() {
                             <span className="text-gray-300">-</span>
                           )}
                         </td>
-                        <td className="py-5 px-6 font-medium text-gray-500 whitespace-nowrap">
+                        <td className="py-5 px-[5px] font-medium text-gray-500 whitespace-nowrap">
                           <div className="flex items-center gap-1.5 font-bold text-gray-700 whitespace-nowrap">
                             <Calendar className="w-4 h-4 text-gray-400" />
                             {enrollment.EnrollmentDate}
                           </div>
                         </td>
-                        <td className="py-5 px-6 whitespace-nowrap">
+                        <td className="py-5 px-[5px] whitespace-nowrap">
                           <span className={cn(
                             "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap",
                             enrollment.Status === 'Active' ? 'bg-emerald-50 text-emerald-600' :
@@ -716,7 +716,7 @@ export default function EnrollmentManagement() {
                             {enrollment.Status === 'Pending' && '⏳ Chờ duyệt'}
                           </span>
                         </td>
-                        <td className="py-5 px-10 text-right whitespace-nowrap">
+                        <td className="py-5 px-[5px] text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
                             {enrollment.Status === 'Pending' && (
                               <button 

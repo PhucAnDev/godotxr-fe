@@ -4,6 +4,7 @@ import {
   createClassroom as createClassroomService,
   getClassrooms as getClassroomsService,
   updateClassroom as updateClassroomService,
+  getClassroomById as getClassroomByIdService,
 } from '../services/classroomService';
 import { getEnrollments as getEnrollmentsService } from '../services/enrollmentService';
 import { getPrograms as getProgramsService } from '../services/programService';
@@ -21,6 +22,7 @@ export function useClassroomManagementApi() {
   const getChildProfiles = useCallback((...args: Parameters<typeof getChildProfilesService>) => getChildProfilesService(...args), []);
   const createClassroom = useCallback((...args: Parameters<typeof createClassroomService>) => createClassroomService(...args), []);
   const updateClassroom = useCallback((...args: Parameters<typeof updateClassroomService>) => updateClassroomService(...args), []);
+  const getClassroomById = useCallback((...args: Parameters<typeof getClassroomByIdService>) => getClassroomByIdService(...args), []);
 
   return {
     getClassrooms,
@@ -31,5 +33,6 @@ export function useClassroomManagementApi() {
     getChildProfiles,
     createClassroom,
     updateClassroom,
+    getClassroomById,
   };
 }

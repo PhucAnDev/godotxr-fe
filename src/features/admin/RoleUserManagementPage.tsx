@@ -20,6 +20,9 @@ import {
   UserX,
   Users,
   X,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Pagination from '../../components/common/Pagination';
@@ -258,6 +261,25 @@ export default function RoleUserManagementPage({
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'Active' | 'Locked'>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [sortColumn, setSortColumn] = useState<keyof UserResponse | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
+
+  const handleSort = (column: keyof UserResponse) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortColumn(null);
+        setSortDirection(null);
+      } else {
+        setSortDirection('asc');
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
   const [modalMode, setModalMode] = useState<ModalMode>(null);
   const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
   const [alertConfig, setAlertConfig] = useState<ToastConfig | null>(null);
@@ -326,7 +348,7 @@ export default function RoleUserManagementPage({
   const filteredUsers = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    return users.filter((user) => {
+    const filtered = users.filter((user) => {
       const matchesSearch =
         query.length === 0 ||
         user.fullName.toLowerCase().includes(query) ||
@@ -345,7 +367,32 @@ export default function RoleUserManagementPage({
 
       return matchesSearch && matchesGender && matchesStatus;
     });
-  }, [genderFilter, searchQuery, statusFilter, users]);
+
+    if (!sortColumn || !sortDirection) {
+      return filtered;
+    }
+
+    return [...filtered].sort((a, b) => {
+      const valA = a[sortColumn];
+      const valB = b[sortColumn];
+
+      if (typeof valA === 'boolean' && typeof valB === 'boolean') {
+        const orderA = valA ? 1 : 0;
+        const orderB = valB ? 1 : 0;
+        return sortDirection === 'asc' ? orderA - orderB : orderB - orderA;
+      }
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortDirection === 'asc' ? valA.localeCompare(valB, 'vi-VN') : valB.localeCompare(valA, 'vi-VN');
+      }
+
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortDirection === 'asc' ? valA - valB : valB - valA;
+      }
+
+      return 0;
+    });
+  }, [genderFilter, searchQuery, statusFilter, users, sortColumn, sortDirection]);
 
   const paginatedUsers = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
@@ -719,26 +766,100 @@ export default function RoleUserManagementPage({
               <table className="w-full border-collapse text-left">
                 <thead>
                   <tr className="border-b border-gray-100 bg-[#FDFCF5]/50 text-xs font-bold uppercase tracking-widest text-[#555]">
-                    <th className="w-[10%] min-w-[110px] px-8 py-5">Mã người dùng</th>
-                    <th className="w-[23%] min-w-[200px] px-6 py-5">
-                      {variant === 'teacher' ? 'Giáo viên' : 'Phụ huynh'}
+                    <th
+                      onClick={() => handleSort('id')}
+                      className="w-[10%] min-w-[110px] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Mã người dùng"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Mã người dùng
+                        {sortColumn === 'id' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
                     </th>
-                    <th className="w-[27%] min-w-[240px] px-6 py-5">Email</th>
-                    <th className="w-[18%] min-w-[160px] px-6 py-5">
-                      {variant === 'teacher' ? config.specialtyLabel : 'Số điện thoại'}
+                    <th
+                      onClick={() => handleSort('fullName')}
+                      className="w-[23%] min-w-[200px] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title={variant === 'teacher' ? 'Sắp xếp theo Giáo viên' : 'Sắp xếp theo Phụ huynh'}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        {variant === 'teacher' ? 'Giáo viên' : 'Phụ huynh'}
+                        {sortColumn === 'fullName' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
                     </th>
-                    <th className="w-[8%] min-w-[80px] px-6 py-5">Giới tính</th>
-                    <th className="w-[9%] min-w-[100px] px-6 py-5">Trạng thái</th>
-                    <th className="w-[5%] min-w-[110px] px-8 py-5 text-right">Tùy chọn</th>
+                    <th
+                      onClick={() => handleSort('email')}
+                      className="w-[27%] min-w-[240px] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Email"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Email
+                        {sortColumn === 'email' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort(variant === 'teacher' ? 'specialty' : 'phone')}
+                      className="w-[18%] min-w-[160px] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title={variant === 'teacher' ? 'Sắp xếp theo Chuyên môn' : 'Sắp xếp theo Số điện thoại'}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        {variant === 'teacher' ? config.specialtyLabel : 'Số điện thoại'}
+                        {sortColumn === (variant === 'teacher' ? 'specialty' : 'phone') ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('gender')}
+                      className="w-[8%] min-w-[80px] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Giới tính"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Giới tính
+                        {sortColumn === 'gender' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('isActive')}
+                      className="w-[9%] min-w-[100px] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Trạng thái"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Trạng thái
+                        {sortColumn === 'isActive' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="w-[5%] min-w-[110px] px-[5px] py-5 text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm font-bold text-gray-700">
                   {paginatedUsers.map((user) => (
                     <tr key={user.id} className="transition-colors hover:bg-gray-50/40">
-                      <td className="px-8 py-5 font-mono text-xs font-black text-gray-400">
+                      <td className="px-[5px] py-5 font-mono text-xs font-black text-gray-400">
                         {formatUserCode(user.id)}
                       </td>
-                      <td className="px-6 py-5">
+                      <td className="px-[5px] py-5">
                         <div className="space-y-1">
                           <p className="text-base font-black text-[#111]">
                             {user.fullName}
@@ -748,13 +869,13 @@ export default function RoleUserManagementPage({
                           </p>
                         </div>
                       </td>
-                      <td className="px-6 py-5">
+                      <td className="px-[5px] py-5">
                         <div className="flex items-center gap-2 font-semibold text-slate-700">
                           <Mail className="h-4 w-4 text-slate-400" />
                           <span>{user.email}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-5">
+                      <td className="px-[5px] py-5">
                         {variant === 'teacher' ? (
                           <span className="font-semibold text-slate-700">
                             {user.specialty || 'Chưa cập nhật'}
@@ -766,10 +887,10 @@ export default function RoleUserManagementPage({
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-5 font-semibold text-slate-700">
+                      <td className="px-[5px] py-5 font-semibold text-slate-700">
                         {getGenderLabel(user.gender)}
                       </td>
-                      <td className="px-6 py-5">
+                      <td className="px-[5px] py-5">
                         <span
                           className={cn(
                             'inline-flex rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide',
@@ -779,7 +900,7 @@ export default function RoleUserManagementPage({
                           {getStatusLabel(user.isActive)}
                         </span>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-[5px] py-5">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             type="button"

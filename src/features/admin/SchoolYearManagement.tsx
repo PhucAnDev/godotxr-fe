@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Plus, 
@@ -19,7 +19,10 @@ import {
   Sparkles,
   SlidersHorizontal,
   ChevronDown,
-  Info
+  Info,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import CustomSelect from '../../components/common/CustomSelect';
@@ -82,6 +85,24 @@ export default function SchoolYearManagement() {
   const [schoolYears, setSchoolYears] = useState<SchoolYear[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [sortColumn, setSortColumn] = useState<keyof SchoolYear | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
+
+  const handleSort = (column: keyof SchoolYear) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortColumn(null);
+        setSortDirection(null);
+      } else {
+        setSortDirection('asc');
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
 
   // Popup toasts feedback helper
   const [alertConfig, setAlertConfig] = useState<{ message: string; type: 'success' | 'warning' } | null>(null);
@@ -266,16 +287,43 @@ export default function SchoolYearManagement() {
   };
 
   // Searching logic pipeline
-  const filteredYears = schoolYears.filter(item => {
-    const searchString = `${item.SchoolYearName} ${item.SchoolYearId}`.toLowerCase();
-    const queryMatch = searchString.includes(searchQuery.toLowerCase());
+  const filteredYears = useMemo(() => {
+    const filtered = schoolYears.filter(item => {
+      const searchString = `${item.SchoolYearName} ${item.SchoolYearId}`.toLowerCase();
+      const queryMatch = searchString.includes(searchQuery.toLowerCase());
 
-    const statusMatch = 
-      filterStatus === 'ALL' || 
-      item.Status === filterStatus;
+      const statusMatch = 
+        filterStatus === 'ALL' || 
+        item.Status === filterStatus;
 
-    return queryMatch && statusMatch;
-  });
+      return queryMatch && statusMatch;
+    });
+
+    if (!sortColumn || !sortDirection) {
+      return filtered;
+    }
+
+    return [...filtered].sort((a, b) => {
+      const valA = a[sortColumn];
+      const valB = b[sortColumn];
+
+      if (sortColumn === 'SchoolYearId') {
+        const numA = Number(a.SchoolYearId.replace(/\D/g, '')) || 0;
+        const numB = Number(b.SchoolYearId.replace(/\D/g, '')) || 0;
+        return sortDirection === 'asc' ? numA - numB : numB - numA;
+      }
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortDirection === 'asc' ? valA.localeCompare(valB, 'vi-VN') : valB.localeCompare(valA, 'vi-VN');
+      }
+
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortDirection === 'asc' ? valA - valB : valB - valA;
+      }
+
+      return 0;
+    });
+  }, [schoolYears, searchQuery, filterStatus, sortColumn, sortDirection]);
 
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative" id="school-year-root">
@@ -443,43 +491,121 @@ export default function SchoolYearManagement() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse" id="year-table-element">
-              <thead>
-                <tr className="bg-[#FDFCF5]/60 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
-                  <th className="py-5 px-10">Mã Năm Học</th>
-                  <th className="py-5 px-6">Tên Niên Khóa</th>
-                  <th className="py-5 px-6">Bắt đầu</th>
-                  <th className="py-5 px-6">Kết thúc</th>
-                  <th className="py-5 px-6">Trạng thái</th>
-                  <th className="py-5 px-6">Thời điểm tạo</th>
-                  <th className="py-5 px-10 text-right">Lựa chọn điều phối</th>
-                </tr>
-              </thead>
+                <thead>
+                  <tr className="bg-[#FDFCF5]/60 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
+                    <th
+                      onClick={() => handleSort('SchoolYearId')}
+                      className="py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Mã Năm Học"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Mã Năm Học
+                        {sortColumn === 'SchoolYearId' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('SchoolYearName')}
+                      className="py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Tên Niên Khóa"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Tên Niên Khóa
+                        {sortColumn === 'SchoolYearName' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('StartDate')}
+                      className="py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Ngày Bắt Đầu"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Bắt đầu
+                        {sortColumn === 'StartDate' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('EndDate')}
+                      className="py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Ngày Kết Thúc"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Kết thúc
+                        {sortColumn === 'EndDate' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('Status')}
+                      className="py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Trạng thái"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Trạng thái
+                        {sortColumn === 'Status' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('CreatedAt')}
+                      className="py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Thời điểm tạo"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Thời điểm tạo
+                        {sortColumn === 'CreatedAt' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="py-5 px-[5px] text-right select-none">Lựa chọn điều phối</th>
+                  </tr>
+                </thead>
               <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
                 {filteredYears.map((year) => (
                   <tr key={year.SchoolYearId} className="hover:bg-slate-50/50 transition-colors">
                     
                     {/* ID */}
-                    <td className="py-5 px-10 font-mono text-gray-400 font-extrabold text-xs">
+                    <td className="py-5 px-[5px] font-mono text-gray-400 font-extrabold text-xs">
                       {year.SchoolYearId}
                     </td>
 
                     {/* Name */}
-                    <td className="py-5 px-6 font-extrabold text-[#111] italic text-base">
+                    <td className="py-5 px-[5px] font-extrabold text-[#111] italic text-base">
                       {year.SchoolYearName}
                     </td>
 
                     {/* Start Date */}
-                    <td className="py-5 px-6 text-gray-500 font-mono text-xs">
+                    <td className="py-5 px-[5px] text-gray-500 font-mono text-xs">
                       {year.StartDate}
                     </td>
 
                     {/* End Date */}
-                    <td className="py-5 px-6 text-gray-500 font-mono text-xs">
+                    <td className="py-5 px-[5px] text-gray-500 font-mono text-xs">
                       {year.EndDate}
                     </td>
 
                     {/* Status Badge */}
-                    <td className="py-5 px-6">
+                    <td className="py-5 px-[5px]">
                       <span className={cn(
                         "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border",
                         year.Status === 'Active' && 'bg-emerald-50 text-emerald-600 border-emerald-100',
@@ -498,12 +624,12 @@ export default function SchoolYearManagement() {
                     </td>
 
                     {/* CreatedAt */}
-                    <td className="py-5 px-6 text-xs text-gray-400 font-medium">
+                    <td className="py-5 px-[5px] text-xs text-gray-400 font-medium">
                       {year.CreatedAt}
                     </td>
 
                     {/* Actions tools */}
-                    <td className="py-5 px-10 text-right">
+                    <td className="py-5 px-[5px] text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         
                         {/* Edit button */}

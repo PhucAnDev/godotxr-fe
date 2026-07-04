@@ -18,6 +18,9 @@ import {
   TrendingUp,
   X,
   Calendar,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown
 } from 'lucide-react';
 import Pagination from '../../components/common/Pagination';
 import { cn, resolveAvatarUrl } from '../../lib/utils';
@@ -229,6 +232,24 @@ export default function AnalyzeManagement() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [sortColumn, setSortColumn] = useState<keyof AnalyzeItem | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
+
+  const handleSort = (column: keyof AnalyzeItem) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortColumn(null);
+        setSortDirection(null);
+      } else {
+        setSortDirection('asc');
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
 
   const [modalType, setModalType] = useState<'detail' | 'form' | 'delete' | null>(null);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
@@ -471,16 +492,57 @@ export default function AnalyzeManagement() {
       item.SocialInteraction === 'Excellent'
   ).length;
 
-  const filteredList = analyzeList.filter((item) => {
-    const matchesSearch = item.ChildFullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.Diagnosis.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesProgress =
-      filterProgress === 'ALL'
-        ? true
-        : item.SpeechLevel.toLowerCase() === filterProgress.toLowerCase();
+  const filteredList = useMemo(() => {
+    const filtered = analyzeList.filter((item) => {
+      const matchesSearch = item.ChildFullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.Diagnosis.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesProgress =
+        filterProgress === 'ALL'
+          ? true
+          : item.SpeechLevel.toLowerCase() === filterProgress.toLowerCase();
 
-    return matchesSearch && matchesProgress;
-  });
+      return matchesSearch && matchesProgress;
+    });
+
+    if (!sortColumn || !sortDirection) {
+      return filtered;
+    }
+
+    return [...filtered].sort((a, b) => {
+      const valA = a[sortColumn];
+      const valB = b[sortColumn];
+
+      if (sortColumn === 'SpeechLevel') {
+        const order = { Mild: 1, Moderate: 2, Severe: 3 };
+        const orderA = order[valA as 'Mild' | 'Moderate' | 'Severe'] || 0;
+        const orderB = order[valB as 'Mild' | 'Moderate' | 'Severe'] || 0;
+        return sortDirection === 'asc' ? orderA - orderB : orderB - orderA;
+      }
+
+      if (sortColumn === 'PronunciationAbility') {
+        const order = { VeryPoor: 1, Poor: 2, Average: 3, Good: 4, Excellent: 5 };
+        const orderA = order[valA as 'VeryPoor' | 'Poor' | 'Average' | 'Good' | 'Excellent'] || 0;
+        const orderB = order[valB as 'VeryPoor' | 'Poor' | 'Average' | 'Good' | 'Excellent'] || 0;
+        return sortDirection === 'asc' ? orderA - orderB : orderB - orderA;
+      }
+
+      if (sortColumn === 'AssessmentDate' || sortColumn === 'NextAssessmentDate') {
+        const dateA = new Date(valA as string).getTime();
+        const dateB = new Date(valB as string).getTime();
+        return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortDirection === 'asc' ? valA.localeCompare(valB, 'vi-VN') : valB.localeCompare(valA, 'vi-VN');
+      }
+
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortDirection === 'asc' ? valA - valB : valB - valA;
+      }
+
+      return 0;
+    });
+  }, [analyzeList, searchQuery, filterProgress, sortColumn, sortDirection]);
 
   const paginatedList = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -619,19 +681,97 @@ export default function AnalyzeManagement() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    <th className="px-6 py-4">Bé học</th>
-                    <th className="px-6 py-4">Mức độ chậm nói</th>
-                    <th className="px-6 py-4">Chẩn đoán sơ bộ</th>
-                    <th className="px-6 py-4">Khả năng phát âm</th>
-                    <th className="px-6 py-4">Ngày đánh giá</th>
-                    <th className="px-6 py-4">Đánh giá tiếp theo</th>
-                    <th className="px-6 py-4 text-right">Thao tác</th>
+                    <th
+                      onClick={() => handleSort('ChildFullName')}
+                      className="px-[5px] py-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Họ tên bé"
+                    >
+                      <div className="flex items-center gap-1">
+                        Bé học
+                        {sortColumn === 'ChildFullName' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('SpeechLevel')}
+                      className="px-[5px] py-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Mức độ chậm nói"
+                    >
+                      <div className="flex items-center gap-1">
+                        Mức độ chậm nói
+                        {sortColumn === 'SpeechLevel' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('Diagnosis')}
+                      className="px-[5px] py-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Chẩn đoán"
+                    >
+                      <div className="flex items-center gap-1">
+                        Chẩn đoán sơ bộ
+                        {sortColumn === 'Diagnosis' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('PronunciationAbility')}
+                      className="px-[5px] py-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Khả năng phát âm"
+                    >
+                      <div className="flex items-center gap-1">
+                        Khả năng phát âm
+                        {sortColumn === 'PronunciationAbility' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('AssessmentDate')}
+                      className="px-[5px] py-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Ngày đánh giá"
+                    >
+                      <div className="flex items-center gap-1">
+                        Ngày đánh giá
+                        {sortColumn === 'AssessmentDate' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('NextAssessmentDate')}
+                      className="px-[5px] py-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Ngày đánh giá tiếp theo"
+                    >
+                      <div className="flex items-center gap-1">
+                        Đánh giá tiếp theo
+                        {sortColumn === 'NextAssessmentDate' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="px-[5px] py-4 text-right select-none">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 text-sm font-semibold text-slate-700">
                   {paginatedList.map((item) => (
                     <tr key={item.Id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-5">
+                      <td className="px-[5px] py-5">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
                             <img
@@ -647,7 +787,7 @@ export default function AnalyzeManagement() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-5">
+                      <td className="px-[5px] py-5">
                         <span
                           className={cn(
                             'inline-flex items-center rounded-full px-3 py-1 text-xs font-black uppercase tracking-wider',
@@ -657,12 +797,12 @@ export default function AnalyzeManagement() {
                           {SpeechLevelMap[item.SpeechLevel]?.label || item.SpeechLevel}
                         </span>
                       </td>
-                      <td className="px-6 py-5">
+                      <td className="px-[5px] py-5">
                         <span className="font-bold text-slate-800 line-clamp-1 max-w-[200px]" title={item.Diagnosis}>
                           {item.Diagnosis || 'Chưa chẩn đoán'}
                         </span>
                       </td>
-                      <td className="px-6 py-5">
+                      <td className="px-[5px] py-5">
                         <span
                           className={cn(
                             'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold border',
@@ -672,13 +812,13 @@ export default function AnalyzeManagement() {
                           {AssessmentLevelMap[item.PronunciationAbility]?.label || item.PronunciationAbility}
                         </span>
                       </td>
-                      <td className="px-6 py-5 font-medium text-slate-500">
+                      <td className="px-[5px] py-5 font-medium text-slate-500">
                         {formatDateOnly(item.AssessmentDate)}
                       </td>
-                      <td className="px-6 py-5 font-medium text-slate-500">
+                      <td className="px-[5px] py-5 font-medium text-slate-500">
                         {item.NextAssessmentDate ? formatDateOnly(item.NextAssessmentDate) : 'Chưa hẹn lại'}
                       </td>
-                      <td className="px-6 py-5 text-right">
+                      <td className="px-[5px] py-5 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => void handleOpenDetail(item)}

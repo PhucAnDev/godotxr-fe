@@ -3,6 +3,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Activity,
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   Award,
   Baby,
   Brain,
@@ -178,6 +181,8 @@ export default function ChildManagement() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [sortColumn, setSortColumn] = useState<keyof Child | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
 
   const [modalType, setModalType] = useState<
     'detail' | 'form' | 'delete' | null
@@ -359,6 +364,22 @@ export default function ChildManagement() {
     setFormError('');
   };
 
+  const handleSort = (column: keyof Child) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortColumn(null);
+        setSortDirection(null);
+      } else {
+        setSortDirection('asc');
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
   const validateForm = () => {
     if (!formState.userId.trim()) return 'Vui lòng chọn phụ huynh liên kết.';
     if (Number.isNaN(Number(formState.userId)) || Number(formState.userId) <= 0) {
@@ -447,35 +468,86 @@ export default function ChildManagement() {
         )
       : 0;
 
-  const filteredChildren = childrenList.filter((child) => {
-    const searchString =
-      `${child.FullName} ${child.ChildId} ${child.ParentUserId}`.toLowerCase();
+  const filteredChildren = useMemo(() => {
+    const filtered = childrenList.filter((child) => {
+      const searchString =
+        `${child.FullName} ${child.ChildId} ${child.ParentUserId}`.toLowerCase();
 
-    const matchesSearch = searchString.includes(searchQuery.toLowerCase());
-    const matchesAge =
-      filterAge === 'ALL'
-        ? true
-        : filterAge === 'UNDER_5'
-          ? child.Age < 5
-          : filterAge === 'S_5_7'
-            ? child.Age >= 5 && child.Age <= 7
-            : child.Age > 7;
+      const matchesSearch = searchString.includes(searchQuery.toLowerCase());
+      const matchesAge =
+        filterAge === 'ALL'
+          ? true
+          : filterAge === 'UNDER_5'
+            ? child.Age < 5
+            : filterAge === 'S_5_7'
+              ? child.Age >= 5 && child.Age <= 7
+              : child.Age > 7;
 
-    const matchesGender =
-      filterGender === 'ALL' || child.Gender === filterGender;
-    const matchesLevel =
-      filterLevel === 'ALL' || child.LearningLevel === filterLevel;
-    const matchesStatus =
-      filterStatus === 'ALL' || child.Status === filterStatus;
+      const matchesGender =
+        filterGender === 'ALL' || child.Gender === filterGender;
+      const matchesLevel =
+        filterLevel === 'ALL' || child.LearningLevel === filterLevel;
+      const matchesStatus =
+        filterStatus === 'ALL' || child.Status === filterStatus;
 
-    return (
-      matchesSearch &&
-      matchesAge &&
-      matchesGender &&
-      matchesLevel &&
-      matchesStatus
-    );
-  });
+      return (
+        matchesSearch &&
+        matchesAge &&
+        matchesGender &&
+        matchesLevel &&
+        matchesStatus
+      );
+    });
+
+    if (!sortColumn || !sortDirection) {
+      return filtered;
+    }
+
+    return [...filtered].sort((a, b) => {
+      const valA = a[sortColumn];
+      const valB = b[sortColumn];
+
+      if (sortColumn === 'ChildId') {
+        const numA = Number(valA) || 0;
+        const numB = Number(valB) || 0;
+        return sortDirection === 'asc' ? numA - numB : numB - numA;
+      }
+
+      if (sortColumn === 'ParentUserId') {
+        const nameA = parentsMap[valA as string] || `Tài khoản #${valA}`;
+        const nameB = parentsMap[valB as string] || `Tài khoản #${valB}`;
+        return sortDirection === 'asc'
+          ? nameA.localeCompare(nameB, 'vi-VN')
+          : nameB.localeCompare(nameA, 'vi-VN');
+      }
+
+      if (sortColumn === 'LearningLevel') {
+        const levelOrder = { Beginner: 1, Intermediate: 2, Advanced: 3 };
+        const orderA = levelOrder[valA as 'Beginner' | 'Intermediate' | 'Advanced'] || 0;
+        const orderB = levelOrder[valB as 'Beginner' | 'Intermediate' | 'Advanced'] || 0;
+        return sortDirection === 'asc' ? orderA - orderB : orderB - orderA;
+      }
+
+      if (sortColumn === 'Status') {
+        const statusOrder = { Active: 1, Inactive: 2 };
+        const orderA = statusOrder[valA as 'Active' | 'Inactive'] || 0;
+        const orderB = statusOrder[valB as 'Active' | 'Inactive'] || 0;
+        return sortDirection === 'asc' ? orderA - orderB : orderB - orderA;
+      }
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortDirection === 'asc'
+          ? valA.localeCompare(valB, 'vi-VN')
+          : valB.localeCompare(valA, 'vi-VN');
+      }
+
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortDirection === 'asc' ? valA - valB : valB - valA;
+      }
+
+      return 0;
+    });
+  }, [childrenList, searchQuery, filterAge, filterGender, filterLevel, filterStatus, sortColumn, sortDirection, parentsMap]);
 
   const totalPages = Math.max(1, Math.ceil(filteredChildren.length / pageSize));
 
@@ -740,14 +812,105 @@ export default function ChildManagement() {
               <table className="w-full border-collapse text-left">
                 <thead>
                   <tr className="border-b border-gray-100 bg-[#FDFCF5]/50 text-xs font-bold uppercase tracking-widest text-[#555]">
-                    <th className="w-[5%] px-6 py-5">Mã số</th>
-                    <th className="w-[25%] px-6 py-5">Hồ sơ trẻ</th>
-                    <th className="w-[10%] px-6 py-5">Độ tuổi</th>
-                    <th className="w-[8%] px-6 py-5">Giới tính</th>
-                    <th className="w-[24%] px-6 py-5">Phụ huynh</th>
-                    <th className="w-[10%] px-6 py-5">Cấp độ</th>
-                    <th className="w-[8%] px-6 py-5">Trạng thái</th>
-                    <th className="w-[10%] px-6 py-5 text-right">Tùy chọn quản trị</th>
+                    <th
+                      onClick={() => handleSort('ChildId')}
+                      className="w-[5%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Mã số"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Mã số
+                        {sortColumn === 'ChildId' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('FullName')}
+                      className="w-[25%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Họ tên"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Hồ sơ trẻ
+                        {sortColumn === 'FullName' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('Age')}
+                      className="w-[10%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Độ tuổi"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Độ tuổi
+                        {sortColumn === 'Age' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('Gender')}
+                      className="w-[8%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Giới tính"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Giới tính
+                        {sortColumn === 'Gender' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('ParentUserId')}
+                      className="w-[24%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Phụ huynh"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Phụ huynh
+                        {sortColumn === 'ParentUserId' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('LearningLevel')}
+                      className="w-[10%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Cấp độ học"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Cấp độ
+                        {sortColumn === 'LearningLevel' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('Status')}
+                      className="w-[8%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Trạng thái"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Trạng thái
+                        {sortColumn === 'Status' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="w-[10%] px-[5px] py-5 text-right select-none">Tùy chọn quản trị</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm font-bold text-gray-700">
@@ -756,10 +919,10 @@ export default function ChildManagement() {
                       key={child.ChildId}
                       className="transition-colors hover:bg-gray-50/40"
                     >
-                      <td className="px-6 py-5 font-mono text-xs font-black text-gray-400">
+                      <td className="px-[5px] py-5 font-mono text-xs font-black text-gray-400">
                         {child.ChildId}
                       </td>
-                      <td className="px-6 py-5">
+                      <td className="px-[5px] py-5">
                         <div className="flex items-center gap-4">
                           <img
                             src={resolveAvatarUrl(child.Avatar, child.FullName, 'bottts')}
@@ -774,20 +937,20 @@ export default function ChildManagement() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-5">
+                      <td className="px-[5px] py-5">
                         <span className="font-extrabold text-gray-900 whitespace-nowrap">
                           {child.Age} tuổi
                         </span>
                       </td>
-                      <td className="px-6 py-5 text-gray-600">
+                      <td className="px-[5px] py-5 text-gray-600">
                         {getGenderLabel(child.Gender)}
                       </td>
-                      <td className="px-6 py-5">
+                      <td className="px-[5px] py-5">
                         <p className="font-extrabold text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis">
                           {parentsMap[child.ParentUserId] || `Tài khoản #${child.ParentUserId}`}
                         </p>
                       </td>
-                      <td className="px-6 py-5">
+                      <td className="px-[5px] py-5">
                         <span
                           className={cn(
                             'inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-wider',
@@ -806,7 +969,7 @@ export default function ChildManagement() {
                               : 'Nâng cao'}
                         </span>
                       </td>
-                      <td className="px-6 py-5">
+                      <td className="px-[5px] py-5">
                         <span
                           className={cn(
                             'inline-flex items-center rounded-full px-3 py-1 text-xs font-black uppercase tracking-wider',
@@ -818,7 +981,7 @@ export default function ChildManagement() {
                           {getStatusLabel(child.Status)}
                         </span>
                       </td>
-                      <td className="px-6 py-5 text-right">
+                      <td className="px-[5px] py-5 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => void handleOpenDetail(child)}

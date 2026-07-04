@@ -58,6 +58,18 @@ export default function RoleManagement() {
     alertConfig, setAlertConfig,
   } = useRoleManagement();
 
+  const [sortBy, setSortBy] = React.useState<string>('id_asc');
+
+  const sortedRoles = React.useMemo(() => {
+    return [...filteredRoles].sort((a, b) => {
+      if (sortBy === 'id_asc') return a.id - b.id;
+      if (sortBy === 'id_desc') return b.id - a.id;
+      if (sortBy === 'name_asc') return a.roleName.localeCompare(b.roleName, 'vi-VN');
+      if (sortBy === 'name_desc') return b.roleName.localeCompare(a.roleName, 'vi-VN');
+      return 0;
+    });
+  }, [filteredRoles, sortBy]);
+
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative">
       
@@ -151,6 +163,18 @@ export default function RoleManagement() {
             { value: 'INACTIVE', label: 'Trạng thái tắt' }
           ]}
         />
+        <CustomSelect
+          value={sortBy}
+          onChange={setSortBy}
+          variant="filter"
+          className="w-full sm:w-56"
+          options={[
+            { value: 'id_asc', label: 'ID tăng dần' },
+            { value: 'id_desc', label: 'ID giảm dần' },
+            { value: 'name_asc', label: 'Tên vai trò A-Z' },
+            { value: 'name_desc', label: 'Tên vai trò Z-A' }
+          ]}
+        />
       </div>
 
       {/* 4. Danh sách role */}
@@ -171,14 +195,14 @@ export default function RoleManagement() {
                 <p className="text-gray-400 font-medium text-sm">Vui lòng thử lại với từ khóa hoặc bộ lọc trạng thái khác.</p>
               </div>
               <button
-                onClick={() => { setSearchQuery(''); setFilterActive('ALL'); }}
+                onClick={() => { setSearchQuery(''); setFilterActive('ALL'); setSortBy('id_asc'); }}
                 className="px-5 py-2 hover:bg-gray-100 rounded-xl font-black text-xs text-[#4EACAF] border border-gray-200 uppercase transition-all"
               >
                 Đặt lại bộ lọc
               </button>
             </div>
           ) : (
-            filteredRoles.map((role) => (
+            sortedRoles.map((role) => (
               <div key={role.id}>
                 <RoleCard
                   role={role}

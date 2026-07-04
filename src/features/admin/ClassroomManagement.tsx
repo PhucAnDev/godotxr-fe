@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   Info,
   BookOpen,
+  RefreshCw,
   Briefcase,
   Clock,
   TrendingUp,
@@ -30,7 +31,10 @@ import {
   Award,
   Baby,
   Activity,
-  Heart
+  Heart,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown
 } from 'lucide-react';
 import { cn, resolveAvatarUrl } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
@@ -99,6 +103,7 @@ export default function ClassroomManagement() {
     getChildProfiles,
     createClassroom,
     updateClassroom,
+    getClassroomById,
   } = useClassroomManagementApi();
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -107,6 +112,10 @@ export default function ClassroomManagement() {
     Record<string, EnrolledStudent[]>
   >({});
   const [defaultSemesterId, setDefaultSemesterId] = useState('');
+  
+  // Classroom detail fetched state
+  const [selectedClassroomDetail, setSelectedClassroomDetail] = useState<ClassroomResponse | null>(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
   
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -117,6 +126,24 @@ export default function ClassroomManagement() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [sortColumn, setSortColumn] = useState<keyof Classroom | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
+
+  const handleSort = (column: keyof Classroom) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortColumn(null);
+        setSortDirection(null);
+      } else {
+        setSortDirection('asc');
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
 
   // Reset page of Classroom list on filter change
   useEffect(() => {
@@ -256,9 +283,23 @@ export default function ClassroomManagement() {
     setModalType('edit');
   };
 
-  const handleOpenDetail = (cls: Classroom) => {
+  const handleOpenDetail = async (cls: Classroom) => {
     setSelectedClass(cls);
     setModalType('detail');
+    setIsDetailLoading(true);
+    setSelectedClassroomDetail(null);
+    try {
+      const result = await getClassroomById(Number(cls.ClassId));
+      if (result.success && result.data) {
+        setSelectedClassroomDetail(result.data);
+      } else {
+        triggerNotification(result.errors.join(' ') || result.message, 'warning');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsDetailLoading(false);
+    }
   };
 
   const handleOpenStudents = (cls: Classroom) => {
@@ -269,6 +310,7 @@ export default function ClassroomManagement() {
   const handleCloseModal = () => {
     setModalType(null);
     setSelectedClass(null);
+    setSelectedClassroomDetail(null);
   };
 
   // Save classroom changes
@@ -352,21 +394,64 @@ export default function ClassroomManagement() {
   };
 
   // Filters logic
-  const filteredClassrooms = classrooms.filter(item => {
-    const teacher = teachers.find(t => t.TeacherId === item.TeacherId);
-    const program = programs.find(p => p.ProgramId === item.ProgramId);
-    
-    const matchesSearch = 
-      item.ClassName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      (teacher?.FullName || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
-      (program?.ProgramName || '').toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredClassrooms = useMemo(() => {
+    const filtered = classrooms.filter(item => {
+      const teacher = teachers.find(t => t.TeacherId === item.TeacherId);
+      const program = programs.find(p => p.ProgramId === item.ProgramId);
+      
+      const matchesSearch = 
+        item.ClassName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (teacher?.FullName || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (program?.ProgramName || '').toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = filterStatus === 'ALL' || item.Status === filterStatus;
-    const matchesProgram = filterProgram === 'ALL' || item.ProgramId === filterProgram;
-    const matchesTeacher = filterTeacher === 'ALL' || item.TeacherId === filterTeacher;
+      const matchesStatus = filterStatus === 'ALL' || item.Status === filterStatus;
+      const matchesProgram = filterProgram === 'ALL' || item.ProgramId === filterProgram;
+      const matchesTeacher = filterTeacher === 'ALL' || item.TeacherId === filterTeacher;
 
-    return matchesSearch && matchesStatus && matchesProgram && matchesTeacher;
-  });
+      return matchesSearch && matchesStatus && matchesProgram && matchesTeacher;
+    });
+
+    if (!sortColumn || !sortDirection) {
+      return filtered;
+    }
+
+    return [...filtered].sort((a, b) => {
+      const valA = a[sortColumn];
+      const valB = b[sortColumn];
+
+      if (sortColumn === 'ClassId') {
+        return sortDirection === 'asc' ? Number(valA) - Number(valB) : Number(valB) - Number(valA);
+      }
+
+      if (sortColumn === 'TeacherId') {
+        const teacherA = teachers.find(t => t.TeacherId === valA)?.FullName || '';
+        const teacherB = teachers.find(t => t.TeacherId === valB)?.FullName || '';
+        return sortDirection === 'asc' ? teacherA.localeCompare(teacherB, 'vi-VN') : teacherB.localeCompare(teacherA, 'vi-VN');
+      }
+
+      if (sortColumn === 'ProgramId') {
+        const programA = programs.find(p => p.ProgramId === valA)?.ProgramName || '';
+        const programB = programs.find(p => p.ProgramId === valB)?.ProgramName || '';
+        return sortDirection === 'asc' ? programA.localeCompare(programB, 'vi-VN') : programB.localeCompare(programA, 'vi-VN');
+      }
+
+      if (sortColumn === 'EnrollmentCount') {
+        const countA = valA ? Number(valA) : 0;
+        const countB = valB ? Number(valB) : 0;
+        return sortDirection === 'asc' ? countA - countB : countB - countA;
+      }
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortDirection === 'asc' ? valA.localeCompare(valB, 'vi-VN') : valB.localeCompare(valA, 'vi-VN');
+      }
+
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortDirection === 'asc' ? valA - valB : valB - valA;
+      }
+
+      return 0;
+    });
+  }, [classrooms, teachers, programs, searchQuery, filterStatus, filterProgram, filterTeacher, sortColumn, sortDirection]);
 
   const totalPages = Math.max(1, Math.ceil(filteredClassrooms.length / pageSize));
 
@@ -583,13 +668,91 @@ export default function ClassroomManagement() {
               <table className="w-full text-left border-collapse" id="classroom-table">
                 <thead>
                   <tr className="bg-[#FDFCF5]/50 border-b border-gray-100 text-[#555] font-bold text-xs uppercase tracking-widest">
-                    <th className="py-5 px-10">Mã Lớp</th>
-                    <th className="py-5 px-6">Phòng & Chương trình</th>
-                    <th className="py-5 px-6">Giáo viên hướng dẫn</th>
-                    <th className="py-5 px-6">Thời gian biểu</th>
-                    <th className="py-5 px-6">Học sinh</th>
-                    <th className="py-5 px-6">Trạng thái</th>
-                    <th className="py-5 px-10 text-right">Tùy chọn hành động</th>
+                    <th
+                      onClick={() => handleSort('ClassId')}
+                      className="w-[8%] py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Mã lớp"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Mã Lớp
+                        {sortColumn === 'ClassId' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('ClassName')}
+                      className="w-[25%] py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Tên lớp học"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Tên lớp
+                        {sortColumn === 'ClassName' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('TeacherId')}
+                      className="w-[22%] py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Giáo viên"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Giáo viên hướng dẫn
+                        {sortColumn === 'TeacherId' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('StartDate')}
+                      className="w-[17%] py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Ngày bắt đầu"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Thời gian biểu
+                        {sortColumn === 'StartDate' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('EnrollmentCount')}
+                      className="w-[8%] py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Sĩ số học sinh"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Học sinh
+                        {sortColumn === 'EnrollmentCount' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('Status')}
+                      className="w-[10%] py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Trạng thái lớp"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Trạng thái
+                        {sortColumn === 'Status' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="w-[10%] py-5 px-[5px] text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
@@ -603,24 +766,18 @@ export default function ClassroomManagement() {
                         className="hover:bg-gray-50/40 transition-colors"
                         id={`row-${cls.ClassId}`}
                       >
-                        <td className="py-5 px-10 font-mono text-gray-400 font-black text-xs">
+                        <td className="py-5 px-[5px] font-mono text-gray-400 font-black text-xs">
                           {cls.ClassId}
                         </td>
-                        <td className="py-5 px-6 max-w-xs">
-                          <div className="space-y-1">
-                            <p className="font-extrabold text-gray-900 text-base flex items-center gap-2">
-                              <span className="p-1.5 bg-orange-50 text-orange-500 rounded-lg">
-                                <School className="w-4 h-4" />
-                              </span>
-                              {cls.ClassName}
-                            </p>
-                            <p className="text-xs text-gray-400 font-bold flex items-center gap-1">
-                              <BookOpen className="w-3.5 h-3.5" />
-                              {program ? program.ProgramName : 'Chưa định cấu hình Chương trình'}
-                            </p>
-                          </div>
-                        </td>
-                        <td className="py-5 px-6">
+                         <td className="py-5 px-[5px] max-w-xs">
+                           <p className="font-extrabold text-gray-900 text-base flex items-center gap-2">
+                             <span className="p-1.5 bg-orange-50 text-orange-500 rounded-lg">
+                               <School className="w-4 h-4" />
+                             </span>
+                             {cls.ClassName}
+                           </p>
+                         </td>
+                        <td className="py-5 px-[5px]">
                           {teacher ? (
                             <div className="flex items-center gap-3">
                                <img 
@@ -638,7 +795,7 @@ export default function ClassroomManagement() {
                             <span className="text-gray-400 italic font-medium">Chưa liên kết</span>
                           )}
                         </td>
-                        <td className="py-5 px-6">
+                        <td className="py-5 px-[5px]">
                           <div className="space-y-1 text-xs">
                             <p className="font-medium text-gray-500 flex items-center gap-1.5">
                               <Calendar className="w-3.5 h-3.5 text-gray-400" />
@@ -650,7 +807,7 @@ export default function ClassroomManagement() {
                             </p>
                           </div>
                         </td>
-                        <td className="py-5 px-6">
+                        <td className="py-5 px-[5px]">
                           <button 
                             onClick={() => handleOpenStudents(cls)}
                             className="inline-flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 text-sky-600 px-3 py-1.5 rounded-xl text-xs transition-colors hover:scale-102 active:scale-98"
@@ -660,7 +817,7 @@ export default function ClassroomManagement() {
                             <span className="font-black">{studentCount} trẻ</span>
                           </button>
                         </td>
-                        <td className="py-5 px-6">
+                        <td className="py-5 px-[5px]">
                           <span className={cn(
                             "inline-flex items-center px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider",
                             cls.Status === 'Active' ? 'bg-emerald-50 text-emerald-600' :
@@ -668,13 +825,13 @@ export default function ClassroomManagement() {
                             cls.Status === 'Inactive' ? 'bg-rose-50 text-[#FF8E8E]' :
                             'bg-gray-100 text-gray-500' // Closed
                           )}>
-                            {cls.Status === 'Active' && 'Đang dạy (Active)'}
-                            {cls.Status === 'Upcoming' && 'Sắp mở (Upcoming)'}
-                            {cls.Status === 'Inactive' && 'Tạm dừng (Inactive)'}
-                            {cls.Status === 'Closed' && 'Đã kết thúc (Closed)'}
+                            {cls.Status === 'Active' && 'Đang dạy'}
+                            {cls.Status === 'Upcoming' && 'Sắp mở'}
+                            {cls.Status === 'Inactive' && 'Tạm dừng'}
+                            {cls.Status === 'Closed' && 'Đã kết thúc'}
                           </span>
                         </td>
-                        <td className="py-5 px-10 text-right">
+                        <td className="py-5 px-[5px] text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             <button 
                               onClick={() => handleOpenDetail(cls)}
@@ -809,85 +966,128 @@ export default function ClassroomManagement() {
               {/* Modal Body: DETAIL info */}
               {modalType === 'detail' && selectedClass ? (
                 <div className="app-modal-body p-8 md:p-10 space-y-8" id="modal-detail-body">
-                  <div className="flex flex-col md:flex-row gap-6 items-start pb-6 border-b border-gray-50 font-bold">
-                     <div className="w-20 h-20 rounded-3xl bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0 mx-auto md:mx-0">
-                        <School className="w-10 h-10 text-purple-600" />
-                     </div>
-                     <div className="space-y-2 flex-1 text-center md:text-left">
-                        <div>
-                          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-                             <span className="text-2xl font-black text-gray-900">{selectedClass.ClassName}</span>
-                             <span className="px-3 py-0.5 bg-gray-100 text-gray-400 font-black tracking-widest text-[9px] rounded-full uppercase">
-                               ID: {selectedClass.ClassId}
-                             </span>
-                          </div>
-                          <p className="text-gray-400 text-xs uppercase tracking-wider mt-1 font-black">
-                            Chương trình: {programs.find(p => p.ProgramId === selectedClass.ProgramId)?.ProgramName || 'Chưa định nghĩa'}
-                          </p>
-                        </div>
-                        
-                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-1">
-                          <span className={cn(
-                            "inline-flex items-center px-4 py-1.5 rounded-full uppercase text-[10px] font-black tracking-wider",
-                            selectedClass.Status === 'Active' ? 'bg-emerald-50 text-emerald-600' :
-                            selectedClass.Status === 'Upcoming' ? 'bg-amber-50 text-amber-600' : 'bg-gray-100 text-gray-500'
-                          )}>
-                            {selectedClass.Status}
-                          </span>
-                        </div>
-                     </div>
-                  </div>
+                  {isDetailLoading ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                      <RefreshCw className="h-10 w-10 animate-spin text-[#4EACAF]" />
+                      <p className="text-sm font-bold text-slate-400">
+                        Đang tải chi tiết lớp học từ máy chủ...
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex flex-col md:flex-row gap-6 items-start pb-6 border-b border-gray-50 font-bold">
+                         <div className="w-20 h-20 rounded-3xl bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0 mx-auto md:mx-0">
+                            <School className="w-10 h-10 text-purple-600" />
+                         </div>
+                         <div className="space-y-2 flex-1 text-center md:text-left">
+                            <div>
+                              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                                 <span className="text-2xl font-black text-gray-900">{selectedClassroomDetail?.className || selectedClass.ClassName}</span>
+                                 <span className="px-3 py-0.5 bg-gray-100 text-gray-400 font-black tracking-widest text-[9px] rounded-full uppercase">
+                                   ID: {selectedClassroomDetail?.id || selectedClass.ClassId}
+                                 </span>
+                              </div>
+                              <p className="text-gray-400 text-xs uppercase tracking-wider mt-1 font-black">
+                                Chương trình: {selectedClassroomDetail?.programName || programs.find(p => p.ProgramId === selectedClass.ProgramId)?.ProgramName || 'Chưa định nghĩa'}
+                              </p>
+                            </div>
+                            
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-1">
+                              <span className={cn(
+                                "inline-flex items-center px-4 py-1.5 rounded-full uppercase text-[10px] font-black tracking-wider",
+                                (selectedClassroomDetail?.status || selectedClass.Status) === 'Active' ? 'bg-emerald-50 text-emerald-600' :
+                                (selectedClassroomDetail?.status || selectedClass.Status) === 'Upcoming' ? 'bg-amber-50 text-amber-600' : 'bg-gray-100 text-gray-500'
+                              )}>
+                                {selectedClassroomDetail?.status || selectedClass.Status}
+                              </span>
+                            </div>
+                         </div>
+                      </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                     <DetailRow 
-                       label="Tên Lớp (ClassName)" 
-                       value={selectedClass.ClassName} 
-                     />
-                     <DetailRow 
-                       label="Mã định danh chương trình (ProgramId)" 
-                       value={`${programs.find(p => p.ProgramId === selectedClass.ProgramId)?.ProgramName || 'Không rõ'} (${selectedClass.ProgramId})`}
-                     />
-                     <DetailRow 
-                       label="Nhóm tuổi tương thích học phần" 
-                       value={`Từ ${programs.find(p => p.ProgramId === selectedClass.ProgramId)?.TargetAgeFrom || 3} tuổi tới ${programs.find(p => p.ProgramId === selectedClass.ProgramId)?.TargetAgeTo || 10} tuổi`}
-                     />
-                     <DetailRow 
-                       label="Ngôn ngữ chính luyện tập" 
-                       value={programs.find(p => p.ProgramId === selectedClass.ProgramId)?.Language || 'Tiếng Việt'}
-                     />
-                     <DetailRow 
-                       label="Chuyên viên phụ trách (Teacher)" 
-                       value={`${teachers.find(t => t.TeacherId === selectedClass.TeacherId)?.FullName || 'Không rỏ'} (${selectedClass.TeacherId})`}
-                     />
-                     <DetailRow 
-                       label="Chuyên môn giáo dục đồng hành" 
-                       value={teachers.find(t => t.TeacherId === selectedClass.TeacherId)?.Specialty || 'Chưa thiết lập'}
-                     />
-                     <DetailRow 
-                       label="Thời biểu nộp hồ sơ khóa học" 
-                       value={`Từ ${selectedClass.StartDate} tới ${selectedClass.EndDate}`} 
-                     />
-                     <DetailRow 
-                       label="Thời gian cấu tạo lớp học" 
-                       value={selectedClass.CreatedAt} 
-                     />
-                     
-                     <div className="space-y-1.5 p-4 rounded-2xl bg-[#FDFCF5]/60 border border-[#F2ECD8]/40 col-span-1 md:col-span-2">
-                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block font-bold">Mô tả giáo trình & Phương tiện VR (Description)</span>
-                       <span className="font-bold text-gray-800 text-sm block leading-relaxed italic">
-                         "{selectedClass.Description}"
-                       </span>
-                     </div>
-                  </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                         <DetailRow 
+                           label="Tên Lớp (ClassName)" 
+                           value={selectedClassroomDetail?.className || selectedClass.ClassName} 
+                         />
+                         <DetailRow 
+                           label="Mã Lớp (ClassId)" 
+                           value={String(selectedClassroomDetail?.id || selectedClass.ClassId)} 
+                         />
+                         <DetailRow 
+                           label="Trạng thái hoạt động" 
+                           value={selectedClassroomDetail?.status || selectedClass.Status} 
+                         />
+                         <DetailRow 
+                           label="Sĩ số học sinh ghi danh (EnrollmentCount)" 
+                           value={`${selectedClassroomDetail?.enrollmentCount ?? selectedClass.EnrollmentCount} học sinh`} 
+                         />
+                         <DetailRow 
+                           label="Tên Chương trình học (ProgramName)" 
+                           value={selectedClassroomDetail?.programName || programs.find(p => p.ProgramId === selectedClass.ProgramId)?.ProgramName || 'Không rõ'} 
+                         />
+                         <DetailRow 
+                           label="Mã định danh chương trình (ProgramId)" 
+                           value={String(selectedClassroomDetail?.programId || selectedClass.ProgramId)} 
+                         />
+                         <DetailRow 
+                           label="Nhóm tuổi tương thích học phần" 
+                           value={`Từ ${selectedClassroomDetail?.targetAgeFrom ?? programs.find(p => p.ProgramId === selectedClass.ProgramId)?.TargetAgeFrom ?? 3} tuổi tới ${selectedClassroomDetail?.targetAgeTo ?? programs.find(p => p.ProgramId === selectedClass.ProgramId)?.TargetAgeTo ?? 10} tuổi`}
+                         />
+                         <DetailRow 
+                           label="Ngôn ngữ chính luyện tập (Language)" 
+                           value={selectedClassroomDetail?.programLanguage || programs.find(p => p.ProgramId === selectedClass.ProgramId)?.Language || 'Tiếng Việt'}
+                         />
+                         <DetailRow 
+                           label="Giáo viên đảm nhiệm (TeacherName)" 
+                           value={selectedClassroomDetail?.teacherName || teachers.find(t => t.TeacherId === selectedClass.TeacherId)?.FullName || 'Không rõ'} 
+                         />
+                         <DetailRow 
+                           label="Mã định danh giáo viên (TeacherId)" 
+                           value={String(selectedClassroomDetail?.userId || selectedClass.TeacherId)} 
+                         />
+                         <DetailRow 
+                           label="Chuyên môn giáo dục đồng hành" 
+                           value={selectedClassroomDetail?.teacherSpecialty || teachers.find(t => t.TeacherId === selectedClass.TeacherId)?.Specialty || 'Chưa thiết lập'}
+                         />
+                         <DetailRow 
+                           label="Học kỳ liên kết (SemesterName)" 
+                           value={selectedClassroomDetail?.semesterName || 'Chưa rõ'} 
+                         />
+                         <DetailRow 
+                           label="Mã học kỳ (SemesterId)" 
+                           value={String(selectedClassroomDetail?.semesterId || selectedClass.SemesterId || 'Chưa rõ')} 
+                         />
+                         <DetailRow 
+                           label="Thời gian hoạt động lớp học" 
+                           value={`Từ ${selectedClassroomDetail ? selectedClassroomDetail.startDate.slice(0, 10) : selectedClass.StartDate} tới ${selectedClassroomDetail ? selectedClassroomDetail.endDate.slice(0, 10) : selectedClass.EndDate}`} 
+                         />
+                         <DetailRow 
+                           label="Thời gian cấu tạo lớp học (CreatedAt)" 
+                           value={selectedClassroomDetail?.createdAt || selectedClass.CreatedAt} 
+                         />
+                         <DetailRow 
+                           label="Thời điểm cập nhật lớp học (UpdatedAt)" 
+                           value={selectedClassroomDetail?.updatedAt || selectedClass.UpdatedAt || 'Chưa có cập nhật'} 
+                         />
+                         
+                         <div className="space-y-1.5 p-4 rounded-2xl bg-[#FDFCF5]/60 border border-[#F2ECD8]/40 col-span-1 md:col-span-2">
+                           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block font-bold">Mô tả giáo trình & Phương tiện VR (Description)</span>
+                           <span className="font-bold text-gray-800 text-sm block leading-relaxed italic">
+                             "{selectedClassroomDetail?.description || selectedClass.Description || 'Không có mô tả'}"
+                           </span>
+                         </div>
+                      </div>
 
-                  <div className="flex justify-end">
-                     <button 
-                       onClick={handleCloseModal}
-                       className="py-4 px-8 bg-gray-100 hover:bg-gray-200 text-gray-600 font-extrabold rounded-2xl transition-all uppercase text-xs tracking-wider"
-                     >
-                       Quay lại
-                     </button>
-                  </div>
+                      <div className="flex justify-end">
+                         <button 
+                           onClick={handleCloseModal}
+                           className="py-4 px-8 bg-gray-100 hover:bg-gray-200 text-gray-600 font-extrabold rounded-2xl transition-all uppercase text-xs tracking-wider"
+                         >
+                           Quay lại
+                         </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : modalType === 'students' && selectedClass ? (
                 /* Modal Body: LIST enrolled students inside class */

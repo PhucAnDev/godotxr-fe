@@ -21,8 +21,11 @@ import {
   SlidersHorizontal,
   FolderOpen,
   User,
+  ArrowRight,
   Activity,
-  ArrowRight
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
@@ -147,6 +150,24 @@ export default function SemesterManagement() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [sortColumn, setSortColumn] = useState<keyof Semester | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
+
+  const handleSort = (column: keyof Semester) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortColumn(null);
+        setSortDirection(null);
+      } else {
+        setSortDirection('asc');
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
 
   // Auto-reset page when filters change
   useEffect(() => {
@@ -353,21 +374,70 @@ export default function SemesterManagement() {
   };
 
   // Searching & filtering logic
-  const filteredSemesters = semesters.filter(item => {
-    const schoolYearName = getSchoolYearName(item.SchoolYearId).toLowerCase();
-    const teacherName = getTeacherName(item.TeacherId).toLowerCase();
-    const className = getClassName(item.ClassId).toLowerCase();
-    const semName = item.SemesterName.toLowerCase();
-    const semId = item.SemesterId.toLowerCase();
+  const filteredSemesters = useMemo(() => {
+    const filtered = semesters.filter(item => {
+      const schoolYearName = getSchoolYearName(item.SchoolYearId).toLowerCase();
+      const teacherName = getTeacherName(item.TeacherId).toLowerCase();
+      const className = getClassName(item.ClassId).toLowerCase();
+      const semName = item.SemesterName.toLowerCase();
+      const semId = item.SemesterId.toLowerCase();
 
-    const combineSearchText = `${semName} ${semId} ${schoolYearName} ${teacherName} ${className}`;
-    const queryMatch = combineSearchText.includes(searchQuery.toLowerCase());
+      const combineSearchText = `${semName} ${semId} ${schoolYearName} ${teacherName} ${className}`;
+      const queryMatch = combineSearchText.includes(searchQuery.toLowerCase());
 
-    const statusMatch = filterStatus === 'ALL' || item.Status === filterStatus;
-    const yearMatch = filterSchoolYear === 'ALL' || item.SchoolYearId === filterSchoolYear;
+      const statusMatch = filterStatus === 'ALL' || item.Status === filterStatus;
+      const yearMatch = filterSchoolYear === 'ALL' || item.SchoolYearId === filterSchoolYear;
 
-    return queryMatch && statusMatch && yearMatch;
-  });
+      return queryMatch && statusMatch && yearMatch;
+    });
+
+    if (!sortColumn || !sortDirection) {
+      return filtered;
+    }
+
+    return [...filtered].sort((a, b) => {
+      const valA = a[sortColumn];
+      const valB = b[sortColumn];
+
+      if (sortColumn === 'SemesterId') {
+        const numA = Number(a.SemesterId.replace(/\D/g, '')) || 0;
+        const numB = Number(b.SemesterId.replace(/\D/g, '')) || 0;
+        return sortDirection === 'asc' ? numA - numB : numB - numA;
+      }
+
+      if (sortColumn === 'SchoolYearId') {
+        const nameA = getSchoolYearName(a.SchoolYearId);
+        const nameB = getSchoolYearName(b.SchoolYearId);
+        return sortDirection === 'asc' ? nameA.localeCompare(nameB, 'vi-VN') : nameB.localeCompare(nameA, 'vi-VN');
+      }
+
+      if (sortColumn === 'ClassId') {
+        const nameA = getClassName(a.ClassId);
+        const nameB = getClassName(b.ClassId);
+        return sortDirection === 'asc' ? nameA.localeCompare(nameB, 'vi-VN') : nameB.localeCompare(nameA, 'vi-VN');
+      }
+
+      if (sortColumn === 'TeacherId') {
+        const nameA = getTeacherName(a.TeacherId);
+        const nameB = getTeacherName(b.TeacherId);
+        return sortDirection === 'asc' ? nameA.localeCompare(nameB, 'vi-VN') : nameB.localeCompare(nameA, 'vi-VN');
+      }
+
+      if (sortColumn === 'ClassCount') {
+        return sortDirection === 'asc' ? (Number(valA) || 0) - (Number(valB) || 0) : (Number(valB) || 0) - (Number(valA) || 0);
+      }
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortDirection === 'asc' ? valA.localeCompare(valB, 'vi-VN') : valB.localeCompare(valA, 'vi-VN');
+      }
+
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortDirection === 'asc' ? valA - valB : valB - valA;
+      }
+
+      return 0;
+    });
+  }, [semesters, searchQuery, filterStatus, filterSchoolYear, sortColumn, sortDirection, schoolYears, teachers]);
 
   const totalPages = Math.max(1, Math.ceil(filteredSemesters.length / pageSize));
 
@@ -581,32 +651,149 @@ export default function SemesterManagement() {
           </div>
         ) : (
           <div className="overflow-x-auto text-left">
-            <table className="w-full border-collapse" id="semester-table-element">
-              <thead>
-                <tr className="bg-[#FDFCF5]/60 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
-                  <th className="py-5 px-10">Mã học kỳ</th>
-                  <th className="py-5 px-6">Tên Học Kỳ</th>
-                  <th className="py-5 px-6">Năm học liên đới</th>
-                  <th className="py-5 px-6">Lớp học</th>
-                  <th className="py-5 px-6">Giáo viên đảm trách</th>
-                  <th className="py-5 px-6 text-center">Gán cơ số lớp</th>
-                  <th className="py-5 px-6">Ngày khởi chiếu</th>
-                  <th className="py-5 px-6">Ngày kết bế</th>
-                  <th className="py-5 px-6">Trạng thái hoạt động</th>
-                  <th className="py-5 px-10 text-right">Tác vụ can thiệp</th>
-                </tr>
-              </thead>
+             <table className="w-full border-collapse" id="semester-table-element">
+                <thead>
+                  <tr className="bg-[#FDFCF5]/60 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
+                    <th
+                      onClick={() => handleSort('SemesterId')}
+                      className="py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Mã học kỳ"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Mã học kỳ
+                        {sortColumn === 'SemesterId' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('SemesterName')}
+                      className="py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Tên học kỳ"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Tên Học Kỳ
+                        {sortColumn === 'SemesterName' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('SchoolYearId')}
+                      className="py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Năm học"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Năm học liên đới
+                        {sortColumn === 'SchoolYearId' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('ClassId')}
+                      className="py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Lớp học"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Lớp học
+                        {sortColumn === 'ClassId' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('TeacherId')}
+                      className="py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Giáo viên"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Giáo viên đảm trách
+                        {sortColumn === 'TeacherId' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('ClassCount')}
+                      className="py-5 px-[5px] text-center cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Cơ số lớp"
+                    >
+                      <div className="flex items-center justify-center gap-1.5">
+                        Gán cơ số lớp
+                        {sortColumn === 'ClassCount' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('StartDate')}
+                      className="py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Ngày bắt đầu"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Ngày khởi chiếu
+                        {sortColumn === 'StartDate' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('EndDate')}
+                      className="py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Ngày kết thúc"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Ngày kết bế
+                        {sortColumn === 'EndDate' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('Status')}
+                      className="py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Trạng thái học kỳ"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Trạng thái hoạt động
+                        {sortColumn === 'Status' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="py-5 px-[5px] text-right select-none">Tác vụ can thiệp</th>
+                  </tr>
+                </thead>
               <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
                 {paginatedSemesters.map((sem) => (
                   <tr key={sem.SemesterId} className="hover:bg-slate-50/50 transition-colors">
                     
                     {/* Semester ID */}
-                    <td className="py-5 px-10 font-mono text-gray-400 font-extrabold text-xs">
+                    <td className="py-5 px-[5px] font-mono text-gray-400 font-extrabold text-xs">
                       {sem.SemesterId}
                     </td>
 
                     {/* Semester Name & description */}
-                    <td className="py-5 px-6 max-w-xs">
+                    <td className="py-5 px-[5px] max-w-xs">
                       <div className="font-extrabold text-[#111] leading-tight mb-1 text-sm md:text-base">
                         {sem.SemesterName}
                       </div>
@@ -616,19 +803,19 @@ export default function SemesterManagement() {
                     </td>
 
                     {/* School Year Name */}
-                    <td className="py-5 px-6 text-teal-600 font-extrabold text-xs">
+                    <td className="py-5 px-[5px] text-teal-600 font-extrabold text-xs">
                       {getSchoolYearName(sem.SchoolYearId)}
                     </td>
 
                     {/* ClassName */}
-                    <td className="py-5 px-6 font-semibold text-gray-600 text-xs">
+                    <td className="py-5 px-[5px] font-semibold text-gray-600 text-xs">
                       <span className="bg-orange-50 text-orange-600 px-2 py-1 rounded-lg">
                         {getClassName(sem.ClassId)}
                       </span>
                     </td>
 
                     {/* TeacherName */}
-                    <td className="py-5 px-6 text-gray-700 font-black text-xs">
+                    <td className="py-5 px-[5px] text-gray-700 font-black text-xs">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-500 border border-indigo-100 text-[10px]">
                           {getTeacherName(sem.TeacherId).slice(0, 2)}
@@ -640,24 +827,24 @@ export default function SemesterManagement() {
                     </td>
 
                     {/* Class count */}
-                    <td className="py-5 px-6 text-center">
+                    <td className="py-5 px-[5px] text-center">
                       <span className="px-2.5 py-1 bg-gray-100 rounded-lg text-xs font-black">
                         {sem.ClassCount} lớp
                       </span>
                     </td>
 
                     {/* StartDate */}
-                    <td className="py-5 px-6 text-gray-500 font-mono text-xs">
+                    <td className="py-5 px-[5px] text-gray-500 font-mono text-xs">
                       {sem.StartDate}
                     </td>
 
                     {/* EndDate */}
-                    <td className="py-5 px-6 text-gray-500 font-mono text-xs">
+                    <td className="py-5 px-[5px] text-gray-500 font-mono text-xs">
                       {sem.EndDate}
                     </td>
 
                     {/* Status Badge */}
-                    <td className="py-5 px-6">
+                    <td className="py-5 px-[5px]">
                       <span className={cn(
                         "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border",
                         sem.Status === 'Active' && 'bg-emerald-50 text-emerald-600 border-emerald-100',
@@ -676,7 +863,7 @@ export default function SemesterManagement() {
                     </td>
 
                     {/* Actions tools */}
-                    <td className="py-5 px-10 text-right">
+                    <td className="py-5 px-[5px] text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         
                         {/* Edit button */}
