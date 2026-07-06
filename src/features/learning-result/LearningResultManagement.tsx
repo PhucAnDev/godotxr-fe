@@ -60,6 +60,10 @@ interface Exercise {
   DifficultyLevel: 'Dễ' | 'Trung bình' | 'Khó';
   TargetSkill: string;
   Language: string;
+  Instruction?: string | null;
+  DurationLimit?: number;
+  Status?: string;
+  CreatedAt?: string;
 }
 
 interface LearningResult {
@@ -133,6 +137,10 @@ function mapExerciseRecord(exercise: ExerciseResponse): Exercise {
     DifficultyLevel: mapDifficultyLevel(exercise.difficultyLevel),
     TargetSkill: exercise.targetSkill,
     Language: exercise.language,
+    Instruction: exercise.instruction,
+    DurationLimit: exercise.durationLimit,
+    Status: exercise.status,
+    CreatedAt: exercise.createdAt,
   };
 }
 
@@ -266,6 +274,12 @@ export default function LearningResultManagement() {
   // Detail Modal view controls
   const [selectedResult, setSelectedResult] = useState<LearningResult | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [activeMetaPopup, setActiveMetaPopup] = useState<{
+    type: 'exercise' | 'lesson';
+    id: string;
+    name: string;
+    details: Record<string, string | number | null | undefined>;
+  } | null>(null);
 
   // Modal feedback editing logic (Simulate Admin/Teacher update feedback)
   const [editFeedbackMode, setEditFeedbackMode] = useState(false);
@@ -1383,7 +1397,33 @@ export default function LearningResultManagement() {
                   {selectedResult.ExerciseId ? (
                     <div className="bg-[#FDFCF5] p-5 rounded-3xl border border-yellow-150 space-y-3">
                       <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                        <span className="text-xs font-black text-[#4EACAF] uppercase tracking-wider">Bài tập huấn luyện ngôn từ 3D</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-black text-[#4EACAF] uppercase tracking-wider">Bài tập huấn luyện ngôn từ 3D</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const exe = getExerciseInfo(selectedResult.ExerciseId);
+                              setActiveMetaPopup({
+                                type: 'exercise',
+                                id: selectedResult.ExerciseId!,
+                                name: exe.ExerciseName,
+                                details: {
+                                  'Mục tiêu kỹ năng': exe.TargetSkill,
+                                  'Độ khó': exe.DifficultyLevel,
+                                  'Ngôn ngữ': exe.Language,
+                                  'Hướng dẫn luyện tập': exe.Instruction || 'Không có',
+                                  'Thời lượng tối đa': exe.DurationLimit ? `${exe.DurationLimit} giây` : 'N/A',
+                                  'Trạng thái': exe.Status || 'Active',
+                                  'Ngày tạo': exe.CreatedAt ? formatDateTime(exe.CreatedAt) : 'N/A'
+                                }
+                              });
+                            }}
+                            className="p-1 text-slate-400 hover:text-[#4EACAF] transition-colors rounded-full hover:bg-slate-100 cursor-pointer"
+                            title="Xem chi tiết bài tập"
+                          >
+                            <Info className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                         <span className="text-[10px] bg-white text-gray-500 px-2 py-0.5 rounded-md font-bold text-mono">
                           ID: {selectedResult.ExerciseId}
                         </span>
@@ -1408,7 +1448,34 @@ export default function LearningResultManagement() {
                   ) : selectedResult.LessonId ? (
                     <div className="bg-[#F5FCFD] p-5 rounded-3xl border border-blue-100 space-y-3">
                       <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                        <span className="text-xs font-black text-[#4EACAF] uppercase tracking-wider">Bài học huấn luyện phát âm VR</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-black text-[#4EACAF] uppercase tracking-wider">Bài học huấn luyện phát âm VR</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const les = getLessonInfo(selectedResult.LessonId);
+                              const fullLes = lessons.find(l => String(l.id) === selectedResult.LessonId);
+                              setActiveMetaPopup({
+                                type: 'lesson',
+                                id: selectedResult.LessonId!,
+                                name: les.LessonName,
+                                details: {
+                                  'Kỹ năng tiêu điểm': les.TargetSkill,
+                                  'Thứ tự bài học': fullLes?.lessonOrder || 'N/A',
+                                  'Thời lượng ước tính': fullLes?.estimatedDuration ? `${fullLes.estimatedDuration} phút` : 'N/A',
+                                  'Mô tả bài học': les.Description || 'Không có',
+                                  'Trạng thái': fullLes?.status || 'Active',
+                                  'Ngày tạo': fullLes?.createdAt ? formatDateTime(fullLes.createdAt) : 'N/A',
+                                  'Ngày cập nhật': fullLes?.updatedAt ? formatDateTime(fullLes.updatedAt) : 'Chưa cập nhật'
+                                }
+                              });
+                            }}
+                            className="p-1 text-slate-400 hover:text-[#4EACAF] transition-colors rounded-full hover:bg-slate-100 cursor-pointer"
+                            title="Xem chi tiết bài học"
+                          >
+                            <Info className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                         <span className="text-[10px] bg-white text-gray-500 px-2 py-0.5 rounded-md font-bold text-mono">
                           ID: {selectedResult.LessonId}
                         </span>
@@ -1683,6 +1750,71 @@ export default function LearningResultManagement() {
 
             </motion.div>
 
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 6. Lesson or Exercise Metadata Popover Overlay (Glassmorphism Popup) */}
+      <AnimatePresence>
+        {activeMetaPopup && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 backdrop-blur-md bg-slate-900/30 animate-in fade-in duration-200">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white rounded-[32px] border border-slate-100 shadow-2xl p-6 w-full max-w-lg relative"
+            >
+              <button
+                type="button"
+                onClick={() => setActiveMetaPopup(null)}
+                className="absolute top-5 right-5 p-2 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors cursor-pointer text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-10 h-10 rounded-xl flex items-center justify-center text-white",
+                    activeMetaPopup.type === 'exercise' ? "bg-[#4EACAF]" : "bg-sky-400"
+                  )}>
+                    <BrainCircuit className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none block">
+                      Chi tiết {activeMetaPopup.type === 'exercise' ? 'Bài tập' : 'Bài học'} (ID: {activeMetaPopup.id})
+                    </span>
+                    <h3 className="text-lg font-black text-gray-900 leading-tight mt-1">
+                      {activeMetaPopup.name}
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-100 pt-3 space-y-3.5 max-h-[50vh] overflow-y-auto pr-1">
+                  {Object.entries(activeMetaPopup.details).map(([label, value]) => {
+                    if (value === null || value === undefined || value === '') return null;
+                    return (
+                      <div key={label} className="grid grid-cols-3 gap-2 text-xs">
+                        <span className="font-extrabold text-slate-400 uppercase tracking-wider">{label}</span>
+                        <span className="col-span-2 text-slate-700 font-extrabold text-sm leading-relaxed whitespace-pre-line">
+                          {value}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveMetaPopup(null)}
+                    className="py-2.5 px-6 bg-slate-100 hover:bg-slate-200 text-slate-600 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+                  >
+                    Đóng chi tiết
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           </div>
         )}
       </AnimatePresence>
