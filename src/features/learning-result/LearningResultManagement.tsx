@@ -1,28 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Search, 
-  X, 
-  Eye, 
-  SlidersHorizontal, 
-  Award, 
-  Clock, 
-  ThumbsUp, 
-  TrendingUp, 
-  Volume2, 
-  Play, 
-  Info, 
-  CheckCircle2, 
-  HelpCircle, 
-  Calendar, 
-  ChevronDown, 
-  Activity, 
-  UserSquare2, 
-  FileCheck2, 
-  Sparkles, 
-  FolderOpen, 
-  BrainCircuit, 
-  MessageSquareShare, 
+import {
+  Search,
+  X,
+  Eye,
+  SlidersHorizontal,
+  Award,
+  Clock,
+  ThumbsUp,
+  TrendingUp,
+  Volume2,
+  Play,
+  Info,
+  CheckCircle2,
+  HelpCircle,
+  Calendar,
+  ChevronDown,
+  Activity,
+  UserSquare2,
+  FileCheck2,
+  Sparkles,
+  FolderOpen,
+  BrainCircuit,
+  MessageSquareShare,
   ShieldAlert,
   ArrowRight,
   ListRestart,
@@ -30,7 +30,8 @@ import {
   Tv,
   ArrowUp,
   ArrowDown,
-  ArrowUpDown
+  ArrowUpDown,
+  FileText
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
@@ -278,7 +279,8 @@ export default function LearningResultManagement() {
     type: 'exercise' | 'lesson';
     id: string;
     name: string;
-    details: Record<string, string | number | null | undefined>;
+    exercise?: Exercise;
+    lesson?: LessonResponse;
   } | null>(null);
 
   // Modal feedback editing logic (Simulate Admin/Teacher update feedback)
@@ -358,46 +360,46 @@ export default function LearningResultManagement() {
           }),
           roleView === 'PARENT'
             ? (async () => {
-                const parentResult =
-                  await getCurrentUserWithChildrenProfiles();
+              const parentResult =
+                await getCurrentUserWithChildrenProfiles();
 
-                if (!parentResult.success || !parentResult.data) {
-                  throw new Error(
-                    parentResult.errors.join(' ') || parentResult.message
-                  );
-                }
+              if (!parentResult.success || !parentResult.data) {
+                throw new Error(
+                  parentResult.errors.join(' ') || parentResult.message
+                );
+              }
 
-                return parentResult.data.childProfiles;
-              })()
+              return parentResult.data.childProfiles;
+            })()
             : roleView === 'TEACHER'
               ? (async () => {
-                  const [allChildren, classroomRecords, enrollmentRecords] =
-                    await Promise.all([
-                      loadAllPages(getChildProfiles),
-                      loadAllPages(getClassrooms),
-                      loadAllPages(getEnrollments),
-                    ]);
+                const [allChildren, classroomRecords, enrollmentRecords] =
+                  await Promise.all([
+                    loadAllPages(getChildProfiles),
+                    loadAllPages(getClassrooms),
+                    loadAllPages(getEnrollments),
+                  ]);
 
-                  const teacherId = sessionUser?.UserId;
-                  const teacherClassIds = new Set(
-                    classroomRecords
-                      .filter((classroom) => String(classroom.userId) === teacherId)
-                      .map((classroom) => classroom.id)
-                  );
-                  const teacherChildIds = new Set(
-                    enrollmentRecords
-                      .filter(
-                        (enrollment) =>
-                          teacherClassIds.has(enrollment.classId) &&
-                          enrollment.status !== 'Cancelled'
-                      )
-                      .map((enrollment) => enrollment.childId)
-                  );
+                const teacherId = sessionUser?.UserId;
+                const teacherClassIds = new Set(
+                  classroomRecords
+                    .filter((classroom) => String(classroom.userId) === teacherId)
+                    .map((classroom) => classroom.id)
+                );
+                const teacherChildIds = new Set(
+                  enrollmentRecords
+                    .filter(
+                      (enrollment) =>
+                        teacherClassIds.has(enrollment.classId) &&
+                        enrollment.status !== 'Cancelled'
+                    )
+                    .map((enrollment) => enrollment.childId)
+                );
 
-                  return allChildren.filter((child) =>
-                    teacherChildIds.has(child.id)
-                  );
-                })()
+                return allChildren.filter((child) =>
+                  teacherChildIds.has(child.id)
+                );
+              })()
               : loadAllPages(getChildProfiles),
           loadAllPages(getLessons).catch((err) => {
             console.warn('Could not fetch lessons list:', err);
@@ -545,7 +547,7 @@ export default function LearningResultManagement() {
       const itemDate = new Date(item.StartedAt.split(' ')[0]);
       const diffTime = Math.abs(today.getTime() - itemDate.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       if (filterDateRange === 'TODAY' && diffDays > 1) dateMatch = false;
       if (filterDateRange === '3DAYS' && diffDays > 3) dateMatch = false;
       if (filterDateRange === '7DAYS' && diffDays > 7) dateMatch = false;
@@ -600,13 +602,13 @@ export default function LearningResultManagement() {
   // STATISTICS CALCULATIONS (Based on ROLE-FILTERED subset for accuracy)
   const roleSubset = getRoleFilteredResults(results);
   const totalAttempts = roleSubset.length;
-  
+
   const completedCount = roleSubset.filter(r => r.CompletionStatus === 'Completed').length;
   const completionRate = totalAttempts > 0 ? Math.round((completedCount / totalAttempts) * 100) : 0;
 
   const resultsWithScore = roleSubset.filter(r => r.Score > 0);
-  const averageScore = resultsWithScore.length > 0 
-    ? Math.round(resultsWithScore.reduce((acc, curr) => acc + curr.Score, 0) / resultsWithScore.length) 
+  const averageScore = resultsWithScore.length > 0
+    ? Math.round(resultsWithScore.reduce((acc, curr) => acc + curr.Score, 0) / resultsWithScore.length)
     : 0;
 
   const totalDurationSeconds = roleSubset.reduce((acc, curr) => acc + curr.DurationSeconds, 0);
@@ -726,7 +728,7 @@ export default function LearningResultManagement() {
 
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative" id="result-management-view">
-      
+
       {/* Dynamic Toast Feedback Overlay */}
       <AnimatePresence>
         {toastMessage && (
@@ -759,8 +761,8 @@ export default function LearningResultManagement() {
               <div className="flex-1 min-w-0">
                 <span className="font-extrabold italic">{toastMessage.text}</span>
               </div>
-              <button 
-                onClick={() => setToastMessage(null)} 
+              <button
+                onClick={() => setToastMessage(null)}
                 className="p-1 hover:bg-white/10 rounded-full transition-colors text-white"
               >
                 <X className="w-5 h-5" />
@@ -804,7 +806,7 @@ export default function LearningResultManagement() {
 
       {/* 2. Kid-friendly visual Statistics indicators depending on role scope */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        
+
         {/* Total attempts count card */}
         <div className="bg-white rounded-[32px] p-6 border-b-4 border-[#4EACAF] shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
           <div className="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center shrink-0">
@@ -884,21 +886,21 @@ export default function LearningResultManagement() {
 
       {/* 3. Multi option Search and advanced filter block */}
       <div className="bg-white rounded-[36px] p-6.5 shadow-sm border border-gray-100 space-y-5" id="results-filter-bar">
-        
+
         {/* Realtime filter row 1 */}
         <div className="flex flex-col md:flex-row gap-4">
-          
+
           <div className="relative flex-1">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input 
-              type="text" 
-              placeholder="Tìm theo tên học sinh, bé cưng hoặc tên bài tập (VD: Nông trại, Leo, sáo...)" 
+            <input
+              type="text"
+              placeholder="Tìm theo tên học sinh, bé cưng hoặc tên bài tập (VD: Nông trại, Leo, sáo...)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-14 pr-12 py-4 rounded-2xl bg-[#FDFCF5] border-2 border-transparent font-bold text-gray-700 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm" 
+              className="w-full pl-14 pr-12 py-4 rounded-2xl bg-[#FDFCF5] border-2 border-transparent font-bold text-gray-700 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
             />
             {searchQuery && (
-              <button 
+              <button
                 onClick={() => setSearchQuery('')}
                 className="absolute right-5 top-1/2 -translate-y-1/2 p-1.5 bg-gray-200/50 hover:bg-gray-200 rounded-full transition-colors"
                 title="Hủy từ khóa"
@@ -941,7 +943,7 @@ export default function LearningResultManagement() {
 
         {/* Filters Row 2 - Dropdowns */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1.5">
-          
+
           {/* Filter Difficulty */}
           <div className="space-y-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Độ khó bài tập:</label>
@@ -993,7 +995,7 @@ export default function LearningResultManagement() {
         {/* Clear filter helper button if any filter is active */}
         {(searchQuery || filterStatus !== 'ALL' || filterDifficulty !== 'ALL' || filterSkill !== 'ALL' || filterDateRange !== 'ALL' || filterChildId !== 'ALL') && (
           <div className="flex items-center justify-end pt-1">
-            <button 
+            <button
               onClick={() => {
                 setSearchQuery('');
                 setFilterStatus('ALL');
@@ -1015,7 +1017,7 @@ export default function LearningResultManagement() {
 
       {/* 4. Elegant Learning Results Table */}
       <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden" id="results-table-container">
-        
+
         <div className="px-10 py-8 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/50 backdrop-blur-sm">
           <div>
             <h3 className="text-2xl font-black text-gray-900 leading-none italic">Danh sách kết quả can thiệp chi tiết</h3>
@@ -1051,285 +1053,285 @@ export default function LearningResultManagement() {
         ) : (
           <>
             <div className="overflow-x-auto text-left">
-            <table className="w-full border-collapse" id="results-table-element">
-              <thead>
-                <tr className="bg-[#FDFCF5]/60 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
-                  <th 
-                    onClick={() => handleSort('ResultId')}
-                    className="py-5 px-10 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
-                    title="Sắp xếp theo Mã kết quả"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      Mã kết quả
-                      {sortColumn === 'ResultId' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
-                      ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    onClick={() => handleSort('ChildId')}
-                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
-                    title="Sắp xếp theo Học sinh"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      Tên Học Sinh Bé
-                      {sortColumn === 'ChildId' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
-                      ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    onClick={() => handleSort('ExerciseId')}
-                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
-                    title="Sắp xếp theo Bài tập"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      Bài tập VR
-                      {sortColumn === 'ExerciseId' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
-                      ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    onClick={() => handleSort('AttemptNumber')}
-                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
-                    title="Sắp xếp theo Lượt thử"
-                  >
-                    <div className="flex items-center justify-center gap-1.5">
-                      Lượt thử
-                      {sortColumn === 'AttemptNumber' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
-                      ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    onClick={() => handleSort('Score')}
-                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
-                    title="Sắp xếp theo Điểm"
-                  >
-                    <div className="flex items-center justify-center gap-1.5">
-                      Điểm số thu âm
-                      {sortColumn === 'Score' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
-                      ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    onClick={() => handleSort('DurationSeconds')}
-                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
-                    title="Sắp xếp theo Thời lượng"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      Thời lượng
-                      {sortColumn === 'DurationSeconds' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
-                      ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    onClick={() => handleSort('CompletionStatus')}
-                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
-                    title="Sắp xếp theo Trạng thái"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      Trạng thái
-                      {sortColumn === 'CompletionStatus' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
-                      ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    onClick={() => handleSort('CompletedAt')}
-                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
-                    title="Sắp xếp theo Thời điểm nộp"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      Thời điểm nộp
-                      {sortColumn === 'CompletedAt' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
-                      ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
-                      )}
-                    </div>
-                  </th>
-                  <th className="py-5 px-10 text-right select-none">Tùy chọn</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
-                {paginatedResults.map((itm) => {
-                  const chd = getChildInfo(itm.ChildId);
-                  const exe = getExerciseInfo(itm.ExerciseId);
-                  const les = getLessonInfo(itm.LessonId);
-                  const isExercise = !!itm.ExerciseId;
-                  const itemTitle = isExercise ? exe.ExerciseName : les.LessonName;
-                  const itemSubtitle = isExercise ? exe.TargetSkill : les.TargetSkill;
+              <table className="w-full border-collapse" id="results-table-element">
+                <thead>
+                  <tr className="bg-[#FDFCF5]/60 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
+                    <th
+                      onClick={() => handleSort('ResultId')}
+                      className="py-5 px-10 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Mã kết quả"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Mã kết quả
+                        {sortColumn === 'ResultId' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('ChildId')}
+                      className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Học sinh"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Tên Học Sinh Bé
+                        {sortColumn === 'ChildId' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('ExerciseId')}
+                      className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Bài tập"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Bài tập VR
+                        {sortColumn === 'ExerciseId' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('AttemptNumber')}
+                      className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
+                      title="Sắp xếp theo Lượt thử"
+                    >
+                      <div className="flex items-center justify-center gap-1.5">
+                        Lượt thử
+                        {sortColumn === 'AttemptNumber' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('Score')}
+                      className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
+                      title="Sắp xếp theo Điểm"
+                    >
+                      <div className="flex items-center justify-center gap-1.5">
+                        Điểm số thu âm
+                        {sortColumn === 'Score' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('DurationSeconds')}
+                      className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Thời lượng"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Thời lượng
+                        {sortColumn === 'DurationSeconds' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('CompletionStatus')}
+                      className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Trạng thái"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Trạng thái
+                        {sortColumn === 'CompletionStatus' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('CompletedAt')}
+                      className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Thời điểm nộp"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Thời điểm nộp
+                        {sortColumn === 'CompletedAt' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="py-5 px-10 text-right select-none">Tùy chọn</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
+                  {paginatedResults.map((itm) => {
+                    const chd = getChildInfo(itm.ChildId);
+                    const exe = getExerciseInfo(itm.ExerciseId);
+                    const les = getLessonInfo(itm.LessonId);
+                    const isExercise = !!itm.ExerciseId;
+                    const itemTitle = isExercise ? exe.ExerciseName : les.LessonName;
+                    const itemSubtitle = isExercise ? exe.TargetSkill : les.TargetSkill;
 
-                  return (
-                    <tr key={itm.ResultId} className="hover:bg-slate-50/50 transition-colors">
-                      
-                      {/* Result ID */}
-                      <td className="py-5 px-10 font-mono text-gray-400 font-extrabold text-xs">
-                        {itm.ResultId}
-                      </td>
+                    return (
+                      <tr key={itm.ResultId} className="hover:bg-slate-50/50 transition-colors">
 
-                      {/* Child Name & Learning level */}
-                      <td className="py-5 px-6">
-                        <div className="font-extrabold text-gray-900 text-sm md:text-base mb-0.5 leading-none">
-                          {chd.FullName}
-                        </div>
-                        <span className="text-[10px] text-[#4EACAF] font-bold uppercase tracking-tight">
-                          {chd.LearningLevel} ({chd.Age} tuổi)
-                        </span>
-                      </td>
+                        {/* Result ID */}
+                        <td className="py-5 px-10 font-mono text-gray-400 font-extrabold text-xs">
+                          {itm.ResultId}
+                        </td>
 
-                      {/* Exercise/Lesson Name & difficulty */}
-                      <td className="py-5 px-6">
-                        <div className="font-extrabold text-gray-800 leading-tight mb-1 text-xs md:text-sm">
-                          {itemTitle}
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className={cn(
-                            "text-[9px] px-1.5 py-0.5 rounded font-black uppercase text-white",
-                            isExercise ? (
-                              exe.DifficultyLevel === 'Dễ' && 'bg-emerald-400' ||
-                              exe.DifficultyLevel === 'Trung bình' && 'bg-indigo-400' ||
-                              exe.DifficultyLevel === 'Khó' && 'bg-[#FF8E8E]'
-                            ) : 'bg-sky-400'
-                          )}>
-                            {isExercise ? exe.DifficultyLevel : 'Bài học'}
+                        {/* Child Name & Learning level */}
+                        <td className="py-5 px-6">
+                          <div className="font-extrabold text-gray-900 text-sm md:text-base mb-0.5 leading-none">
+                            {chd.FullName}
+                          </div>
+                          <span className="text-[10px] text-[#4EACAF] font-bold uppercase tracking-tight">
+                            {chd.LearningLevel} ({chd.Age} tuổi)
                           </span>
-                          <span className="text-[10px] text-gray-400 font-medium truncate max-w-[140px]">
-                            {itemSubtitle}
-                          </span>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Attempt number */}
-                      <td className="py-5 px-6 text-center font-mono">
-                        <span className="px-2 py-0.5 bg-gray-100 rounded-md text-xs font-extrabold">
-                          Lần {itm.AttemptNumber}
-                        </span>
-                      </td>
+                        {/* Exercise/Lesson Name & difficulty */}
+                        <td className="py-5 px-6">
+                          <div className="font-extrabold text-gray-800 leading-tight mb-1 text-xs md:text-sm">
+                            {itemTitle}
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className={cn(
+                              "text-[9px] px-1.5 py-0.5 rounded font-black uppercase text-white",
+                              isExercise ? (
+                                exe.DifficultyLevel === 'Dễ' && 'bg-emerald-400' ||
+                                exe.DifficultyLevel === 'Trung bình' && 'bg-indigo-400' ||
+                                exe.DifficultyLevel === 'Khó' && 'bg-[#FF8E8E]'
+                              ) : 'bg-sky-400'
+                            )}>
+                              {isExercise ? exe.DifficultyLevel : 'Bài học'}
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-medium truncate max-w-[140px]">
+                              {itemSubtitle}
+                            </span>
+                          </div>
+                        </td>
 
-                      {/* Score metric with colorful circle indicator */}
-                      <td className="py-5 px-6 text-center">
-                        <div className="inline-flex items-center justify-center flex-col">
-                          <span className={cn(
-                            "font-black text-base italic",
-                            itm.Score >= 90 ? 'text-emerald-500' : itm.Score >= 70 ? 'text-indigo-500' : 'text-rose-500'
-                          )}>
-                            {itm.Score > 0 ? `${itm.Score}` : '—'}
+                        {/* Attempt number */}
+                        <td className="py-5 px-6 text-center font-mono">
+                          <span className="px-2 py-0.5 bg-gray-100 rounded-md text-xs font-extrabold">
+                            Lần {itm.AttemptNumber}
                           </span>
-                          {itm.Score > 0 && (
-                            <div className="w-8 h-1 bg-gray-100 rounded-full overflow-hidden mt-1">
-                              <div 
+                        </td>
+
+                        {/* Score metric with colorful circle indicator */}
+                        <td className="py-5 px-6 text-center">
+                          <div className="inline-flex items-center justify-center flex-col">
+                            <span className={cn(
+                              "font-black text-base italic",
+                              itm.Score >= 90 ? 'text-emerald-500' : itm.Score >= 70 ? 'text-indigo-500' : 'text-rose-500'
+                            )}>
+                              {itm.Score > 0 ? `${itm.Score}` : '—'}
+                            </span>
+                            {itm.Score > 0 && (
+                              <div className="w-8 h-1 bg-gray-100 rounded-full overflow-hidden mt-1">
+                                <div
+                                  className={cn(
+                                    "h-full rounded-full",
+                                    itm.Score >= 90 ? 'bg-emerald-500' : itm.Score >= 70 ? 'bg-indigo-500' : 'bg-rose-500'
+                                  )}
+                                  style={{ width: `${itm.Score}%` }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Duration in seconds */}
+                        <td className="py-5 px-6 text-gray-500 font-mono text-xs">
+                          {itm.DurationSeconds} giây
+                        </td>
+
+                        {/* Completion status */}
+                        <td className="py-5 px-6">
+                          {renderStatusBadge(itm.CompletionStatus)}
+                        </td>
+
+                        {/* Time submitted */}
+                        <td className="py-5 px-6 text-xs text-gray-400 font-medium">
+                          {itm.CompletedAt ? itm.CompletedAt : 'Đang xử lý...'}
+                        </td>
+
+                        {/* Actions toolbox */}
+                        <td className="py-5 px-10 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+
+                            {/* Main view modal button */}
+                            <ActionButton
+                              type="view"
+                              onClick={() => handleOpenDetailModal(itm)}
+                              title="Bấm để xem tương tác chi tiết"
+                            />
+
+                            {/* Quick audio play */}
+                            {itm.AudioRecordUrl && (
+                              <button
+                                onClick={() => handleSimulateAudioPlay(itm)}
                                 className={cn(
-                                  "h-full rounded-full",
-                                  itm.Score >= 90 ? 'bg-emerald-500' : itm.Score >= 70 ? 'bg-indigo-500' : 'bg-rose-500'
-                                )} 
-                                style={{ width: `${itm.Score}%` }}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </td>
+                                  "p-2 rounded-xl transition-all",
+                                  playingAudioId === itm.ResultId
+                                    ? "bg-emerald-500 text-white animate-bounce"
+                                    : "bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white"
+                                )}
+                                title="Nghe giọng bé thu từ kính VR"
+                              >
+                                <Volume2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
 
-                      {/* Duration in seconds */}
-                      <td className="py-5 px-6 text-gray-500 font-mono text-xs">
-                        {itm.DurationSeconds} giây
-                      </td>
+                            {/* Quick 3D replay coordinate simulation */}
+                            {itm.ReplayDataUrl && (
+                              <button
+                                onClick={() => handleSimulate3DReplay(itm)}
+                                className={cn(
+                                  "p-2 rounded-xl transition-all",
+                                  playingReplayId === itm.ResultId
+                                    ? "bg-indigo-500 text-white animate-pulse"
+                                    : "bg-indigo-50 text-indigo-600 hover:bg-indigo-500 hover:text-white"
+                                )}
+                                title="Xem replay chuyển động 3D thần sầu"
+                              >
+                                <Play className="w-3.5 h-3.5" />
+                              </button>
+                            )}
 
-                      {/* Completion status */}
-                      <td className="py-5 px-6">
-                        {renderStatusBadge(itm.CompletionStatus)}
-                      </td>
+                          </div>
+                        </td>
 
-                      {/* Time submitted */}
-                      <td className="py-5 px-6 text-xs text-gray-400 font-medium">
-                        {itm.CompletedAt ? itm.CompletedAt : 'Đang xử lý...'}
-                      </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
 
-                      {/* Actions toolbox */}
-                      <td className="py-5 px-10 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          
-                          {/* Main view modal button */}
-                           <ActionButton
-                             type="view"
-                             onClick={() => handleOpenDetailModal(itm)}
-                             title="Bấm để xem tương tác chi tiết"
-                           />
-
-                          {/* Quick audio play */}
-                          {itm.AudioRecordUrl && (
-                            <button
-                              onClick={() => handleSimulateAudioPlay(itm)}
-                              className={cn(
-                                "p-2 rounded-xl transition-all",
-                                playingAudioId === itm.ResultId 
-                                  ? "bg-emerald-500 text-white animate-bounce" 
-                                  : "bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white"
-                              )}
-                              title="Nghe giọng bé thu từ kính VR"
-                            >
-                              <Volume2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-
-                          {/* Quick 3D replay coordinate simulation */}
-                          {itm.ReplayDataUrl && (
-                            <button
-                              onClick={() => handleSimulate3DReplay(itm)}
-                              className={cn(
-                                "p-2 rounded-xl transition-all",
-                                playingReplayId === itm.ResultId 
-                                  ? "bg-indigo-500 text-white animate-pulse" 
-                                  : "bg-indigo-50 text-indigo-600 hover:bg-indigo-500 hover:text-white"
-                              )}
-                              title="Xem replay chuyển động 3D thần sầu"
-                            >
-                              <Play className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-
-                        </div>
-                      </td>
-
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="px-10 pb-8 border-t border-slate-50">
-            <Pagination
-              currentPage={currentPage}
-              totalItems={displayResults.length}
-              pageSize={pageSize}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={(size) => {
-                setPageSize(size);
-                setCurrentPage(1);
-              }}
-              itemLabel="kết quả"
-            />
-          </div>
-        </>
+            <div className="px-10 pb-8 border-t border-slate-50">
+              <Pagination
+                currentPage={currentPage}
+                totalItems={displayResults.length}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setCurrentPage(1);
+                }}
+                itemLabel="kết quả"
+              />
+            </div>
+          </>
         )}
 
       </div>
@@ -1338,7 +1340,7 @@ export default function LearningResultManagement() {
       <AnimatePresence>
         {isDetailModalOpen && selectedResult && (
           <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/15 animate-in fade-in duration-300 overflow-y-auto w-full h-full" id="result-modal-backdrop">
-            
+
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1346,7 +1348,7 @@ export default function LearningResultManagement() {
               className="app-modal-panel app-modal-panel--wide bg-white rounded-[40px] shadow-2xl w-full max-w-4xl overflow-hidden border border-gray-100 relative z-30 flex flex-col my-8"
               id="result-modal-box"
             >
-              
+
               {/* Modal Top Header with accent color */}
               <div className="bg-[#E2F2F3] px-8 py-6 flex items-center justify-between border-b border-[#C5E1E3] text-gray-900">
                 <div className="space-y-1">
@@ -1361,7 +1363,7 @@ export default function LearningResultManagement() {
                     Ứng dụng Kính VR đồng bộ thông suốt với hệ thống Dashboard GodotXR
                   </p>
                 </div>
-                <button 
+                <button
                   onClick={() => setIsDetailModalOpen(false)}
                   className="p-2.5 hover:bg-white/50 rounded-full transition-colors shrink-0"
                 >
@@ -1371,10 +1373,10 @@ export default function LearningResultManagement() {
 
               {/* Modal Body Scroll view divided into grid columns */}
               <div className="app-modal-body p-8 space-y-6 overflow-y-auto max-h-[70vh]">
-                
+
                 {/* Section A: Child & Exercise Header card Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  
+
                   {/* Left Column: Children specs */}
                   <div className="bg-[#FDFCF5] p-5 rounded-3xl border border-yellow-105 space-y-3">
                     <div className="flex items-center justify-between border-b border-gray-100 pb-2">
@@ -1407,21 +1409,13 @@ export default function LearningResultManagement() {
                                 type: 'exercise',
                                 id: selectedResult.ExerciseId!,
                                 name: exe.ExerciseName,
-                                details: {
-                                  'Mục tiêu kỹ năng': exe.TargetSkill,
-                                  'Độ khó': exe.DifficultyLevel,
-                                  'Ngôn ngữ': exe.Language,
-                                  'Hướng dẫn luyện tập': exe.Instruction || 'Không có',
-                                  'Thời lượng tối đa': exe.DurationLimit ? `${exe.DurationLimit} giây` : 'N/A',
-                                  'Trạng thái': exe.Status || 'Active',
-                                  'Ngày tạo': exe.CreatedAt ? formatDateTime(exe.CreatedAt) : 'N/A'
-                                }
+                                exercise: exe
                               });
                             }}
-                            className="p-1 text-slate-400 hover:text-[#4EACAF] transition-colors rounded-full hover:bg-slate-100 cursor-pointer"
-                            title="Xem chi tiết bài tập"
+                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#E2F2F3] hover:bg-[#D5EBEC] text-[#4EACAF] hover:text-[#3B8D90] transition-all rounded-full font-black text-[10px] uppercase tracking-wider cursor-pointer"
                           >
-                            <Info className="w-3.5 h-3.5" />
+                            <Eye className="w-3.5 h-3.5" />
+                            Chi tiết
                           </button>
                         </div>
                         <span className="text-[10px] bg-white text-gray-500 px-2 py-0.5 rounded-md font-bold text-mono">
@@ -1459,21 +1453,13 @@ export default function LearningResultManagement() {
                                 type: 'lesson',
                                 id: selectedResult.LessonId!,
                                 name: les.LessonName,
-                                details: {
-                                  'Kỹ năng tiêu điểm': les.TargetSkill,
-                                  'Thứ tự bài học': fullLes?.lessonOrder || 'N/A',
-                                  'Thời lượng ước tính': fullLes?.estimatedDuration ? `${fullLes.estimatedDuration} phút` : 'N/A',
-                                  'Mô tả bài học': les.Description || 'Không có',
-                                  'Trạng thái': fullLes?.status || 'Active',
-                                  'Ngày tạo': fullLes?.createdAt ? formatDateTime(fullLes.createdAt) : 'N/A',
-                                  'Ngày cập nhật': fullLes?.updatedAt ? formatDateTime(fullLes.updatedAt) : 'Chưa cập nhật'
-                                }
+                                lesson: fullLes
                               });
                             }}
-                            className="p-1 text-slate-400 hover:text-[#4EACAF] transition-colors rounded-full hover:bg-slate-100 cursor-pointer"
-                            title="Xem chi tiết bài học"
+                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#E2F2F3] hover:bg-[#D5EBEC] text-[#4EACAF] hover:text-[#3B8D90] transition-all rounded-full font-black text-[10px] uppercase tracking-wider cursor-pointer"
                           >
-                            <Info className="w-3.5 h-3.5" />
+                            <Eye className="w-3.5 h-3.5" />
+                            Chi tiết
                           </button>
                         </div>
                         <span className="text-[10px] bg-white text-gray-500 px-2 py-0.5 rounded-md font-bold text-mono">
@@ -1508,7 +1494,7 @@ export default function LearningResultManagement() {
                   </h4>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    
+
                     {/* Audio recording player simulation card */}
                     <div className="bg-white p-4.5 rounded-2xl border border-gray-100 flex flex-col justify-between gap-3">
                       <div className="flex items-center gap-2.5">
@@ -1527,7 +1513,7 @@ export default function LearningResultManagement() {
                         <div className="space-y-2 mt-2">
                           {/* Mini simulated audio player dashboard */}
                           <div className="bg-slate-50 p-2.5 rounded-xl flex items-center gap-3">
-                            <button 
+                            <button
                               type="button"
                               onClick={() => handleSimulateAudioPlay(selectedResult)}
                               className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
@@ -1544,8 +1530,8 @@ export default function LearningResultManagement() {
                                 <span>00:10 (Mô phỏng)</span>
                               </div>
                               <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                <div 
-                                  className={cn("h-full bg-emerald-500 rounded-full", playingAudioId === selectedResult.ResultId && "w-1/3 transition-all duration-[4s]")} 
+                                <div
+                                  className={cn("h-full bg-emerald-500 rounded-full", playingAudioId === selectedResult.ResultId && "w-1/3 transition-all duration-[4s]")}
                                   style={{ width: playingAudioId === selectedResult.ResultId ? '100%' : '0%' }}
                                 />
                               </div>
@@ -1578,8 +1564,8 @@ export default function LearningResultManagement() {
                             onClick={() => handleSimulate3DReplay(selectedResult)}
                             className={cn(
                               "w-full py-2.5 rounded-xl font-black text-xs uppercase tracking-wide transition-all border flex items-center justify-center gap-2",
-                              playingReplayId === selectedResult.ResultId 
-                                ? "bg-indigo-600 text-white" 
+                              playingReplayId === selectedResult.ResultId
+                                ? "bg-indigo-600 text-white"
                                 : "bg-indigo-50 border-indigo-100 text-indigo-600 hover:bg-indigo-500 hover:text-white"
                             )}
                           >
@@ -1607,7 +1593,7 @@ export default function LearningResultManagement() {
 
                 {/* Section C: Numeric indicators detail */}
                 <div className="bg-[#FDFCF5] p-5 rounded-[28px] border border-gray-100 grid grid-cols-2 sm:grid-cols-4 gap-6 font-bold text-center">
-                  
+
                   <div className="space-y-1 border-r border-gray-100 last:border-0">
                     <p className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">Nỗ lực thứ</p>
                     <p className="text-2xl font-black text-gray-800">Lượt {selectedResult.AttemptNumber}</p>
@@ -1718,7 +1704,7 @@ export default function LearningResultManagement() {
                 <span className="text-xs text-gray-400 font-mono font-medium">
                   Created at: {selectedResult.CreatedAt}
                 </span>
-                
+
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -1733,8 +1719,8 @@ export default function LearningResultManagement() {
                     <button
                       type="button"
                       onClick={() => {
-                        const name = selectedResult.ExerciseId 
-                          ? getExerciseInfo(selectedResult.ExerciseId).ExerciseName 
+                        const name = selectedResult.ExerciseId
+                          ? getExerciseInfo(selectedResult.ExerciseId).ExerciseName
                           : getLessonInfo(selectedResult.LessonId).LessonName;
                         showToast(`Đã phát lệnh yêu cầu bé tập lại: "${name}"!`, 'success');
                         setIsDetailModalOpen(false);
@@ -1762,7 +1748,7 @@ export default function LearningResultManagement() {
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white rounded-[32px] border border-slate-100 shadow-2xl p-6 w-full max-w-lg relative"
+              className="bg-white rounded-[32px] border border-slate-100 shadow-2xl p-8 w-full max-w-2xl lg:max-w-3xl relative"
             >
               <button
                 type="button"
@@ -1790,18 +1776,178 @@ export default function LearningResultManagement() {
                   </div>
                 </div>
 
-                <div className="border-t border-slate-100 pt-3 space-y-3.5 max-h-[50vh] overflow-y-auto pr-1">
-                  {Object.entries(activeMetaPopup.details).map(([label, value]) => {
-                    if (value === null || value === undefined || value === '') return null;
-                    return (
-                      <div key={label} className="grid grid-cols-3 gap-2 text-xs">
-                        <span className="font-extrabold text-slate-400 uppercase tracking-wider">{label}</span>
-                        <span className="col-span-2 text-slate-700 font-extrabold text-sm leading-relaxed whitespace-pre-line">
-                          {value}
-                        </span>
-                      </div>
-                    );
-                  })}
+                <div className="border-t border-slate-100 pt-5 space-y-5 max-h-[60vh] overflow-y-auto pr-1">
+                  
+                  {/* Grid of styled modern cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {activeMetaPopup.type === 'lesson' && activeMetaPopup.lesson && (
+                      <>
+                        <div className="p-4.5 rounded-2xl border border-indigo-100/50 bg-indigo-50/15 flex items-center gap-3.5 shadow-sm">
+                          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-500 shrink-0 shadow-sm">
+                            <Volume2 className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">Kỹ năng tiêu điểm</span>
+                            <span className="text-sm font-black text-slate-800">{activeMetaPopup.lesson.targetSkill || 'N/A'}</span>
+                          </div>
+                        </div>
+
+                        <div className="p-4.5 rounded-2xl border border-sky-100/50 bg-sky-50/15 flex items-center gap-3.5 shadow-sm">
+                          <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-500 shrink-0 shadow-sm">
+                            <SlidersHorizontal className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">Thứ tự bài học</span>
+                            <span className="text-sm font-black text-slate-800">Bài {activeMetaPopup.lesson.lessonOrder}</span>
+                          </div>
+                        </div>
+
+                        <div className="p-4.5 rounded-2xl border border-emerald-100/50 bg-emerald-50/15 flex items-center gap-3.5 shadow-sm">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-500 shrink-0 shadow-sm">
+                            <Clock className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">Thời lượng ước tính</span>
+                            <span className="text-sm font-black text-slate-800">{activeMetaPopup.lesson.estimatedDuration ? `${activeMetaPopup.lesson.estimatedDuration} phút` : 'N/A'}</span>
+                          </div>
+                        </div>
+
+                        <div className="p-4.5 rounded-2xl border border-teal-100/50 bg-teal-50/15 flex items-center gap-3.5 shadow-sm">
+                          <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-[#4EACAF] shrink-0 shadow-sm">
+                            <CheckCircle2 className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">Trạng thái bài học</span>
+                            <span className={cn(
+                              "text-xs px-2 py-0.5 rounded-md font-black uppercase text-white inline-block mt-0.5",
+                              activeMetaPopup.lesson.status === 'Active' ? 'bg-[#4EACAF]' : 'bg-slate-400'
+                            )}>
+                              {activeMetaPopup.lesson.status}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="p-4.5 rounded-2xl border border-amber-100/50 bg-amber-50/15 flex items-center gap-3.5 shadow-sm">
+                          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500 shrink-0 shadow-sm">
+                            <Calendar className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">Ngày khởi tạo</span>
+                            <span className="text-sm font-black text-slate-800">{formatDateTime(activeMetaPopup.lesson.createdAt)}</span>
+                          </div>
+                        </div>
+
+                        {activeMetaPopup.lesson.updatedAt && (
+                          <div className="p-4.5 rounded-2xl border border-purple-100/50 bg-purple-50/15 flex items-center gap-3.5 shadow-sm">
+                            <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-500 shrink-0 shadow-sm">
+                              <Calendar className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">Ngày cập nhật</span>
+                              <span className="text-sm font-black text-slate-800">{formatDateTime(activeMetaPopup.lesson.updatedAt)}</span>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {activeMetaPopup.type === 'exercise' && activeMetaPopup.exercise && (
+                      <>
+                        <div className="p-4.5 rounded-2xl border border-indigo-100/50 bg-indigo-50/15 flex items-center gap-3.5 shadow-sm">
+                          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-500 shrink-0 shadow-sm">
+                            <Volume2 className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">Mục tiêu kỹ năng</span>
+                            <span className="text-sm font-black text-slate-800">{activeMetaPopup.exercise.TargetSkill || 'N/A'}</span>
+                          </div>
+                        </div>
+
+                        <div className="p-4.5 rounded-2xl border border-rose-100/50 bg-rose-50/15 flex items-center gap-3.5 shadow-sm">
+                          <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-[#FF8E8E] shrink-0 shadow-sm">
+                            <Award className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">Độ khó bài tập</span>
+                            <span className={cn(
+                              "text-xs px-2 py-0.5 rounded-md font-black uppercase text-white inline-block mt-0.5",
+                              activeMetaPopup.exercise.DifficultyLevel === 'Dễ' && 'bg-emerald-400',
+                              activeMetaPopup.exercise.DifficultyLevel === 'Trung bình' && 'bg-indigo-400',
+                              activeMetaPopup.exercise.DifficultyLevel === 'Khó' && 'bg-[#FF8E8E]'
+                            )}>
+                              {activeMetaPopup.exercise.DifficultyLevel}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="p-4.5 rounded-2xl border border-sky-100/50 bg-sky-50/15 flex items-center gap-3.5 shadow-sm">
+                          <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-500 shrink-0 shadow-sm">
+                            <Tv className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">Ngôn ngữ huấn luyện</span>
+                            <span className="text-sm font-black text-slate-800">{activeMetaPopup.exercise.Language || 'Tiếng Việt'}</span>
+                          </div>
+                        </div>
+
+                        <div className="p-4.5 rounded-2xl border border-emerald-100/50 bg-emerald-50/15 flex items-center gap-3.5 shadow-sm">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-500 shrink-0 shadow-sm">
+                            <Clock className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">Thời gian tối đa</span>
+                            <span className="text-sm font-black text-slate-800">
+                              {activeMetaPopup.exercise.DurationLimit ? `${activeMetaPopup.exercise.DurationLimit} giây` : 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="p-4.5 rounded-2xl border border-teal-100/50 bg-teal-50/15 flex items-center gap-3.5 shadow-sm">
+                          <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-[#4EACAF] shrink-0 shadow-sm">
+                            <CheckCircle2 className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">Trạng thái</span>
+                            <span className={cn(
+                              "text-xs px-2 py-0.5 rounded-md font-black uppercase text-white inline-block mt-0.5",
+                              activeMetaPopup.exercise.Status === 'Active' ? 'bg-[#4EACAF]' : 'bg-slate-400'
+                            )}>
+                              {activeMetaPopup.exercise.Status || 'Active'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="p-4.5 rounded-2xl border border-amber-100/50 bg-amber-50/15 flex items-center gap-3.5 shadow-sm">
+                          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500 shrink-0 shadow-sm">
+                            <Calendar className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">Ngày khởi tạo</span>
+                            <span className="text-sm font-black text-slate-800">
+                              {activeMetaPopup.exercise.CreatedAt ? formatDateTime(activeMetaPopup.exercise.CreatedAt) : 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Detailed Description/Syllabus block */}
+                  <div className="bg-gradient-to-br from-slate-50 to-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-3">
+                    <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                      <FileText className="w-4.5 h-4.5 text-[#FF8E8E]" />
+                      <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                        {activeMetaPopup.type === 'lesson' ? 'Mô tả chi tiết bài học giáo trình' : 'Chi tiết bài tập rèn luyện và hướng dẫn'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-700 font-extrabold leading-relaxed whitespace-pre-line">
+                      {activeMetaPopup.type === 'lesson' 
+                        ? (activeMetaPopup.lesson?.description || 'Không có mô tả chi tiết giáo trình cho bài học này.') 
+                        : (activeMetaPopup.exercise?.Instruction || 'Không có mô tả chi tiết hướng dẫn học tập cho bài tập này.')
+                      }
+                    </p>
+                  </div>
+
                 </div>
 
                 <div className="flex justify-end pt-2">
@@ -1810,7 +1956,7 @@ export default function LearningResultManagement() {
                     onClick={() => setActiveMetaPopup(null)}
                     className="py-2.5 px-6 bg-slate-100 hover:bg-slate-200 text-slate-600 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer"
                   >
-                    Đóng chi tiết
+                    Đóng
                   </button>
                 </div>
               </div>
