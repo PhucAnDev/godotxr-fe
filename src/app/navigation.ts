@@ -105,6 +105,12 @@ export const parentSidebarItems: SidebarItem[] = [
     path: '/parent/history',
   },
   {
+    id: 'LEARNING_RESULT_MANAGEMENT',
+    label: 'Kết quả luyện tập',
+    icon: GraduationCap,
+    path: '/parent/results',
+  },
+  {
     id: 'PROGRESS_ANALYSIS',
     label: 'Phân tích tiến độ',
     icon: TrendingUp,

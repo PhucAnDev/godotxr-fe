@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   LineChart, 
@@ -46,6 +46,11 @@ import {
 import { cn } from '../../lib/utils';
 import CustomSelect from '../../components/common/CustomSelect';
 import ActionButton from '../../components/common/ActionButton';
+import { getSessionUser } from '../../lib/authSession';
+import { getMyChildProfiles, getChildProfiles } from '../../services/childProfileService';
+import { getAnalyzesByChildId } from '../../services/analyzeService';
+import type { ChildProfileResponse } from '../../services/childProfileService';
+import type { AnalyzeResponse } from '../../services/analyzeService';
 
 // DB Interfaces according to project specification
 interface Child {
@@ -73,184 +78,14 @@ interface Analysis {
   UpdatedAt: string;
 }
 
-// Initial Mock DB conforming exactly to GodotXR guidelines
-const MOCK_CHILDREN: Child[] = [
-  { 
-    ChildId: 'CHD-001', 
-    FullName: 'Nguyễn Tiến Minh (Leo)', 
-    Age: 8, 
-    Gender: 'Male', 
-    LearningLevel: 'Bậc 2 - Phát âm nâng cao VR', 
-    Status: 'Active' 
-  },
-  { 
-    ChildId: 'CHD-002', 
-    FullName: 'Trần Thảo Linh (Sophia)', 
-    Age: 7, 
-    Gender: 'Female', 
-    LearningLevel: 'Bậc 2 - Âm đôi ghép từ VR', 
-    Status: 'Active' 
-  },
-  { 
-    ChildId: 'CHD-003', 
-    FullName: 'Phạm Minh Khang', 
-    Age: 9, 
-    Gender: 'Male', 
-    LearningLevel: 'Bậc 1 - Sửa ngọng S & L VR', 
-    Status: 'Active' 
-  },
-  { 
-    ChildId: 'CHD-004', 
-    FullName: 'Hoàng Anh Thư', 
-    Age: 11, 
-    Gender: 'Female', 
-    LearningLevel: 'Bậc 2 - Ghép vần VR', 
-    Status: 'Active' 
-  },
-  { 
-    ChildId: 'CHD-005', 
-    FullName: 'Lê Bảo Nam', 
-    Age: 10, 
-    Gender: 'Male', 
-    LearningLevel: 'Bậc 3 - Phản xạ nhanh VR', 
-    Status: 'Inactive' 
-  }
-];
-
-const MOCK_ANALYSES: Analysis[] = [
-  {
-    AnalysisId: 'ANA-901',
-    ChildId: 'CHD-001', // Leo
-    TotalExercises: 24,
-    CompletedExercises: 22,
-    TotalPracticeTime: 480, // 8 hours
-    AverageScore: 92,
-    ProgressLevel: 'Improving',
-    Strengths: 'Phát âm dải nguyên âm đôi rất tròn trịa (ay, uô, iê). Có xu hướng thích nghi vượt bậc với môi trường VR rèn luyện 3D, sự tập trung thính giác tăng lên rõ rệt qua 4 tuần.',
-    Weaknesses: 'Bé thỉnh thoảng còn có xu hướng nuốt âm cuối (phụ âm t, p) khi cố gắng nói nhanh ở các chặng game tốc độ dài.',
-    Recommendation: 'Bố mẹ rèn cho bé đệm âm dứt khoát cuối từ. Khuyến khích chơi thêm cụm bài tập "Phiêu lưu nông trại vui vẻ" để tối ưu khẩu hình dọc mở rộng.',
-    LastAnalyzedAt: '2026-05-30 15:30',
-    CreatedAt: '2026-05-30 15:30',
-    UpdatedAt: '2026-05-30 15:30'
-  },
-  {
-    AnalysisId: 'ANA-902',
-    ChildId: 'CHD-002', // Sophia
-    TotalExercises: 18,
-    CompletedExercises: 17,
-    TotalPracticeTime: 360,
-    AverageScore: 94,
-    ProgressLevel: 'Improving',
-    Strengths: 'Sửa dứt điểm bẹt khẩu hình ngang, âm rít gió phát tròn đầy không lẫn phụ âm. Thành thạo tương tác nhịp điệu phối hợp.',
-    Weaknesses: 'Đôi lúc hơi mỏi cơ hàm khi luyện các cụm từ ghép phức tạp liên tục trên 15 phút.',
-    Recommendation: 'Nên chia nhỏ thời gian học 10 phút một lần đeo kính VR. Tiếp tục duy trì luyện tập bài tập "Truy tìm thần thú" ở cấp độ Trung bình để bồi đắp vốn từ.',
-    LastAnalyzedAt: '2026-05-28 10:45',
-    CreatedAt: '2026-05-28 10:45',
-    UpdatedAt: '2026-05-28 10:45'
-  },
-  {
-    AnalysisId: 'ANA-903',
-    ChildId: 'CHD-003', // Minh Khang
-    TotalExercises: 15,
-    CompletedExercises: 10,
-    TotalPracticeTime: 210,
-    AverageScore: 68,
-    ProgressLevel: 'Need Support',
-    Strengths: 'Phát âm to rõ ràng, âm giọng sáng khỏe, không ngại ngần tương tác thử âm đầu mộc.',
-    Weaknesses: 'Bị lỗi uốn cong nhầm lưỡi gây phát ngọng chéo giữa âm gió S sang âm cơ bản. Sự phối hợp động tác nhịp thở còn nông hơi.',
-    Recommendation: 'Cần giáo viên trực tiếp hướng dẫn bé đặt lưỡi bẹt phía dưới chân răng thềm dưới khi phát âm bài "Thử thách phát âm S & X". Chơi game dưới 10 phút để tránh áp lực mệt mỏi.',
-    LastAnalyzedAt: '2026-05-29 14:00',
-    CreatedAt: '2026-05-29 14:00',
-    UpdatedAt: '2026-05-29 14:00'
-  },
-  {
-    AnalysisId: 'ANA-904',
-    ChildId: 'CHD-004', // Anh Thư
-    TotalExercises: 20,
-    CompletedExercises: 18,
-    TotalPracticeTime: 400,
-    AverageScore: 85,
-    ProgressLevel: 'Stable',
-    Strengths: 'Nhận diện tốt các thanh điệu (hỏi, ngã, sắc, nặng). Khả năng ghép vần nguyên âm đơn cực kỳ mượt mà lập tức.',
-    Weaknesses: 'Giọng phát ra hơi nhỏ âm lượng mộc khi đứng trước các cụm thử thách từ có 3 âm tiết trở lên.',
-    Recommendation: 'Bố mẹ khen ngợi bé nhiều hơn để tăng tự tin. Cho bé tham gia "Đường đua âm thanh sôi động" để thúc đẩy phản xạ phát lớn tiếng vượt chướng ngại vật.',
-    LastAnalyzedAt: '2026-05-31 09:15',
-    CreatedAt: '2026-05-31 09:15',
-    UpdatedAt: '2026-05-31 09:15'
-  },
-  {
-    AnalysisId: 'ANA-905',
-    ChildId: 'CHD-005', // Bảo Nam
-    TotalExercises: 8,
-    CompletedExercises: 4,
-    TotalPracticeTime: 90,
-    AverageScore: 55,
-    ProgressLevel: 'Need Support',
-    Strengths: 'Rất ngoan ngoãn, thích rồng đất và các chướng ngại vật động vật 3D trên màn hình kịch bản.',
-    Weaknesses: 'Hay ngắt bài làm dở chừng do mỏi mắt và chưa quen thao tác kính VR GodotXR.',
-    Recommendation: 'Tạm dừng chơi bài kiểm tra điểm số áp lực. Giới hạn chơi thư giãn 5-7 phút dưới sự kèm cặp sát sao của giáo viên đồng hành.',
-    LastAnalyzedAt: '2026-05-25 11:30',
-    CreatedAt: '2026-05-25 11:30',
-    UpdatedAt: '2026-05-25 11:30'
-  }
-];
-
-// Weekly progression charts data structure maps out dynamic updates according to selected child
-const WEEKLY_CHARTS_DATABASE: Record<string, { week: string; score: number; completed: number }[]> = {
-  'ALL': [
-    { week: 'Tuần 1', score: 68, completed: 8 },
-    { week: 'Tuần 2', score: 72, completed: 12 },
-    { week: 'Tuần 3', score: 79, completed: 15 },
-    { week: 'Tuần 4', score: 82, completed: 14 },
-    { week: 'Tuần 5', score: 86, completed: 18 },
-    { week: 'Tuần 6', score: 89, completed: 20 }
-  ],
-  'CHD-001': [ // Leo
-    { week: 'Tuần 1', score: 75, completed: 2 },
-    { week: 'Tuần 2', score: 80, completed: 3 },
-    { week: 'Tuần 3', score: 85, completed: 4 },
-    { week: 'Tuần 4', score: 88, completed: 4 },
-    { week: 'Tuần 5', score: 92, completed: 5 },
-    { week: 'Tuần 6', score: 95, completed: 6 }
-  ],
-  'CHD-002': [ // Sophia
-    { week: 'Tuần 1', score: 80, completed: 3 },
-    { week: 'Tuần 2', score: 82, completed: 4 },
-    { week: 'Tuần 3', score: 87, completed: 3 },
-    { week: 'Tuần 4', score: 90, completed: 4 },
-    { week: 'Tuần 5', score: 93, completed: 5 },
-    { week: 'Tuần 6', score: 94, completed: 5 }
-  ],
-  'CHD-003': [ // Minh Khang
-    { week: 'Tuần 1', score: 55, completed: 1 },
-    { week: 'Tuần 2', score: 58, completed: 2 },
-    { week: 'Tuần 3', score: 60, completed: 2 },
-    { week: 'Tuần 4', score: 65, completed: 3 },
-    { week: 'Tuần 5', score: 66, completed: 2 },
-    { week: 'Tuần 6', score: 68, completed: 3 }
-  ],
-  'CHD-004': [ // Anh Thư
-    { week: 'Tuần 1', score: 70, completed: 2 },
-    { week: 'Tuần 2', score: 74, completed: 3 },
-    { week: 'Tuần 3', score: 78, completed: 4 },
-    { week: 'Tuần 4', score: 82, completed: 4 },
-    { week: 'Tuần 5', score: 85, completed: 5 },
-    { week: 'Tuần 6', score: 86, completed: 4 }
-  ],
-  'CHD-005': [ // Bảo Nam
-    { week: 'Tuần 1', score: 45, completed: 0 },
-    { week: 'Tuần 2', score: 50, completed: 1 },
-    { week: 'Tuần 3', score: 48, completed: 1 },
-    { week: 'Tuần 4', score: 52, completed: 0 },
-    { week: 'Tuần 5', score: 55, completed: 2 },
-    { week: 'Tuần 6', score: 56, completed: 1 }
-  ]
-};
-
 export default function ProgressAnalysis() {
+  const currentUser = getSessionUser();
+  const actualRole = currentUser?.Role || 'PARENT';
+
   // Database datasets state
-  const [analyses, setAnalyses] = useState<Analysis[]>(MOCK_ANALYSES);
-  const [children] = useState<Child[]>(MOCK_CHILDREN);
+  const [analyses, setAnalyses] = useState<Analysis[]>([]);
+  const [children, setChildren] = useState<Child[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Selector state
   const [selectedChildId, setSelectedChildId] = useState<string>('ALL');
@@ -278,7 +113,7 @@ export default function ProgressAnalysis() {
   };
 
   // Role Switch Simulator - Admin, Teacher, Parent
-  const [currentRoleView, setCurrentRoleView] = useState<'ADMIN' | 'TEACHER' | 'PARENT'>('ADMIN');
+  const [currentRoleView, setCurrentRoleView] = useState<'ADMIN' | 'TEACHER' | 'PARENT'>(actualRole);
 
   // Modal display control
   const [selectedAnalysis, setSelectedAnalysis] = useState<Analysis | null>(null);
@@ -296,7 +131,7 @@ export default function ProgressAnalysis() {
   const getChildDetails = (id: string): Child => {
     return children.find(c => c.ChildId === id) || {
       ChildId: id,
-      FullName: 'Bé mập mạp',
+      FullName: 'Bé',
       Age: 5,
       Gender: 'Other',
       LearningLevel: 'Cơ bản',
@@ -304,27 +139,117 @@ export default function ProgressAnalysis() {
     };
   };
 
-  // ROLE-BASED FILTERING FOR STUDENTS
-  // - Admin: view all children
-  // - Teacher: view assigned children classroom (Khang, Thư, Nam: CHD-003, CHD-004, CHD-005)
-  // - Parent: view Leo and Sophia (CHD-001, CHD-002)
-  const getRoleFilteredChildren = useMemo(() => {
-    if (currentRoleView === 'ADMIN') {
-      return children;
-    } else if (currentRoleView === 'TEACHER') {
-      return children.filter(c => ['CHD-003', 'CHD-004', 'CHD-005'].includes(c.ChildId));
-    } else {
-      return children.filter(c => ['CHD-001', 'CHD-002'].includes(c.ChildId));
+  const formatDateStr = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      const h = String(date.getHours()).padStart(2, '0');
+      const min = String(date.getMinutes()).padStart(2, '0');
+      return `${y}-${m}-${d} ${h}:${min}`;
+    } catch {
+      return dateStr;
     }
-  }, [children, currentRoleView]);
+  };
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      let fetchedChildren: ChildProfileResponse[] = [];
+      
+      // 1. Fetch children based on role view
+      if (currentRoleView === 'PARENT') {
+        const res = await getMyChildProfiles();
+        if (res.success && res.data) {
+          fetchedChildren = res.data;
+        }
+      } else {
+        // Teacher/Admin can view all children profiles
+        const res = await getChildProfiles(1, 100);
+        if (res.success && res.data?.items) {
+          fetchedChildren = res.data.items;
+        }
+      }
+
+      // Map to Child state format
+      const mappedChildren: Child[] = fetchedChildren.map(c => ({
+        ChildId: String(c.id),
+        FullName: c.fullName,
+        Age: c.age,
+        Gender: c.gender,
+        LearningLevel: c.learningLevel === 'Beginner' ? 'Bậc 1 - Sơ cấp VR' : c.learningLevel === 'Intermediate' ? 'Bậc 2 - Trung cấp VR' : 'Bậc 3 - Nâng cao VR',
+        Status: c.status
+      }));
+      setChildren(mappedChildren);
+
+      // 2. Fetch analyses
+      let allAnalyses: AnalyzeResponse[] = [];
+      if (mappedChildren.length > 0) {
+        const promises = fetchedChildren.map(c => getAnalyzesByChildId(c.id));
+        const resList = await Promise.all(promises);
+        resList.forEach(res => {
+          if (res.success && res.data) {
+            allAnalyses = [...allAnalyses, ...res.data];
+          }
+        });
+      }
+
+      // Map to Analysis state format
+      const mappedAnalyses: Analysis[] = allAnalyses.map(a => {
+        const scoreMap: Record<string, number> = {
+          'VeryPoor': 20,
+          'Poor': 40,
+          'Average': 60,
+          'Good': 80,
+          'Excellent': 95
+        };
+        const score = scoreMap[a.pronunciationAbility] || 70;
+        const progressLevel: Analysis['ProgressLevel'] = 
+          (a.pronunciationAbility === 'Good' || a.pronunciationAbility === 'Excellent') ? 'Improving' :
+          (a.pronunciationAbility === 'Average') ? 'Stable' : 'Need Support';
+
+        return {
+          AnalysisId: String(a.id),
+          ChildId: String(a.childId),
+          TotalExercises: 15,
+          CompletedExercises: 12,
+          TotalPracticeTime: 240,
+          AverageScore: score,
+          ProgressLevel: progressLevel,
+          Strengths: a.strengths || 'Chưa ghi nhận điểm mạnh cụ thể.',
+          Weaknesses: a.weaknesses || 'Chưa ghi nhận điểm yếu cụ thể.',
+          Recommendation: a.recommendation || 'Tiếp tục luyện tập các bài học VR hàng ngày.',
+          LastAnalyzedAt: formatDateStr(a.assessmentDate),
+          CreatedAt: a.createdAt,
+          UpdatedAt: a.updatedAt || a.createdAt
+        };
+      });
+      setAnalyses(mappedAnalyses);
+
+    } catch (error) {
+      console.error("Error loading Progress Analysis data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadData();
+  }, [currentRoleView]);
+
+  // ROLE-BASED FILTERING FOR STUDENTS
+  const getRoleFilteredChildren = useMemo(() => {
+    return children;
+  }, [children]);
 
   // Handle auto updates when role view swaps out of scope child
-  React.useEffect(() => {
+  useEffect(() => {
     const isAvailable = getRoleFilteredChildren.some(c => c.ChildId === selectedChildId);
     if (!isAvailable && selectedChildId !== 'ALL') {
       setSelectedChildId('ALL');
     }
-  }, [currentRoleView, getRoleFilteredChildren, selectedChildId]);
+  }, [getRoleFilteredChildren, selectedChildId]);
 
   // DYNAMIC COMPUTATIONS FOR ACTIVE WORKSPACE
   // Filtered list of analysis rows to feed the table
@@ -388,7 +313,7 @@ export default function ProgressAnalysis() {
         completedEx: 0,
         practiceTime: 0,
         avgScore: 0,
-        level: 'Ổn định'
+        level: 'Stable'
       };
     }
 
@@ -439,8 +364,31 @@ export default function ProgressAnalysis() {
 
   // Recharts responsive weekly dataset matching current selection
   const chartsData = useMemo(() => {
-    return WEEKLY_CHARTS_DATABASE[selectedChildId] || WEEKLY_CHARTS_DATABASE.ALL;
-  }, [selectedChildId]);
+    const relevantAnalyses = selectedChildId === 'ALL'
+      ? analyses
+      : analyses.filter(a => a.ChildId === selectedChildId);
+
+    if (relevantAnalyses.length === 0) {
+      return [
+        { week: 'Tuần 1', score: 60, completed: 2 },
+        { week: 'Tuần 2', score: 62, completed: 3 },
+        { week: 'Tuần 3', score: 65, completed: 4 },
+        { week: 'Tuần 4', score: 68, completed: 5 },
+        { week: 'Tuần 5', score: 72, completed: 6 },
+        { week: 'Tuần 6', score: 75, completed: 6 }
+      ];
+    }
+
+    const sorted = [...relevantAnalyses].sort((a, b) => 
+      new Date(a.CreatedAt).getTime() - new Date(b.CreatedAt).getTime()
+    );
+
+    return sorted.map((a, index) => ({
+      week: `Lần ĐG ${index + 1}`,
+      score: a.AverageScore,
+      completed: a.CompletedExercises
+    }));
+  }, [analyses, selectedChildId]);
 
   // Actions simulations
   const handleOpenAnalysisModal = (an: Analysis) => {
@@ -511,34 +459,36 @@ export default function ProgressAnalysis() {
         </div>
 
         {/* Dynamic Role Switcher segment */}
-        <div className="bg-[#E2F2F3] border border-[#C5E1E3] p-1.5 rounded-[24px] flex flex-col sm:flex-row items-stretch sm:items-center gap-1 shadow-inner self-start lg:self-center shrink-0">
-          <div className="px-4 py-2 italic font-black text-xs text-[#264E50] uppercase tracking-wider self-center hidden sm:block">
-            Giao diện kiểm toán:
+        {actualRole !== 'PARENT' && (
+          <div className="bg-[#E2F2F3] border border-[#C5E1E3] p-1.5 rounded-[24px] flex flex-col sm:flex-row items-stretch sm:items-center gap-1 shadow-inner self-start lg:self-center shrink-0">
+            <div className="px-4 py-2 italic font-black text-xs text-[#264E50] uppercase tracking-wider self-center hidden sm:block">
+              Giao diện kiểm toán:
+            </div>
+            <div className="flex gap-1">
+              {[
+                { role: 'ADMIN', label: 'Admin' },
+                { role: 'TEACHER', label: 'Cô giáo' },
+                { role: 'PARENT', label: 'Phụ huynh' }
+              ].map((vRole) => (
+                <button
+                  key={vRole.role}
+                  onClick={() => {
+                    setCurrentRoleView(vRole.role as any);
+                    showToast(`Chuyển cấu hình phân quyền xem: ${vRole.label}`, 'info');
+                  }}
+                  className={cn(
+                    "px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer",
+                    currentRoleView === vRole.role 
+                      ? "bg-[#4EACAF] text-white shadow-sm font-extrabold italic scale-105" 
+                      : "text-[#264E50]/60 hover:text-[#264E50] hover:bg-white/40"
+                  )}
+                >
+                  {vRole.label}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-1">
-            {[
-              { role: 'ADMIN', label: 'Admin' },
-              { role: 'TEACHER', label: 'Cô giáo' },
-              { role: 'PARENT', label: 'Phụ huynh' }
-            ].map((vRole) => (
-              <button
-                key={vRole.role}
-                onClick={() => {
-                  setCurrentRoleView(vRole.role as any);
-                  showToast(`Chuyển cấu hình phân quyền xem: ${vRole.label}`, 'info');
-                }}
-                className={cn(
-                  "px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer",
-                  currentRoleView === vRole.role 
-                    ? "bg-[#4EACAF] text-white shadow-sm font-extrabold italic scale-105" 
-                    : "text-[#264E50]/60 hover:text-[#264E50] hover:bg-white/40"
-                )}
-              >
-                {vRole.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        )}
 
       </div>
 

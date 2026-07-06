@@ -38,11 +38,13 @@ import CustomSelect from '../../components/common/CustomSelect';
 import { useLearningResultApi } from '../../hooks/useLearningResultApi';
 import ActionButton from '../../components/common/ActionButton';
 import { getSessionUser } from '../../lib/authSession';
+import { getLessons } from '../../services/lessonService';
 import type { ChildProfileResponse } from '../../services/childProfileService';
 import type { EventLogResponse } from '../../services/eventLogService';
 import type { ExerciseResponse } from '../../services/exerciseService';
 import type { ResultResponse } from '../../services/resultService';
 import type { PagedResponse, ServiceResult } from '../../services/serviceTypes';
+import type { LessonResponse } from '../../services/lessonService';
 
 // DB Interfaces according to specification
 interface Child {
@@ -63,7 +65,8 @@ interface Exercise {
 interface LearningResult {
   ResultId: string;
   ChildId: string;
-  ExerciseId: string;
+  ExerciseId: string | null;
+  LessonId: string | null;
   AttemptNumber: number;
   CompletionStatus: 'Completed' | 'InProgress' | 'Failed' | 'NeedReview';
   Score: number;
@@ -140,7 +143,8 @@ function mapResultRecord(result: ResultResponse): LearningResult {
   return {
     ResultId: String(result.id),
     ChildId: String(result.childId),
-    ExerciseId: String(result.exerciseId),
+    ExerciseId: result.exerciseId !== null && result.exerciseId !== undefined ? String(result.exerciseId) : null,
+    LessonId: result.lessonId !== null && result.lessonId !== undefined ? String(result.lessonId) : null,
     AttemptNumber: result.attemptNumber,
     CompletionStatus: mapResultStatus(result.completionStatus),
     Score: Math.round(result.score),
@@ -209,6 +213,7 @@ export default function LearningResultManagement() {
   const [results, setResults] = useState<LearningResult[]>([]);
   const [children, setChildren] = useState<Child[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [lessons, setLessons] = useState<LessonResponse[]>([]);
   const [isApiLoading, setIsApiLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
   const [eventLogsByResultId, setEventLogsByResultId] = useState<
@@ -286,7 +291,7 @@ export default function LearningResultManagement() {
       try {
         const roleView = getStoredRoleView();
         const sessionUser = getSessionUser();
-        const [exerciseRecords, childRecords] = await Promise.all([
+        const [exerciseRecords, childRecords, lessonRecords] = await Promise.all([
           loadAllPages(getExercises).catch((err) => {
             console.warn('Parent user could not fetch exercises list:', err);
             return [
@@ -380,6 +385,10 @@ export default function LearningResultManagement() {
                   );
                 })()
               : loadAllPages(getChildProfiles),
+          loadAllPages(getLessons).catch((err) => {
+            console.warn('Could not fetch lessons list:', err);
+            return [] as LessonResponse[];
+          }),
         ]);
 
         const resultSettled = await Promise.allSettled(
@@ -404,6 +413,7 @@ export default function LearningResultManagement() {
 
         setChildren(childRecords.map(mapChildRecord));
         setExercises(exerciseRecords.map(mapExerciseRecord));
+        setLessons(lessonRecords);
         setResults(uniqueResults.map(mapResultRecord));
       } catch (error) {
         if (cancelled) return;
@@ -439,7 +449,16 @@ export default function LearningResultManagement() {
     return children.find(c => c.ChildId === id) || { ChildId: id, FullName: 'Học sinh ẩn danh', Age: 8, LearningLevel: 'Bậc 1' };
   };
 
-  const getExerciseInfo = (id: string): Exercise => {
+  const getExerciseInfo = (id: string | null): Exercise => {
+    if (!id || id === 'null') {
+      return {
+        ExerciseId: '',
+        ExerciseName: '',
+        DifficultyLevel: 'Dễ',
+        TargetSkill: '',
+        Language: '',
+      };
+    }
     return (
       exercises.find((e) => e.ExerciseId === id) || {
         ExerciseId: id,
@@ -456,6 +475,19 @@ export default function LearningResultManagement() {
     );
   };
 
+  const getLessonInfo = (id: string | null): { LessonId: string; LessonName: string; Description: string; TargetSkill: string } => {
+    if (!id || id === 'null') {
+      return { LessonId: '', LessonName: '', Description: '', TargetSkill: '' };
+    }
+    const lesson = lessons.find(l => String(l.id) === id);
+    return {
+      LessonId: id,
+      LessonName: lesson ? lesson.lessonName : `Bài học (Mã: ${id})`,
+      Description: lesson?.description || '',
+      TargetSkill: lesson?.targetSkill || 'Phát âm/Giao tiếp'
+    };
+  };
+
   // ROLE-BASED FILTERING LOGIC
   // - Admin: Xem tất cả.
   // - Teacher (Giáo viên phụ trách): Xem các bé thuộc lớp phụ trách. Giả lập xem các bé: Bảo Nam, Anh Thư, Minh Khang (CHD-003, CHD-004, CHD-005)
@@ -468,14 +500,28 @@ export default function LearningResultManagement() {
   // Active results list depending on Role and input Search Query & Dropdowns
   const displayResults = getRoleFilteredResults(results).filter(item => {
     const child = getChildInfo(item.ChildId);
-    const exe = getExerciseInfo(item.ExerciseId);
+    let itemName = '';
+    let itemSkill = '';
+    let itemDifficulty = '';
 
-    const matchText = `${child.FullName} ${exe.ExerciseName} ${item.ResultId}`.toLowerCase();
+    if (item.ExerciseId) {
+      const exe = getExerciseInfo(item.ExerciseId);
+      itemName = exe.ExerciseName;
+      itemSkill = exe.TargetSkill;
+      itemDifficulty = exe.DifficultyLevel;
+    } else if (item.LessonId) {
+      const les = getLessonInfo(item.LessonId);
+      itemName = les.LessonName;
+      itemSkill = les.TargetSkill;
+      itemDifficulty = '';
+    }
+
+    const matchText = `${child.FullName} ${itemName} ${item.ResultId}`.toLowerCase();
     const queryMatch = matchText.includes(searchQuery.toLowerCase());
 
     const statusMatch = filterStatus === 'ALL' || item.CompletionStatus === filterStatus;
-    const diffMatch = filterDifficulty === 'ALL' || exe.DifficultyLevel === filterDifficulty;
-    const skillMatch = filterSkill === 'ALL' || exe.TargetSkill.includes(filterSkill);
+    const diffMatch = filterDifficulty === 'ALL' || itemDifficulty === filterDifficulty;
+    const skillMatch = filterSkill === 'ALL' || itemSkill.includes(filterSkill);
     const childMatch = filterChildId === 'ALL' || item.ChildId === filterChildId;
 
     // Date range filter
@@ -513,8 +559,8 @@ export default function LearningResultManagement() {
         valA = getChildInfo(a.ChildId).FullName;
         valB = getChildInfo(b.ChildId).FullName;
       } else if (sortColumn === 'ExerciseId') {
-        valA = getExerciseInfo(a.ExerciseId).ExerciseName;
-        valB = getExerciseInfo(b.ExerciseId).ExerciseName;
+        valA = a.ExerciseId ? getExerciseInfo(a.ExerciseId).ExerciseName : (a.LessonId ? getLessonInfo(a.LessonId).LessonName : '');
+        valB = b.ExerciseId ? getExerciseInfo(b.ExerciseId).ExerciseName : (b.LessonId ? getLessonInfo(b.LessonId).LessonName : '');
       }
 
       if (typeof valA === 'string' && typeof valB === 'string') {
@@ -527,7 +573,7 @@ export default function LearningResultManagement() {
       }
       return 0;
     });
-  }, [displayResults, sortColumn, sortDirection, exercises, children]);
+  }, [displayResults, sortColumn, sortDirection, exercises, lessons, children]);
 
   const paginatedResults = React.useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
@@ -1113,6 +1159,11 @@ export default function LearningResultManagement() {
                 {paginatedResults.map((itm) => {
                   const chd = getChildInfo(itm.ChildId);
                   const exe = getExerciseInfo(itm.ExerciseId);
+                  const les = getLessonInfo(itm.LessonId);
+                  const isExercise = !!itm.ExerciseId;
+                  const itemTitle = isExercise ? exe.ExerciseName : les.LessonName;
+                  const itemSubtitle = isExercise ? exe.TargetSkill : les.TargetSkill;
+
                   return (
                     <tr key={itm.ResultId} className="hover:bg-slate-50/50 transition-colors">
                       
@@ -1131,22 +1182,24 @@ export default function LearningResultManagement() {
                         </span>
                       </td>
 
-                      {/* Exercise Name & difficulty */}
+                      {/* Exercise/Lesson Name & difficulty */}
                       <td className="py-5 px-6">
                         <div className="font-extrabold text-gray-800 leading-tight mb-1 text-xs md:text-sm">
-                          {exe.ExerciseName}
+                          {itemTitle}
                         </div>
                         <div className="flex items-center gap-1.5">
                           <span className={cn(
                             "text-[9px] px-1.5 py-0.5 rounded font-black uppercase text-white",
-                            exe.DifficultyLevel === 'Dễ' && 'bg-emerald-400',
-                            exe.DifficultyLevel === 'Trung bình' && 'bg-indigo-400',
-                            exe.DifficultyLevel === 'Khó' && 'bg-[#FF8E8E]'
+                            isExercise ? (
+                              exe.DifficultyLevel === 'Dễ' && 'bg-emerald-400' ||
+                              exe.DifficultyLevel === 'Trung bình' && 'bg-indigo-400' ||
+                              exe.DifficultyLevel === 'Khó' && 'bg-[#FF8E8E]'
+                            ) : 'bg-sky-400'
                           )}>
-                            {exe.DifficultyLevel}
+                            {isExercise ? exe.DifficultyLevel : 'Bài học'}
                           </span>
                           <span className="text-[10px] text-gray-400 font-medium truncate max-w-[140px]">
-                            {exe.TargetSkill}
+                            {itemSubtitle}
                           </span>
                         </div>
                       </td>
@@ -1326,25 +1379,57 @@ export default function LearningResultManagement() {
                     </div>
                   </div>
 
-                  {/* Right Column: Exercises specs */}
-                  <div className="bg-[#FDFCF5] p-5 rounded-3xl border border-yellow-105 space-y-3">
-                    <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                      <span className="text-xs font-black text-[#4EACAF] uppercase tracking-wider">Bài tập huấn luyện ngôn từ 3D</span>
-                      <span className="text-[10px] bg-white text-gray-500 px-2 py-0.5 rounded-md font-bold text-mono">
-                        ID: {selectedResult.ExerciseId}
-                      </span>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-lg font-black text-gray-900 leading-tight">
-                        {getExerciseInfo(selectedResult.ExerciseId).ExerciseName}
-                      </p>
-                      <div className="flex items-center gap-3 text-xs font-bold text-gray-400 mt-1">
-                        <span>Độ khó: <strong className="text-[#FF8E8E]">{getExerciseInfo(selectedResult.ExerciseId).DifficultyLevel}</strong></span>
-                        <span>|</span>
-                        <span>Ngôn ngữ: <strong className="text-black">{getExerciseInfo(selectedResult.ExerciseId).Language}</strong></span>
+                  {/* Right Column: Exercises/Lessons specs */}
+                  {selectedResult.ExerciseId ? (
+                    <div className="bg-[#FDFCF5] p-5 rounded-3xl border border-yellow-150 space-y-3">
+                      <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                        <span className="text-xs font-black text-[#4EACAF] uppercase tracking-wider">Bài tập huấn luyện ngôn từ 3D</span>
+                        <span className="text-[10px] bg-white text-gray-500 px-2 py-0.5 rounded-md font-bold text-mono">
+                          ID: {selectedResult.ExerciseId}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-lg font-black text-gray-900 leading-tight">
+                          {getExerciseInfo(selectedResult.ExerciseId).ExerciseName}
+                        </p>
+                        <div className="flex items-center gap-3 text-xs font-bold text-gray-400 mt-1">
+                          {getExerciseInfo(selectedResult.ExerciseId).DifficultyLevel && (
+                            <span>Độ khó: <strong className="text-[#FF8E8E]">{getExerciseInfo(selectedResult.ExerciseId).DifficultyLevel}</strong></span>
+                          )}
+                          {getExerciseInfo(selectedResult.ExerciseId).DifficultyLevel && getExerciseInfo(selectedResult.ExerciseId).Language && (
+                            <span>|</span>
+                          )}
+                          {getExerciseInfo(selectedResult.ExerciseId).Language && (
+                            <span>Ngôn ngữ: <strong className="text-black">{getExerciseInfo(selectedResult.ExerciseId).Language}</strong></span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : selectedResult.LessonId ? (
+                    <div className="bg-[#F5FCFD] p-5 rounded-3xl border border-blue-100 space-y-3">
+                      <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                        <span className="text-xs font-black text-[#4EACAF] uppercase tracking-wider">Bài học huấn luyện phát âm VR</span>
+                        <span className="text-[10px] bg-white text-gray-500 px-2 py-0.5 rounded-md font-bold text-mono">
+                          ID: {selectedResult.LessonId}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-lg font-black text-gray-900 leading-tight">
+                          {getLessonInfo(selectedResult.LessonId).LessonName}
+                        </p>
+                        <div className="flex flex-col gap-1 text-xs font-bold text-gray-400 mt-1">
+                          {getLessonInfo(selectedResult.LessonId).TargetSkill && (
+                            <span>Kỹ năng tiêu điểm: <strong className="text-indigo-500">{getLessonInfo(selectedResult.LessonId).TargetSkill}</strong></span>
+                          )}
+                          {getLessonInfo(selectedResult.LessonId).Description && (
+                            <span className="text-gray-500 font-medium line-clamp-2 mt-0.5">
+                              {getLessonInfo(selectedResult.LessonId).Description}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
 
                 </div>
 
@@ -1581,7 +1666,10 @@ export default function LearningResultManagement() {
                     <button
                       type="button"
                       onClick={() => {
-                        showToast(`Đã phát lệnh yêu cầu bé tập lại: "${getExerciseInfo(selectedResult.ExerciseId).ExerciseName}"!`, 'success');
+                        const name = selectedResult.ExerciseId 
+                          ? getExerciseInfo(selectedResult.ExerciseId).ExerciseName 
+                          : getLessonInfo(selectedResult.LessonId).LessonName;
+                        showToast(`Đã phát lệnh yêu cầu bé tập lại: "${name}"!`, 'success');
                         setIsDetailModalOpen(false);
                       }}
                       className="py-3 px-6 bg-[#FF8E8E] hover:bg-[#FF8E8E]/95 text-white font-black italic text-xs uppercase tracking-widest rounded-2xl transition-all flex items-center gap-1.5 shadow-lg shadow-[#FF8E8E]/10"

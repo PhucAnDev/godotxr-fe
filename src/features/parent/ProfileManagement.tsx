@@ -1,9 +1,24 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Plus, Edit2, X, Check, Trash2, AlertTriangle, RefreshCw, ChevronDown } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Plus, Edit2, X, Check, Trash2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { cn, resolveAvatarUrl } from '../../lib/utils';
 import { useChildManagementApi } from '../../hooks/useChildManagementApi';
 import type { ChildProfileResponse } from '../../services/childProfileService';
 import { getSessionUser } from '../../lib/authSession';
+import CustomSelect from '../../components/common/CustomSelect';
+
+const genderOptions = [
+  { value: 'Male', label: '👦 Nam' },
+  { value: 'Female', label: '👧 Nữ' },
+  { value: 'Other', label: '⚪ Khác' },
+];
+
+const levelOptions = [
+  { value: 'Beginner', label: '🎨 Sơ cấp (Beginner)' },
+  { value: 'Intermediate', label: '🚀 Trung cấp (Intermediate)' },
+  { value: 'Advanced', label: '🏆 Nâng cao (Advanced)' },
+];
+
 
 const CARD_COLORS = [
   'bg-blue-300 border-blue-400',
@@ -335,7 +350,7 @@ export default function ProfileManagement() {
       )}
 
       {/* Create / Edit Form Modal */}
-      {modalType === 'form' && (
+      {modalType === 'form' && createPortal(
         <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-6 backdrop-blur-xl bg-blue-900/10 animate-in fade-in duration-300">
           <div className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100">
             <div className="bg-sky-100 px-10 py-6 flex items-center justify-between">
@@ -383,35 +398,23 @@ export default function ProfileManagement() {
                 {/* Gender select */}
                 <div className="space-y-2">
                   <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Giới tính</label>
-                  <div className="relative">
-                    <select 
-                      value={formState.gender}
-                      onChange={(e) => handleFormChange('gender', e.target.value as any)}
-                      className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-bold text-lg outline-none appearance-none cursor-pointer focus:ring-4 focus:ring-sky-100 focus:bg-white transition-all text-gray-800"
-                    >
-                      <option value="Male">👦 Nam</option>
-                      <option value="Female">👧 Nữ</option>
-                      <option value="Other">⚪ Khác</option>
-                    </select>
-                    <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 pointer-events-none" />
-                  </div>
+                  <CustomSelect 
+                    value={formState.gender}
+                    onChange={(val) => handleFormChange('gender', val as any)}
+                    options={genderOptions}
+                    variant="form"
+                  />
                 </div>
 
                 {/* Learning level select */}
                 <div className="space-y-2">
                   <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Cấp độ học tập</label>
-                  <div className="relative">
-                    <select 
-                      value={formState.learningLevel}
-                      onChange={(e) => handleFormChange('learningLevel', e.target.value as any)}
-                      className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-bold text-lg outline-none appearance-none cursor-pointer focus:ring-4 focus:ring-sky-100 focus:bg-white transition-all text-gray-800"
-                    >
-                      <option value="Beginner">🎨 Sơ cấp (Beginner)</option>
-                      <option value="Intermediate">🚀 Trung cấp (Intermediate)</option>
-                      <option value="Advanced">🏆 Nâng cao (Advanced)</option>
-                    </select>
-                    <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 pointer-events-none" />
-                  </div>
+                  <CustomSelect 
+                    value={formState.learningLevel}
+                    onChange={(val) => handleFormChange('learningLevel', val as any)}
+                    options={levelOptions}
+                    variant="form"
+                  />
                 </div>
 
                 {/* Notes input */}
@@ -499,11 +502,12 @@ export default function ProfileManagement() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Delete Confirmation Modal */}
-      {modalType === 'delete' && (
+      {modalType === 'delete' && createPortal(
         <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-6 backdrop-blur-xl bg-red-900/10 animate-in fade-in duration-300">
           <div className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100">
             <div className="bg-red-50 px-8 py-6 flex items-center justify-between border-b border-red-100">
@@ -543,7 +547,8 @@ export default function ProfileManagement() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Floating Bot Illustration */}

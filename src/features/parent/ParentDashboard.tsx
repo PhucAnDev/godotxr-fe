@@ -103,7 +103,7 @@ export default function ParentDashboard() {
     if (!latestResult) return 'Chưa bắt đầu';
     
     // Check if feedbackText can give clues or map based on exerciseId
-    const exId = latestResult.exerciseId;
+    const exId = latestResult.exerciseId || 0;
     if (latestResult.feedbackText && latestResult.feedbackText.includes('Luyện tập:')) {
       return latestResult.feedbackText.split('Luyện tập:')[1]?.trim() || latestResult.feedbackText;
     }

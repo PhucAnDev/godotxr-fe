@@ -24,7 +24,8 @@ export interface ResultResponse {
   id: number;
   sessionId: string;
   childId: number;
-  exerciseId: number;
+  exerciseId: number | null;
+  lessonId: number | null;
   attemptNumber: number;
   completionStatus: string;
   score: number;
