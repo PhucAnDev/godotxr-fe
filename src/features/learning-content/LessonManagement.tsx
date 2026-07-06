@@ -692,19 +692,8 @@ export default function LessonManagement() {
                         )}
                       </div>
                     </th>
-                    <th 
-                      onClick={() => handleSort('Status')}
-                      className="w-[8%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
-                      title="Sắp xếp theo Trạng thái"
-                    >
-                      <div className="flex items-center gap-1">
-                        Trạng Thái
-                        {sortColumn === 'Status' ? (
-                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
-                        ) : (
-                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
-                        )}
-                      </div>
+                    <th className="w-[8%] py-5 px-4 select-none">
+                      Trạng Thái
                     </th>
                     <th className="w-[10%] py-5 px-4 text-right select-none">Tùy chọn</th>
                   </tr>
