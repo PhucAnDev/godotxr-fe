@@ -1,33 +1,194 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
-  Eye, 
-  Settings, 
-  AlertTriangle, 
   ArrowRight, 
   FileText, 
   School, 
   UserSquare2, 
-  TrendingUp, 
   CheckCircle, 
   Info,
   Calendar,
-  Volume2
+  Volume2,
+  AlertTriangle,
+  Settings
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { getSessionUser } from '../../lib/authSession';
+import { getClassrooms } from '../../services/classroomService';
+import { getEnrollments } from '../../services/enrollmentService';
+import { getChildProfiles } from '../../services/childProfileService';
+import { getResultsByChild } from '../../services/resultService';
+import { getExercises } from '../../services/exerciseService';
+import { getLessons } from '../../services/lessonService';
+
+function formatDateTime(value: string | null | undefined): string {
+  if (!value) return '';
+  return value.replace('T', ' ').slice(0, 19);
+}
+
+function formatRelativeTime(dateStr: string): string {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+
+  if (diffMins < 1) return 'Vừa xong';
+  if (diffMins < 60) return `${diffMins} phút trước`;
+  if (diffHours < 24) return `${diffHours} giờ trước`;
+  return dateStr.replace('T', ' ').slice(0, 10);
+}
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
 
-  // Mock data for recent practices
-  const [recentPractices] = useState([
-    { id: '1', name: 'Nguyễn Tiến Minh (Leo)', age: 8, class: 'Lớp VR Phát Âm 1', exercise: 'Vật phẩm nông trại (Vần O)', score: 96, date: '10 phút trước', progress: 'Improving', needSupport: false },
-    { id: '2', name: 'Phạm Minh Khang', age: 4, class: 'Lớp Sửa Ngọng S-X', exercise: 'Trò chơi đường đua (Phụ âm S)', score: 50, date: '1 giờ trước', progress: 'Need Support', needSupport: true },
-    { id: '3', name: 'Trần Thảo Linh (Sophia)', age: 6, class: 'Lớp VR Phát Âm 1', exercise: 'Cụm từ ghép kì ảo (Âm kép)', score: 82, date: '3 giờ trước', progress: 'Improving', needSupport: false },
-    { id: '4', name: 'Hoàng Anh Thư', age: 5, class: 'Lớp VR Phát Âm 1', exercise: 'Từ đơn lặp vần (Ghép âm)', score: 92, date: 'Hôm qua', progress: 'Stable', needSupport: false },
-    { id: '5', name: 'Phạm Minh Hải', age: 7, class: 'Lớp Sửa Ngọng S-X', exercise: 'Vận động môi lưỡi (Thả lỏng hàm)', score: 45, date: 'Hôm qua', progress: 'Need Support', needSupport: true },
-  ]);
+  const [classCount, setClassCount] = useState<number>(0);
+  const [studentCount, setStudentCount] = useState<number>(0);
+  const [needSupportCount, setNeedSupportCount] = useState<number>(0);
+  const [completedAttempts, setCompletedAttempts] = useState<number>(0);
+  const [recentPractices, setRecentPractices] = useState<any[]>([]);
+  const [needSupportList, setNeedSupportList] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadTeacherData() {
+      setIsLoading(true);
+      try {
+        const currentUser = getSessionUser();
+        const teacherId = currentUser ? Number(currentUser.UserId) : null;
+        if (!teacherId) return;
+
+        // 1. Fetch Classrooms
+        const classroomsRes = await getClassrooms(1, 1000);
+        if (cancelled) return;
+        const allClassrooms = classroomsRes.success && classroomsRes.data?.items ? classroomsRes.data.items : [];
+        const myClassrooms = allClassrooms.filter(c => c.userId === teacherId);
+        setClassCount(myClassrooms.length);
+
+        const myClassIds = myClassrooms.map(c => c.id);
+
+        // 2. Fetch Enrollments
+        const enrollmentsRes = await getEnrollments(1, 1000);
+        if (cancelled) return;
+        const allEnrollments = enrollmentsRes.success && enrollmentsRes.data?.items ? enrollmentsRes.data.items : [];
+        const myStudentsEnrollments = allEnrollments.filter(e => myClassIds.includes(e.classId));
+        
+        // Find unique child IDs
+        const uniqueChildIds = Array.from(new Set(myStudentsEnrollments.map(s => s.childId)));
+        setStudentCount(uniqueChildIds.length);
+
+        // 3. Fetch Child Profiles
+        const childProfilesRes = await getChildProfiles(1, 1000);
+        if (cancelled) return;
+        const allChildren = childProfilesRes.success && childProfilesRes.data?.items ? childProfilesRes.data.items : [];
+
+        // 4. Fetch Exercises and Lessons
+        const [exercisesRes, lessonsRes] = await Promise.all([
+          getExercises(1, 1000),
+          getLessons(1, 1000)
+        ]);
+        if (cancelled) return;
+        const exerciseList = exercisesRes.success && exercisesRes.data?.items ? exercisesRes.data.items : [];
+        const lessonList = lessonsRes.success && lessonsRes.data?.items ? lessonsRes.data.items : [];
+
+        // 5. Fetch results for each unique student
+        const resultPromises = uniqueChildIds.map(childId => getResultsByChild(childId));
+        const resultsList = await Promise.all(resultPromises);
+        if (cancelled) return;
+
+        let totalCompleted = 0;
+        let supportCount = 0;
+        let practicesAccumulator: any[] = [];
+        let supportListAccumulator: any[] = [];
+
+        resultsList.forEach((res, index) => {
+          if (res.success && res.data) {
+            const childId = uniqueChildIds[index];
+            const childObj = allChildren.find(c => c.id === childId);
+            const childName = childObj?.fullName || `Học sinh ID: ${childId}`;
+            const childAge = childObj?.age || 6;
+
+            const childEnrollment = myStudentsEnrollments.find(e => e.childId === childId);
+            const className = childEnrollment?.className || 'Lớp học phụ trách';
+
+            // Completed attempts
+            const completedList = res.data.filter(r => r.completionStatus === 'Completed');
+            totalCompleted += completedList.length;
+
+            // Flag as need support if latest practice score < 60
+            if (res.data.length > 0) {
+              const sorted = [...res.data].sort((a, b) => {
+                const dateA = a.completedAt || a.startedAt || '';
+                const dateB = b.completedAt || b.startedAt || '';
+                return dateB.localeCompare(dateA);
+              });
+              const latestResult = sorted[0];
+              if (latestResult.score < 60) {
+                supportCount++;
+                const exerciseObj = latestResult.exerciseId ? exerciseList.find(e => e.id === latestResult.exerciseId) : null;
+                const lessonObj = latestResult.lessonId ? lessonList.find(l => l.id === latestResult.lessonId) : null;
+                const nameOfActivity = exerciseObj ? exerciseObj.exerciseName : (lessonObj ? lessonObj.lessonName : 'Bài rèn luyện');
+
+                supportListAccumulator.push({
+                  childName,
+                  score: latestResult.score,
+                  activityName: nameOfActivity,
+                  time: latestResult.completedAt || latestResult.startedAt || ''
+                });
+              }
+            }
+
+            // Map all results to recent practices
+            res.data.forEach(r => {
+              const exerciseObj = r.exerciseId ? exerciseList.find(e => e.id === r.exerciseId) : null;
+              const lessonObj = r.lessonId ? lessonList.find(l => l.id === r.lessonId) : null;
+              const activityName = exerciseObj ? exerciseObj.exerciseName : (lessonObj ? lessonObj.lessonName : 'Bài rèn luyện');
+
+              practicesAccumulator.push({
+                id: String(r.id),
+                name: childName,
+                age: childAge,
+                class: className,
+                exercise: activityName,
+                score: r.score,
+                date: r.completedAt || r.startedAt || '',
+                progress: r.score >= 80 ? 'Improving' : (r.score >= 60 ? 'Stable' : 'Need Support'),
+                needSupport: r.score < 60
+              });
+            });
+          }
+        });
+
+        setClassCount(myClassrooms.length);
+        setStudentCount(uniqueChildIds.length);
+        setCompletedAttempts(totalCompleted);
+        setNeedSupportCount(supportCount);
+
+        // Sort practices descending by date
+        practicesAccumulator.sort((a, b) => b.date.localeCompare(a.date));
+        setRecentPractices(practicesAccumulator.slice(0, 5));
+
+        // Sort support list descending
+        supportListAccumulator.sort((a, b) => b.time.localeCompare(a.time));
+        setNeedSupportList(supportListAccumulator.slice(0, 3));
+      } catch (err) {
+        console.error('Error loading Teacher Dashboard:', err);
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadTeacherData();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -38,7 +199,7 @@ export default function TeacherDashboard() {
           <p className="text-xs text-slate-500 mt-1">Giám sát quá trình rèn luyện, kiểm duyệt âm thanh VR và hỗ trợ can thiệp cho học sinh</p>
         </div>
         <div className="mt-2 md:mt-0 text-[11px] bg-sky-50 text-sky-600 border border-sky-200 px-3 py-1 rounded-md font-semibold">
-          Học kỳ II • Năm học 2025-2026
+          Học kỳ II • Năm học 2025–2026
         </div>
       </div>
 
@@ -49,7 +210,9 @@ export default function TeacherDashboard() {
             <School className="w-5 h-5 text-[#4EACAF]" />
           </div>
           <div>
-            <p className="text-xl font-bold text-slate-800 tracking-tight leading-none">3 Lớp học</p>
+            <p className="text-xl font-bold text-slate-800 tracking-tight leading-none">
+              {isLoading ? '...' : `${classCount} Lớp học`}
+            </p>
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">Đang hoạt động</p>
           </div>
         </div>
@@ -59,7 +222,9 @@ export default function TeacherDashboard() {
             <Users className="w-5 h-5 text-indigo-500" />
           </div>
           <div>
-            <p className="text-xl font-bold text-slate-800 tracking-tight leading-none">32 Học sinh</p>
+            <p className="text-xl font-bold text-slate-800 tracking-tight leading-none">
+              {isLoading ? '...' : `${studentCount} Học sinh`}
+            </p>
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">Tổng học viên phụ trách</p>
           </div>
         </div>
@@ -69,7 +234,9 @@ export default function TeacherDashboard() {
             <AlertTriangle className="w-5 h-5 text-rose-500" />
           </div>
           <div>
-            <p className="text-xl font-bold text-rose-600 tracking-tight leading-none">3 Học sinh</p>
+            <p className="text-xl font-bold text-rose-600 tracking-tight leading-none">
+              {isLoading ? '...' : `${needSupportCount} Học sinh`}
+            </p>
             <p className="text-[10px] text-rose-400 font-semibold uppercase tracking-wider mt-1">Cần hỗ trợ gấp</p>
           </div>
         </div>
@@ -79,7 +246,9 @@ export default function TeacherDashboard() {
             <CheckCircle className="w-5 h-5 text-emerald-600" />
           </div>
           <div>
-            <p className="text-xl font-bold text-slate-800 tracking-tight leading-none">145 Buổi</p>
+            <p className="text-xl font-bold text-slate-800 tracking-tight leading-none">
+              {isLoading ? '...' : `${completedAttempts} Buổi`}
+            </p>
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">Luyện tập hoàn thành</p>
           </div>
         </div>
@@ -99,7 +268,7 @@ export default function TeacherDashboard() {
               </h4>
               <button 
                 onClick={() => navigate('/teacher/results')}
-                className="text-xs text-[#4EACAF] hover:text-[#4eacaf]/80 font-semibold flex items-center gap-1 cursor-pointer"
+                className="text-xs text-[#4EACAF] hover:text-[#4eacaf]/80 font-semibold flex items-center gap-1 cursor-pointer animate-pulse"
               >
                 Xem tất cả
                 <ArrowRight className="w-3 h-3" />
@@ -110,50 +279,58 @@ export default function TeacherDashboard() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/70 border-b border-slate-100 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                    <th className="px-5 py-3">Học sinh (Tuổi)</th>
-                    <th className="px-5 py-3">Bài tập / Trò chơi</th>
-                    <th className="px-5 py-3 text-center">Biểu điểm</th>
-                    <th className="px-5 py-3">Tiến trình</th>
-                    <th className="px-5 py-3">Thời gian</th>
+                    <th className="px-[5px] py-3">Học sinh (Tuổi)</th>
+                    <th className="px-[5px] py-3">Bài tập / Trò chơi</th>
+                    <th className="px-[5px] py-3 text-center">Biểu điểm</th>
+                    <th className="px-[5px] py-3">Tiến trình</th>
+                    <th className="px-[5px] py-3">Thời gian</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
-                  {recentPractices.map((practice) => (
-                    <tr key={practice.id} className="hover:bg-slate-50/30 transition-colors">
-                      <td className="px-5 py-3">
-                        <span className="font-semibold text-slate-700 block">{practice.name}</span>
-                        <span className="text-[10px] text-slate-400 font-medium">Học viên {practice.age} tuổi</span>
-                      </td>
-                      <td className="px-5 py-3">
-                        <span className="font-semibold text-slate-650 block">{practice.exercise}</span>
-                        <span className="text-[10px] text-slate-400 font-medium">{practice.class}</span>
-                      </td>
-                      <td className="px-5 py-3 text-center">
-                        <span className={cn(
-                          "px-2 py-0.5 rounded-md font-bold text-[11px]",
-                          practice.score >= 80 ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
-                          practice.score >= 50 ? "bg-amber-50 text-amber-600 border border-amber-100" :
-                          "bg-rose-50 text-rose-600 border border-rose-100"
-                        )}>
-                          {practice.score}/100
-                        </span>
-                      </td>
-                      <td className="px-5 py-3">
-                        <span className={cn(
-                          "px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider",
-                          practice.progress === 'Improving' ? "bg-emerald-50 text-emerald-600" :
-                          practice.progress === 'Stable' ? "bg-indigo-50 text-indigo-600" :
-                          "bg-rose-50 text-rose-600 border border-rose-200"
-                        )}>
-                          {practice.progress === 'Improving' ? 'Tiến bộ tốt' : 
-                           practice.progress === 'Stable' ? 'Ổn định' : 'Cần hỗ trợ'}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-slate-400">
-                        {practice.date}
+                  {recentPractices.length > 0 ? (
+                    recentPractices.map((practice) => (
+                      <tr key={practice.id} className="hover:bg-slate-50/30 transition-colors">
+                        <td className="px-[5px] py-3">
+                          <span className="font-semibold text-slate-700 block">{practice.name}</span>
+                          <span className="text-[10px] text-slate-400 font-medium">Học viên {practice.age} tuổi</span>
+                        </td>
+                        <td className="px-[5px] py-3">
+                          <span className="font-semibold text-slate-650 block">{practice.exercise}</span>
+                          <span className="text-[10px] text-slate-400 font-medium">{practice.class}</span>
+                        </td>
+                        <td className="px-[5px] py-3 text-center">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded-md font-bold text-[11px]",
+                            practice.score >= 80 ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                            practice.score >= 50 ? "bg-amber-50 text-amber-600 border border-amber-100" :
+                            "bg-rose-50 text-rose-600 border border-rose-100"
+                          )}>
+                            {practice.score}/100
+                          </span>
+                        </td>
+                        <td className="px-[5px] py-3">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider",
+                            practice.progress === 'Improving' ? "bg-emerald-50 text-emerald-600" :
+                            practice.progress === 'Stable' ? "bg-indigo-50 text-indigo-600" :
+                            "bg-rose-50 text-rose-600 border border-rose-200"
+                          )}>
+                            {practice.progress === 'Improving' ? 'Tiến bộ tốt' : 
+                             practice.progress === 'Stable' ? 'Ổn định' : 'Cần hỗ trợ'}
+                          </span>
+                        </td>
+                        <td className="px-[5px] py-3 text-slate-400">
+                          {formatRelativeTime(practice.date)}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="text-center py-8 text-slate-400 font-semibold">
+                        {isLoading ? 'Đang tải dữ liệu kết quả học tập...' : 'Chưa ghi nhận lượt luyện tập VR nào từ học sinh.'}
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -163,7 +340,7 @@ export default function TeacherDashboard() {
           <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-200/60 flex items-start gap-3">
             <Info className="w-5 h-5 text-[#4EACAF] shrink-0 mt-0.5" />
             <div className="space-y-0.5 text-xs text-slate-500 font-medium">
-              <p className="font-semibold text-slate-700">Khăn dặn thông tin tham khảo chuyên môn:</p>
+              <p className="font-semibold text-slate-700">Khuyên dặn thông tin tham khảo chuyên môn:</p>
               <p>
                 Dữ liệu âm học và biểu đồ hiển thị trên hệ thống được thu nhận từ quá trình trải nghiệm kính thực tế ảo VR đóng vai trò bổ trợ và phục vụ nhu cầu tham khảo cho phụ huynh cùng giáo viên. Hệ thống không đại diện cho bất kỳ chẩn đoán y khoa chuyên nghiệp nào.
               </p>
@@ -234,44 +411,26 @@ export default function TeacherDashboard() {
             </h4>
 
             <div className="space-y-4 divide-y divide-slate-100">
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <p className="font-bold text-slate-700 text-xs">Phạm Minh Khang</p>
-                  <span className="text-[10px] text-rose-500 font-bold bg-rose-50 px-1.5 py-0.5 rounded">CẦN HỖ TRỢ</span>
+              {needSupportList.length > 0 ? (
+                needSupportList.map((sup, idx) => (
+                  <div key={idx} className={cn("space-y-1", idx > 0 && "pt-3")}>
+                    <div className="flex items-center justify-between">
+                      <p className="font-bold text-slate-700 text-xs">{sup.childName}</p>
+                      <span className="text-[10px] text-rose-500 font-bold bg-rose-50 px-1.5 py-0.5 rounded">CẦN HỖ TRỢ</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Lượt rèn luyện gần nhất bài <b>{sup.activityName}</b> đạt <b>{sup.score}/100</b> dưới trung bình.
+                    </p>
+                    <p className="text-[9px] text-slate-400 flex items-center gap-1">
+                      <Calendar className="w-3 h-3" /> Ghi nhận {formatRelativeTime(sup.time)}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-xs text-slate-400 font-semibold">
+                  {isLoading ? 'Đang phân tích dữ liệu cảnh báo...' : 'Không có cảnh báo tiến trình chậm nào. Tất cả trẻ đang tiến bộ tốt!'}
                 </div>
-                <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Gặp khó khăn kéo dài với cụm phụ âm gió &ldquo;S&rdquo;. Điểm phát âm <b>50/100</b> dưới trung bình.
-                </p>
-                <p className="text-[9px] text-slate-400 flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> Ghi nhận 1 giờ trước
-                </p>
-              </div>
-
-              <div className="pt-3 space-y-1">
-                <div className="flex items-center justify-between">
-                  <p className="font-bold text-slate-700 text-xs">Phạm Minh Hải</p>
-                  <span className="text-[10px] text-rose-500 font-bold bg-rose-50 px-1.5 py-0.5 rounded">CẦN HỖ TRỢ</span>
-                </div>
-                <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Dấu hiệu bẹt nguyên âm trong bài lưỡi-môi. Điểm số sụt giảm liên tiếp trong tuần.
-                </p>
-                <p className="text-[9px] text-slate-400 flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> Ghi nhận Hôm qua
-                </p>
-              </div>
-
-              <div className="pt-3 space-y-1">
-                <div className="flex items-center justify-between">
-                  <p className="font-bold text-slate-700 text-xs">Nguyễn Tiến Minh (Leo)</p>
-                  <span className="text-[10px] text-amber-500 font-bold bg-amber-50 px-1.5 py-0.5 rounded">CẦN KIỂM TRA PHÒNG VR</span>
-                </div>
-                <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Hành động hủy/vấp lặp lại nhiều lần tại thiết bị kính số 03. Đang chờ hiệu chỉnh lại micro.
-                </p>
-                <p className="text-[9px] text-slate-400 flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> Ghi nhận 10 phút trước
-                </p>
-              </div>
+              )}
             </div>
           </div>
 
