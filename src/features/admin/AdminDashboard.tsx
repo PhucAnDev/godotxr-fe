@@ -1,7 +1,124 @@
-import { Users, GraduationCap, BookOpen, UserPlus, Layers, Bell, Search, ArrowUpRight, Play, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Users, GraduationCap, Layers, Bell, Search, ArrowUpRight, Play, CheckCircle2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { getUsers } from '../../services/userService';
+import { getChildProfiles } from '../../services/childProfileService';
+import { getResultsByChild } from '../../services/resultService';
+
+function formatDateTime(value: string | null | undefined): string {
+  if (!value) return '';
+  return value.replace('T', ' ').slice(0, 19);
+}
+
+interface RecentActivity {
+  time: string;
+  user: string;
+  action: string;
+  target?: string;
+  status?: string;
+}
 
 export default function AdminDashboard() {
+  const [totalUsers, setTotalUsers] = useState<number>(0);
+  const [totalTeachers, setTotalTeachers] = useState<number>(0);
+  const [totalAttempts, setTotalAttempts] = useState<number>(0);
+  const [newUsersThisWeek, setNewUsersThisWeek] = useState<string>('0 Người dùng mới tuần này');
+  const [pendingAccounts, setPendingAccounts] = useState<string>('0 Tài khoản đang chờ duyệt');
+  const [attemptsToday, setAttemptsToday] = useState<string>('0 Lượt buổi hôm nay');
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadStats() {
+      try {
+        setIsLoading(true);
+        // 1. Fetch total users & filter teachers
+        const userRes = await getUsers(1, 1000);
+        if (cancelled) return;
+
+        if (userRes.success && userRes.data) {
+          const allUsers = userRes.data.items;
+          setTotalUsers(userRes.data.totalCount);
+          
+          const teachers = allUsers.filter(u => u.roleName.toLowerCase() === 'teacher');
+          setTotalTeachers(teachers.length);
+          
+          const inactive = allUsers.filter(u => !u.isActive).length;
+          setPendingAccounts(`${inactive} Tài khoản chưa hoạt động`);
+          
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+          const thisWeekCount = allUsers.filter(u => new Date(u.createdAt) > oneWeekAgo).length;
+          setNewUsersThisWeek(`+${thisWeekCount} Tài khoản mới tuần này`);
+        }
+
+        // 2. Fetch children and results
+        const childRes = await getChildProfiles(1, 1000);
+        if (cancelled) return;
+
+        if (childRes.success && childRes.data?.items) {
+          const childrenList = childRes.data.items;
+          const resultPromises = childrenList.map(c => getResultsByChild(c.id));
+          const resultsList = await Promise.all(resultPromises);
+          if (cancelled) return;
+
+          let sumAttempts = 0;
+          let sumAttemptsToday = 0;
+          const startOfToday = new Date();
+          startOfToday.setHours(0, 0, 0, 0);
+
+          let combinedResults: any[] = [];
+
+          resultsList.forEach((res, index) => {
+            if (res.success && res.data) {
+              sumAttempts += res.data.length;
+              const child = childrenList[index];
+
+              // Sum attempts today
+              const todayCount = res.data.filter(r => {
+                const activeTime = r.completedAt ? new Date(r.completedAt) : (r.startedAt ? new Date(r.startedAt) : null);
+                return activeTime && activeTime >= startOfToday;
+              }).length;
+              sumAttemptsToday += todayCount;
+
+              // Map to activities
+              res.data.forEach(r => {
+                const activeTimeStr = r.completedAt || r.startedAt || '';
+                combinedResults.push({
+                  time: activeTimeStr ? formatDateTime(activeTimeStr).slice(11, 16) : '00:00',
+                  rawTime: activeTimeStr,
+                  user: `Bé ${child.fullName}`,
+                  action: `đã rèn luyện ${r.exerciseId ? 'bài tập' : 'bài học'}`,
+                  target: r.exerciseId ? `Mã bài tập: ${r.exerciseId}` : `Mã bài học: ${r.lessonId}`
+                });
+              });
+            }
+          });
+
+          setTotalAttempts(sumAttempts);
+          setAttemptsToday(`${sumAttemptsToday} Lượt buổi hôm nay`);
+
+          // Sort activities by completion time
+          combinedResults.sort((a, b) => b.rawTime.localeCompare(a.rawTime));
+          setRecentActivities(combinedResults.slice(0, 5));
+        }
+      } catch (err) {
+        console.error('Error loading dashboard stats:', err);
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadStats();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header page component */}
@@ -34,28 +151,28 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Main Stats Grid - Standardized spacing, border and shadow */}
+      {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <AdminStatCard 
           label="Tổng người dùng" 
-          value="12,450" 
-          growth="+350 Người quản trị mới tuần này" 
+          value={isLoading ? "..." : String(totalUsers)} 
+          growth={isLoading ? "Đang tải dữ liệu..." : newUsersThisWeek} 
           icon={<Users className="w-6 h-6" />} 
           color="text-teal-600"
           bgColor="bg-teal-50 border-teal-100"
         />
         <AdminStatCard 
           label="Tổng giáo viên" 
-          value="850" 
-          growth="42 Tài khoản đang chờ duyệt" 
+          value={isLoading ? "..." : String(totalTeachers)} 
+          growth={isLoading ? "Đang tải dữ liệu..." : pendingAccounts} 
           icon={<GraduationCap className="w-6 h-6" />} 
           color="text-blue-600"
           bgColor="bg-blue-50 border-blue-100"
         />
         <AdminStatCard 
           label="Tổng lượt tập" 
-          value="54,320" 
-          growth="1,200 Lượt buổi hôm nay" 
+          value={isLoading ? "..." : String(totalAttempts)} 
+          growth={isLoading ? "Đang tải dữ liệu..." : attemptsToday} 
           icon={<Play className="w-6 h-6" />} 
           color="text-emerald-600"
           bgColor="bg-emerald-50 border-emerald-100"
@@ -67,12 +184,12 @@ export default function AdminDashboard() {
          <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-100 space-y-6">
             <div>
               <h4 className="text-lg font-bold text-slate-800">Thao tác quản trị nhanh</h4>
-              <p className="text-xs text-slate-400 mt-1">Điều hướng tới các phân khu quản lý một chạm</p>
+              <p className="text-xs text-slate-400 mt-1">Điều hệ tới các phân khu quản lý một chạm</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                <button className="flex items-center justify-between p-5 bg-[#4EACAF] hover:bg-[#3d8a8c] text-white rounded-xl shadow-sm transition-all group cursor-pointer">
                   <div className="flex items-center gap-3">
-                    <UserPlus className="w-5 h-5" />
+                    <Users className="w-5 h-5" />
                     <span className="font-bold text-sm">Quản lý người dùng</span>
                   </div>
                   <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
@@ -90,13 +207,27 @@ export default function AdminDashboard() {
          {/* Recent System Activity */}
          <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-100 space-y-5">
             <div>
-              <h4 className="text-lg font-bold text-slate-800">Hoạt động hệ thống gần đây</h4>
-              <p className="text-xs text-slate-400 mt-1">Báo cáo trực tiếp các biến động trong 30 phút qua</p>
+              <h4 className="text-lg font-bold text-slate-800">Hoạt động rèn luyện gần đây</h4>
+              <p className="text-xs text-slate-400 mt-1">Báo cáo trực tiếp lượt nộp kết quả VR của trẻ</p>
             </div>
             <div className="space-y-3.5">
-               <ActivityItem time="10:15 AM" user="Ms. Trần Hồng" action="đã tạo lớp mới" target="Speech Explorers" />
-               <ActivityItem time="10:05 AM" user="Bé Leo M." action="hoàn thành buổi học" target="Level 2, Unit 3" />
-               <ActivityItem time="09:45 AM" user="Cảnh báo hệ thống" action="tải CPU máy chủ vượt ngưỡng 80%" status="warning" />
+               {recentActivities.length > 0 ? (
+                 recentActivities.map((act, idx) => (
+                   <ActivityItem 
+                     key={idx} 
+                     time={act.time} 
+                     user={act.user} 
+                     action={act.action} 
+                     target={act.target} 
+                   />
+                 ))
+               ) : (
+                 <>
+                   <div className="text-center py-6 text-slate-400 text-xs font-semibold">
+                     Chưa ghi nhận hoạt động rèn luyện nào của học sinh trong hôm nay.
+                   </div>
+                 </>
+               )}
             </div>
          </div>
       </div>
