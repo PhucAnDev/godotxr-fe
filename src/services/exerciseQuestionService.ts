@@ -43,9 +43,9 @@ async function request<T>(
   }
 }
 
-export const getExerciseQuestions = (pageNumber = 1, pageSize = 100) =>
+export const getExerciseQuestions = (pageNumber = 1, pageSize = 100, exerciseId?: number) =>
   request<PagedResponse<ExerciseQuestionResponse>>(
-    `/api/exercise-questions?pageNumber=${pageNumber}&pageSize=${pageSize}`
+    `/api/exercise-questions?pageNumber=${pageNumber}&pageSize=${pageSize}${exerciseId ? `&exerciseId=${exerciseId}` : ''}`
   );
 
 export const getExerciseQuestionById = (id: number) =>
