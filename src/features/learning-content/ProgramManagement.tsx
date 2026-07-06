@@ -27,6 +27,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import ActionButton from '../../components/common/ActionButton';
 import Pagination from '../../components/common/Pagination';
 import CustomSelect from '../../components/common/CustomSelect';
 import { parseNumberInput, toNumberInputValue } from '../../lib/numberInput';
@@ -621,21 +622,17 @@ export default function ProgramManagement() {
                             Xem bài học
                           </button>
 
-                          <button 
+                          <ActionButton
+                            type="edit"
                             onClick={() => handleOpenEdit(prog)}
-                            className="p-3 bg-gray-50 hover:bg-[#4EACAF]/10 hover:text-[#4EACAF] text-gray-500 rounded-xl transition-colors"
                             title="Chỉnh sửa thông số"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
+                          />
 
-                          <button 
+                          <ActionButton
+                            type="delete"
                             onClick={() => handleOpenDelete(prog)}
-                            className="p-3 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-xl transition-colors"
                             title="Xóa chương trình học"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          />
                         </div>
                       </div>
                     </div>

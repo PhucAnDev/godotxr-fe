@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Search, ChevronDown, Eye, Filter } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Search, ChevronDown, Eye, Filter, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
+import ActionButton from '../../components/common/ActionButton';
 
 const historyData = [
   { id: 1, name: 'Phiêu lưu ngôn ngữ: Nông trại', duration: '12 phút', date: '10 Thg 11, 2023', status: 'Hoàn thành' },
@@ -12,6 +13,59 @@ const historyData = [
 
 export default function LearningHistory() {
   const navigate = useNavigate();
+
+  // Sorting states
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortColumn(null);
+        setSortDirection(null);
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedHistory = useMemo(() => {
+    if (!sortColumn || !sortDirection) return historyData;
+    return [...historyData].sort((a, b) => {
+      let valA: any = a[sortColumn as keyof typeof a];
+      let valB: any = b[sortColumn as keyof typeof b];
+
+      // Custom conversion for dates to sort chronologically: "10 Thg 11, 2023" -> Date
+      if (sortColumn === 'date') {
+        const parseDate = (dStr: string) => {
+          const parts = dStr.split(' ');
+          const day = parseInt(parts[0]) || 1;
+          const month = parseInt(parts[2].replace(',', '')) || 1;
+          const year = parseInt(parts[3]) || 2026;
+          return new Date(year, month - 1, day).getTime();
+        };
+        valA = parseDate(valA);
+        valB = parseDate(valB);
+      } else if (sortColumn === 'duration') {
+        // "12 phút" -> 12
+        valA = parseInt(valA) || 0;
+        valB = parseInt(valB) || 0;
+      }
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortDirection === 'asc'
+          ? valA.localeCompare(valB, 'vi-VN')
+          : valB.localeCompare(valA, 'vi-VN');
+      }
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortDirection === 'asc' ? valA - valB : valB - valA;
+      }
+      return 0;
+    });
+  }, [sortColumn, sortDirection]);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -38,15 +92,67 @@ export default function LearningHistory() {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-[#F8FAFC]">
-              <th className="px-8 py-6 text-sm font-bold text-gray-600 uppercase tracking-widest">Tên bài tập</th>
-              <th className="px-8 py-6 text-sm font-bold text-gray-600 uppercase tracking-widest">Thời lượng</th>
-              <th className="px-8 py-6 text-sm font-bold text-gray-600 uppercase tracking-widest">Ngày học</th>
-              <th className="px-8 py-6 text-sm font-bold text-gray-600 uppercase tracking-widest">Trạng thái</th>
-              <th className="px-8 py-6 text-sm font-bold text-gray-600 uppercase tracking-widest">Hành động</th>
+              <th 
+                onClick={() => handleSort('name')}
+                className="px-8 py-6 text-sm font-bold text-gray-600 uppercase tracking-widest cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                title="Sắp xếp theo Tên bài tập"
+              >
+                <div className="flex items-center gap-1.5">
+                  Tên bài tập
+                  {sortColumn === 'name' ? (
+                    sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                  ) : (
+                    <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                  )}
+                </div>
+              </th>
+              <th 
+                onClick={() => handleSort('duration')}
+                className="px-8 py-6 text-sm font-bold text-gray-600 uppercase tracking-widest cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                title="Sắp xếp theo Thời lượng"
+              >
+                <div className="flex items-center gap-1.5">
+                  Thời lượng
+                  {sortColumn === 'duration' ? (
+                    sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                  ) : (
+                    <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                  )}
+                </div>
+              </th>
+              <th 
+                onClick={() => handleSort('date')}
+                className="px-8 py-6 text-sm font-bold text-gray-600 uppercase tracking-widest cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                title="Sắp xếp theo Ngày học"
+              >
+                <div className="flex items-center gap-1.5">
+                  Ngày học
+                  {sortColumn === 'date' ? (
+                    sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                  ) : (
+                    <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                  )}
+                </div>
+              </th>
+              <th 
+                onClick={() => handleSort('status')}
+                className="px-8 py-6 text-sm font-bold text-gray-600 uppercase tracking-widest cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                title="Sắp xếp theo Trạng thái"
+              >
+                <div className="flex items-center gap-1.5">
+                  Trạng thái
+                  {sortColumn === 'status' ? (
+                    sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                  ) : (
+                    <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                  )}
+                </div>
+              </th>
+              <th className="px-8 py-6 text-sm font-bold text-gray-600 uppercase tracking-widest text-right select-none">Tùy chọn</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {historyData.map((item) => (
+            {sortedHistory.map((item) => (
               <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-8 py-6 font-bold text-gray-900">{item.name}</td>
                 <td className="px-8 py-6 text-gray-500 font-medium">{item.duration}</td>
@@ -55,14 +161,12 @@ export default function LearningHistory() {
                    <StatusBadge status={item.status} />
                 </td>
                 <td className="px-8 py-6 text-right">
-                  <button 
+                  <ActionButton 
+                    type="view"
                     onClick={() => navigate('/parent/lesson-review')}
-                    className="flex items-center gap-2 px-6 py-2 bg-[#C5E1A5] hover:bg-[#B5D195] text-[#33691E] font-bold rounded-full transition-all disabled:opacity-50 disabled:bg-gray-100 disabled:text-gray-400" 
                     disabled={item.status !== 'Hoàn thành'}
-                  >
-                    <Eye className="w-4 h-4" />
-                    Xem lại
-                  </button>
+                    title="Xem lại bài học"
+                  />
                 </td>
               </tr>
             ))}

@@ -24,6 +24,8 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
+import ActionButton from '../../components/common/ActionButton';
 import {
   useExerciseManagementApi,
   type ExerciseTypeResponse,
@@ -133,6 +135,9 @@ export default function ExerciseTypeManagement() {
   const [isOpenFormModal, setIsOpenFormModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [selectedType, setSelectedType] = useState<ExerciseType | null>(null);
+  const [isOpenDeleteModal, setIsOpenDeleteModal] = useState(false);
+  const [typeToDelete, setTypeToDelete] = useState<ExerciseType | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [formTypeName, setFormTypeName] = useState('');
   const [formDescription, setFormDescription] = useState('');
@@ -243,26 +248,31 @@ export default function ExerciseTypeManagement() {
     );
   };
 
-  const handleDeleteType = async (typeId: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa loại bài tập ${typeId} không?`)) {
-      return;
-    }
+  const handleDeleteClick = (type: ExerciseType) => {
+    setTypeToDelete(type);
+    setIsOpenDeleteModal(true);
+  };
 
-    const result = await deleteExerciseType(Number(typeId));
+  const handleConfirmDelete = async () => {
+    if (!typeToDelete) return;
+    setIsDeleting(true);
+    const result = await deleteExerciseType(Number(typeToDelete.TypeId));
     if (result.success) {
       setExerciseTypes((current) =>
-        current.filter((item) => item.TypeId !== typeId)
+        current.filter((item) => item.TypeId !== typeToDelete.TypeId)
       );
-      triggerToast(`Đã xóa loại bài tập ${typeId}.`, 'warning');
-      return;
+      triggerToast(`Đã xóa loại bài tập "${typeToDelete.TypeName}".`, 'success');
+      setIsOpenDeleteModal(false);
+      setTypeToDelete(null);
+    } else {
+      triggerToast(
+        result.errors.join(' ') ||
+          result.message ||
+          'Không thể xóa loại bài tập.',
+        'warning'
+      );
     }
-
-    triggerToast(
-      result.errors.join(' ') ||
-        result.message ||
-        'Không thể xóa loại bài tập.',
-      'warning'
-    );
+    setIsDeleting(false);
   };
 
   const handleSaveSubmit = async (event: React.FormEvent) => {
@@ -576,22 +586,17 @@ export default function ExerciseTypeManagement() {
                     )}
                   </button>
 
-                  <button
+                  <ActionButton
+                    type="edit"
                     onClick={() => void handleOpenEdit(type)}
-                    className="flex shrink-0 items-center gap-1.5 rounded-2xl bg-[#4EACAF]/10 px-4 py-2.5 text-xs font-black italic uppercase tracking-widest text-[#4EACAF] transition-all hover:bg-[#4EACAF] hover:text-white"
                     title="Chỉnh sửa loại"
-                  >
-                    <Edit3 className="h-3.5 w-3.5" />
-                    Edit
-                  </button>
+                  />
 
-                  <button
-                    onClick={() => void handleDeleteType(type.TypeId)}
-                    className="rounded-2xl p-2.5 text-rose-500 transition-colors hover:bg-rose-50"
+                  <ActionButton
+                    type="delete"
+                    onClick={() => handleDeleteClick(type)}
                     title="Xóa loại"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  />
                 </div>
               </div>
             </div>
@@ -720,6 +725,27 @@ export default function ExerciseTypeManagement() {
               </form>
             </motion.div>
           </div>
+        )}
+
+        {isOpenDeleteModal && typeToDelete && (
+          <ConfirmDeleteModal
+            title="Xóa loại bài tập"
+            subtitle="HÀNH ĐỘNG NÀY SẼ XÓA VĨNH VIỄN LOẠI BÀI TẬP KHỎI HỆ THỐNG"
+            onClose={() => {
+              setIsOpenDeleteModal(false);
+              setTypeToDelete(null);
+            }}
+            onConfirm={handleConfirmDelete}
+            isDeleting={isDeleting}
+            accent="rose"
+          >
+            <p className="font-semibold">
+              Bạn sắp xóa loại bài tập <strong>{typeToDelete.TypeName}</strong> (ID: {typeToDelete.TypeId}).
+            </p>
+            <p className="mt-2 text-xs">
+              Hành động này không thể hoàn tác. Vui lòng xác nhận nếu đây là loại bài tập bạn thực sự muốn xóa.
+            </p>
+          </ConfirmDeleteModal>
         )}
       </AnimatePresence>
     </div>

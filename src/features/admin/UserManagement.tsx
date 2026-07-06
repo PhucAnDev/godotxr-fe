@@ -28,6 +28,7 @@ import {
 import { cn, resolveAvatarUrl } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
 import CustomSelect from '../../components/common/CustomSelect';
+import ActionButton from '../../components/common/ActionButton';
 import { useUserManagement, type UserResponse } from '../../hooks/useUserManagement';
 
 type CreateAccountRole = 'Teacher' | 'Parent';
@@ -571,44 +572,29 @@ export default function UserManagement() {
                       {/* Action buttons */}
                       <td className="py-5 px-[5px] text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button
+                          <ActionButton
+                            type="view"
                             onClick={() => handleOpenDetail(user)}
-                            className="p-2 hover:bg-teal-50 text-teal-600 rounded-xl transition-colors hover:scale-105"
                             title="Xem chi tiết"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
+                          />
 
-                          <button
+                          <ActionButton
+                            type="edit"
                             onClick={() => handleOpenEdit(user)}
-                            className="p-2 hover:bg-sky-50 text-sky-500 rounded-xl transition-colors hover:scale-105"
                             title="Chỉnh sửa"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
+                          />
 
-                          <button
+                          <ActionButton
+                            type={user.isActive ? 'lock' : 'unlock'}
                             onClick={() => handleToggleLock(user)}
-                            className={cn(
-                              'p-2 rounded-xl transition-colors hover:scale-105',
-                              user.isActive
-                                ? 'hover:bg-rose-50 text-rose-500'
-                                : 'hover:bg-emerald-50 text-emerald-500'
-                            )}
                             title={user.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
-                          >
-                            {user.isActive
-                              ? <Lock className="w-4 h-4" />
-                              : <Unlock className="w-4 h-4" />}
-                          </button>
+                          />
 
-                          <button
+                          <ActionButton
+                            type="reset"
                             onClick={() => handleResetPassword(user)}
-                            className="p-2 hover:bg-yellow-50 text-yellow-500 rounded-xl transition-colors hover:scale-105"
                             title="Khởi tạo lại mật khẩu"
-                          >
-                            <RefreshCw className="w-4 h-4" />
-                          </button>
+                          />
                         </div>
                       </td>
                     </tr>

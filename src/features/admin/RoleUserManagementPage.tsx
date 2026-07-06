@@ -36,6 +36,7 @@ import {
   type UserResponse,
 } from '../../services/userService';
 import { getCurrentUser } from '../../lib/authMock';
+import ActionButton from '../../components/common/ActionButton';
 
 type PageVariant = 'teacher' | 'parent';
 type ModalMode = 'detail' | 'edit' | 'add' | null;
@@ -902,39 +903,21 @@ export default function RoleUserManagementPage({
                       </td>
                       <td className="px-[5px] py-5">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
+                          <ActionButton
+                            type="view"
                             onClick={() => handleOpenDetail(user)}
-                            className="rounded-xl bg-slate-100 p-2 text-slate-600 transition-colors hover:bg-slate-200"
                             title="Xem chi tiết"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
+                          />
+                          <ActionButton
+                            type="edit"
                             onClick={() => handleOpenEdit(user)}
-                            className="rounded-xl bg-sky-50 p-2 text-sky-600 transition-colors hover:bg-sky-100"
                             title="Chỉnh sửa"
-                          >
-                            <Edit3 className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
+                          />
+                          <ActionButton
+                            type={user.isActive ? 'lock' : 'unlock'}
                             onClick={() => void handleToggleLock(user)}
-                            className={cn(
-                              'rounded-xl p-2 transition-colors',
-                              user.isActive
-                                ? 'bg-rose-50 text-rose-600 hover:bg-rose-100'
-                                : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                            )}
                             title={user.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
-                          >
-                            {user.isActive ? (
-                              <Lock className="h-4 w-4" />
-                            ) : (
-                              <Check className="h-4 w-4" />
-                            )}
-                          </button>
+                          />
                         </div>
                       </td>
                     </tr>

@@ -24,9 +24,13 @@ import {
   Trash2,
   Volume2,
   X,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown
 } from 'lucide-react';
 import Pagination from '../../components/common/Pagination';
 import { cn } from '../../lib/utils';
+import ActionButton from '../../components/common/ActionButton';
 import CustomSelect from '../../components/common/CustomSelect';
 import {
   useExerciseManagementApi,
@@ -315,6 +319,40 @@ export default function ExerciseManagement() {
     type: 'success' | 'warning';
   } | null>(null);
 
+  // Sorting states
+  const [exerciseSortColumn, setExerciseSortColumn] = useState<keyof Exercise | null>(null);
+  const [exerciseSortDirection, setExerciseSortDirection] = useState<'asc' | 'desc' | null>(null);
+  const [questionSortColumn, setQuestionSortColumn] = useState<keyof ExerciseQuestion | null>(null);
+  const [questionSortDirection, setQuestionSortDirection] = useState<'asc' | 'desc' | null>(null);
+
+  const handleSortExercises = (column: keyof Exercise) => {
+    if (exerciseSortColumn === column) {
+      if (exerciseSortDirection === 'asc') {
+        setExerciseSortDirection('desc');
+      } else if (exerciseSortDirection === 'desc') {
+        setExerciseSortColumn(null);
+        setExerciseSortDirection(null);
+      }
+    } else {
+      setExerciseSortColumn(column);
+      setExerciseSortDirection('asc');
+    }
+  };
+
+  const handleSortQuestions = (column: keyof ExerciseQuestion) => {
+    if (questionSortColumn === column) {
+      if (questionSortDirection === 'asc') {
+        setQuestionSortDirection('desc');
+      } else if (questionSortDirection === 'desc') {
+        setQuestionSortColumn(null);
+        setQuestionSortDirection(null);
+      }
+    } else {
+      setQuestionSortColumn(column);
+      setQuestionSortDirection('asc');
+    }
+  };
+
   const [exFormLessonId, setExFormLessonId] = useState('');
   const [exFormTeacherId, setExFormTeacherId] = useState('');
   const [exFormTypeId, setExFormTypeId] = useState('');
@@ -526,10 +564,28 @@ export default function ExerciseManagement() {
     }
   }, [currentPage, totalExercisesPages]);
 
+  const sortedExercises = useMemo(() => {
+    if (!exerciseSortColumn || !exerciseSortDirection) return filteredExercises;
+    return [...filteredExercises].sort((a, b) => {
+      const valA = a[exerciseSortColumn];
+      const valB = b[exerciseSortColumn];
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return exerciseSortDirection === 'asc'
+          ? valA.localeCompare(valB, 'vi-VN')
+          : valB.localeCompare(valA, 'vi-VN');
+      }
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return exerciseSortDirection === 'asc' ? valA - valB : valB - valA;
+      }
+      return 0;
+    });
+  }, [filteredExercises, exerciseSortColumn, exerciseSortDirection]);
+
   const paginatedExercises = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
-    return filteredExercises.slice(startIndex, startIndex + pageSize);
-  }, [currentPage, filteredExercises, pageSize]);
+    return sortedExercises.slice(startIndex, startIndex + pageSize);
+  }, [currentPage, sortedExercises, pageSize]);
 
   const selectedExerciseQuestions = useMemo(() => {
     if (!selectedExercise) return [];
@@ -549,13 +605,31 @@ export default function ExerciseManagement() {
     }
   }, [currentQuestionPage, totalQuestionsPages]);
 
+  const sortedQuestions = useMemo(() => {
+    if (!questionSortColumn || !questionSortDirection) return selectedExerciseQuestions;
+    return [...selectedExerciseQuestions].sort((a, b) => {
+      const valA = a[questionSortColumn];
+      const valB = b[questionSortColumn];
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return questionSortDirection === 'asc'
+          ? valA.localeCompare(valB, 'vi-VN')
+          : valB.localeCompare(valA, 'vi-VN');
+      }
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return questionSortDirection === 'asc' ? valA - valB : valB - valA;
+      }
+      return 0;
+    });
+  }, [selectedExerciseQuestions, questionSortColumn, questionSortDirection]);
+
   const paginatedQuestions = useMemo(() => {
     const startIndex = (currentQuestionPage - 1) * questionPageSize;
-    return selectedExerciseQuestions.slice(
+    return sortedQuestions.slice(
       startIndex,
       startIndex + questionPageSize
     );
-  }, [currentQuestionPage, questionPageSize, selectedExerciseQuestions]);
+  }, [currentQuestionPage, questionPageSize, sortedQuestions]);
 
   const totalExercises = exercises.length;
   const totalQuestionsSum = questions.length;
@@ -1174,15 +1248,106 @@ export default function ExerciseManagement() {
               <table className="w-full border-collapse text-left font-sans text-slate-700">
                 <thead>
                   <tr className="border-b border-gray-150 bg-[#FDFCF5]/50 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                    <th className="px-8 py-5 w-[5%] min-w-[55px]">Mã bài</th>
-                    <th className="px-6 py-5 w-[27%] min-w-[220px]">Tên bài luyện nói</th>
-                    <th className="px-6 py-5 w-[12%] min-w-[110px]">Bài học</th>
-                    <th className="px-6 py-5 w-[9%] min-w-[90px]">Loại</th>
-                    <th className="px-6 py-5 w-[13%] min-w-[110px]">Độ khó</th>
-                    <th className="px-6 py-5 w-[16%] min-w-[140px]">Kỹ năng</th>
-                    <th className="px-6 py-5 w-[10%] min-w-[95px]">Trạng thái</th>
-                    <th className="px-6 py-5 w-[4%] min-w-[50px]">Số câu hỏi</th>
-                    <th className="px-3 py-5 text-right w-[4%] min-w-[90px]">Thao tác</th>
+                    <th 
+                      onClick={() => handleSortExercises('ExerciseId')}
+                      className="px-8 py-5 w-[8%] min-w-[70px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Mã bài"
+                    >
+                      <div className="flex items-center gap-1">
+                        Mã bài
+                        {exerciseSortColumn === 'ExerciseId' ? (
+                          exerciseSortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSortExercises('ExerciseName')}
+                      className="px-6 py-5 w-[24%] min-w-[200px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Tên bài"
+                    >
+                      <div className="flex items-center gap-1">
+                        Tên bài luyện nói
+                        {exerciseSortColumn === 'ExerciseName' ? (
+                          exerciseSortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSortExercises('LessonId')}
+                      className="px-6 py-5 w-[12%] min-w-[110px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Bài học"
+                    >
+                      <div className="flex items-center gap-1">
+                        Bài học
+                        {exerciseSortColumn === 'LessonId' ? (
+                          exerciseSortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSortExercises('TypeId')}
+                      className="px-6 py-5 w-[10%] min-w-[90px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Loại"
+                    >
+                      <div className="flex items-center gap-1">
+                        Loại
+                        {exerciseSortColumn === 'TypeId' ? (
+                          exerciseSortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSortExercises('DifficultyLevel')}
+                      className="px-6 py-5 w-[12%] min-w-[110px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Độ khó"
+                    >
+                      <div className="flex items-center gap-1">
+                        Độ khó
+                        {exerciseSortColumn === 'DifficultyLevel' ? (
+                          exerciseSortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSortExercises('TargetSkill')}
+                      className="px-6 py-5 w-[15%] min-w-[130px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Kỹ năng"
+                    >
+                      <div className="flex items-center gap-1">
+                        Kỹ năng
+                        {exerciseSortColumn === 'TargetSkill' ? (
+                          exerciseSortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSortExercises('Status')}
+                      className="px-6 py-5 w-[11%] min-w-[95px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Trạng thái"
+                    >
+                      <div className="flex items-center gap-1">
+                        Trạng thái
+                        {exerciseSortColumn === 'Status' ? (
+                          exerciseSortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="px-6 py-5 w-[4%] min-w-[50px] select-none text-slate-500 font-black uppercase text-[10px] tracking-widest">Số câu hỏi</th>
+                    <th className="px-3 py-5 text-right w-[4%] min-w-[90px] select-none text-slate-500 font-black uppercase text-[10px] tracking-widest">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-xs font-bold text-gray-600 md:text-sm">
@@ -1282,38 +1447,30 @@ export default function ExerciseManagement() {
                           onClick={(event) => event.stopPropagation()}
                         >
                           <div className="flex flex-wrap items-center justify-end gap-1 max-w-[72px] ml-auto">
-                            <button
+                            <ActionButton
+                              type="view"
                               onClick={() => setSelectedExercise(exercise)}
-                              className={cn(
-                                'rounded-xl p-2 text-gray-500 transition-all hover:bg-[#4EACAF]/10 hover:text-[#4EACAF]',
-                                isSelected && 'bg-[#4EACAF]/20 text-[#4EACAF]'
-                              )}
+                              className={cn(isSelected && 'bg-[#4EACAF]/20 text-[#4EACAF]')}
                               title="Chọn bài tập"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
+                            />
 
-                            <button
+                            <ActionButton
+                              type="edit"
                               onClick={() => void handleOpenEditExercise(exercise)}
-                              className="rounded-xl p-2 text-sky-500 transition-colors hover:bg-sky-50"
                               title="Sửa bài tập"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            <button
+                            />
+
+                            <ActionButton
+                              type="add"
                               onClick={() => handleOpenAddQuestion(exercise.ExerciseId)}
-                              className="rounded-xl p-2 text-orange-500 transition-colors hover:bg-orange-50"
                               title="Thêm câu hỏi"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </button>
-                            <button
+                            />
+
+                            <ActionButton
+                              type="delete"
                               onClick={() => handleOpenDeleteExercise(exercise)}
-                              className="rounded-xl p-2 text-rose-500 transition-colors hover:bg-rose-50"
                               title="Xóa bài tập"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            />
                           </div>
                         </td>
                       </tr>
@@ -1388,13 +1545,65 @@ export default function ExerciseManagement() {
               <table className="w-full border-collapse text-left font-sans text-slate-700">
                 <thead>
                   <tr className="border-b border-gray-150 bg-[#FDFCF5]/50 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                    <th className="px-8 py-5 w-[10%] min-w-[90px]">Mã câu hỏi</th>
-                    <th className="px-6 py-5 w-[28%] min-w-[240px]">Nội dung câu luyện nói</th>
-                    <th className="px-6 py-5 w-[20%] min-w-[160px]">Câu trả lời mẫu</th>
-                    <th className="px-6 py-5 w-[14%] min-w-[110px]">Đầu vào</th>
-                    <th className="px-6 py-5 w-[8%] min-w-[70px]">Hình ảnh</th>
-                    <th className="px-6 py-5 w-[10%] min-w-[90px]">Âm thanh</th>
-                    <th className="px-8 py-5 text-right w-[10%] min-w-[90px]">Thao tác</th>
+                    <th 
+                      onClick={() => handleSortQuestions('QuestionId')}
+                      className="px-8 py-5 w-[10%] min-w-[90px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Mã câu hỏi"
+                    >
+                      <div className="flex items-center gap-1">
+                        Mã câu hỏi
+                        {questionSortColumn === 'QuestionId' ? (
+                          questionSortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSortQuestions('QuestionSentence')}
+                      className="px-6 py-5 w-[28%] min-w-[240px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Câu luyện nói"
+                    >
+                      <div className="flex items-center gap-1">
+                        Nội dung câu luyện nói
+                        {questionSortColumn === 'QuestionSentence' ? (
+                          questionSortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSortQuestions('AnswerSentence')}
+                      className="px-6 py-5 w-[20%] min-w-[160px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Câu trả lời mẫu"
+                    >
+                      <div className="flex items-center gap-1">
+                        Câu trả lời mẫu
+                        {questionSortColumn === 'AnswerSentence' ? (
+                          questionSortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSortQuestions('InputType')}
+                      className="px-6 py-5 w-[14%] min-w-[110px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Đầu vào"
+                    >
+                      <div className="flex items-center gap-1">
+                        Đầu vào
+                        {questionSortColumn === 'InputType' ? (
+                          questionSortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="px-6 py-5 w-[8%] min-w-[70px] select-none">Hình ảnh</th>
+                    <th className="px-6 py-5 w-[10%] min-w-[90px] select-none">Âm thanh</th>
+                    <th className="px-8 py-5 text-right w-[10%] min-w-[90px] select-none">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-xs font-bold text-gray-600 md:text-sm">
@@ -1489,20 +1698,16 @@ export default function ExerciseManagement() {
                             >
                               <Play className="h-4 w-4 fill-[#4EACAF]" />
                             </button>
-                            <button
+                            <ActionButton
+                              type="edit"
                               onClick={() => void handleOpenEditQuestion(question)}
-                              className="rounded-xl p-2 text-sky-500 hover:bg-sky-50"
                               title="Sửa câu hỏi"
-                            >
-                              <Edit3 className="h-4 w-4" />
-                            </button>
-                            <button
+                            />
+                            <ActionButton
+                              type="delete"
                               onClick={() => handleOpenDeleteQuestion(question)}
-                              className="rounded-xl p-2 text-rose-500 hover:bg-rose-50"
                               title="Xóa câu hỏi"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            />
                           </div>
                         </td>
                       </tr>

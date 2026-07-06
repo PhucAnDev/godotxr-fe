@@ -26,9 +26,13 @@ import {
   ChevronRight,
   Sparkle,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import ActionButton from '../../components/common/ActionButton';
 import Pagination from '../../components/common/Pagination';
 import CustomSelect from '../../components/common/CustomSelect';
 import { useLessonManagementApi, type LessonResponse } from '../../hooks/useLessonManagementApi';
@@ -193,6 +197,24 @@ export default function LessonManagement() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  // Sorting states
+  const [sortColumn, setSortColumn] = useState<keyof Lesson | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
+
+  const handleSort = (column: keyof Lesson) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortColumn(null);
+        setSortDirection(null);
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
 
   // Reset page of lessons on filter change
   useEffect(() => {
@@ -383,10 +405,28 @@ export default function LessonManagement() {
     }
   }, [currentPage, totalPages]);
 
+  const sortedLessons = useMemo(() => {
+    if (!sortColumn || !sortDirection) return filteredLessons;
+    return [...filteredLessons].sort((a, b) => {
+      const valA = a[sortColumn];
+      const valB = b[sortColumn];
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortDirection === 'asc'
+          ? valA.localeCompare(valB, 'vi-VN')
+          : valB.localeCompare(valA, 'vi-VN');
+      }
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortDirection === 'asc' ? valA - valB : valB - valA;
+      }
+      return 0;
+    });
+  }, [filteredLessons, sortColumn, sortDirection]);
+
   const paginatedLessons = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
-    return filteredLessons.slice(startIndex, startIndex + pageSize);
-  }, [filteredLessons, currentPage, pageSize]);
+    return sortedLessons.slice(startIndex, startIndex + pageSize);
+  }, [sortedLessons, currentPage, pageSize]);
 
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative" id="lesson-view-root">
@@ -568,14 +608,105 @@ export default function LessonManagement() {
               <table className="w-full text-left border-collapse" id="lessons-table-body">
                 <thead>
                   <tr className="bg-[#FDFCF5]/50 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
-                    <th className="w-[5%] py-5 px-4">Mã Số</th>
-                    <th className="w-[5%] py-5 px-2">Thứ tự</th>
-                    <th className="w-[28%] py-5 px-4">Tiêu đề bài học</th>
-                    <th className="w-[18%] py-5 px-4">Chương trình liên đới</th>
-                    <th className="w-[15%] py-5 px-4">Mục Tiêu Kỹ Năng</th>
-                    <th className="w-[8%] py-5 px-4">Thời Lượng Quy Định</th>
-                    <th className="w-[8%] py-5 px-4">Trạng Thái</th>
-                    <th className="w-[13%] py-5 px-4 text-right">Hành Động</th>
+                    <th 
+                      onClick={() => handleSort('LessonId')}
+                      className="w-[7%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Mã Số"
+                    >
+                      <div className="flex items-center gap-1">
+                        Mã Số
+                        {sortColumn === 'LessonId' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('LessonOrder')}
+                      className="w-[7%] py-5 px-2 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Thứ tự"
+                    >
+                      <div className="flex items-center gap-1">
+                        Thứ tự
+                        {sortColumn === 'LessonOrder' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('LessonName')}
+                      className="w-[25%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Tiêu đề bài học"
+                    >
+                      <div className="flex items-center gap-1">
+                        Tiêu đề bài học
+                        {sortColumn === 'LessonName' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('ProgramId')}
+                      className="w-[18%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Chương trình"
+                    >
+                      <div className="flex items-center gap-1">
+                        Chương trình liên đới
+                        {sortColumn === 'ProgramId' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('TargetSkill')}
+                      className="w-[15%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Mục tiêu kỹ năng"
+                    >
+                      <div className="flex items-center gap-1">
+                        Mục Tiêu Kỹ Năng
+                        {sortColumn === 'TargetSkill' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('EstimatedDuration')}
+                      className="w-[10%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Thời lượng"
+                    >
+                      <div className="flex items-center gap-1">
+                        Thời Lượng Quy Định
+                        {sortColumn === 'EstimatedDuration' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('Status')}
+                      className="w-[8%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Trạng thái"
+                    >
+                      <div className="flex items-center gap-1">
+                        Trạng Thái
+                        {sortColumn === 'Status' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="w-[10%] py-5 px-4 text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
@@ -639,29 +770,23 @@ export default function LessonManagement() {
                               )}
                             </button>
 
-                            <button 
+                            <ActionButton
+                              type="play"
                               onClick={() => handleOpenExercises(lesson)}
-                              className="p-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-all shrink-0"
                               title="Xem chi tiết các bài thực hành"
-                            >
-                              <Play className="w-4 h-4" />
-                            </button>
+                            />
 
-                            <button 
+                            <ActionButton
+                              type="edit"
                               onClick={() => handleOpenEdit(lesson)}
-                              className="p-2.5 hover:bg-sky-50 text-sky-500 rounded-xl transition-all duration-150 hover:scale-105 shrink-0"
                               title="Cập nhật thông số bài học"
-                            >
-                              <Edit3 className="w-4.5 h-4.5" />
-                            </button>
+                            />
 
-                            <button 
+                            <ActionButton
+                              type="delete"
                               onClick={() => handleOpenDelete(lesson)}
-                              className="p-2.5 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-xl transition-all duration-150 hover:scale-105 shrink-0"
                               title="Xóa bài học"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            />
                           </div>
                         </td>
                       </tr>

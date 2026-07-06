@@ -22,11 +22,14 @@ import {
   Info,
   ArrowDown,
   ArrowUp,
-  ArrowUpDown
+  ArrowUpDown,
+  Play
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import CustomSelect from '../../components/common/CustomSelect';
 import { useSchoolYearManagementApi, type SchoolYearResponse } from '../../hooks/useSchoolYearManagementApi';
+import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
+import ActionButton from '../../components/common/ActionButton';
 
 // DB Interface according to database architecture
 interface SchoolYear {
@@ -122,6 +125,9 @@ export default function SchoolYearManagement() {
   const [isOpenFormModal, setIsOpenFormModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [selectedYear, setSelectedYear] = useState<SchoolYear | null>(null);
+  const [isOpenDeleteModal, setIsOpenDeleteModal] = useState(false);
+  const [yearToDelete, setYearToDelete] = useState<SchoolYear | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form Inputs
   const [formName, setFormName] = useState('');
@@ -276,14 +282,24 @@ export default function SchoolYearManagement() {
     setIsOpenFormModal(false);
   };
 
-  const handleDelete = async (yearId: string) => {
-    if (window.confirm(`Bạn có chắc chắn muốn phát động gỡ bỏ năm học ${yearId}? Hành động này có thể ảnh hưởng liên đới đến các kỳ thi và học sinh.`)) {
-      const result = await deleteSchoolYear(Number(yearId));
-      if (result.success) {
-        setSchoolYears(current => current.filter(y => y.SchoolYearId !== yearId));
-        triggerToast(result.message, 'warning');
-      } else triggerToast(result.errors.join(' ') || result.message, 'warning');
+  const handleDeleteClick = (y: SchoolYear) => {
+    setYearToDelete(y);
+    setIsOpenDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!yearToDelete) return;
+    setIsDeleting(true);
+    const result = await deleteSchoolYear(Number(yearToDelete.SchoolYearId));
+    if (result.success) {
+      setSchoolYears(current => current.filter(y => y.SchoolYearId !== yearToDelete.SchoolYearId));
+      triggerToast(result.message, 'success');
+      setIsOpenDeleteModal(false);
+      setYearToDelete(null);
+    } else {
+      triggerToast(result.errors.join(' ') || result.message, 'warning');
     }
+    setIsDeleting(false);
   };
 
   // Searching logic pipeline
@@ -577,7 +593,7 @@ export default function SchoolYearManagement() {
                         )}
                       </div>
                     </th>
-                    <th className="py-5 px-[5px] text-right select-none">Lựa chọn điều phối</th>
+                    <th className="py-5 px-[5px] text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
               <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
@@ -633,46 +649,36 @@ export default function SchoolYearManagement() {
                       <div className="flex items-center justify-end gap-1.5">
                         
                         {/* Edit button */}
-                        <button
+                        <ActionButton
+                          type="edit"
                           onClick={() => handleOpenEdit(year)}
-                          className="py-2 px-3 bg-teal-50 hover:bg-[#4EACAF] text-[#4EACAF] hover:text-white rounded-xl text-xs font-black transition-colors flex items-center gap-1"
                           title="Sửa niên khóa"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          Sửa
-                        </button>
+                        />
 
                         {/* Set self as Current (Active) */}
                         {year.Status !== 'Active' && (
-                          <button
+                          <ActionButton
+                            type="play"
                             onClick={() => handleSetCurrent(year.SchoolYearId)}
-                            className="py-2 px-3 bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white rounded-xl text-xs font-black transition-colors"
                             title="Đặt làm năm học hiện tại chủ quản"
-                          >
-                            Làm hiện tại
-                          </button>
+                          />
                         )}
 
                         {/* Close session button */}
                         {year.Status === 'Active' && (
-                          <button
+                          <ActionButton
+                            type="lock"
                             onClick={() => handleCloseYear(year.SchoolYearId)}
-                            className="py-2 px-3 bg-rose-50 hover:bg-rose-600 text-[#FF8E8E] hover:text-white rounded-xl text-xs font-black transition-colors flex items-center gap-1"
                             title="Đóng năm học hiện hành"
-                          >
-                            <Lock className="w-3 h-3" />
-                            Đóng năm
-                          </button>
+                          />
                         )}
 
                         {/* Delete button option */}
-                        <button
-                          onClick={() => handleDelete(year.SchoolYearId)}
-                          className="p-2 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white rounded-xl transition-colors"
+                        <ActionButton
+                          type="delete"
+                          onClick={() => handleDeleteClick(year)}
                           title="Gỡ sạch dữ liệu"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        />
 
                       </div>
                     </td>
@@ -812,6 +818,27 @@ export default function SchoolYearManagement() {
               </form>
             </motion.div>
           </div>
+        )}
+
+        {isOpenDeleteModal && yearToDelete && (
+          <ConfirmDeleteModal
+            title="Xóa niên khóa"
+            subtitle="HÀNH ĐỘNG NÀY SẼ XÓA VĨNH VIỄN NIÊN KHÓA KHỎI HỆ THỐNG"
+            onClose={() => {
+              setIsOpenDeleteModal(false);
+              setYearToDelete(null);
+            }}
+            onConfirm={handleConfirmDelete}
+            isDeleting={isDeleting}
+            accent="rose"
+          >
+            <p className="font-semibold">
+              Bạn sắp xóa niên khóa <strong>{yearToDelete.SchoolYearName}</strong> (ID: {yearToDelete.SchoolYearId}).
+            </p>
+            <p className="mt-2">
+              Hành động này có thể ảnh hưởng liên đới đến các kỳ thi, học sinh và các học phần liên quan. Hành động này không thể hoàn tác, vui lòng xác nhận trước khi xóa.
+            </p>
+          </ConfirmDeleteModal>
         )}
       </AnimatePresence>
 

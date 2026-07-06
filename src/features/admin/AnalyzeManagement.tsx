@@ -28,6 +28,7 @@ import CustomSelect from '../../components/common/CustomSelect';
 import { useAnalyzeApi, type AnalyzeResponse } from '../../hooks/useAnalyzeApi';
 import { useChildManagementApi } from '../../hooks/useChildManagementApi';
 import type { AnalyzePayload } from '../../services/analyzeService';
+import ActionButton from '../../components/common/ActionButton';
 
 interface AnalyzeItem {
   Id: number;
@@ -765,7 +766,7 @@ export default function AnalyzeManagement() {
                         )}
                       </div>
                     </th>
-                    <th className="px-[5px] py-4 text-right select-none">Thao tác</th>
+                    <th className="px-[5px] py-4 text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 text-sm font-semibold text-slate-700">
@@ -820,29 +821,23 @@ export default function AnalyzeManagement() {
                       </td>
                       <td className="px-[5px] py-5 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button
+                          <ActionButton
+                            type="view"
                             onClick={() => void handleOpenDetail(item)}
-                            className="rounded-xl p-2 text-teal-600 transition-colors hover:bg-teal-50 hover:scale-105"
                             title="Thông tin chi tiết"
-                          >
-                            <Eye className="h-4.5 w-4.5" />
-                          </button>
+                          />
 
-                          <button
+                          <ActionButton
+                            type="edit"
                             onClick={() => void openEditModal(item)}
-                            className="rounded-xl p-2 text-sky-500 transition-colors hover:bg-sky-50 hover:scale-105"
                             title="Chỉnh sửa bản đánh giá"
-                          >
-                            <Edit3 className="h-4.5 w-4.5" />
-                          </button>
+                          />
 
-                          <button
+                          <ActionButton
+                            type="delete"
                             onClick={() => openDeleteModal(item)}
-                            className="rounded-xl p-2 text-rose-500 transition-colors hover:bg-rose-50 hover:scale-105"
                             title="Xóa đánh giá"
-                          >
-                            <Trash2 className="h-4.5 w-4.5" />
-                          </button>
+                          />
                         </div>
                       </td>
                     </tr>

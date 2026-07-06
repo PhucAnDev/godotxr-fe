@@ -22,9 +22,13 @@ import {
   TrendingUp,
   Users,
   X,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getCurrentUser } from '../../lib/authMock';
+import ActionButton from '../../components/common/ActionButton';
 import {
   getChildProfiles,
   type ChildProfileResponse,
@@ -250,6 +254,24 @@ export default function TeacherClassDetail({
   const [studentSearchQuery, setStudentSearchQuery] = useState('');
   const [selectedProgressFilter, setSelectedProgressFilter] =
     useState<string>('ALL');
+
+  // Sorting states
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortColumn(null);
+        setSortDirection(null);
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
   const [toastMessage, setToastMessage] = useState<{
     text: string;
     type: 'success' | 'info' | 'warn';
@@ -490,6 +512,32 @@ export default function TeacherClassDetail({
     selectedProgressFilter,
     studentSearchQuery,
   ]);
+
+  const sortedChildren = useMemo(() => {
+    if (!sortColumn || !sortDirection) return filteredChildren;
+    return [...filteredChildren].sort((a, b) => {
+      let valA: any = a[sortColumn as keyof Child];
+      let valB: any = b[sortColumn as keyof Child];
+
+      if (sortColumn === 'AverageScore') {
+        valA = analysisByChildId[a.ChildId]?.AverageScore ?? 0;
+        valB = analysisByChildId[b.ChildId]?.AverageScore ?? 0;
+      } else if (sortColumn === 'ProgressLevel') {
+        valA = analysisByChildId[a.ChildId]?.ProgressLevel ?? '';
+        valB = analysisByChildId[b.ChildId]?.ProgressLevel ?? '';
+      }
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortDirection === 'asc'
+          ? valA.localeCompare(valB, 'vi-VN')
+          : valB.localeCompare(valA, 'vi-VN');
+      }
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortDirection === 'asc' ? valA - valB : valB - valA;
+      }
+      return 0;
+    });
+  }, [filteredChildren, sortColumn, sortDirection, analysisByChildId]);
 
   const renderStatusBadge = (status: ClassroomStatus) => {
     const mappings = {
@@ -887,18 +935,109 @@ export default function TeacherClassDetail({
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
-                    <th className="px-4 py-3">Mã bé</th>
-                    <th className="px-4 py-3">Họ tên</th>
-                    <th className="px-4 py-3 text-center">Tuổi</th>
-                    <th className="px-4 py-3 text-center">Giới tính</th>
-                    <th className="px-4 py-3">Trình độ</th>
-                    <th className="px-4 py-3 text-center">Điểm TB</th>
-                    <th className="px-4 py-3">Tiến độ</th>
-                    <th className="px-4 py-3 text-right">Tác vụ</th>
+                    <th 
+                      onClick={() => handleSort('ChildId')}
+                      className="px-4 py-3 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Mã bé"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Mã bé
+                        {sortColumn === 'ChildId' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('FullName')}
+                      className="px-4 py-3 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Họ tên"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Họ tên
+                        {sortColumn === 'FullName' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('Age')}
+                      className="px-4 py-3 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
+                      title="Sắp xếp theo Tuổi"
+                    >
+                      <div className="flex items-center justify-center gap-1.5">
+                        Tuổi
+                        {sortColumn === 'Age' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('Gender')}
+                      className="px-4 py-3 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
+                      title="Sắp xếp theo Giới tính"
+                    >
+                      <div className="flex items-center justify-center gap-1.5">
+                        Giới tính
+                        {sortColumn === 'Gender' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('LearningLevel')}
+                      className="px-4 py-3 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Trình độ"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Trình độ
+                        {sortColumn === 'LearningLevel' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('AverageScore')}
+                      className="px-4 py-3 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
+                      title="Sắp xếp theo Điểm TB"
+                    >
+                      <div className="flex items-center justify-center gap-1.5">
+                        Điểm TB
+                        {sortColumn === 'AverageScore' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('ProgressLevel')}
+                      className="px-4 py-3 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Tiến độ"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Tiến độ
+                        {sortColumn === 'ProgressLevel' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="px-4 py-3 text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm font-bold text-gray-700">
-                  {filteredChildren.length === 0 ? (
+                  {sortedChildren.length === 0 ? (
                     <tr>
                       <td
                         colSpan={8}
@@ -908,7 +1047,7 @@ export default function TeacherClassDetail({
                       </td>
                     </tr>
                   ) : (
-                    filteredChildren.map((child) => {
+                    sortedChildren.map((child) => {
                       const analysis =
                         analysisByChildId[child.ChildId] ?? buildAnalysis(child, []);
                       const progressStyle = getProgressLevelBadge(
@@ -966,7 +1105,8 @@ export default function TeacherClassDetail({
                           </td>
                           <td className="px-6 py-5 text-right">
                             <div className="flex items-center justify-end gap-1.5">
-                              <button
+                              <ActionButton
+                                type="view"
                                 onClick={() => {
                                   if (onNavigate) {
                                     onNavigate(
@@ -976,34 +1116,23 @@ export default function TeacherClassDetail({
                                   }
                                   triggerSimulation('PROFILE', child.FullName);
                                 }}
-                                className="rounded-xl bg-[#4EACAF]/10 px-3 py-1.5 text-xs font-black text-[#4EACAF] transition-all hover:bg-[#4EACAF] hover:text-white"
-                              >
-                                Xem hồ sơ
-                              </button>
-                              <button
-                                onClick={() =>
-                                  triggerSimulation('HISTORY', child.FullName)
-                                }
-                                className="rounded-xl bg-indigo-50 p-2 text-indigo-500 transition-all hover:bg-indigo-500 hover:text-white"
-                              >
-                                <History className="h-3.5 w-3.5" />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  triggerSimulation('REPLAY', child.FullName)
-                                }
-                                className="rounded-xl bg-rose-50 p-2 text-rose-500 transition-all hover:bg-rose-500 hover:text-white"
-                              >
-                                <Eye className="h-3.5 w-3.5" />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  triggerSimulation('ANALYZE', child.FullName)
-                                }
-                                className="rounded-xl bg-yellow-50 p-2 text-[#FFA800] transition-all hover:bg-[#FFA800] hover:text-white"
-                              >
-                                <TrendingUp className="h-3.5 w-3.5" />
-                              </button>
+                                title="Xem hồ sơ chi tiết"
+                              />
+                              <ActionButton
+                                type="history"
+                                onClick={() => triggerSimulation('HISTORY', child.FullName)}
+                                title="Lịch sử rèn luyện"
+                              />
+                              <ActionButton
+                                type="play"
+                                onClick={() => triggerSimulation('REPLAY', child.FullName)}
+                                title="Xem mô phỏng 3D phát âm (Replay)"
+                              />
+                              <ActionButton
+                                type="trend"
+                                onClick={() => triggerSimulation('ANALYZE', child.FullName)}
+                                title="Đồ thị tiến trình phát triển"
+                              />
                             </div>
                           </td>
                         </tr>

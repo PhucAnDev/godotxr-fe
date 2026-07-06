@@ -33,6 +33,7 @@ import { cn, resolveAvatarUrl } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
 import CustomSelect from '../../components/common/CustomSelect';
 import { useEnrollmentManagementApi, type EnrollmentResponse } from '../../hooks/useEnrollmentManagementApi';
+import ActionButton from '../../components/common/ActionButton';
 
 // DB Interfaces
 interface Child {
@@ -644,7 +645,7 @@ export default function EnrollmentManagement() {
                     <th className="py-5 px-[5px] w-[15%] whitespace-nowrap">Cấp độ phát âm</th>
                     <th className="py-5 px-[5px] w-[12%] whitespace-nowrap">Ngày Nhập Lớp</th>
                     <th className="py-5 px-[5px] w-[13%] whitespace-nowrap">Trạng thái ghi danh</th>
-                    <th className="py-5 px-[5px] text-right w-[15%] whitespace-nowrap">Quản lý thao tác</th>
+                    <th className="py-5 px-[5px] text-right w-[15%] whitespace-nowrap">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
@@ -719,49 +720,38 @@ export default function EnrollmentManagement() {
                         <td className="py-5 px-[5px] text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
                             {enrollment.Status === 'Pending' && (
-                              <button 
+                              <ActionButton
+                                type="approve"
                                 onClick={() => handleApproveEnrollment(enrollment)}
-                                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 duration-150 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1 whitespace-nowrap"
-                                title="Duyệt hồ sơ nhanh"
-                              >
-                                <Check className="w-3.5 h-3.5" />
-                                Duyệt
-                              </button>
+                                title="Duyệt hồ sơ nhanh (Duyệt)"
+                              />
                             )}
 
-                            <button 
+                            <ActionButton
+                              type="view"
                               onClick={() => handleOpenDetail(enrollment)}
-                              className="p-2.5 hover:bg-teal-50 text-teal-600 rounded-xl transition-colors hover:scale-105"
                               title="Xem chi tiết ghi danh"
-                            >
-                              <Eye className="w-4.5 h-4.5" />
-                            </button>
+                            />
 
-                            <button 
+                            <ActionButton
+                              type="edit"
                               onClick={() => handleOpenEdit(enrollment)}
-                              className="p-2.5 hover:bg-sky-50 text-sky-500 rounded-xl transition-colors hover:scale-105"
                               title="Cập nhật cấu hình ghi danh"
-                            >
-                              <Edit3 className="w-4.5 h-4.5" />
-                            </button>
+                            />
 
                             {enrollment.Status === 'Active' && (
                               <>
-                                <button 
+                                <ActionButton
+                                  type="transfer"
                                   onClick={() => handleOpenTransfer(enrollment)}
-                                  className="p-2.5 hover:bg-indigo-50 text-indigo-600 rounded-xl transition-colors hover:scale-105"
                                   title="Chuyển lớp cho bé"
-                                >
-                                  <ArrowRightLeft className="w-4.5 h-4.5" />
-                                </button>
+                                />
 
-                                <button 
+                                <ActionButton
+                                  type="cancel"
                                   onClick={() => handleOpenCancelConfirm(enrollment)}
-                                  className="p-2.5 hover:bg-rose-50 text-rose-500 rounded-xl transition-colors hover:scale-105"
                                   title="Hủy bỏ ghi danh"
-                                >
-                                  <XCircle className="w-4.5 h-4.5" />
-                                </button>
+                                />
                               </>
                             )}
                           </div>

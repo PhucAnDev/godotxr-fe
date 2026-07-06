@@ -22,11 +22,15 @@ import {
   HelpCircle,
   FileAudio,
   Glasses,
-  RotateCcw
+  RotateCcw,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
 import { useLearningResultApi } from '../../hooks/useLearningResultApi';
+import ActionButton from '../../components/common/ActionButton';
 import type { ChildProfileResponse } from '../../services/childProfileService';
 import type { ExerciseResponse } from '../../services/exerciseService';
 import type { PronunciationDetailResponse } from '../../services/pronunciationDetailService';
@@ -366,6 +370,24 @@ export default function PronunciationDetailPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  // Sorting states
+  const [sortColumn, setSortColumn] = useState<keyof PronunciationDetail | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
+
+  const handleSort = (column: keyof PronunciationDetail) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortColumn(null);
+        setSortDirection(null);
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
@@ -561,10 +583,33 @@ export default function PronunciationDetailPage() {
     }
   }, [currentPage, totalPages]);
 
+  const sortedDetails = React.useMemo(() => {
+    if (!sortColumn || !sortDirection) return filteredDetails;
+    return [...filteredDetails].sort((a, b) => {
+      let valA: any = a[sortColumn];
+      let valB: any = b[sortColumn];
+
+      if (sortColumn === 'ResultId') {
+        valA = getChildInfoForResult(a.ResultId).FullName;
+        valB = getChildInfoForResult(b.ResultId).FullName;
+      }
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortDirection === 'asc'
+          ? valA.localeCompare(valB, 'vi-VN')
+          : valB.localeCompare(valA, 'vi-VN');
+      }
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortDirection === 'asc' ? valA - valB : valB - valA;
+      }
+      return 0;
+    });
+  }, [filteredDetails, sortColumn, sortDirection, results, children]);
+
   const paginatedDetails = React.useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
-    return filteredDetails.slice(startIndex, startIndex + pageSize);
-  }, [filteredDetails, currentPage, pageSize]);
+    return sortedDetails.slice(startIndex, startIndex + pageSize);
+  }, [sortedDetails, currentPage, pageSize]);
 
   // STATS CALCULATIONS (Based on ROLE-FILTERED dataset)
   const activeRoleDetails = getRoleFilteredDetails(details);
@@ -885,14 +930,92 @@ export default function PronunciationDetailPage() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-[#FDFCF5]/60 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
-                    <th className="py-5 px-10">Mã chi tiết ID</th>
-                    <th className="py-5 px-6">Học sinh</th>
-                    <th className="py-5 px-6">Lượt làm VR</th>
-                    <th className="py-5 px-6 text-center">Âm mong đợi</th>
-                    <th className="py-5 px-6 text-center">Trẻ phát ra thực tế</th>
-                    <th className="py-5 px-6">Độ chính xác</th>
-                    <th className="py-5 px-6">Lỗi nhận diện</th>
-                    <th className="py-5 px-10 text-right">Tác vụ theo dõi</th>
+                    <th 
+                      onClick={() => handleSort('DetailId')}
+                      className="py-5 px-10 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Mã chi tiết ID"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Mã chi tiết ID
+                        {sortColumn === 'DetailId' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('ResultId')}
+                      className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Học sinh"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Học sinh
+                        {sortColumn === 'ResultId' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="py-5 px-6 select-none">Lượt làm VR</th>
+                    <th 
+                      onClick={() => handleSort('ExpectedPhoneme')}
+                      className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
+                      title="Sắp xếp theo Âm mong đợi"
+                    >
+                      <div className="flex items-center justify-center gap-1.5">
+                        Âm mong đợi
+                        {sortColumn === 'ExpectedPhoneme' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('ActualPhoneme')}
+                      className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
+                      title="Sắp xếp theo Trẻ phát ra thực tế"
+                    >
+                      <div className="flex items-center justify-center gap-1.5">
+                        Trẻ phát ra thực tế
+                        {sortColumn === 'ActualPhoneme' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('AccuracyScore')}
+                      className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Độ chính xác"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Độ chính xác
+                        {sortColumn === 'AccuracyScore' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('IssueType')}
+                      className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Lỗi nhận diện"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Lỗi nhận diện
+                        {sortColumn === 'IssueType' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="py-5 px-10 text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
@@ -983,7 +1106,8 @@ export default function PronunciationDetailPage() {
                           <div className="flex items-center justify-end gap-1.5">
                             
                             {/* Replay tracking map action */}
-                            <button
+                            <ActionButton
+                              type="view"
                               onClick={async () => {
                                 const detailId = Number(item.DetailId);
                                 const detailResponse = Number.isNaN(detailId)
@@ -1000,12 +1124,8 @@ export default function PronunciationDetailPage() {
 
                                 showToast('Nạp tọa độ cử động góc môi, khớp lưỡi từ tệp replay...', 'info');
                               }}
-                              className="py-1.5 px-3 bg-[#4EACAF]/10 hover:bg-[#4EACAF] text-[#4EACAF] hover:text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5"
                               title="Xem mô phỏng vị trí lưỡi và môi 3D"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                              Xem Replay
-                            </button>
+                            />
 
                             {/* Quick listen raw record mock */}
                             {result_ref.AudioRecordUrl && (

@@ -40,6 +40,7 @@ import { cn, resolveAvatarUrl } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
 import CustomSelect from '../../components/common/CustomSelect';
 import { useClassroomManagementApi, type ClassroomResponse } from '../../hooks/useClassroomManagementApi';
+import ActionButton from '../../components/common/ActionButton';
 
 // DB Interfaces
 interface Classroom {
@@ -833,41 +834,26 @@ export default function ClassroomManagement() {
                         </td>
                         <td className="py-5 px-[5px] text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button 
+                            <ActionButton
+                              type="view"
                               onClick={() => handleOpenDetail(cls)}
-                              className="p-2.5 hover:bg-teal-50 text-teal-600 rounded-xl transition-colors hover:scale-105"
                               title="Xem chi tiết lớp"
                               id={`action-detail-${cls.ClassId}`}
-                            >
-                              <Eye className="w-4.5 h-4.5" />
-                            </button>
+                            />
                             
-                            <button 
+                            <ActionButton
+                              type="edit"
                               onClick={() => handleOpenEdit(cls)}
-                              className="p-2.5 hover:bg-sky-50 text-sky-500 rounded-xl transition-colors hover:scale-105"
                               title="Sửa cấu hình lớp"
                               id={`action-edit-${cls.ClassId}`}
-                            >
-                              <Edit3 className="w-4.5 h-4.5" />
-                            </button>
+                            />
 
-                            <button 
+                            <ActionButton
+                              type={cls.Status === 'Closed' ? 'unlock' : 'lock'}
                               onClick={() => handleToggleClassState(cls)}
-                              className={cn(
-                                "p-2.5 rounded-xl transition-colors hover:scale-105",
-                                cls.Status === 'Closed' 
-                                  ? 'hover:bg-emerald-50 text-emerald-500' 
-                                  : 'hover:bg-rose-50 text-[#FF8E8E]'
-                              )}
                               title={cls.Status === 'Closed' ? "Khởi động lại khóa học" : "Đóng & chấm dứt lớp"}
                               id={`action-toggle-${cls.ClassId}`}
-                            >
-                              {cls.Status === 'Closed' ? (
-                                <Unlock className="w-4.5 h-4.5" />
-                              ) : (
-                                <Lock className="w-4.5 h-4.5" />
-                              )}
-                            </button>
+                            />
                           </div>
                         </td>
                       </tr>

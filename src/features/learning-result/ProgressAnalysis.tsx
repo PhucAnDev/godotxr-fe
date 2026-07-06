@@ -38,10 +38,14 @@ import {
   User,
   Activity,
   History,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import CustomSelect from '../../components/common/CustomSelect';
+import ActionButton from '../../components/common/ActionButton';
 
 // DB Interfaces according to project specification
 interface Child {
@@ -255,6 +259,24 @@ export default function ProgressAnalysis() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterProgressLevel, setFilterProgressLevel] = useState<string>('ALL');
 
+  // Sorting states
+  const [sortColumn, setSortColumn] = useState<keyof Analysis | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
+
+  const handleSort = (column: keyof Analysis) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortColumn(null);
+        setSortDirection(null);
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
   // Role Switch Simulator - Admin, Teacher, Parent
   const [currentRoleView, setCurrentRoleView] = useState<'ADMIN' | 'TEACHER' | 'PARENT'>('ADMIN');
 
@@ -327,6 +349,29 @@ export default function ProgressAnalysis() {
       return true;
     });
   }, [analyses, selectedChildId, filterProgressLevel, searchQuery, getRoleFilteredChildren]);
+
+  const sortedAnalysesList = useMemo(() => {
+    if (!sortColumn || !sortDirection) return filteredAnalysesList;
+    return [...filteredAnalysesList].sort((a, b) => {
+      let valA: any = a[sortColumn];
+      let valB: any = b[sortColumn];
+
+      if (sortColumn === 'ChildId') {
+        valA = getChildDetails(a.ChildId).FullName;
+        valB = getChildDetails(b.ChildId).FullName;
+      }
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortDirection === 'asc'
+          ? valA.localeCompare(valB, 'vi-VN')
+          : valB.localeCompare(valA, 'vi-VN');
+      }
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortDirection === 'asc' ? valA - valB : valB - valA;
+      }
+      return 0;
+    });
+  }, [filteredAnalysesList, sortColumn, sortDirection]);
 
   // Aggregate stats derived from filtered elements
   const metrics = useMemo(() => {
@@ -854,19 +899,110 @@ export default function ProgressAnalysis() {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-[#FDFCF5]/60 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
-                  <th className="py-5 px-10">Mã phân tích</th>
-                  <th className="py-5 px-6">Học sinh</th>
-                  <th className="py-5 px-6 text-center">Tổng bài chơi</th>
-                  <th className="py-5 px-6 text-center">Đã vượt ải</th>
-                  <th className="py-5 px-6 text-center">Tỷ lệ</th>
-                  <th className="py-5 px-6 text-center">Điểm trung bình</th>
-                  <th className="py-5 px-6">Mức độ tiến bộ</th>
-                  <th className="py-5 px-6">Thời điểm kiểm định</th>
-                  <th className="py-5 px-10 text-right">Tác vụ rèn luyện</th>
+                  <th 
+                    onClick={() => handleSort('AnalysisId')}
+                    className="py-5 px-10 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                    title="Sắp xếp theo Mã phân tích"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      Mã phân tích
+                      {sortColumn === 'AnalysisId' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    onClick={() => handleSort('ChildId')}
+                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                    title="Sắp xếp theo Học sinh"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      Học sinh
+                      {sortColumn === 'ChildId' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    onClick={() => handleSort('TotalExercises')}
+                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
+                    title="Sắp xếp theo Tổng bài chơi"
+                  >
+                    <div className="flex items-center justify-center gap-1.5">
+                      Tổng bài chơi
+                      {sortColumn === 'TotalExercises' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    onClick={() => handleSort('CompletedExercises')}
+                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
+                    title="Sắp xếp theo Đã vượt ải"
+                  >
+                    <div className="flex items-center justify-center gap-1.5">
+                      Đã vượt ải
+                      {sortColumn === 'CompletedExercises' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </th>
+                  <th className="py-5 px-6 text-center select-none">Tỷ lệ</th>
+                  <th 
+                    onClick={() => handleSort('AverageScore')}
+                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
+                    title="Sắp xếp theo Điểm trung bình"
+                  >
+                    <div className="flex items-center justify-center gap-1.5">
+                      Điểm trung bình
+                      {sortColumn === 'AverageScore' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    onClick={() => handleSort('ProgressLevel')}
+                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                    title="Sắp xếp theo Mức độ tiến bộ"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      Mức độ tiến bộ
+                      {sortColumn === 'ProgressLevel' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    onClick={() => handleSort('LastAnalyzedAt')}
+                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                    title="Sắp xếp theo Thời điểm kiểm định"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      Thời điểm kiểm định
+                      {sortColumn === 'LastAnalyzedAt' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </th>
+                  <th className="py-5 px-10 text-right select-none">Tùy chọn</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
-                {filteredAnalysesList.map((anItem) => {
+                {sortedAnalysesList.map((anItem) => {
                   const subChild = getChildDetails(anItem.ChildId);
                   const completionPercentage = anItem.TotalExercises > 0 ? Math.round((anItem.CompletedExercises / anItem.TotalExercises) * 100) : 0;
                   
@@ -933,14 +1069,11 @@ export default function ProgressAnalysis() {
                         <div className="flex items-center justify-end gap-1.5">
                           
                           {/* Details interactive modal trigger */}
-                          <button
+                          <ActionButton
+                            type="view"
                             onClick={() => handleOpenAnalysisModal(anItem)}
-                            className="py-1.5 px-3 bg-[#4EACAF]/10 hover:bg-[#4EACAF] text-[#4EACAF] hover:text-white rounded-xl text-xs font-black transition-all flex items-center gap-1"
                             title="Truy cập sâu thông tin chi tiết"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            Khảo sát sâu
-                          </button>
+                          />
 
                           {/* Trigger mock export report PDF with feedback toast */}
                           <button

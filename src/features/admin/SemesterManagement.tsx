@@ -25,12 +25,15 @@ import {
   Activity,
   ArrowDown,
   ArrowUp,
-  ArrowUpDown
+  ArrowUpDown,
+  Play
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
 import CustomSelect from '../../components/common/CustomSelect';
 import { useSemesterManagementApi, type SemesterResponse } from '../../hooks/useSemesterManagementApi';
+import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
+import ActionButton from '../../components/common/ActionButton';
 
 // DB Interfaces according to specifications
 interface SchoolYear {
@@ -194,6 +197,9 @@ export default function SemesterManagement() {
   const [isOpenFormModal, setIsOpenFormModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [selectedSemester, setSelectedSemester] = useState<Semester | null>(null);
+  const [isOpenDeleteModal, setIsOpenDeleteModal] = useState(false);
+  const [semesterToDelete, setSemesterToDelete] = useState<Semester | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form Inputs
   const [formSchoolYearId, setFormSchoolYearId] = useState('SCH-2025');
@@ -338,14 +344,24 @@ export default function SemesterManagement() {
     setIsOpenFormModal(false);
   };
 
-  const handleDelete = async (semId: string) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa học kỳ ${semId}? Tất cả thông tin liên kết lớp và giáo viên có liên quan sẽ bị gián đoạn sinh lý học.`)) {
-      const result = await deleteSemester(Number(semId));
-      if (result.success) {
-        setSemesters(current => current.filter(s => s.SemesterId !== semId));
-        triggerToast(result.message, 'warning');
-      } else triggerToast(result.errors.join(' ') || result.message, 'warning');
+  const handleDeleteClick = (sem: Semester) => {
+    setSemesterToDelete(sem);
+    setIsOpenDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!semesterToDelete) return;
+    setIsDeleting(true);
+    const result = await deleteSemester(Number(semesterToDelete.SemesterId));
+    if (result.success) {
+      setSemesters(current => current.filter(s => s.SemesterId !== semesterToDelete.SemesterId));
+      triggerToast(result.message, 'success');
+      setIsOpenDeleteModal(false);
+      setSemesterToDelete(null);
+    } else {
+      triggerToast(result.errors.join(' ') || result.message, 'warning');
     }
+    setIsDeleting(false);
   };
 
   const handleUpdateStatus = async (semId: string, newStatus: Semester['Status']) => {
@@ -624,12 +640,9 @@ export default function SemesterManagement() {
       <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden" id="semester-table-card">
         <div className="px-10 py-8 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/50 backdrop-blur-sm">
           <div>
-            <h3 className="text-2xl font-black text-gray-900 leading-none italic">Chi tiết cấu phân hệ Học kỳ</h3>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-2">Dữ liệu phân công giáo án và hỗ trợ bé sửa ngọng GodotXR</p>
+            <h3 className="text-2xl font-black text-gray-900 leading-none italic">Quản lý Lộ trình Học kỳ</h3>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-2">Phân công giáo án và quản lý lộ trình rèn luyện phát âm cho trẻ</p>
           </div>
-          <span className="text-xs bg-indigo-50 text-indigo-600 px-3.5 py-1 rounded-full font-bold uppercase tracking-wider border border-indigo-100/30 self-start sm:self-center">
-            SEMASTERS
-          </span>
         </div>
 
         {filteredSemesters.length === 0 ? (
@@ -697,20 +710,6 @@ export default function SemesterManagement() {
                       </div>
                     </th>
                     <th
-                      onClick={() => handleSort('ClassId')}
-                      className="py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
-                      title="Sắp xếp theo Lớp học"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        Lớp học
-                        {sortColumn === 'ClassId' ? (
-                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
-                        ) : (
-                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
-                        )}
-                      </div>
-                    </th>
-                    <th
                       onClick={() => handleSort('TeacherId')}
                       className="py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Giáo viên"
@@ -727,10 +726,10 @@ export default function SemesterManagement() {
                     <th
                       onClick={() => handleSort('ClassCount')}
                       className="py-5 px-[5px] text-center cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
-                      title="Sắp xếp theo Cơ số lớp"
+                      title="Sắp xếp theo Số lớp"
                     >
                       <div className="flex items-center justify-center gap-1.5">
-                        Gán cơ số lớp
+                        Số lớp
                         {sortColumn === 'ClassCount' ? (
                           sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
                         ) : (
@@ -758,7 +757,7 @@ export default function SemesterManagement() {
                       title="Sắp xếp theo Ngày kết thúc"
                     >
                       <div className="flex items-center gap-1.5">
-                        Ngày kết bế
+                        Ngày kết thúc
                         {sortColumn === 'EndDate' ? (
                           sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
                         ) : (
@@ -772,7 +771,7 @@ export default function SemesterManagement() {
                       title="Sắp xếp theo Trạng thái học kỳ"
                     >
                       <div className="flex items-center gap-1.5">
-                        Trạng thái hoạt động
+                        Trạng thái
                         {sortColumn === 'Status' ? (
                           sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
                         ) : (
@@ -780,7 +779,7 @@ export default function SemesterManagement() {
                         )}
                       </div>
                     </th>
-                    <th className="py-5 px-[5px] text-right select-none">Tác vụ can thiệp</th>
+                    <th className="py-5 px-[5px] text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
               <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
@@ -807,12 +806,7 @@ export default function SemesterManagement() {
                       {getSchoolYearName(sem.SchoolYearId)}
                     </td>
 
-                    {/* ClassName */}
-                    <td className="py-5 px-[5px] font-semibold text-gray-600 text-xs">
-                      <span className="bg-orange-50 text-orange-600 px-2 py-1 rounded-lg">
-                        {getClassName(sem.ClassId)}
-                      </span>
-                    </td>
+
 
                     {/* TeacherName */}
                     <td className="py-5 px-[5px] text-gray-700 font-black text-xs">
@@ -867,45 +861,35 @@ export default function SemesterManagement() {
                       <div className="flex items-center justify-end gap-1.5">
                         
                         {/* Edit button */}
-                        <button
+                        <ActionButton
+                          type="edit"
                           onClick={() => handleOpenEdit(sem)}
-                          className="py-1.5 px-3 bg-teal-50 hover:bg-[#4EACAF] text-[#4EACAF] hover:text-white rounded-xl text-xs font-black transition-colors flex items-center gap-1"
                           title="Chỉnh sửa học kỳ"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          Sửa
-                        </button>
+                        />
 
                         {/* Status switcher quick buttons */}
                         {sem.Status === 'Upcoming' && (
-                          <button
+                          <ActionButton
+                            type="play"
                             onClick={() => handleUpdateStatus(sem.SemesterId, 'Active')}
-                            className="py-1.5 px-2 bg-emerald-50 hover:bg-emerald-500 text-emerald-500 hover:text-white rounded-xl text-xs font-black transition-colors"
-                            title="Khởi động học kỳ"
-                          >
-                            Bắt đầu
-                          </button>
+                            title="Khởi động học kỳ (Bắt đầu)"
+                          />
                         )}
 
                         {sem.Status === 'Active' && (
-                          <button
+                          <ActionButton
+                            type="lock"
                             onClick={() => handleUpdateStatus(sem.SemesterId, 'Completed')}
-                            className="py-1.5 px-2 bg-gray-100 hover:bg-gray-500 text-gray-500 hover:text-white rounded-xl text-xs font-black transition-colors flex items-center gap-1"
-                            title="Gác bút hoàn tất học kỳ"
-                          >
-                            <Lock className="w-3 h-3" />
-                            Đóng
-                          </button>
+                            title="Gác bút hoàn tất học kỳ (Đóng)"
+                          />
                         )}
 
                         {/* Delete button option */}
-                        <button
-                          onClick={() => handleDelete(sem.SemesterId)}
-                          className="p-1.5 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white rounded-xl transition-colors"
+                        <ActionButton
+                          type="delete"
+                          onClick={() => handleDeleteClick(sem)}
                           title="Gỡ bỏ vĩnh viễn"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        />
 
                       </div>
                     </td>
@@ -1138,6 +1122,27 @@ export default function SemesterManagement() {
               </form>
             </motion.div>
           </div>
+        )}
+
+        {isOpenDeleteModal && semesterToDelete && (
+          <ConfirmDeleteModal
+            title="Xóa học kỳ"
+            subtitle="HÀNH ĐỘNG NÀY SẼ XÓA VĨNH VIỄN HỌC KỲ KHỎI HỆ THỐNG"
+            onClose={() => {
+              setIsOpenDeleteModal(false);
+              setSemesterToDelete(null);
+            }}
+            onConfirm={handleConfirmDelete}
+            isDeleting={isDeleting}
+            accent="rose"
+          >
+            <p className="font-semibold">
+              Bạn sắp xóa học kỳ <strong>{semesterToDelete.SemesterName}</strong> (ID: {semesterToDelete.SemesterId}).
+            </p>
+            <p className="mt-2">
+              Tất cả thông tin liên kết lớp và giáo viên có liên quan sẽ bị gián đoạn sinh lý học và hành động này không thể hoàn tác. Vui lòng xác nhận nếu đây là học kỳ bạn thực sự muốn xóa.
+            </p>
+          </ConfirmDeleteModal>
         )}
       </AnimatePresence>
 

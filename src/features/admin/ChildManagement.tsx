@@ -26,6 +26,7 @@ import {
 import Pagination from '../../components/common/Pagination';
 import { cn, resolveAvatarUrl } from '../../lib/utils';
 import CustomSelect from '../../components/common/CustomSelect';
+import ActionButton from '../../components/common/ActionButton';
 import {
   useChildManagementApi,
   type ChildProfileResponse,
@@ -910,7 +911,7 @@ export default function ChildManagement() {
                         )}
                       </div>
                     </th>
-                    <th className="w-[10%] px-[5px] py-5 text-right select-none">Tùy chọn quản trị</th>
+                    <th className="w-[10%] px-[5px] py-5 text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm font-bold text-gray-700">
@@ -983,43 +984,34 @@ export default function ChildManagement() {
                       </td>
                       <td className="px-[5px] py-5 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button
+                          <ActionButton
+                            type="view"
                             onClick={() => void handleOpenDetail(child)}
-                            className="rounded-xl p-2 text-teal-600 transition-colors hover:bg-teal-50 hover:scale-105"
                             title="Thông tin chi tiết"
-                          >
-                            <Eye className="h-4.5 w-4.5" />
-                          </button>
+                          />
 
-                          <button
+                          <ActionButton
+                            type="edit"
                             onClick={() => openEditModal(child)}
-                            className="rounded-xl p-2 text-sky-500 transition-colors hover:bg-sky-50 hover:scale-105"
                             title="Chỉnh sửa hồ sơ"
-                          >
-                            <Edit3 className="h-4.5 w-4.5" />
-                          </button>
+                          />
 
-
-                          <button
+                          <ActionButton
+                            type="delete"
                             onClick={() => openDeleteModal(child)}
-                            className="rounded-xl p-2 text-rose-500 transition-colors hover:bg-rose-50 hover:scale-105"
                             title="Xóa hồ sơ"
-                          >
-                            <Trash2 className="h-4.5 w-4.5" />
-                          </button>
+                          />
 
-                          <button
+                          <ActionButton
+                            type="trend"
                             onClick={() =>
                               triggerNotification(
                                 'Lịch sử học tập chi tiết sẽ được cập nhật trong phiên bản tiếp theo.',
                                 'warning'
                               )
                             }
-                            className="rounded-xl p-2 text-orange-500 transition-colors hover:bg-orange-50 hover:scale-105"
                             title="Tiến độ học tập"
-                          >
-                            <TrendingUp className="h-4.5 w-4.5" />
-                          </button>
+                          />
                         </div>
                       </td>
                     </tr>

@@ -27,12 +27,16 @@ import {
   ArrowRight,
   ListRestart,
   Music,
-  Tv
+  Tv,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
 import CustomSelect from '../../components/common/CustomSelect';
 import { useLearningResultApi } from '../../hooks/useLearningResultApi';
+import ActionButton from '../../components/common/ActionButton';
 import { getSessionUser } from '../../lib/authSession';
 import type { ChildProfileResponse } from '../../services/childProfileService';
 import type { EventLogResponse } from '../../services/eventLogService';
@@ -226,6 +230,24 @@ export default function LearningResultManagement() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  // Sorting states
+  const [sortColumn, setSortColumn] = useState<keyof LearningResult | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
+
+  const handleSort = (column: keyof LearningResult) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortColumn(null);
+        setSortDirection(null);
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
 
   // Reset page when filters change
   useEffect(() => {
@@ -480,10 +502,37 @@ export default function LearningResultManagement() {
     }
   }, [currentPage, totalPages]);
 
+  const sortedResults = React.useMemo(() => {
+    if (!sortColumn || !sortDirection) return displayResults;
+    return [...displayResults].sort((a, b) => {
+      let valA: any = a[sortColumn];
+      let valB: any = b[sortColumn];
+
+      // Custom resolution for foreign key child and exercise naming
+      if (sortColumn === 'ChildId') {
+        valA = getChildInfo(a.ChildId).FullName;
+        valB = getChildInfo(b.ChildId).FullName;
+      } else if (sortColumn === 'ExerciseId') {
+        valA = getExerciseInfo(a.ExerciseId).ExerciseName;
+        valB = getExerciseInfo(b.ExerciseId).ExerciseName;
+      }
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortDirection === 'asc'
+          ? valA.localeCompare(valB, 'vi-VN')
+          : valB.localeCompare(valA, 'vi-VN');
+      }
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortDirection === 'asc' ? valA - valB : valB - valA;
+      }
+      return 0;
+    });
+  }, [displayResults, sortColumn, sortDirection, exercises, children]);
+
   const paginatedResults = React.useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
-    return displayResults.slice(startIndex, startIndex + pageSize);
-  }, [displayResults, currentPage, pageSize]);
+    return sortedResults.slice(startIndex, startIndex + pageSize);
+  }, [sortedResults, currentPage, pageSize]);
 
   // Unique target skills list from API exercises for select dropdown filters
   const allTargetSkills = Array.from(new Set(exercises.map(e => e.TargetSkill)));
@@ -945,15 +994,119 @@ export default function LearningResultManagement() {
             <table className="w-full border-collapse" id="results-table-element">
               <thead>
                 <tr className="bg-[#FDFCF5]/60 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
-                  <th className="py-5 px-10">Mã kết quả</th>
-                  <th className="py-5 px-6">Tên Học Sinh Bé</th>
-                  <th className="py-5 px-6">Bài tập VR</th>
-                  <th className="py-5 px-6 text-center">Lượt thử</th>
-                  <th className="py-5 px-6 text-center">Điểm số thu âm</th>
-                  <th className="py-5 px-6">Thời lượng</th>
-                  <th className="py-5 px-6">Trạng thái</th>
-                  <th className="py-5 px-6">Thời điểm nộp</th>
-                  <th className="py-5 px-10 text-right">Tác vụ can thiệp</th>
+                  <th 
+                    onClick={() => handleSort('ResultId')}
+                    className="py-5 px-10 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                    title="Sắp xếp theo Mã kết quả"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      Mã kết quả
+                      {sortColumn === 'ResultId' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    onClick={() => handleSort('ChildId')}
+                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                    title="Sắp xếp theo Học sinh"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      Tên Học Sinh Bé
+                      {sortColumn === 'ChildId' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    onClick={() => handleSort('ExerciseId')}
+                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                    title="Sắp xếp theo Bài tập"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      Bài tập VR
+                      {sortColumn === 'ExerciseId' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    onClick={() => handleSort('AttemptNumber')}
+                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
+                    title="Sắp xếp theo Lượt thử"
+                  >
+                    <div className="flex items-center justify-center gap-1.5">
+                      Lượt thử
+                      {sortColumn === 'AttemptNumber' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    onClick={() => handleSort('Score')}
+                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
+                    title="Sắp xếp theo Điểm"
+                  >
+                    <div className="flex items-center justify-center gap-1.5">
+                      Điểm số thu âm
+                      {sortColumn === 'Score' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    onClick={() => handleSort('DurationSeconds')}
+                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                    title="Sắp xếp theo Thời lượng"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      Thời lượng
+                      {sortColumn === 'DurationSeconds' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    onClick={() => handleSort('CompletionStatus')}
+                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                    title="Sắp xếp theo Trạng thái"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      Trạng thái
+                      {sortColumn === 'CompletionStatus' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    onClick={() => handleSort('CompletedAt')}
+                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                    title="Sắp xếp theo Thời điểm nộp"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      Thời điểm nộp
+                      {sortColumn === 'CompletedAt' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </th>
+                  <th className="py-5 px-10 text-right select-none">Tùy chọn</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
@@ -1048,14 +1201,11 @@ export default function LearningResultManagement() {
                         <div className="flex items-center justify-end gap-1.5">
                           
                           {/* Main view modal button */}
-                          <button
-                            onClick={() => handleOpenDetailModal(itm)}
-                            className="py-1.5 px-3 bg-[#4EACAF]/10 hover:bg-[#4EACAF] text-[#4EACAF] hover:text-white rounded-xl text-xs font-black transition-all flex items-center gap-1"
-                            title="Bấm để xem tương tác chi tiết"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            Chi tiết
-                          </button>
+                           <ActionButton
+                             type="view"
+                             onClick={() => handleOpenDetailModal(itm)}
+                             title="Bấm để xem tương tác chi tiết"
+                           />
 
                           {/* Quick audio play */}
                           {itm.AudioRecordUrl && (
