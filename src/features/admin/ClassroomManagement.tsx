@@ -427,13 +427,13 @@ export default function ClassroomManagement() {
       if (sortColumn === 'TeacherId') {
         const teacherA = teachers.find(t => t.TeacherId === valA)?.FullName || '';
         const teacherB = teachers.find(t => t.TeacherId === valB)?.FullName || '';
-        return sortDirection === 'asc' ? teacherA.localeCompare(teacherB, 'vi-VN') : teacherB.localeCompare(teacherA, 'vi-VN');
+        return sortDirection === 'asc' ? teacherA.localeCompare(teacherB, 'vi-VN', { numeric: true }) : teacherB.localeCompare(teacherA, 'vi-VN', { numeric: true });
       }
 
       if (sortColumn === 'ProgramId') {
         const programA = programs.find(p => p.ProgramId === valA)?.ProgramName || '';
         const programB = programs.find(p => p.ProgramId === valB)?.ProgramName || '';
-        return sortDirection === 'asc' ? programA.localeCompare(programB, 'vi-VN') : programB.localeCompare(programA, 'vi-VN');
+        return sortDirection === 'asc' ? programA.localeCompare(programB, 'vi-VN', { numeric: true }) : programB.localeCompare(programA, 'vi-VN', { numeric: true });
       }
 
       if (sortColumn === 'EnrollmentCount') {
@@ -443,7 +443,7 @@ export default function ClassroomManagement() {
       }
 
       if (typeof valA === 'string' && typeof valB === 'string') {
-        return sortDirection === 'asc' ? valA.localeCompare(valB, 'vi-VN') : valB.localeCompare(valA, 'vi-VN');
+        return sortDirection === 'asc' ? valA.localeCompare(valB, 'vi-VN', { numeric: true }) : valB.localeCompare(valA, 'vi-VN', { numeric: true });
       }
 
       if (typeof valA === 'number' && typeof valB === 'number') {
@@ -1204,7 +1204,7 @@ export default function ClassroomManagement() {
                         placeholder="Mô tả cấu trúc đồ chơi can thiệp hoặc ghi chú tiến trình đặc thù của lớp học..."
                         value={formDescription}
                         onChange={(e) => setFormDescription(e.target.value)}
-                        className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold outline-none focus:border-[#4EACAF] focus:bg-white transition-all text-gray-700 text-sm" 
+                        className="resize-y w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold outline-none focus:border-[#4EACAF] focus:bg-white transition-all text-gray-700 text-sm" 
                       />
                     </div>
 

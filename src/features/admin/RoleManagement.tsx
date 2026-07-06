@@ -64,8 +64,8 @@ export default function RoleManagement() {
     return [...filteredRoles].sort((a, b) => {
       if (sortBy === 'id_asc') return a.id - b.id;
       if (sortBy === 'id_desc') return b.id - a.id;
-      if (sortBy === 'name_asc') return a.roleName.localeCompare(b.roleName, 'vi-VN');
-      if (sortBy === 'name_desc') return b.roleName.localeCompare(a.roleName, 'vi-VN');
+      if (sortBy === 'name_asc') return a.roleName.localeCompare(b.roleName, 'vi-VN', { numeric: true });
+      if (sortBy === 'name_desc') return b.roleName.localeCompare(a.roleName, 'vi-VN', { numeric: true });
       return 0;
     });
   }, [filteredRoles, sortBy]);
@@ -294,7 +294,7 @@ export default function RoleManagement() {
                         placeholder="Mô tả cụ thể phạm vi tiếp cận dữ liệu và quyền truy cập chức năng của vai trò..."
                         value={formDescription}
                         onChange={(e) => setFormDescription(e.target.value)}
-                        className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold outline-none focus:border-[#4EACAF] focus:bg-white transition-all text-gray-700 resize-none"
+                        className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold outline-none focus:border-[#4EACAF] focus:bg-white transition-all text-gray-700 resize-y"
                       />
                     </div>
 

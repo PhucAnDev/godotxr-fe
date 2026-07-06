@@ -494,7 +494,7 @@ export default function RegisterParentView({ onBackToLogin, onRegisterSuccess }:
                           value={childNote}
                           onChange={(e) => setChildNote(e.target.value)}
                           rows={2.5}
-                          className="w-full pl-15 pr-6 py-4 rounded-[24px] bg-gray-50/50 border-4 border-gray-50 focus:border-[#FF8E8E] focus:bg-white transition-all outline-none font-bold text-sm text-gray-900 placeholder:text-gray-300 resize-none font-sans"
+                          className="w-full pl-15 pr-6 py-4 rounded-[24px] bg-gray-50/50 border-4 border-gray-50 focus:border-[#FF8E8E] focus:bg-white transition-all outline-none font-bold text-sm text-gray-900 placeholder:text-gray-300 resize-y font-sans"
                         />
                       </div>
                     </div>

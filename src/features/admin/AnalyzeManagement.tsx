@@ -534,7 +534,7 @@ export default function AnalyzeManagement() {
       }
 
       if (typeof valA === 'string' && typeof valB === 'string') {
-        return sortDirection === 'asc' ? valA.localeCompare(valB, 'vi-VN') : valB.localeCompare(valA, 'vi-VN');
+        return sortDirection === 'asc' ? valA.localeCompare(valB, 'vi-VN', { numeric: true }) : valB.localeCompare(valA, 'vi-VN', { numeric: true });
       }
 
       if (typeof valA === 'number' && typeof valB === 'number') {
@@ -1146,7 +1146,7 @@ export default function AnalyzeManagement() {
                   onChange={(e) => handleFormChange('diagnosis', e.target.value)}
                   rows={2}
                   placeholder="Chẩn đoán ban đầu về tình trạng ngôn ngữ của bé..."
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
+                  className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
                 />
               </div>
 
@@ -1157,7 +1157,7 @@ export default function AnalyzeManagement() {
                   onChange={(e) => handleFormChange('difficulties', e.target.value)}
                   rows={2}
                   placeholder="Các rào cản phát âm hoặc chú ý tập trung của trẻ..."
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
+                  className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
                 />
               </div>
 
@@ -1169,7 +1169,7 @@ export default function AnalyzeManagement() {
                     onChange={(e) => handleFormChange('strengths', e.target.value)}
                     rows={2}
                     placeholder="Bé phản xạ tốt với trò chơi VR..."
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
+                    className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
                   />
                 </div>
 
@@ -1180,7 +1180,7 @@ export default function AnalyzeManagement() {
                     onChange={(e) => handleFormChange('weaknesses', e.target.value)}
                     rows={2}
                     placeholder="Ngọng âm S, L..."
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
+                    className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
                   />
                 </div>
               </div>
@@ -1192,7 +1192,7 @@ export default function AnalyzeManagement() {
                   onChange={(e) => handleFormChange('interventionGoals', e.target.value)}
                   rows={2}
                   placeholder="Phát âm chuẩn âm S trong 1 tuần..."
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
+                  className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
                 />
               </div>
 
@@ -1203,7 +1203,7 @@ export default function AnalyzeManagement() {
                   onChange={(e) => handleFormChange('recommendation', e.target.value)}
                   rows={2}
                   placeholder="Phụ huynh đồng hành chơi game VR 15 phút mỗi ngày..."
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
+                  className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
                 />
               </div>
 
@@ -1214,7 +1214,7 @@ export default function AnalyzeManagement() {
                   onChange={(e) => handleFormChange('notes', e.target.value)}
                   rows={2}
                   placeholder="Bố mẹ hỗ trợ nhiệt tình..."
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
+                  className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
                 />
               </div>
 

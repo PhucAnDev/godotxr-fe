@@ -593,8 +593,8 @@ export default function LearningResultManagement() {
 
       if (typeof valA === 'string' && typeof valB === 'string') {
         return sortDirection === 'asc'
-          ? valA.localeCompare(valB, 'vi-VN')
-          : valB.localeCompare(valA, 'vi-VN');
+          ? valA.localeCompare(valB, 'vi-VN', { numeric: true })
+          : valB.localeCompare(valA, 'vi-VN', { numeric: true });
       }
       if (typeof valA === 'number' && typeof valB === 'number') {
         return sortDirection === 'asc' ? valA - valB : valB - valA;
@@ -1665,7 +1665,7 @@ export default function LearningResultManagement() {
                       <textarea
                         value={feedbackInput}
                         onChange={(e) => setFeedbackInput(e.target.value)}
-                        className="w-full bg-white border-2 border-amber-200 focus:border-[#4EACAF] rounded-2xl p-4 font-bold text-gray-700 outline-none text-sm resize-none"
+                        className="w-full bg-white border-2 border-amber-200 focus:border-[#4EACAF] rounded-2xl p-4 font-bold text-gray-700 outline-none text-sm resize-y"
                         rows={4}
                         placeholder="Hãy bổ sung bài học can thiệp, bài thu sửa ngọng cụ thể để phụ huynh phối hợp ở nhà..."
                       />

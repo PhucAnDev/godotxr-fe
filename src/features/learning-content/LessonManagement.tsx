@@ -413,8 +413,8 @@ export default function LessonManagement() {
 
       if (typeof valA === 'string' && typeof valB === 'string') {
         return sortDirection === 'asc'
-          ? valA.localeCompare(valB, 'vi-VN')
-          : valB.localeCompare(valA, 'vi-VN');
+          ? valA.localeCompare(valB, 'vi-VN', { numeric: true })
+          : valB.localeCompare(valA, 'vi-VN', { numeric: true });
       }
       if (typeof valA === 'number' && typeof valB === 'number') {
         return sortDirection === 'asc' ? valA - valB : valB - valA;
@@ -1047,7 +1047,7 @@ export default function LessonManagement() {
                         placeholder="Tóm tắt kịch bản tương tác game và phân bổ kỹ năng để phụ huynh tiện theo dõi..." 
                         value={formDesc}
                         onChange={(e) => setFormDesc(e.target.value)}
-                        className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 placeholder-gray-300 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
+                        className="resize-y w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 placeholder-gray-300 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
                       />
                     </div>
 

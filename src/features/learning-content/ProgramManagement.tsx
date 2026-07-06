@@ -831,7 +831,7 @@ export default function ProgramManagement() {
                         placeholder="Hãy tóm tắt kịch bản tương tác và lỗi phát âm trẻ sẽ sửa tại chương trình..." 
                         value={formDesc}
                         onChange={(e) => setFormDesc(e.target.value)}
-                        className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 placeholder-gray-300 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
+                        className="resize-y w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 placeholder-gray-300 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
                       />
                     </div>
 

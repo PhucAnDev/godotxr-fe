@@ -425,7 +425,7 @@ export default function ProfileManagement() {
                     onChange={(e) => handleFormChange('note', e.target.value)}
                     placeholder="Nhập ghi chú đặc biệt về sức khỏe, thói quen hoặc quá trình tiếp thu của bé..."
                     rows={3}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-bold text-base outline-none focus:ring-4 focus:ring-sky-100 focus:bg-white transition-all text-gray-800 resize-none"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-bold text-base outline-none focus:ring-4 focus:ring-sky-100 focus:bg-white transition-all text-gray-800 resize-y"
                   />
                 </div>
               </div>

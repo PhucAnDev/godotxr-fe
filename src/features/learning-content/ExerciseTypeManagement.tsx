@@ -673,7 +673,7 @@ export default function ExerciseTypeManagement() {
                         setFormDescription(event.target.value)
                       }
                       rows={4}
-                      className="w-full resize-none rounded-2xl border-2 border-transparent bg-[#FDFCF5] p-5 text-sm font-bold leading-relaxed text-gray-700 outline-none focus:border-[#4EACAF] focus:bg-white"
+                      className="w-full resize-y rounded-2xl border-2 border-transparent bg-[#FDFCF5] p-5 text-sm font-bold leading-relaxed text-gray-700 outline-none focus:border-[#4EACAF] focus:bg-white"
                     />
                   </div>
 

@@ -424,19 +424,19 @@ export default function SemesterManagement() {
       if (sortColumn === 'SchoolYearId') {
         const nameA = getSchoolYearName(a.SchoolYearId);
         const nameB = getSchoolYearName(b.SchoolYearId);
-        return sortDirection === 'asc' ? nameA.localeCompare(nameB, 'vi-VN') : nameB.localeCompare(nameA, 'vi-VN');
+        return sortDirection === 'asc' ? nameA.localeCompare(nameB, 'vi-VN', { numeric: true }) : nameB.localeCompare(nameA, 'vi-VN', { numeric: true });
       }
 
       if (sortColumn === 'ClassId') {
         const nameA = getClassName(a.ClassId);
         const nameB = getClassName(b.ClassId);
-        return sortDirection === 'asc' ? nameA.localeCompare(nameB, 'vi-VN') : nameB.localeCompare(nameA, 'vi-VN');
+        return sortDirection === 'asc' ? nameA.localeCompare(nameB, 'vi-VN', { numeric: true }) : nameB.localeCompare(nameA, 'vi-VN', { numeric: true });
       }
 
       if (sortColumn === 'TeacherId') {
         const nameA = getTeacherName(a.TeacherId);
         const nameB = getTeacherName(b.TeacherId);
-        return sortDirection === 'asc' ? nameA.localeCompare(nameB, 'vi-VN') : nameB.localeCompare(nameA, 'vi-VN');
+        return sortDirection === 'asc' ? nameA.localeCompare(nameB, 'vi-VN', { numeric: true }) : nameB.localeCompare(nameA, 'vi-VN', { numeric: true });
       }
 
       if (sortColumn === 'ClassCount') {
@@ -444,7 +444,7 @@ export default function SemesterManagement() {
       }
 
       if (typeof valA === 'string' && typeof valB === 'string') {
-        return sortDirection === 'asc' ? valA.localeCompare(valB, 'vi-VN') : valB.localeCompare(valA, 'vi-VN');
+        return sortDirection === 'asc' ? valA.localeCompare(valB, 'vi-VN', { numeric: true }) : valB.localeCompare(valA, 'vi-VN', { numeric: true });
       }
 
       if (typeof valA === 'number' && typeof valB === 'number') {
@@ -1067,7 +1067,7 @@ export default function SemesterManagement() {
                       value={formDescription}
                       onChange={(e) => setFormDescription(e.target.value)}
                       rows={2}
-                      className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none focus:border-[#4EACAF] text-sm focus:bg-white resize-none"
+                      className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none focus:border-[#4EACAF] text-sm focus:bg-white resize-y"
                     />
                   </div>
 

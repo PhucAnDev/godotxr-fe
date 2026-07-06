@@ -518,8 +518,8 @@ export default function ChildManagement() {
         const nameA = parentsMap[valA as string] || `Tài khoản #${valA}`;
         const nameB = parentsMap[valB as string] || `Tài khoản #${valB}`;
         return sortDirection === 'asc'
-          ? nameA.localeCompare(nameB, 'vi-VN')
-          : nameB.localeCompare(nameA, 'vi-VN');
+          ? nameA.localeCompare(nameB, 'vi-VN', { numeric: true })
+          : nameB.localeCompare(nameA, 'vi-VN', { numeric: true });
       }
 
       if (sortColumn === 'LearningLevel') {
@@ -538,8 +538,8 @@ export default function ChildManagement() {
 
       if (typeof valA === 'string' && typeof valB === 'string') {
         return sortDirection === 'asc'
-          ? valA.localeCompare(valB, 'vi-VN')
-          : valB.localeCompare(valA, 'vi-VN');
+          ? valA.localeCompare(valB, 'vi-VN', { numeric: true })
+          : valB.localeCompare(valA, 'vi-VN', { numeric: true });
       }
 
       if (typeof valA === 'number' && typeof valB === 'number') {
@@ -1305,7 +1305,7 @@ export default function ChildManagement() {
                   }
                   rows={4}
                   placeholder="Nhập chẩn đoán hoặc ghi chú hỗ trợ cho bé..."
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
+                  className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
                 />
               </div>
 

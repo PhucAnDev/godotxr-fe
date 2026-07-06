@@ -287,6 +287,7 @@ export default function ExerciseManagement() {
     | 'exercise'
     | 'question'
     | 'preview'
+    | 'preview_exercise'
     | 'delete_exercise'
     | 'delete_question'
     | null
@@ -572,8 +573,8 @@ export default function ExerciseManagement() {
 
       if (typeof valA === 'string' && typeof valB === 'string') {
         return exerciseSortDirection === 'asc'
-          ? valA.localeCompare(valB, 'vi-VN')
-          : valB.localeCompare(valA, 'vi-VN');
+          ? valA.localeCompare(valB, 'vi-VN', { numeric: true })
+          : valB.localeCompare(valA, 'vi-VN', { numeric: true });
       }
       if (typeof valA === 'number' && typeof valB === 'number') {
         return exerciseSortDirection === 'asc' ? valA - valB : valB - valA;
@@ -613,8 +614,8 @@ export default function ExerciseManagement() {
 
       if (typeof valA === 'string' && typeof valB === 'string') {
         return questionSortDirection === 'asc'
-          ? valA.localeCompare(valB, 'vi-VN')
-          : valB.localeCompare(valA, 'vi-VN');
+          ? valA.localeCompare(valB, 'vi-VN', { numeric: true })
+          : valB.localeCompare(valA, 'vi-VN', { numeric: true });
       }
       if (typeof valA === 'number' && typeof valB === 'number') {
         return questionSortDirection === 'asc' ? valA - valB : valB - valA;
@@ -1191,9 +1192,12 @@ export default function ExerciseManagement() {
             variant="filter"
             options={[
               { value: 'ALL', label: 'Độ khó: tất cả' },
-              { value: 'Easy', label: 'Dễ (Easy)' },
-              { value: 'Medium', label: 'Vừa (Medium)' },
-              { value: 'Hard', label: 'Khó (Hard)' },
+              { value: 'Foundation', label: 'Foundation' },
+              { value: 'Guided', label: 'Guided' },
+              { value: 'Independent', label: 'Independent' },
+              { value: 'Easy', label: 'Easy' },
+              { value: 'Medium', label: 'Medium' },
+              { value: 'Hard', label: 'Hard' },
             ]}
           />
           <SelectField
@@ -1250,7 +1254,7 @@ export default function ExerciseManagement() {
                   <tr className="border-b border-gray-150 bg-[#FDFCF5]/50 text-[10px] font-black uppercase tracking-widest text-slate-500">
                     <th 
                       onClick={() => handleSortExercises('ExerciseId')}
-                      className="px-8 py-5 w-[8%] min-w-[70px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="px-[5px] py-5 w-[6%] min-w-[60px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Mã bài"
                     >
                       <div className="flex items-center gap-1">
@@ -1264,7 +1268,7 @@ export default function ExerciseManagement() {
                     </th>
                     <th 
                       onClick={() => handleSortExercises('ExerciseName')}
-                      className="px-6 py-5 w-[24%] min-w-[200px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="px-[5px] py-5 w-[28%] min-w-[240px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Tên bài"
                     >
                       <div className="flex items-center gap-1">
@@ -1278,7 +1282,7 @@ export default function ExerciseManagement() {
                     </th>
                     <th 
                       onClick={() => handleSortExercises('LessonId')}
-                      className="px-6 py-5 w-[12%] min-w-[110px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="px-[5px] py-5 w-[14%] min-w-[130px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Bài học"
                     >
                       <div className="flex items-center gap-1">
@@ -1292,7 +1296,7 @@ export default function ExerciseManagement() {
                     </th>
                     <th 
                       onClick={() => handleSortExercises('TypeId')}
-                      className="px-6 py-5 w-[10%] min-w-[90px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="px-[5px] py-5 w-[10%] min-w-[90px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Loại"
                     >
                       <div className="flex items-center gap-1">
@@ -1306,7 +1310,7 @@ export default function ExerciseManagement() {
                     </th>
                     <th 
                       onClick={() => handleSortExercises('DifficultyLevel')}
-                      className="px-6 py-5 w-[12%] min-w-[110px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="px-[5px] py-5 w-[10%] min-w-[90px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Độ khó"
                     >
                       <div className="flex items-center gap-1">
@@ -1320,7 +1324,7 @@ export default function ExerciseManagement() {
                     </th>
                     <th 
                       onClick={() => handleSortExercises('TargetSkill')}
-                      className="px-6 py-5 w-[15%] min-w-[130px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="px-[5px] py-5 w-[12%] min-w-[110px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Kỹ năng"
                     >
                       <div className="flex items-center gap-1">
@@ -1334,7 +1338,7 @@ export default function ExerciseManagement() {
                     </th>
                     <th 
                       onClick={() => handleSortExercises('Status')}
-                      className="px-6 py-5 w-[11%] min-w-[95px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="px-[5px] py-5 w-[10%] min-w-[90px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Trạng thái"
                     >
                       <div className="flex items-center gap-1">
@@ -1346,8 +1350,8 @@ export default function ExerciseManagement() {
                         )}
                       </div>
                     </th>
-                    <th className="px-6 py-5 w-[4%] min-w-[50px] select-none text-slate-500 font-black uppercase text-[10px] tracking-widest">Số câu hỏi</th>
-                    <th className="px-3 py-5 text-right w-[4%] min-w-[90px] select-none text-slate-500 font-black uppercase text-[10px] tracking-widest">Tùy chọn</th>
+                    <th className="px-[5px] py-5 w-[5%] min-w-[65px] select-none text-slate-500 font-black uppercase text-[10px] tracking-widest">Số câu hỏi</th>
+                    <th className="px-[5px] py-5 text-right w-[5%] min-w-[90px] select-none text-slate-500 font-black uppercase text-[10px] tracking-widest">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-xs font-bold text-gray-600 md:text-sm">
@@ -1376,11 +1380,11 @@ export default function ExerciseManagement() {
                         )}
                         onClick={() => setSelectedExercise(exercise)}
                       >
-                        <td className="px-8 py-5 font-mono text-xs font-extrabold text-gray-400">
+                        <td className="px-[5px] py-5 font-mono text-xs font-extrabold text-gray-400">
                           {exercise.ExerciseId}
                         </td>
-                        <td className="px-6 py-5">
-                          <div className="max-w-xs text-left">
+                        <td className="px-[5px] py-5">
+                          <div className="max-w-md text-left">
                             <p className="text-sm font-black leading-snug text-gray-950">
                               {exercise.ExerciseName}
                             </p>
@@ -1393,32 +1397,32 @@ export default function ExerciseManagement() {
                             </p>
                           </div>
                         </td>
-                        <td className="px-6 py-5 text-xs text-slate-800">
-                          <span className="line-clamp-2 max-w-[150px] font-bold">
+                        <td className="px-[5px] py-5 text-xs text-slate-800">
+                          <span className="line-clamp-2 max-w-[180px] font-bold">
                             {lesson?.LessonName || 'Bài học không tồn tại'}
                           </span>
                         </td>
-                        <td className="px-6 py-5">
+                        <td className="px-[5px] py-5">
                           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-slate-600">
                             {translateTypeName(type?.TypeName || 'Unknown')}
                           </span>
                         </td>
-                        <td className="px-6 py-5">
+                        <td className="px-[5px] py-5">
                           <span
                             className={cn(
                               'rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider',
                               getDifficultyClass(exercise.DifficultyLevel)
                             )}
                           >
-                            {translateDifficulty(exercise.DifficultyLevel)}
+                            {exercise.DifficultyLevel}
                           </span>
                         </td>
-                        <td className="px-6 py-5">
+                        <td className="px-[5px] py-5">
                           <span className="rounded bg-[#4EACAF]/15 px-2 py-0.5 text-[10px] font-extrabold uppercase text-[#4EACAF]">
                             {exercise.TargetSkill}
                           </span>
                         </td>
-                        <td className="px-6 py-5">
+                        <td className="px-[5px] py-5">
                           <span
                             className={cn(
                               'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider',
@@ -1430,7 +1434,7 @@ export default function ExerciseManagement() {
                             {exercise.Status === 'Active' ? 'Hoạt động' : 'Tạm ngưng'}
                           </span>
                         </td>
-                        <td className="px-6 py-5 text-center font-mono">
+                        <td className="px-[5px] py-5 text-center font-mono">
                           <span
                             className={cn(
                               'rounded-xl px-2.5 py-1 text-xs font-extrabold',
@@ -1443,15 +1447,18 @@ export default function ExerciseManagement() {
                           </span>
                         </td>
                         <td
-                          className="px-3 py-5 text-right"
+                          className="px-[5px] py-5 text-right"
                           onClick={(event) => event.stopPropagation()}
                         >
                           <div className="flex flex-wrap items-center justify-end gap-1 max-w-[72px] ml-auto">
                             <ActionButton
                               type="view"
-                              onClick={() => setSelectedExercise(exercise)}
+                              onClick={() => {
+                                setSelectedExercise(exercise);
+                                setActiveModal('preview_exercise');
+                              }}
                               className={cn(isSelected && 'bg-[#4EACAF]/20 text-[#4EACAF]')}
-                              title="Chọn bài tập"
+                              title="Xem chi tiết bài tập"
                             />
 
                             <ActionButton
@@ -1547,7 +1554,7 @@ export default function ExerciseManagement() {
                   <tr className="border-b border-gray-150 bg-[#FDFCF5]/50 text-[10px] font-black uppercase tracking-widest text-slate-500">
                     <th 
                       onClick={() => handleSortQuestions('QuestionId')}
-                      className="px-8 py-5 w-[10%] min-w-[90px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="px-[5px] py-5 w-[8%] min-w-[75px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Mã câu hỏi"
                     >
                       <div className="flex items-center gap-1">
@@ -1561,7 +1568,7 @@ export default function ExerciseManagement() {
                     </th>
                     <th 
                       onClick={() => handleSortQuestions('QuestionSentence')}
-                      className="px-6 py-5 w-[28%] min-w-[240px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="px-[5px] py-5 w-[32%] min-w-[260px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Câu luyện nói"
                     >
                       <div className="flex items-center gap-1">
@@ -1575,7 +1582,7 @@ export default function ExerciseManagement() {
                     </th>
                     <th 
                       onClick={() => handleSortQuestions('AnswerSentence')}
-                      className="px-6 py-5 w-[20%] min-w-[160px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="px-[5px] py-5 w-[24%] min-w-[180px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Câu trả lời mẫu"
                     >
                       <div className="flex items-center gap-1">
@@ -1589,7 +1596,7 @@ export default function ExerciseManagement() {
                     </th>
                     <th 
                       onClick={() => handleSortQuestions('InputType')}
-                      className="px-6 py-5 w-[14%] min-w-[110px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="px-[5px] py-5 w-[12%] min-w-[100px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Đầu vào"
                     >
                       <div className="flex items-center gap-1">
@@ -1601,9 +1608,9 @@ export default function ExerciseManagement() {
                         )}
                       </div>
                     </th>
-                    <th className="px-6 py-5 w-[8%] min-w-[70px] select-none">Hình ảnh</th>
-                    <th className="px-6 py-5 w-[10%] min-w-[90px] select-none">Âm thanh</th>
-                    <th className="px-8 py-5 text-right w-[10%] min-w-[90px] select-none">Tùy chọn</th>
+                    <th className="px-[5px] py-5 w-[8%] min-w-[70px] select-none">Hình ảnh</th>
+                    <th className="px-[5px] py-5 w-[8%] min-w-[85px] select-none">Âm thanh</th>
+                    <th className="px-[5px] py-5 text-right w-[8%] min-w-[85px] select-none">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-xs font-bold text-gray-600 md:text-sm">
@@ -1616,11 +1623,11 @@ export default function ExerciseManagement() {
                         key={question.QuestionId}
                         className="transition-all hover:bg-slate-50/20"
                       >
-                        <td className="px-8 py-5 font-mono text-xs font-extrabold text-gray-400">
+                        <td className="px-[5px] py-5 font-mono text-xs font-extrabold text-gray-400">
                           {question.QuestionId}
                         </td>
-                        <td className="px-6 py-5">
-                          <div className="max-w-xs text-left">
+                        <td className="px-[5px] py-5">
+                          <div className="max-w-sm text-left">
                             <p className="text-sm font-extrabold leading-snug text-slate-900">
                               {question.QuestionSentence}
                             </p>
@@ -1629,18 +1636,18 @@ export default function ExerciseManagement() {
                             </p>
                           </div>
                         </td>
-                        <td className="px-6 py-5">
-                          <div className="inline-block max-w-xs rounded-lg border border-sky-100 bg-sky-50 px-3 py-1.5 font-mono text-xs text-sky-600">
+                        <td className="px-[5px] py-5">
+                          <div className="inline-block max-w-sm rounded-lg border border-sky-100 bg-sky-50 px-3 py-1.5 font-mono text-xs text-sky-600">
                             {question.AnswerSentence}
                           </div>
                         </td>
-                        <td className="px-6 py-5">
+                        <td className="px-[5px] py-5">
                           <span className="inline-flex items-center gap-1 rounded-full border border-teal-100 bg-teal-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-teal-600">
                             <Mic className="h-3 w-3 shrink-0" />
                             {question.InputType}
                           </span>
                         </td>
-                        <td className="px-6 py-5">
+                        <td className="px-[5px] py-5">
                           {question.ImageURL ? (
                             <img
                               src={question.ImageURL}
@@ -1655,7 +1662,7 @@ export default function ExerciseManagement() {
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-5">
+                        <td className="px-[5px] py-5">
                           {question.AudioURL ? (
                             <button
                               onClick={() =>
@@ -1689,7 +1696,7 @@ export default function ExerciseManagement() {
                             </span>
                           )}
                         </td>
-                        <td className="px-8 py-5 text-right">
+                        <td className="px-[5px] py-5 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => void handleOpenPreviewQuestion(question)}
@@ -1752,7 +1759,9 @@ export default function ExerciseManagement() {
                       ? 'border-sky-100 bg-sky-50 text-gray-900'
                       : (activeModal === 'delete_exercise' || activeModal === 'delete_question')
                         ? 'border-rose-100 bg-rose-50 text-gray-900'
-                        : 'border-amber-100 bg-amber-50 text-gray-900'
+                        : activeModal === 'preview_exercise'
+                          ? 'border-[#4EACAF]/10 bg-[#4EACAF]/10 text-gray-900'
+                          : 'border-amber-100 bg-amber-50 text-gray-900'
                 )}
               >
                 <div className="flex items-center justify-between gap-4">
@@ -1800,6 +1809,12 @@ export default function ExerciseManagement() {
                           Xác nhận xóa câu hỏi
                         </>
                       )}
+                      {activeModal === 'preview_exercise' && (
+                        <>
+                          <Eye className="w-6 h-6 text-[#4EACAF]" />
+                          Chi tiết bài tập luyện nói
+                        </>
+                      )}
                     </h2>
                     <p className="mt-1 text-[11px] font-black uppercase tracking-wider text-gray-400">
                       {activeModal === 'exercise' &&
@@ -1808,6 +1823,8 @@ export default function ExerciseManagement() {
                         'Đồng bộ với API exercisequestions'}
                       {activeModal === 'preview' &&
                         'Xem nội dung, hình ảnh và audio gắn với câu hỏi'}
+                      {activeModal === 'preview_exercise' &&
+                        'Xem thông tin cấu hình và hướng dẫn chi tiết của bài tập'}
                       {(activeModal === 'delete_exercise' || activeModal === 'delete_question') &&
                         'Hành động này không thể khôi phục và có thể ảnh hưởng đến kết quả học tập'}
                     </p>
@@ -1953,6 +1970,9 @@ export default function ExerciseManagement() {
                           setExFormDifficulty(value as Exercise['DifficultyLevel'])
                         }
                         options={[
+                          { value: 'Foundation', label: 'Foundation' },
+                          { value: 'Guided', label: 'Guided' },
+                          { value: 'Independent', label: 'Independent' },
                           { value: 'Easy', label: 'Easy' },
                           { value: 'Medium', label: 'Medium' },
                           { value: 'Hard', label: 'Hard' },
@@ -2009,7 +2029,7 @@ export default function ExerciseManagement() {
                           onChange={(event) =>
                             setExFormInstruction(event.target.value)
                           }
-                          className="w-full resize-none rounded-2xl border-2 border-transparent bg-[#FDFCF5] p-5 font-bold leading-relaxed text-gray-700 outline-none focus:border-[#4EACAF] focus:bg-white"
+                          className="w-full resize-y rounded-2xl border-2 border-transparent bg-[#FDFCF5] p-5 font-bold leading-relaxed text-gray-700 outline-none focus:border-[#4EACAF] focus:bg-white"
                         />
                       </FormField>
                     </div>
@@ -2067,7 +2087,7 @@ export default function ExerciseManagement() {
                           onChange={(event) =>
                             setQstFormQuestionSentence(event.target.value)
                           }
-                          className="w-full resize-none rounded-2xl border-2 border-transparent bg-[#FDFCF5] p-5 font-bold leading-relaxed text-gray-700 outline-none focus:border-[#4EACAF] focus:bg-white"
+                          className="w-full resize-y rounded-2xl border-2 border-transparent bg-[#FDFCF5] p-5 font-bold leading-relaxed text-gray-700 outline-none focus:border-[#4EACAF] focus:bg-white"
                         />
                       </FormField>
                     </div>
@@ -2080,7 +2100,7 @@ export default function ExerciseManagement() {
                           onChange={(event) =>
                             setQstFormAnswerSentence(event.target.value)
                           }
-                          className="w-full resize-none rounded-2xl border-2 border-transparent bg-[#FDFCF5] p-5 font-bold leading-relaxed text-gray-700 outline-none focus:border-[#4EACAF] focus:bg-white"
+                          className="w-full resize-y rounded-2xl border-2 border-transparent bg-[#FDFCF5] p-5 font-bold leading-relaxed text-gray-700 outline-none focus:border-[#4EACAF] focus:bg-white"
                         />
                       </FormField>
                     </div>
@@ -2093,7 +2113,7 @@ export default function ExerciseManagement() {
                           onChange={(event) =>
                             setQstFormInstruction(event.target.value)
                           }
-                          className="w-full resize-none rounded-2xl border-2 border-transparent bg-[#FDFCF5] p-5 font-bold leading-relaxed text-gray-700 outline-none focus:border-[#4EACAF] focus:bg-white"
+                          className="w-full resize-y rounded-2xl border-2 border-transparent bg-[#FDFCF5] p-5 font-bold leading-relaxed text-gray-700 outline-none focus:border-[#4EACAF] focus:bg-white"
                         />
                       </FormField>
                     </div>
@@ -2123,7 +2143,7 @@ export default function ExerciseManagement() {
                     submitLabel="Lưu câu hỏi"
                   />
                 </form>
-              ) : (
+              ) : activeModal === 'preview' ? (
                 <div className="space-y-6 overflow-y-auto p-6 md:p-8">
                   {previewQuestion && (
                     <>
@@ -2192,8 +2212,8 @@ export default function ExerciseManagement() {
                                 </>
                               ) : (
                                 <>
-                                  <Volume2 className="h-4 w-4" />
-                                  Phát audio mẫu
+                                  <Volume2 className="h-4.5 w-4.5" />
+                                  Nghe thử Audio
                                 </>
                               )}
                             </button>
@@ -2207,7 +2227,72 @@ export default function ExerciseManagement() {
                     </>
                   )}
                 </div>
-              )}
+              ) : activeModal === 'preview_exercise' ? (
+                <div className="space-y-6 overflow-y-auto p-6 md:p-8">
+                  {selectedExercise && (() => {
+                    const lesson = lessons.find(l => l.LessonId === selectedExercise.LessonId);
+                    const type = exerciseTypes.find(t => t.TypeId === selectedExercise.TypeId);
+                    return (
+                      <>
+                        <div className="rounded-3xl border border-[#4EACAF]/20 bg-[#4EACAF]/5 p-5">
+                          <p className="text-sm font-black text-[#4EACAF]">
+                            {selectedExercise.ExerciseName}
+                          </p>
+                          <p className="mt-2 text-xs font-bold text-gray-500">
+                            Mã bài tập: {selectedExercise.ExerciseId}
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                          <PreviewCard
+                            label="Bài học liên kết"
+                            value={lesson?.LessonName || 'Bài học không tồn tại'}
+                          />
+                          <PreviewCard
+                            label="Loại bài tập"
+                            value={translateTypeName(type?.TypeName || 'Không xác định')}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                          <PreviewCard
+                            label="Độ khó"
+                            value={selectedExercise.DifficultyLevel}
+                          />
+                          <PreviewCard
+                            label="Kỹ năng mục tiêu"
+                            value={selectedExercise.TargetSkill}
+                          />
+                          <PreviewCard
+                            label="Ngôn ngữ"
+                            value={selectedExercise.Language || 'Vietnamese'}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                          <PreviewCard
+                            label="Thời lượng giới hạn"
+                            value={`${selectedExercise.DurationLimit} giây`}
+                          />
+                          <PreviewCard
+                            label="Trạng thái"
+                            value={selectedExercise.Status === 'Active' ? 'Hoạt động' : 'Tạm ngưng'}
+                          />
+                        </div>
+
+                        <div className="rounded-3xl border border-slate-100 bg-slate-50 p-5">
+                          <p className="text-xs font-black uppercase tracking-wider text-gray-400">
+                            Hướng dẫn bài tập
+                          </p>
+                          <p className="mt-4 text-sm font-bold text-slate-700 whitespace-pre-wrap leading-relaxed">
+                            {selectedExercise.Instruction || 'Không có hướng dẫn.'}
+                          </p>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              ) : null}
             </motion.div>
           </div>
         )}

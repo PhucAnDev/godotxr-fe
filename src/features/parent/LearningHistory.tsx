@@ -215,8 +215,8 @@ export default function LearningHistory() {
 
       if (typeof valA === 'string' && typeof valB === 'string') {
         return sortDirection === 'asc'
-          ? valA.localeCompare(valB, 'vi-VN')
-          : valB.localeCompare(valA, 'vi-VN');
+          ? valA.localeCompare(valB, 'vi-VN', { numeric: true })
+          : valB.localeCompare(valA, 'vi-VN', { numeric: true });
       }
       return sortDirection === 'asc' ? valA - valB : valB - valA;
     });
