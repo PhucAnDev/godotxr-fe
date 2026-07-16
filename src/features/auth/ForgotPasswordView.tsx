@@ -367,12 +367,22 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                     <div className="pt-3">
                       <motion.button
                         type="submit"
+                        disabled={isLoading}
                         whileHover={{ y: -2 }}
                         whileTap={{ scale: 0.98 }}
-                        className="w-full py-3.5 bg-[#FF8E8E] hover:bg-[#ef7e7e] text-white text-base font-black rounded-2xl shadow-lg shadow-[#FF8E8E]/10 transition-all flex items-center justify-center gap-2 border-b-4 border-[#d46565] cursor-pointer"
+                        className="w-full py-3.5 bg-[#FF8E8E] hover:bg-[#ef7e7e] text-white text-base font-black rounded-2xl shadow-lg shadow-[#FF8E8E]/10 transition-all flex items-center justify-center gap-2 border-b-4 border-[#d46565] cursor-pointer disabled:opacity-50"
                       >
-                        Xác nhận OTP
-                        <Send className="w-4 h-4" />
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Đang xác thực...
+                          </>
+                        ) : (
+                          <>
+                            Xác nhận OTP
+                            <Send className="w-4 h-4" />
+                          </>
+                        )}
                       </motion.button>
                     </div>
                   </motion.form>

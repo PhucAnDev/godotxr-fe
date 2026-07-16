@@ -14,6 +14,11 @@ interface ForgotPasswordPayload {
   email: string;
 }
 
+interface VerifyOtpPayload {
+  email: string;
+  otp: string;
+}
+
 interface ResetPasswordPayload {
   email: string;
   otp: string;
@@ -129,6 +134,27 @@ export async function forgotPassword(
   try {
     const payload: ForgotPasswordPayload = { email };
     const res = await apiRequest<void>('/api/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    return {
+      success: res.success,
+      message: res.message,
+      errors: res.errors ?? [],
+    };
+  } catch (err) {
+    return handleError(err);
+  }
+}
+
+export async function verifyOtp(
+  email: string,
+  otp: string
+): Promise<AuthServiceResult> {
+  try {
+    const payload: VerifyOtpPayload = { email, otp };
+    const res = await apiRequest<void>('/api/auth/verify-otp', {
       method: 'POST',
       body: JSON.stringify(payload),
     });

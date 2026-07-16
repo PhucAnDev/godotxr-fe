@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { forgotPassword, resetPassword } from '../services/authService';
+import { forgotPassword, resetPassword, verifyOtp } from '../services/authService';
 
 export type ForgotStep = 'EMAIL' | 'OTP' | 'RESET_PASSWORD' | 'SUCCESS';
 
@@ -83,7 +83,7 @@ export function useForgotPassword(): UseForgotPasswordReturn {
     setInfoMessage('Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư.');
   };
 
-  const handleVerifyOtp = (e: FormEvent) => {
+  const handleVerifyOtp = async (e: FormEvent) => {
     e.preventDefault();
     clearMessages();
 
@@ -97,7 +97,15 @@ export function useForgotPassword(): UseForgotPasswordReturn {
       return;
     }
 
-    // OTP thực sẽ được xác thực bởi BE cùng lúc với reset-password.
+    setIsLoading(true);
+    const result = await verifyOtp(email.trim(), trimmedOtp);
+    setIsLoading(false);
+
+    if (!result.success) {
+      setValidationError(result.errors.join(' ') || result.message);
+      return;
+    }
+
     setStep('RESET_PASSWORD');
   };
 
