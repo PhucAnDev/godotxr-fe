@@ -72,6 +72,15 @@ const mapEnrollment = (enrollment: EnrollmentResponse): Enrollment => ({
   CreatedAt: enrollment.createdAt, UpdatedAt: enrollment.updatedAt,
 });
 
+const formatDateDMY = (dateStr: string): string => {
+  if (!dateStr) return '';
+  const parts = dateStr.slice(0, 10).split('-');
+  if (parts.length === 3) {
+    return `${parts[2]} - ${parts[1]} - ${parts[0]}`;
+  }
+  return dateStr;
+};
+
 // Mock Data
 const MOCK_CHILDREN: Child[] = [
   { ChildId: 'CHD-001', FullName: 'Leo (Phạm Minh Đức)', Age: 6, Gender: 'Male', LearningLevel: 'Advanced', Status: 'Active' },
@@ -700,7 +709,7 @@ export default function EnrollmentManagement() {
                         <td className="py-5 px-[5px] font-medium text-gray-500 whitespace-nowrap">
                           <div className="flex items-center gap-1.5 font-bold text-gray-700 whitespace-nowrap">
                             <Calendar className="w-4 h-4 text-gray-400" />
-                            {enrollment.EnrollmentDate}
+                            {formatDateDMY(enrollment.EnrollmentDate)}
                           </div>
                         </td>
                         <td className="py-5 px-[5px] whitespace-nowrap">
@@ -886,15 +895,15 @@ export default function EnrollmentManagement() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                            <DetailRow 
-                             label="Mã Phiếu Ghi Danh (EnrollmentId)" 
+                             label="Mã Phiếu Ghi Danh" 
                              value={selectedEnrollment.EnrollmentId} 
                            />
                            <DetailRow 
-                             label="Ngày Nhập Học (EnrollmentDate)" 
-                             value={selectedEnrollment.EnrollmentDate} 
+                             label="Ngày Nhập Học" 
+                             value={formatDateDMY(selectedEnrollment.EnrollmentDate)} 
                            />
                            <DetailRow 
-                             label="Bé can thiệp (ChildFullName)" 
+                             label="Bé can thiệp" 
                              value={`${child?.FullName || 'Chưa định dạng'} (${child?.Age || 0} tuổi | ${child?.Gender === 'Male' ? 'Nam' : 'Nữ'})`} 
                            />
                            <DetailRow 
@@ -911,11 +920,11 @@ export default function EnrollmentManagement() {
                            />
                            <DetailRow 
                              label="Thời gian thiết lập hồ sơ" 
-                             value={selectedEnrollment.CreatedAt} 
+                             value={formatDateDMY(selectedEnrollment.CreatedAt)} 
                            />
                            <DetailRow 
                              label="Cập nhật gần nhất" 
-                             value={selectedEnrollment.UpdatedAt} 
+                             value={formatDateDMY(selectedEnrollment.UpdatedAt)} 
                            />
                         </div>
 
@@ -962,10 +971,10 @@ export default function EnrollmentManagement() {
                             <span className="text-gray-400 font-bold text-xs uppercase tracking-wider">Lớp tiếp nhận:</span>
                             <span className="text-gray-800 font-extrabold">{classroom?.ClassName || 'Không rõ'}</span>
                           </div>
-                          <div className="flex justify-between font-bold">
-                            <span className="text-gray-400 font-bold text-xs uppercase tracking-wider">Ngày nhập lớp:</span>
-                            <span className="text-gray-850 font-extrabold">{selectedEnrollment.EnrollmentDate}</span>
-                          </div>
+                           <div className="flex justify-between font-bold">
+                             <span className="text-gray-400 font-bold text-xs uppercase tracking-wider">Ngày nhập lớp:</span>
+                             <span className="text-gray-850 font-extrabold">{formatDateDMY(selectedEnrollment.EnrollmentDate)}</span>
+                           </div>
                         </div>
 
                         <p className="text-xs text-slate-500 font-medium italic">

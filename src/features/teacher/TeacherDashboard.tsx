@@ -38,6 +38,10 @@ function formatRelativeTime(dateStr: string): string {
   if (diffMins < 1) return 'Vừa xong';
   if (diffMins < 60) return `${diffMins} phút trước`;
   if (diffHours < 24) return `${diffHours} giờ trước`;
+  const parts = dateStr.slice(0, 10).split('-');
+  if (parts.length === 3) {
+    return `${parts[2]} - ${parts[1]} - ${parts[0]}`;
+  }
   return dateStr.replace('T', ' ').slice(0, 10);
 }
 

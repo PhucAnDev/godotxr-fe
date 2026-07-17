@@ -28,6 +28,15 @@ import { getExercises, type ExerciseResponse } from '../../services/exerciseServ
 import { getExerciseQuestions, type ExerciseQuestionResponse } from '../../services/exerciseQuestionService';
 import { getUserById, type UserResponse } from '../../services/userService';
 
+const formatDateDMY = (dateStr: string): string => {
+  if (!dateStr) return '';
+  const parts = dateStr.slice(0, 10).split('-');
+  if (parts.length === 3) {
+    return `${parts[2]} - ${parts[1]} - ${parts[0]}`;
+  }
+  return dateStr;
+};
+
 export default function ParentChildClass() {
   const { getMyChildProfiles } = useChildManagementApi();
 
@@ -209,14 +218,14 @@ export default function ParentChildClass() {
   // Determine classroom display values (use classroomDetail if available, fall back to enrollment data)
   const displayClassName = classroomDetail?.className ?? enrollment?.className ?? '';
   const displayDescription = classroomDetail?.description ?? `Lớp học VR dành cho ${selectedChild?.fullName ?? 'bé'}.`;
-  const displayStartDate = classroomDetail?.startDate ? classroomDetail.startDate.slice(0, 10) : '—';
-  const displayEndDate = classroomDetail?.endDate ? classroomDetail.endDate.slice(0, 10) : '—';
+  const displayStartDate = classroomDetail?.startDate ? formatDateDMY(classroomDetail.startDate) : '—';
+  const displayEndDate = classroomDetail?.endDate ? formatDateDMY(classroomDetail.endDate) : '—';
   const displayClassId = classroomDetail ? `CLS-${classroomDetail.id}` : `CLS-${enrollment?.classId ?? '—'}`;
   const displayStatus = classroomDetail?.status ?? 'Active';
   const displayTeacherName = classroomDetail?.teacherName ?? '—';
   const displayTeacherSpecialty = classroomDetail?.teacherSpecialty ?? '—';
   const displayProgramName = classroomDetail?.programName ?? '—';
-  const displayEnrollmentDate = enrollment?.enrollmentDate ? enrollment.enrollmentDate.slice(0, 10) : '—';
+  const displayEnrollmentDate = enrollment?.enrollmentDate ? formatDateDMY(enrollment.enrollmentDate) : '—';
   const displayEnrollmentStatus = enrollment?.status ?? '—';
 
   return (

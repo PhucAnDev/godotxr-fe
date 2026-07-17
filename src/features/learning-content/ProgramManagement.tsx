@@ -74,6 +74,15 @@ const mapProgram = (program: ProgramResponse): Program => {
   };
 };
 
+const formatDateDMY = (dateStr: string): string => {
+  if (!dateStr) return '';
+  const parts = dateStr.slice(0, 10).split('-');
+  if (parts.length === 3) {
+    return `${parts[2]} - ${parts[1]} - ${parts[0]}`;
+  }
+  return dateStr;
+};
+
 const mapLesson = (lesson: LessonResponse): Lesson => ({
   LessonId: String(lesson.id),
   LessonName: lesson.lessonName,
@@ -639,7 +648,7 @@ export default function ProgramManagement() {
 
                     {/* Created At footer ribbon */}
                     <div className="text-[9px] text-gray-300 font-extrabold uppercase tracking-wide self-end">
-                      Tạo lập: {prog.CreatedAt}
+                      Tạo lập: {formatDateDMY(prog.CreatedAt)}
                     </div>
                   </motion.div>
                 );
@@ -840,7 +849,7 @@ export default function ProgramManagement() {
                       {/* Age range From */}
                       <div className="space-y-2">
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                          Độ tuổi bắt đầu (TargetAgeFrom) <span className="text-[#FF8E8E]">*</span>
+                          Độ tuổi bắt đầu <span className="text-[#FF8E8E]">*</span>
                         </label>
                         <input 
                           type="text"
@@ -856,7 +865,7 @@ export default function ProgramManagement() {
                       {/* Age range To */}
                       <div className="space-y-2">
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                          Độ tuổi tối đa (TargetAgeTo) <span className="text-[#FF8E8E]">*</span>
+                          Độ tuổi tối đa <span className="text-[#FF8E8E]">*</span>
                         </label>
                         <input 
                           type="text"

@@ -90,11 +90,21 @@ const API_PAGE_SIZE = 100;
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return '--';
+  const parts = value.slice(0, 10).split('-');
+  if (parts.length === 3) {
+    return `${parts[2]} - ${parts[1]} - ${parts[0]}`;
+  }
   return value.slice(0, 10);
 }
 
 function formatDateTime(value: string | null | undefined): string {
   if (!value) return '';
+  const datePart = value.slice(0, 10);
+  const timePart = value.slice(11, 19);
+  const parts = datePart.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]} - ${parts[1]} - ${parts[0]} ${timePart}`;
+  }
   return value.replace('T', ' ').slice(0, 19);
 }
 

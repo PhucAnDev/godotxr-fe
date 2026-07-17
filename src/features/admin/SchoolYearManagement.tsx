@@ -52,6 +52,15 @@ const mapSchoolYear = (year: SchoolYearResponse): SchoolYear => ({
   UpdatedAt: year.updatedAt ?? year.createdAt,
 });
 
+const formatDateDMY = (dateStr: string): string => {
+  if (!dateStr) return '';
+  const parts = dateStr.slice(0, 10).split('-');
+  if (parts.length === 3) {
+    return `${parts[2]} - ${parts[1]} - ${parts[0]}`;
+  }
+  return dateStr;
+};
+
 // Initial Mock data for SCHOOL_YEAR table
 const INITIAL_SCHOOL_YEARS: SchoolYear[] = [
   {
@@ -601,12 +610,12 @@ export default function SchoolYearManagement() {
 
                     {/* Start Date */}
                     <td className="py-5 px-[5px] text-gray-500 font-mono text-xs">
-                      {year.StartDate}
+                      {formatDateDMY(year.StartDate)}
                     </td>
 
                     {/* End Date */}
                     <td className="py-5 px-[5px] text-gray-500 font-mono text-xs">
-                      {year.EndDate}
+                      {formatDateDMY(year.EndDate)}
                     </td>
 
                     {/* Status Badge */}

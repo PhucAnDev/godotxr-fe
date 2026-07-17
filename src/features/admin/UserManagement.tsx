@@ -62,6 +62,15 @@ function getRoleDisplayName(roleName: string) {
   }
 }
 
+const formatDateDMY = (dateStr: string): string => {
+  if (!dateStr) return '';
+  const parts = dateStr.slice(0, 10).split('-');
+  if (parts.length === 3) {
+    return `${parts[2]} - ${parts[1]} - ${parts[0]}`;
+  }
+  return dateStr;
+};
+
 /** Chuyển isActive sang label tiếng Việt */
 function getStatusLabel(isActive: boolean) {
   return isActive ? 'Hoạt động' : 'Đã khóa';
@@ -565,7 +574,7 @@ export default function UserManagement() {
                       <td className="py-4 px-[5px] text-slate-400 text-xs">
                         <div className="flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5 text-slate-350" />
-                          {user.createdAt.slice(0, 10)}
+                          {formatDateDMY(user.createdAt)}
                         </div>
                       </td>
 
@@ -1016,8 +1025,8 @@ function DetailModalBody({
         </div>
 
         <DetailRow label="Số điện thoại" value={user.phone || '—'} />
-        <DetailRow label="Thời điểm khởi tạo (CreatedAt)" value={user.createdAt.slice(0, 19).replace('T', ' ')} />
-        <DetailRow label="Cập nhật lần cuối (UpdatedAt)" value={user.updatedAt?.slice(0, 19).replace('T', ' ') ?? '—'} />
+        <DetailRow label="Thời điểm khởi tạo" value={formatDateDMY(user.createdAt)} />
+        <DetailRow label="Cập nhật lần cuối" value={formatDateDMY(user.updatedAt || '') || '—'} />
       </div>
 
       {/* Security note */}

@@ -74,6 +74,15 @@ const mapSemester = (semester: SemesterResponse): Semester => ({
   Status: semester.status, CreatedAt: semester.createdAt, UpdatedAt: semester.updatedAt ?? semester.createdAt,
 });
 
+const formatDateDMY = (dateStr: string): string => {
+  if (!dateStr) return '';
+  const parts = dateStr.slice(0, 10).split('-');
+  if (parts.length === 3) {
+    return `${parts[2]} - ${parts[1]} - ${parts[0]}`;
+  }
+  return dateStr;
+};
+
 // Initial Mock data
 const MOCK_SCHOOL_YEARS: SchoolYear[] = [
   { SchoolYearId: 'SCH-2024', SchoolYearName: 'Năm học 2024 - 2025' },
@@ -818,12 +827,12 @@ export default function SemesterManagement() {
 
                     {/* StartDate */}
                     <td className="py-5 px-[5px] text-gray-500 font-mono text-xs">
-                      {sem.StartDate}
+                      {formatDateDMY(sem.StartDate)}
                     </td>
 
                     {/* EndDate */}
                     <td className="py-5 px-[5px] text-gray-500 font-mono text-xs">
-                      {sem.EndDate}
+                      {formatDateDMY(sem.EndDate)}
                     </td>
 
                     {/* Status Badge */}

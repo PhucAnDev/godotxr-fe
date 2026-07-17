@@ -66,6 +66,15 @@ const mapClassroom = (classroom: ClassroomResponse): Classroom => ({
   Status: classroom.status as Classroom['Status'], CreatedAt: classroom.createdAt, UpdatedAt: classroom.updatedAt ?? classroom.createdAt,
 });
 
+const formatDateDMY = (dateStr: string): string => {
+  if (!dateStr) return '';
+  const parts = dateStr.slice(0, 10).split('-');
+  if (parts.length === 3) {
+    return `${parts[2]} - ${parts[1]} - ${parts[0]}`;
+  }
+  return dateStr;
+};
+
 interface Teacher {
   TeacherId: string;
   FullName: string;
@@ -81,6 +90,13 @@ interface Program {
   Language: string;
   TargetAgeFrom: number;
   TargetAgeTo: number;
+}
+
+interface Semester {
+  SemesterId: string;
+  SemesterName: string;
+  StartDate: string;
+  EndDate: string;
 }
 
 interface EnrolledStudent {
@@ -113,6 +129,8 @@ export default function ClassroomManagement() {
     Record<string, EnrolledStudent[]>
   >({});
   const [defaultSemesterId, setDefaultSemesterId] = useState('');
+  const [semesters, setSemesters] = useState<Semester[]>([]);
+  const [formSemesterId, setFormSemesterId] = useState('');
   
   // Classroom detail fetched state
   const [selectedClassroomDetail, setSelectedClassroomDetail] = useState<ClassroomResponse | null>(null);
@@ -241,7 +259,16 @@ export default function ClassroomManagement() {
         }
       }
       if (programResult.data) setPrograms(programResult.data.items.map(p => ({ ProgramId: String(p.id), ProgramName: p.programName, Language: p.language, TargetAgeFrom: p.targetAgeFrom, TargetAgeTo: p.targetAgeTo })));
-      if (semesterResult.data) setDefaultSemesterId(String(semesterResult.data.items[0]?.id ?? ''));
+      if (semesterResult.data) {
+        const mappedSemesters = semesterResult.data.items.map(s => ({
+          SemesterId: String(s.id),
+          SemesterName: s.semesterName,
+          StartDate: s.startDate.slice(0, 10),
+          EndDate: s.endDate.slice(0, 10)
+        }));
+        setSemesters(mappedSemesters);
+        setDefaultSemesterId(String(semesterResult.data.items[0]?.id ?? ''));
+      }
     });
   }, [getChildProfiles, getClassrooms, getEnrollments, getPrograms, getSemesters, getUsers]);
 
@@ -264,6 +291,7 @@ export default function ClassroomManagement() {
     setFormClassName('');
     setFormTeacherId(teachers[0]?.TeacherId || '');
     setFormProgramId(programs[0]?.ProgramId || '');
+    setFormSemesterId(semesters[0]?.SemesterId || defaultSemesterId || '');
     setFormDescription('');
     setFormStartDate('2026-06-01');
     setFormEndDate('2026-09-01');
@@ -277,6 +305,7 @@ export default function ClassroomManagement() {
     setFormClassName(cls.ClassName);
     setFormTeacherId(cls.TeacherId);
     setFormProgramId(cls.ProgramId);
+    setFormSemesterId(cls.SemesterId || defaultSemesterId || '');
     setFormDescription(cls.Description);
     setFormStartDate(cls.StartDate);
     setFormEndDate(cls.EndDate);
@@ -333,7 +362,7 @@ export default function ClassroomManagement() {
       return;
     }
 
-    const payload = { userId: Number(formTeacherId), programId: Number(formProgramId), semesterId: Number(selectedClass?.SemesterId || defaultSemesterId), className: formClassName.trim(), description: formDescription.trim(), startDate: formStartDate, endDate: formEndDate, status: formStatus };
+    const payload = { userId: Number(formTeacherId), programId: Number(formProgramId), semesterId: Number(formSemesterId), className: formClassName.trim(), description: formDescription.trim(), startDate: formStartDate, endDate: formEndDate, status: formStatus };
     const apiResult = modalType === 'add' ? await createClassroom(payload) : selectedClass ? await updateClassroom(Number(selectedClass.ClassId), payload) : null;
     if (apiResult?.success && apiResult.data) {
       const mapped = mapClassroom(apiResult.data);
@@ -981,11 +1010,11 @@ export default function ClassroomManagement() {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                          <DetailRow 
-                           label="Tên Lớp (ClassName)" 
+                           label="Tên Lớp" 
                            value={selectedClassroomDetail?.className || selectedClass.ClassName} 
                          />
                          <DetailRow 
-                           label="Mã Lớp (ClassId)" 
+                           label="Mã Lớp" 
                            value={String(selectedClassroomDetail?.id || selectedClass.ClassId)} 
                          />
                          <DetailRow 
@@ -993,15 +1022,15 @@ export default function ClassroomManagement() {
                            value={selectedClassroomDetail?.status || selectedClass.Status} 
                          />
                          <DetailRow 
-                           label="Sĩ số học sinh ghi danh (EnrollmentCount)" 
+                           label="Sĩ số học sinh ghi danh" 
                            value={`${selectedClassroomDetail?.enrollmentCount ?? selectedClass.EnrollmentCount} học sinh`} 
                          />
                          <DetailRow 
-                           label="Tên Chương trình học (ProgramName)" 
+                           label="Tên Chương trình học" 
                            value={selectedClassroomDetail?.programName || programs.find(p => p.ProgramId === selectedClass.ProgramId)?.ProgramName || 'Không rõ'} 
                          />
                          <DetailRow 
-                           label="Mã định danh chương trình (ProgramId)" 
+                           label="Mã định danh chương trình" 
                            value={String(selectedClassroomDetail?.programId || selectedClass.ProgramId)} 
                          />
                          <DetailRow 
@@ -1009,15 +1038,15 @@ export default function ClassroomManagement() {
                            value={`Từ ${selectedClassroomDetail?.targetAgeFrom ?? programs.find(p => p.ProgramId === selectedClass.ProgramId)?.TargetAgeFrom ?? 3} tuổi tới ${selectedClassroomDetail?.targetAgeTo ?? programs.find(p => p.ProgramId === selectedClass.ProgramId)?.TargetAgeTo ?? 10} tuổi`}
                          />
                          <DetailRow 
-                           label="Ngôn ngữ chính luyện tập (Language)" 
+                           label="Ngôn ngữ chính luyện tập" 
                            value={selectedClassroomDetail?.programLanguage || programs.find(p => p.ProgramId === selectedClass.ProgramId)?.Language || 'Tiếng Việt'}
                          />
                          <DetailRow 
-                           label="Giáo viên đảm nhiệm (TeacherName)" 
+                           label="Giáo viên đảm nhiệm" 
                            value={selectedClassroomDetail?.teacherName || teachers.find(t => t.TeacherId === selectedClass.TeacherId)?.FullName || 'Không rõ'} 
                          />
                          <DetailRow 
-                           label="Mã định danh giáo viên (TeacherId)" 
+                           label="Mã định danh giáo viên" 
                            value={String(selectedClassroomDetail?.userId || selectedClass.TeacherId)} 
                          />
                          <DetailRow 
@@ -1025,28 +1054,28 @@ export default function ClassroomManagement() {
                            value={selectedClassroomDetail?.teacherSpecialty || teachers.find(t => t.TeacherId === selectedClass.TeacherId)?.Specialty || 'Chưa thiết lập'}
                          />
                          <DetailRow 
-                           label="Học kỳ liên kết (SemesterName)" 
+                           label="Học kỳ liên kết" 
                            value={selectedClassroomDetail?.semesterName || 'Chưa rõ'} 
                          />
                          <DetailRow 
-                           label="Mã học kỳ (SemesterId)" 
+                           label="Mã học kỳ" 
                            value={String(selectedClassroomDetail?.semesterId || selectedClass.SemesterId || 'Chưa rõ')} 
                          />
                          <DetailRow 
                            label="Thời gian hoạt động lớp học" 
-                           value={`Từ ${selectedClassroomDetail ? selectedClassroomDetail.startDate.slice(0, 10) : selectedClass.StartDate} tới ${selectedClassroomDetail ? selectedClassroomDetail.endDate.slice(0, 10) : selectedClass.EndDate}`} 
+                           value={`Từ ${formatDateDMY(selectedClassroomDetail ? selectedClassroomDetail.startDate : selectedClass.StartDate)} tới ${formatDateDMY(selectedClassroomDetail ? selectedClassroomDetail.endDate : selectedClass.EndDate)}`} 
                          />
                          <DetailRow 
-                           label="Thời gian cấu tạo lớp học (CreatedAt)" 
-                           value={selectedClassroomDetail?.createdAt || selectedClass.CreatedAt} 
+                           label="Thời gian tạo lớp học" 
+                           value={formatDateDMY(selectedClassroomDetail?.createdAt || selectedClass.CreatedAt)} 
                          />
                          <DetailRow 
-                           label="Thời điểm cập nhật lớp học (UpdatedAt)" 
-                           value={selectedClassroomDetail?.updatedAt || selectedClass.UpdatedAt || 'Chưa có cập nhật'} 
+                           label="Thời điểm cập nhật lớp học" 
+                           value={formatDateDMY(selectedClassroomDetail?.updatedAt || selectedClass.UpdatedAt || 'Chưa có cập nhật')} 
                          />
                          
                          <div className="space-y-1.5 p-4 rounded-2xl bg-[#FDFCF5]/60 border border-[#F2ECD8]/40 col-span-1 md:col-span-2">
-                           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block font-bold">Mô tả giáo trình & Phương tiện VR (Description)</span>
+                           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block font-bold">Mô tả giáo trình & Phương tiện VR</span>
                            <span className="font-bold text-gray-800 text-sm block leading-relaxed italic">
                              "{selectedClassroomDetail?.description || selectedClass.Description || 'Không có mô tả'}"
                            </span>
@@ -1127,7 +1156,7 @@ export default function ClassroomManagement() {
 
                     <div className="space-y-2 col-span-1 md:col-span-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                        Tên lớp học can thiệp (ClassName) <span className="text-[#FF8E8E]">*</span>
+                        Tên lớp học can thiệp <span className="text-[#FF8E8E]">*</span>
                       </label>
                       <input 
                         type="text" 
@@ -1141,7 +1170,7 @@ export default function ClassroomManagement() {
 
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                        Chuyên viên điều trị (TeacherId) <span className="text-[#FF8E8E]">*</span>
+                        Chuyên viên điều trị <span className="text-[#FF8E8E]">*</span>
                       </label>
                       <CustomSelect
                         value={formTeacherId}
@@ -1156,7 +1185,7 @@ export default function ClassroomManagement() {
 
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                        Học trình / Chương trình học (ProgramId) <span className="text-[#FF8E8E]">*</span>
+                        Học trình / Chương trình học <span className="text-[#FF8E8E]">*</span>
                       </label>
                       <CustomSelect
                         value={formProgramId}
@@ -1165,6 +1194,21 @@ export default function ClassroomManagement() {
                         options={programs.map(p => ({
                           value: p.ProgramId,
                           label: p.ProgramName
+                        }))}
+                      />
+                    </div>
+
+                    <div className="space-y-2 col-span-1 md:col-span-2">
+                      <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
+                        Học kỳ liên kết <span className="text-[#FF8E8E]">*</span>
+                      </label>
+                      <CustomSelect
+                        value={formSemesterId}
+                        onChange={setFormSemesterId}
+                        variant="form"
+                        options={semesters.map(s => ({
+                          value: s.SemesterId,
+                          label: `${s.SemesterName} (Từ ${formatDateDMY(s.StartDate)} tới ${formatDateDMY(s.EndDate)})`
                         }))}
                       />
                     </div>
@@ -1197,7 +1241,7 @@ export default function ClassroomManagement() {
 
                     <div className="space-y-2 col-span-1 md:col-span-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                        Khảo cứu chuyên môn / Mô tả lớp học (Description)
+                        Khảo cứu chuyên môn / Mô tả lớp học
                       </label>
                       <textarea 
                         rows={3}

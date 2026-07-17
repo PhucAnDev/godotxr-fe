@@ -22,6 +22,21 @@ import { getResultsByChild, type ResultResponse } from '../../services/resultSer
 import { getExercises, type ExerciseResponse } from '../../services/exerciseService';
 import type { ChildProfileResponse } from '../../services/childProfileService';
 
+const formatDateTimeDMY = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return '';
+  try {
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes} - ${day} - ${month} - ${year}`;
+  } catch {
+    return dateStr || '';
+  }
+};
+
 export interface SuggestedExercise {
   id: number;
   exerciseName: string;
@@ -196,7 +211,7 @@ export default function ParentRecommendations() {
   // Last analyzed date string
   const lastAnalyzedDate = useMemo(() => {
     if (analysis?.createdAt) {
-      return new Date(analysis.createdAt).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit' } as any);
+      return formatDateTimeDMY(analysis.createdAt);
     }
     return 'Chưa có đánh giá';
   }, [analysis]);
@@ -266,7 +281,7 @@ export default function ParentRecommendations() {
         ResultId: String(res.id),
         Score: res.score,
         FeedbackText: res.feedbackText || 'Con hoàn thành tốt phần rèn luyện của mình.',
-        CreatedAt: res.completedAt ? new Date(res.completedAt).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit' } as any) : 'Vừa xong',
+        CreatedAt: res.completedAt ? formatDateTimeDMY(res.completedAt) : 'Vừa xong',
         ExerciseName: matchedEx ? matchedEx.exerciseName : 'Bài chơi ảo tương tác'
       };
     });

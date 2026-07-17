@@ -9,8 +9,11 @@ import {
 export interface ExerciseResponse {
   id: number;
   teacherId: number;
+  teacherName: string;
   lessonId: number;
+  lessonName: string;
   typeId: number;
+  typeName: string;
   exerciseName: string;
   instruction: string | null;
   difficultyLevel: string;
@@ -18,6 +21,7 @@ export interface ExerciseResponse {
   language: string;
   durationLimit: number;
   status: 'Active' | 'Inactive';
+  questionCount: number;
   createdAt: string;
   updatedAt: string | null;
 }

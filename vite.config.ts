@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
       // Proxy /api/* → BE để tránh CORS khi dev local
       proxy: {
         '/api': {
-          target: 'https://103-162-31-23.sslip.io',
+          target: 'https://103-162-30-111.sslip.io',
           changeOrigin: true,
           secure: false, // bỏ qua self-signed cert của localhost
         },

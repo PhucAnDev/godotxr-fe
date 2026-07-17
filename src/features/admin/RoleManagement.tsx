@@ -33,6 +33,15 @@ const ROLE_NAME_OPTIONS: { value: UserRoleEnum; label: string }[] = [
   { value: 'Child', label: 'Child' },
 ];
 
+const formatDateDMY = (dateStr: string): string => {
+  if (!dateStr) return '';
+  const parts = dateStr.slice(0, 10).split('-');
+  if (parts.length === 3) {
+    return `${parts[2]} - ${parts[1]} - ${parts[0]}`;
+  }
+  return dateStr;
+};
+
 export default function RoleManagement() {
   const {
     filteredRoles,
@@ -270,7 +279,7 @@ export default function RoleManagement() {
                     {/* RoleName — dropdown enum */}
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
-                        Tên vai trò (RoleName) <span className="text-[#FF8E8E]">*</span>
+                        Tên vai trò <span className="text-[#FF8E8E]">*</span>
                       </label>
                       <CustomSelect
                         value={formRoleName}
@@ -430,7 +439,7 @@ function RoleCard({
       <div className="pt-6 border-t border-gray-50 flex flex-wrap items-center justify-between gap-4 mt-auto">
         <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400">
           <Calendar className="w-3.5 h-3.5 text-gray-300" />
-          <span>Lập: {role.createdAt.slice(0, 10)}</span>
+          <span>Lập: {formatDateDMY(role.createdAt)}</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -488,8 +497,8 @@ function DetailView({ role, onClose }: { role: RoleResponse; onClose: () => void
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <DetailRowItem label="Thời điểm khởi tạo (CreatedAt)" value={role.createdAt.slice(0, 10)} />
-        <DetailRowItem label="Cập nhật lần cuối (UpdatedAt)" value={role.updatedAt ? role.updatedAt.slice(0, 10) : 'Chưa cập nhật'} />
+        <DetailRowItem label="Thời điểm khởi tạo" value={formatDateDMY(role.createdAt)} />
+        <DetailRowItem label="Cập nhật lần cuối" value={role.updatedAt ? formatDateDMY(role.updatedAt) : 'Chưa cập nhật'} />
       </div>
 
       <div className="bg-purple-50/50 p-5 rounded-3xl border border-purple-100/50 space-y-1">
