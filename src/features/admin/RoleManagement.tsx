@@ -136,11 +136,11 @@ export default function RoleManagement() {
 
       {/* 2. Thống kê */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard title="Tổng vai trò" value={totalRoles} subtitle="Số vai trò trong hệ thống"
+        <StatItem title="Tổng vai trò" value={totalRoles} subtitle="Số vai trò trong hệ thống"
           icon={<Shield className="w-5 h-5 text-[#4EACAF]" />} bgColor="bg-[#4EACAF]/5" borderColor="border-slate-100" />
-        <StatCard title="Vai trò hoạt động" value={activeRoles} subtitle="Đang khả dụng để phân chia người dùng"
+        <StatItem title="Vai trò hoạt động" value={activeRoles} subtitle="Đang khả dụng để phân chia người dùng"
           icon={<Check className="w-5 h-5 text-emerald-600" />} bgColor="bg-emerald-50/70" borderColor="border-slate-100" />
-        <StatCard title="Vai trò bị tắt" value={inactiveRoles} subtitle="Trong trạng thái nháp"
+        <StatItem title="Vai trò bị tắt" value={inactiveRoles} subtitle="Trong trạng thái nháp"
           icon={<ToggleLeft className="w-5 h-5 text-slate-500" />} bgColor="bg-slate-50" borderColor="border-slate-100" />
       </div>
 
@@ -153,7 +153,7 @@ export default function RoleManagement() {
             placeholder="Tìm theo vai trò, mô tả chi tiết, mã ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-gray-700 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white"
+            className="w-full pl-11 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-normal text-slate-600 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white"
           />
           {searchQuery && (
             <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-gray-200/60 rounded-full hover:bg-gray-200">
@@ -423,7 +423,7 @@ function RoleCard({
             </div>
           </div>
           <span className={cn(
-            "inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider",
+            "inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest",
             role.isActive
               ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
               : 'bg-rose-50/70 text-rose-500 border border-rose-100'
@@ -476,7 +476,7 @@ function DetailView({ role, onClose }: { role: RoleResponse; onClose: () => void
         </div>
         <div className="space-y-3 flex-1 text-center md:text-left">
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-            <span className="text-2xl font-black text-gray-900">{role.roleName}</span>
+            <span className="text-2xl font-medium text-slate-800">{role.roleName}</span>
             <span className="px-3 py-0.5 bg-gray-100 text-gray-400 font-mono font-black tracking-widest text-[9px] rounded-full uppercase">
               ID: {role.id}
             </span>
@@ -520,19 +520,37 @@ function DetailView({ role, onClose }: { role: RoleResponse; onClose: () => void
   );
 }
 
-function StatCard({ title, value, subtitle, icon, bgColor, borderColor }: {
-  title: string; value: number; subtitle: string;
-  icon: React.ReactNode; bgColor: string; borderColor: string;
+function StatItem({
+  title,
+  value,
+  subtitle,
+  icon,
+  bgColor,
+  borderColor,
+}: {
+  title: string;
+  value: number | string;
+  subtitle: string;
+  icon: React.ReactNode;
+  bgColor: string;
+  borderColor: string;
 }) {
   return (
-    <div className={cn("bg-white rounded-[32px] p-6 shadow-sm border relative overflow-hidden group hover:shadow-md transition-all duration-300", borderColor)}>
-      <div className={cn("absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-10 transition-transform duration-500 group-hover:scale-150", bgColor)} />
+    <div className={cn(
+      'bg-white rounded-[32px] p-6 shadow-sm border relative overflow-hidden group hover:shadow-md transition-all duration-300',
+      borderColor
+    )}>
+      <div className={cn('absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-10 transition-transform duration-500 group-hover:scale-150', bgColor)} />
       <div className="flex items-center gap-5 relative z-10">
-        <div className={cn("p-4 rounded-2xl shadow-inner shrink-0", bgColor)}>{icon}</div>
+        <div className={cn('p-4 rounded-2xl shadow-inner shrink-0', bgColor)}>
+          {icon}
+        </div>
         <div className="space-y-0.5">
           <p className="text-gray-400 font-bold uppercase text-[10px] tracking-wider">{title}</p>
-          <p className="text-3xl font-black text-gray-900 leading-none">{value.toLocaleString()}</p>
-          <p className="text-[11px] text-[#888] font-medium pt-1 line-clamp-1">{subtitle}</p>
+          <p className="text-3xl font-black text-gray-900 leading-none">
+            {typeof value === 'number' ? value.toLocaleString() : value}
+          </p>
+          <p className="text-[11px] text-gray-500 font-medium pt-1 line-clamp-1">{subtitle}</p>
         </div>
       </div>
     </div>

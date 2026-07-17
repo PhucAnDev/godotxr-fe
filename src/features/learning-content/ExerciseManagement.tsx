@@ -1138,7 +1138,7 @@ export default function ExerciseManagement() {
       </div>
 
       <div className="space-y-4 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-        <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">
+        <h3 className="text-sm font-black uppercase tracking-widest text-slate-700">
           Tìm kiếm & bộ lọc bài tập
         </h3>
 
@@ -1149,7 +1149,7 @@ export default function ExerciseManagement() {
             placeholder="Tìm kiếm theo tên bài tập, kỹ năng hoặc hướng dẫn..."
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            className="w-full rounded-2xl border-2 border-transparent bg-slate-50 py-3.5 pl-11 pr-11 text-xs font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
+            className="w-full rounded-2xl border-2 border-transparent bg-slate-50 py-3.5 pl-11 pr-11 text-xs font-normal text-slate-600 outline-none transition-all placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
           />
           {searchQuery && (
             <button
@@ -1229,7 +1229,7 @@ export default function ExerciseManagement() {
             <h3 className="text-xl font-bold tracking-tight text-slate-800">
               Chi tiết bài tập luyện nói
             </h3>
-            <p className="mt-1 text-[11px] font-bold uppercase tracking-wider text-gray-400">
+            <p className="mt-1 text-[11px] font-normal uppercase tracking-wider text-gray-400">
               Đang hiển thị {filteredExercises.length} bài tập theo bộ lọc
             </p>
           </div>
@@ -1251,7 +1251,7 @@ export default function ExerciseManagement() {
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left font-sans text-slate-700">
                 <thead>
-                  <tr className="border-b border-gray-150 bg-[#FDFCF5]/50 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  <tr className="border-b border-gray-150 bg-[#FDFCF5]/50 text-[10px] font-medium uppercase tracking-wider text-slate-500">
                     <th 
                       onClick={() => handleSortExercises('ExerciseId')}
                       className="px-[5px] py-5 w-[6%] min-w-[60px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
@@ -1354,7 +1354,7 @@ export default function ExerciseManagement() {
                     <th className="px-[5px] py-5 text-right w-[5%] min-w-[90px] select-none text-slate-500 font-black uppercase text-[10px] tracking-widest">Tùy chọn</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 text-xs font-bold text-gray-600 md:text-sm">
+                <tbody className="divide-y divide-gray-50 text-xs font-normal text-slate-600 md:text-sm">
                   {paginatedExercises.map((exercise) => {
                     const lesson = lessons.find(
                       (item) => item.LessonId === exercise.LessonId
@@ -1410,7 +1410,7 @@ export default function ExerciseManagement() {
                         <td className="px-[5px] py-5">
                           <span
                             className={cn(
-                              'rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider',
+                              'rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider',
                               getDifficultyClass(exercise.DifficultyLevel)
                             )}
                           >
@@ -1425,7 +1425,7 @@ export default function ExerciseManagement() {
                         <td className="px-[5px] py-5">
                           <span
                             className={cn(
-                              'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider',
+                              'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider',
                               exercise.Status === 'Active'
                                 ? 'border border-emerald-100 bg-emerald-50 text-emerald-600'
                                 : 'border border-transparent bg-gray-100 text-gray-400'
@@ -1551,7 +1551,7 @@ export default function ExerciseManagement() {
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left font-sans text-slate-700">
                 <thead>
-                  <tr className="border-b border-gray-150 bg-[#FDFCF5]/50 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  <tr className="border-b border-gray-150 bg-[#FDFCF5]/50 text-[10px] font-medium uppercase tracking-wider text-slate-500">
                     <th 
                       onClick={() => handleSortQuestions('QuestionId')}
                       className="px-[5px] py-5 w-[8%] min-w-[75px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
@@ -1642,7 +1642,7 @@ export default function ExerciseManagement() {
                           </div>
                         </td>
                         <td className="px-[5px] py-5">
-                          <span className="inline-flex items-center gap-1 rounded-full border border-teal-100 bg-teal-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-teal-600">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-teal-100 bg-teal-50 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-teal-600">
                             <Mic className="h-3 w-3 shrink-0" />
                             {question.InputType}
                           </span>
@@ -1672,7 +1672,7 @@ export default function ExerciseManagement() {
                                 )
                               }
                               className={cn(
-                                'flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-all',
+                                'flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium uppercase tracking-wider transition-all',
                                 isAudioPlaying
                                   ? 'animate-pulse border border-rose-200 bg-rose-100 text-rose-600 shadow-md'
                                   : 'bg-[#4EACAF]/10 text-[#4EACAF] hover:bg-[#4EACAF]/20'
@@ -1816,7 +1816,7 @@ export default function ExerciseManagement() {
                         </>
                       )}
                     </h2>
-                    <p className="mt-1 text-[11px] font-black uppercase tracking-wider text-gray-400">
+                    <p className="mt-1 text-[11px] font-medium uppercase tracking-wider text-gray-400">
                       {activeModal === 'exercise' &&
                         'Đồng bộ với API exercises và lessons'}
                       {activeModal === 'question' &&
@@ -1843,7 +1843,7 @@ export default function ExerciseManagement() {
                   <div className="flex items-center gap-4 rounded-3xl border border-rose-100 bg-rose-50 p-5 text-rose-700 animate-in fade-in duration-300">
                     <AlertTriangle className="h-10 w-10 shrink-0 text-rose-500" />
                     <div>
-                      <h4 className="text-sm font-black uppercase tracking-wider text-rose-950">
+                      <h4 className="text-sm font-medium uppercase tracking-wider text-rose-950">
                         Xác nhận xóa bài tập
                       </h4>
                       <p className="mt-1 text-xs font-bold text-rose-700 leading-relaxed">
@@ -1856,14 +1856,14 @@ export default function ExerciseManagement() {
                     <button
                       type="button"
                       onClick={handleCloseModal}
-                      className="flex-1 cursor-pointer rounded-2xl border-4 border-gray-100 py-4 text-xs font-black uppercase tracking-wider text-gray-400 transition-all hover:border-gray-200 hover:text-gray-600"
+                      className="flex-1 cursor-pointer rounded-2xl border-4 border-gray-100 py-4 text-xs font-medium uppercase tracking-wider text-gray-400 transition-all hover:border-gray-200 hover:text-gray-600"
                     >
                       Hủy bỏ
                     </button>
                     <button
                       type="button"
                       onClick={() => void handleConfirmDeleteExercise()}
-                      className="flex-1 cursor-pointer rounded-2xl bg-rose-500 py-4 text-sm font-black uppercase tracking-wider text-white shadow-xl shadow-rose-500/15 transition-all hover:bg-rose-600"
+                      className="flex-1 cursor-pointer rounded-2xl bg-rose-500 py-4 text-sm font-medium uppercase tracking-wider text-white shadow-xl shadow-rose-500/15 transition-all hover:bg-rose-600"
                     >
                       Xác nhận xóa
                     </button>
@@ -1874,7 +1874,7 @@ export default function ExerciseManagement() {
                   <div className="flex items-center gap-4 rounded-3xl border border-rose-100 bg-rose-50 p-5 text-rose-700 animate-in fade-in duration-300">
                     <AlertTriangle className="h-10 w-10 shrink-0 text-rose-500" />
                     <div>
-                      <h4 className="text-sm font-black uppercase tracking-wider text-rose-950">
+                      <h4 className="text-sm font-medium uppercase tracking-wider text-rose-950">
                         Xác nhận xóa câu hỏi
                       </h4>
                       <p className="mt-1 text-xs font-bold text-rose-700 leading-relaxed">
@@ -1887,14 +1887,14 @@ export default function ExerciseManagement() {
                     <button
                       type="button"
                       onClick={handleCloseModal}
-                      className="flex-1 cursor-pointer rounded-2xl border-4 border-gray-100 py-4 text-xs font-black uppercase tracking-wider text-gray-400 transition-all hover:border-gray-200 hover:text-gray-600"
+                      className="flex-1 cursor-pointer rounded-2xl border-4 border-gray-100 py-4 text-xs font-medium uppercase tracking-wider text-gray-400 transition-all hover:border-gray-200 hover:text-gray-600"
                     >
                       Hủy bỏ
                     </button>
                     <button
                       type="button"
                       onClick={() => void handleConfirmDeleteQuestion()}
-                      className="flex-1 cursor-pointer rounded-2xl bg-rose-500 py-4 text-sm font-black uppercase tracking-wider text-white shadow-xl shadow-rose-500/15 transition-all hover:bg-rose-600"
+                      className="flex-1 cursor-pointer rounded-2xl bg-rose-500 py-4 text-sm font-medium uppercase tracking-wider text-white shadow-xl shadow-rose-500/15 transition-all hover:bg-rose-600"
                     >
                       Xác nhận xóa
                     </button>
@@ -2169,7 +2169,7 @@ export default function ExerciseManagement() {
 
                       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div className="rounded-3xl border border-slate-100 bg-slate-50 p-5">
-                          <p className="text-xs font-black uppercase tracking-wider text-gray-400">
+                          <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
                             Hình ảnh minh họa
                           </p>
                           {previewQuestion.ImageURL ? (
@@ -2187,7 +2187,7 @@ export default function ExerciseManagement() {
                         </div>
 
                         <div className="rounded-3xl border border-slate-100 bg-slate-50 p-5">
-                          <p className="text-xs font-black uppercase tracking-wider text-gray-400">
+                          <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
                             Audio mẫu
                           </p>
                           {previewQuestion.AudioURL ? (
@@ -2281,7 +2281,7 @@ export default function ExerciseManagement() {
                         </div>
 
                         <div className="rounded-3xl border border-slate-100 bg-slate-50 p-5">
-                          <p className="text-xs font-black uppercase tracking-wider text-gray-400">
+                          <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
                             Hướng dẫn bài tập
                           </p>
                           <p className="mt-4 text-sm font-bold text-slate-700 whitespace-pre-wrap leading-relaxed">
@@ -2331,7 +2331,7 @@ function FormField({
 }) {
   return (
     <div className="space-y-2">
-      <label className="ml-1 text-xs font-black uppercase tracking-widest text-gray-400">
+      <label className="ml-1 text-xs font-medium uppercase tracking-wider text-gray-400">
         {label}
       </label>
       {children}
@@ -2360,7 +2360,7 @@ function ModalActions({
       <button
         type="submit"
         disabled={isSaving}
-        className="flex items-center gap-2 rounded-2xl bg-[#4EACAF] px-8 py-3.5 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-[#4EACAF]/10 transition-all hover:bg-[#4EACAF]/90"
+        className="flex items-center gap-2 rounded-2xl bg-[#4EACAF] px-8 py-3.5 text-xs font-medium uppercase tracking-wider text-white shadow-lg shadow-[#4EACAF]/10 transition-all hover:bg-[#4EACAF]/90"
       >
         {isSaving ? (
           <RefreshCw className="h-4 w-4 animate-spin" />
@@ -2398,7 +2398,7 @@ function EmptyState({
       {actionLabel && onAction && (
         <button
           onClick={onAction}
-          className="rounded-xl bg-orange-500 px-6 py-3 text-xs font-black uppercase tracking-wider text-white shadow-md transition-all hover:bg-orange-600"
+          className="rounded-xl bg-orange-500 px-6 py-3 text-xs font-medium uppercase tracking-wider text-white shadow-md transition-all hover:bg-orange-600"
         >
           {actionLabel}
         </button>
@@ -2427,7 +2427,7 @@ function StatCardItem({
         <p className="text-3xl font-black leading-tight tracking-tight text-gray-900">
           {value}
         </p>
-        <p className="mt-1 text-xs font-bold uppercase tracking-wider text-gray-400">
+        <p className="mt-1 text-xs font-normal uppercase tracking-wider text-gray-400">
           {title}
         </p>
         <p className="mt-1 text-[10px] font-bold text-gray-400">{subtitle}</p>
@@ -2439,7 +2439,7 @@ function StatCardItem({
 function PreviewCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-3xl border border-slate-100 bg-slate-50 p-5">
-      <p className="text-xs font-black uppercase tracking-wider text-gray-400">
+      <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
         {label}
       </p>
       <p className="mt-3 text-sm font-bold leading-relaxed text-slate-700">

@@ -67,10 +67,10 @@ export function Topbar({
           </button>
         )}
         <div className="flex flex-col justify-center">
-          <h2 className="text-xs md:text-sm font-black tracking-tight leading-none uppercase">
+          <h2 className="text-xs md:text-sm font-medium tracking-tight leading-none uppercase text-slate-350">
             {greetingTitle}
           </h2>
-          <p className="text-[10px] md:text-xs opacity-75 sm:block hidden mt-1 font-semibold leading-none">
+          <p className="text-[10px] md:text-xs opacity-65 sm:block hidden mt-1 font-normal leading-none">
             {greetingSub}
           </p>
         </div>
@@ -101,8 +101,8 @@ export function Topbar({
             )}
           />
           <div className="hidden sm:flex flex-col items-start leading-none">
-            <span className="text-xs font-black tracking-tight">{roleLabel}</span>
-            <span className="text-[9px] opacity-60 font-semibold uppercase mt-0.5 tracking-wider">{badgeLabel}</span>
+            <span className="text-xs font-medium tracking-tight text-slate-200">{roleLabel}</span>
+            <span className="text-[9px] opacity-60 font-normal uppercase mt-0.5 tracking-wider">{badgeLabel}</span>
           </div>
         </div>
       </div>

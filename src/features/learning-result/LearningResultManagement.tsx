@@ -636,7 +636,7 @@ export default function LearningResultManagement() {
     };
     const style = maps[status];
     return (
-      <span className={cn("inline-flex items-center gap-1.5 px-3 py-1 bg-[#F5FBFB] rounded-full text-xs font-black uppercase tracking-wider border", style.bg)}>
+      <span className={cn("inline-flex items-center gap-1.5 px-3 py-1 bg-[#F5FBFB] rounded-full text-xs font-black uppercase tracking-widest border", style.bg)}>
         <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse", style.dot)} />
         {style.label}
       </span>
@@ -825,8 +825,8 @@ export default function LearningResultManagement() {
             <Activity className="w-7 h-7 text-[#4EACAF]" />
           </div>
           <div>
-            <p className="text-3xl font-black text-gray-900 tracking-tight leading-none">{totalAttempts}</p>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Tổng lượt luyện</p>
+            <p className="text-3xl font-medium text-slate-800 tracking-tight leading-none">{totalAttempts}</p>
+            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1.5">Tổng lượt luyện</p>
           </div>
         </div>
 
@@ -836,8 +836,8 @@ export default function LearningResultManagement() {
             <Award className="w-7 h-7 text-[#FF8E8E]" />
           </div>
           <div>
-            <p className="text-3xl font-black text-gray-900 tracking-tight leading-none">{averageScore}/100</p>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Điểm số trung bình</p>
+            <p className="text-3xl font-medium text-slate-800 tracking-tight leading-none">{averageScore}/100</p>
+            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1.5">Điểm số trung bình</p>
           </div>
         </div>
 
@@ -847,8 +847,8 @@ export default function LearningResultManagement() {
             <Clock className="w-7 h-7 text-indigo-500" />
           </div>
           <div>
-            <p className="text-3xl font-black text-gray-900 tracking-tight leading-none">{formattedTotalMinutes} phút</p>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Tổng giờ tương tác</p>
+            <p className="text-3xl font-medium text-slate-800 tracking-tight leading-none">{formattedTotalMinutes} phút</p>
+            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1.5">Tổng giờ tương tác</p>
           </div>
         </div>
 
@@ -859,7 +859,7 @@ export default function LearningResultManagement() {
           </div>
           <div>
             <p className="text-3xl font-black text-emerald-600 tracking-tight leading-none">{completionRate}%</p>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Tỷ lệ hoàn thành</p>
+            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1.5">Tỷ lệ hoàn thành</p>
           </div>
         </div>
 
@@ -1017,7 +1017,7 @@ export default function LearningResultManagement() {
                 setFilterChildId('ALL');
                 showToast('Đã xóa bỏ toàn bộ màng lọc!', 'info');
               }}
-              className="inline-flex items-center gap-1.5 text-xs text-[#FF8E8E] font-black uppercase tracking-wider hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs text-[#FF8E8E] font-medium uppercase tracking-wider hover:underline"
             >
               <ListRestart className="w-3.5 h-3.5" />
               Reset toàn bộ màng lọc dữ liệu
@@ -1032,10 +1032,10 @@ export default function LearningResultManagement() {
 
         <div className="px-10 py-8 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/50 backdrop-blur-sm">
           <div>
-            <h3 className="text-2xl font-black text-gray-900 leading-none italic">Danh sách kết quả can thiệp chi tiết</h3>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-2">Dòng dữ liệu mộc lưu vết VR headset, nỗ lực sửa ngọng của trẻ nhỏ</p>
+            <h3 className="text-2xl font-medium text-slate-800 leading-none italic">Danh sách kết quả can thiệp chi tiết</h3>
+            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-2">Dòng dữ liệu mộc lưu vết VR headset, nỗ lực sửa ngọng của trẻ nhỏ</p>
           </div>
-          <span className="text-xs bg-indigo-50 text-indigo-600 px-3.5 py-1.5 rounded-full font-bold uppercase tracking-wider border border-indigo-100/30 self-start sm:self-center">
+          <span className="text-xs bg-indigo-50 text-indigo-600 px-3.5 py-1.5 rounded-full font-normal uppercase tracking-wider border border-indigo-100/30 self-start sm:self-center">
             API_DATABASE: RESULT ({displayResults.length} dòng)
           </span>
         </div>
@@ -1172,7 +1172,7 @@ export default function LearningResultManagement() {
                     <th className="py-5 px-10 text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
+                <tbody className="divide-y divide-gray-50 font-normal text-sm text-slate-650">
                   {paginatedResults.map((itm) => {
                     const chd = getChildInfo(itm.ChildId);
                     const exe = getExerciseInfo(itm.ExerciseId);
@@ -1201,7 +1201,7 @@ export default function LearningResultManagement() {
 
                         {/* Exercise/Lesson Name & difficulty */}
                         <td className="py-5 px-6">
-                          <div className="font-extrabold text-gray-800 leading-tight mb-1 text-xs md:text-sm">
+                          <div className="font-normal text-slate-650 leading-tight mb-1 text-xs md:text-sm">
                             {itemTitle}
                           </div>
                           <div className="flex items-center gap-1.5">
@@ -1353,7 +1353,7 @@ export default function LearningResultManagement() {
               {/* Modal Top Header with accent color */}
               <div className="bg-[#E2F2F3] px-8 py-6 flex items-center justify-between border-b border-[#C5E1E3] text-gray-900">
                 <div className="space-y-1">
-                  <div className="inline-flex items-center gap-1.5 bg-[#4EACAF] text-white px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider">
+                  <div className="inline-flex items-center gap-1.5 bg-[#4EACAF] text-white px-2.5 py-0.5 rounded-lg text-[10px] font-medium uppercase tracking-wider">
                     <Activity className="w-3 h-3" />
                     Lưu vết hồ sơ y tế học đường
                   </div>
@@ -1387,7 +1387,7 @@ export default function LearningResultManagement() {
                       </span>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-lg font-black text-gray-900 leading-tight">
+                      <p className="text-lg font-medium text-slate-800 leading-tight">
                         {getChildInfo(selectedResult.ChildId).FullName}
                       </p>
                       <p className="text-xs font-bold text-gray-500">
@@ -1424,7 +1424,7 @@ export default function LearningResultManagement() {
                         </span>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-lg font-black text-gray-900 leading-tight">
+                        <p className="text-lg font-medium text-slate-800 leading-tight">
                           {getExerciseInfo(selectedResult.ExerciseId).ExerciseName}
                         </p>
                         <div className="flex items-center gap-3 text-xs font-bold text-gray-400 mt-1">
@@ -1468,7 +1468,7 @@ export default function LearningResultManagement() {
                         </span>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-lg font-black text-gray-900 leading-tight">
+                        <p className="text-lg font-medium text-slate-800 leading-tight">
                           {getLessonInfo(selectedResult.LessonId).LessonName}
                         </p>
                         <div className="flex flex-col gap-1 text-xs font-bold text-gray-400 mt-1">
@@ -1564,7 +1564,7 @@ export default function LearningResultManagement() {
                             type="button"
                             onClick={() => handleSimulate3DReplay(selectedResult)}
                             className={cn(
-                              "w-full py-2.5 rounded-xl font-black text-xs uppercase tracking-wide transition-all border flex items-center justify-center gap-2",
+                              "w-full py-2.5 rounded-xl font-medium text-xs uppercase tracking-wide transition-all border flex items-center justify-center gap-2",
                               playingReplayId === selectedResult.ResultId
                                 ? "bg-indigo-600 text-white"
                                 : "bg-indigo-50 border-indigo-100 text-indigo-600 hover:bg-indigo-500 hover:text-white"
@@ -1653,7 +1653,7 @@ export default function LearningResultManagement() {
                           setEditFeedbackMode(!editFeedbackMode);
                           setFeedbackInput(selectedResult.FeedbackText);
                         }}
-                        className="text-xs text-[#4EACAF] hover:text-[#4EACAF]/85 font-black uppercase tracking-wider flex items-center gap-1 hover:underline"
+                        className="text-xs text-[#4EACAF] hover:text-[#4EACAF]/85 font-medium uppercase tracking-wider flex items-center gap-1 hover:underline"
                       >
                         {editFeedbackMode ? 'Hủy sửa' : 'Chỉnh sửa nhận xét'}
                       </button>
@@ -1680,7 +1680,7 @@ export default function LearningResultManagement() {
                         <button
                           type="button"
                           onClick={handleSaveFeedback}
-                          className="px-5 py-2.5 bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#4EACAF]/10"
+                          className="px-5 py-2.5 bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-medium text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#4EACAF]/10"
                         >
                           Cập nhật ngay
                         </button>
@@ -1771,7 +1771,7 @@ export default function LearningResultManagement() {
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none block">
                       Chi tiết {activeMetaPopup.type === 'exercise' ? 'Bài tập' : 'Bài học'} (ID: {activeMetaPopup.id})
                     </span>
-                    <h3 className="text-lg font-black text-gray-900 leading-tight mt-1">
+                    <h3 className="text-lg font-medium text-slate-800 leading-tight mt-1">
                       {activeMetaPopup.name}
                     </h3>
                   </div>

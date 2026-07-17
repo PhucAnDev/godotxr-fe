@@ -521,11 +521,11 @@ export default function UserManagement() {
                     <th className="py-4 px-6 text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium text-sm text-slate-700">
+                <tbody className="divide-y divide-slate-100 font-normal text-sm text-slate-600">
                   {sortedUsers.map((user) => (
                     <tr key={user.id} className="hover:bg-slate-50/40 transition-colors">
                       {/* ID */}
-                      <td className="py-4 px-[5px] font-mono text-slate-400 font-bold text-xs">
+                      <td className="py-4 px-[5px] font-mono text-slate-400 font-normal text-xs">
                         USR-{String(user.id).padStart(3, '0')}
                       </td>
 
@@ -539,21 +539,21 @@ export default function UserManagement() {
                             referrerPolicy="no-referrer"
                           />
                           <div>
-                            <p className="font-bold text-slate-800 text-sm">{user.fullName}</p>
-                            <p className="text-xs text-slate-400 font-medium">{user.email}</p>
+                            <p className="font-medium text-slate-800 text-sm">{user.fullName}</p>
+                            <p className="text-xs text-slate-400 font-normal">{user.email}</p>
                           </div>
                         </div>
                       </td>
 
                       {/* Số điện thoại */}
                       <td className="py-4 px-[5px] text-xs">
-                        <p className="text-slate-700 font-semibold">{user.phone || '—'}</p>
+                        <p className="text-slate-600 font-normal">{user.phone || '—'}</p>
                       </td>
 
                       {/* Role badge */}
                       <td className="py-4 px-[5px]">
                         <span className={cn(
-                          'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase',
+                          'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium uppercase',
                           getRoleBadgeClass(user.roleName)
                         )}>
                           {getRoleDisplayName(user.roleName)}
@@ -563,7 +563,7 @@ export default function UserManagement() {
                       {/* Status badge */}
                       <td className="py-4 px-[5px]">
                         <span className={cn(
-                          'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold uppercase tracking-wide',
+                          'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium uppercase tracking-wide',
                           getStatusBadgeClass(user.isActive)
                         )}>
                           {getStatusLabel(user.isActive)}

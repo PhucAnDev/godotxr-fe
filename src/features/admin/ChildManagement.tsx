@@ -697,7 +697,7 @@ export default function ChildManagement() {
             placeholder="Tìm theo tên bé, mã hồ sơ hoặc ID tài khoản phụ huynh..."
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-10 text-sm font-semibold text-gray-700 outline-none transition-all placeholder:text-gray-400 focus:border-[#4EACAF] focus:bg-white"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-10 text-sm font-normal text-slate-600 outline-none transition-all placeholder:text-gray-400 focus:border-[#4EACAF] focus:bg-white"
           />
           {searchQuery && (
             <button
@@ -758,13 +758,13 @@ export default function ChildManagement() {
             <h3 className="text-lg font-bold leading-none text-slate-800">
               Danh sách trẻ cần can thiệp âm
             </h3>
-            <p className="mt-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
+            <p className="mt-1.5 text-xs font-normal uppercase tracking-wider text-slate-400">
               Hiển thị {filteredChildren.length} hồ sơ phù hợp bộ lọc
             </p>
           </div>
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 animate-pulse rounded-full bg-[#4EACAF]" />
-            <span className="text-xs font-bold uppercase tracking-wider text-[#4EACAF]">
+            <span className="text-xs font-normal uppercase tracking-wider text-[#4EACAF]">
               Hệ thống đồng bộ
             </span>
           </div>
@@ -812,7 +812,7 @@ export default function ChildManagement() {
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-[#FDFCF5]/50 text-xs font-bold uppercase tracking-widest text-[#555]">
+                  <tr className="border-b border-gray-100 bg-[#FDFCF5]/50 text-xs font-semibold uppercase tracking-wider text-slate-550">
                     <th
                       onClick={() => handleSort('ChildId')}
                       className="w-[5%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
@@ -903,7 +903,7 @@ export default function ChildManagement() {
                     <th className="w-[10%] px-[5px] py-5 text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 text-sm font-bold text-gray-700">
+                <tbody className="divide-y divide-gray-50 font-normal text-sm text-slate-650">
                   {paginatedChildren.map((child) => (
                     <tr
                       key={child.ChildId}
@@ -936,14 +936,14 @@ export default function ChildManagement() {
                         {getGenderLabel(child.Gender)}
                       </td>
                       <td className="px-[5px] py-5">
-                        <p className="font-extrabold text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis">
+                        <p className="font-normal text-slate-650 whitespace-nowrap overflow-hidden text-ellipsis">
                           {parentsMap[child.ParentUserId] || `Tài khoản #${child.ParentUserId}`}
                         </p>
                       </td>
                       <td className="px-[5px] py-5">
                         <span
                           className={cn(
-                            'inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-wider',
+                            'inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-widest',
                             child.LearningLevel === 'Beginner'
                               ? 'border-sky-100 bg-sky-50 text-sky-600'
                               : child.LearningLevel === 'Intermediate'
@@ -962,7 +962,7 @@ export default function ChildManagement() {
                       <td className="px-[5px] py-5">
                         <span
                           className={cn(
-                            'inline-flex items-center rounded-full px-3 py-1 text-xs font-black uppercase tracking-wider',
+                            'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider',
                             child.Status === 'Active'
                               ? 'bg-emerald-50 text-emerald-600'
                               : 'bg-gray-100 text-gray-500'
@@ -1059,10 +1059,10 @@ export default function ChildManagement() {
                 <div className="flex-1 space-y-3 text-center md:text-left">
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
-                      <span className="text-2xl font-black text-gray-900">
+                      <span className="text-2xl font-medium text-slate-800">
                         {selectedChild.FullName}
                       </span>
-                      <span className="rounded-full bg-gray-100 px-3 py-0.5 text-[9px] font-black uppercase tracking-widest text-gray-400">
+                      <span className="rounded-full bg-gray-100 px-3 py-0.5 text-[9px] font-medium uppercase tracking-wider text-gray-400">
                         ID: {selectedChild.ChildId}
                       </span>
                     </div>
@@ -1130,7 +1130,7 @@ export default function ChildManagement() {
                   value={formatDateTime(selectedChild.UpdatedAt)}
                 />
                 <div className="col-span-1 space-y-1.5 rounded-2xl border border-[#F2ECD8]/40 bg-[#FDFCF5]/60 p-4 md:col-span-2">
-                  <span className="block text-[10px] font-black uppercase tracking-widest text-gray-400">
+                  <span className="block text-[10px] font-medium uppercase tracking-wider text-gray-400">
                     Chẩn đoán & Lưu ý đặc biệt (Ghi chú)
                   </span>
                   <span className="block text-sm font-bold italic leading-relaxed text-gray-800">
@@ -1295,7 +1295,7 @@ export default function ChildManagement() {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-500">
+                <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">
                   Ghi chú / Lưu ý lâm sàng
                 </label>
                 <textarea
@@ -1305,7 +1305,7 @@ export default function ChildManagement() {
                   }
                   rows={4}
                   placeholder="Nhập chẩn đoán hoặc ghi chú hỗ trợ cho bé..."
-                  className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
+                  className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal text-slate-600 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
                 />
               </div>
 
@@ -1449,7 +1449,7 @@ function ModalFrame({
               <Info className="h-6 w-6" />
               {title}
             </h2>
-            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-gray-400">
+            <p className="mt-1 text-xs font-normal uppercase tracking-wider text-gray-400">
               {subtitle}
             </p>
           </div>
@@ -1483,7 +1483,7 @@ function InputField({
 }) {
   return (
     <div className="space-y-2">
-      <label className="block text-xs font-black uppercase tracking-wider text-slate-500">
+      <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">
         {label}
       </label>
       <input
@@ -1491,7 +1491,7 @@ function InputField({
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         inputMode={inputMode}
-        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
+        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal text-slate-600 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
       />
     </div>
   );
@@ -1510,7 +1510,7 @@ function SelectInputField({
 }) {
   return (
     <div className="space-y-2">
-      <label className="block text-xs font-black uppercase tracking-wider text-slate-500">
+      <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">
         {label}
       </label>
       <CustomSelect
@@ -1532,38 +1532,28 @@ function StatItem({
   borderColor,
 }: {
   title: string;
-  value: string | number;
+  value: number | string;
   subtitle: string;
   icon: React.ReactNode;
   bgColor: string;
   borderColor: string;
 }) {
   return (
-    <div
-      className={cn(
-        'group relative overflow-hidden rounded-[32px] border bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md',
-        borderColor
-      )}
-    >
-      <div
-        className={cn(
-          'absolute -bottom-6 -right-6 h-24 w-24 rounded-full opacity-10 transition-transform duration-500 group-hover:scale-150',
-          bgColor
-        )}
-      />
-
-      <div className="relative z-10 flex items-center gap-5">
-        <div className={cn('shrink-0 rounded-2xl p-4 shadow-inner', bgColor)}>
+    <div className={cn(
+      'bg-white rounded-[32px] p-6 shadow-sm border relative overflow-hidden group hover:shadow-md transition-all duration-300',
+      borderColor
+    )}>
+      <div className={cn('absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-10 transition-transform duration-500 group-hover:scale-150', bgColor)} />
+      <div className="flex items-center gap-5 relative z-10">
+        <div className={cn('p-4 rounded-2xl shadow-inner shrink-0', bgColor)}>
           {icon}
         </div>
-        <div>
-          <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
-            {title}
+        <div className="space-y-0.5">
+          <p className="text-gray-400 font-bold uppercase text-[10px] tracking-wider">{title}</p>
+          <p className="text-3xl font-black text-gray-900 leading-none">
+            {typeof value === 'number' ? value.toLocaleString() : value}
           </p>
-          <h3 className="mt-1 text-4xl font-black leading-none tracking-tight text-slate-900">
-            {value}
-          </h3>
-          <p className="mt-2 text-xs font-semibold text-slate-500">{subtitle}</p>
+          <p className="text-[11px] text-gray-500 font-medium pt-1 line-clamp-1">{subtitle}</p>
         </div>
       </div>
     </div>
@@ -1573,7 +1563,7 @@ function StatItem({
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1.5 rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
-      <span className="block text-[10px] font-black uppercase tracking-widest text-gray-400">
+      <span className="block text-[10px] font-medium uppercase tracking-wider text-gray-400">
         {label}
       </span>
       <span className="block text-sm font-bold text-gray-800">{value}</span>

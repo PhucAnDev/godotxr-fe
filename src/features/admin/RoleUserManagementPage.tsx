@@ -766,7 +766,7 @@ export default function RoleUserManagementPage({
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-[#FDFCF5]/50 text-xs font-bold uppercase tracking-widest text-[#555]">
+                  <tr className="border-b border-gray-100 bg-[#FDFCF5]/50 text-xs font-semibold uppercase tracking-widest text-[#555]">
                     <th
                       onClick={() => handleSort('id')}
                       className="w-[10%] min-w-[110px] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
@@ -854,47 +854,47 @@ export default function RoleUserManagementPage({
                     <th className="w-[5%] min-w-[110px] px-[5px] py-5 text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 text-sm font-bold text-gray-700">
+                <tbody className="divide-y divide-gray-50 text-sm font-normal text-slate-600">
                   {paginatedUsers.map((user) => (
                     <tr key={user.id} className="transition-colors hover:bg-gray-50/40">
-                      <td className="px-[5px] py-5 font-mono text-xs font-black text-gray-400">
+                      <td className="px-[5px] py-5 font-mono text-xs font-normal text-slate-400">
                         {formatUserCode(user.id)}
                       </td>
                       <td className="px-[5px] py-5">
                         <div className="space-y-1">
-                          <p className="text-base font-black text-[#111]">
+                          <p className="text-sm font-medium text-slate-800">
                             {user.fullName}
                           </p>
-                          <p className="text-xs font-semibold text-slate-400">
+                          <p className="text-xs font-normal text-slate-400">
                             {variant === 'teacher' ? 'Giáo viên' : 'Phụ huynh'}
                           </p>
                         </div>
                       </td>
                       <td className="px-[5px] py-5">
-                        <div className="flex items-center gap-2 font-semibold text-slate-700">
+                        <div className="flex items-center gap-2 font-normal text-slate-650">
                           <Mail className="h-4 w-4 text-slate-400" />
                           <span>{user.email}</span>
                         </div>
                       </td>
                       <td className="px-[5px] py-5">
                         {variant === 'teacher' ? (
-                          <span className="font-semibold text-slate-700">
+                          <span className="font-normal text-slate-650">
                             {user.specialty || 'Chưa cập nhật'}
                           </span>
                         ) : (
-                          <div className="flex items-center gap-2 font-semibold text-slate-700">
+                          <div className="flex items-center gap-2 font-normal text-slate-650">
                             <Phone className="h-4 w-4 text-slate-400" />
                             <span>{user.phone || 'Chưa cập nhật'}</span>
                           </div>
                         )}
                       </td>
-                      <td className="px-[5px] py-5 font-semibold text-slate-700">
+                      <td className="px-[5px] py-5 font-normal text-slate-650">
                         {getGenderLabel(user.gender)}
                       </td>
                       <td className="px-[5px] py-5">
                         <span
                           className={cn(
-                            'inline-flex rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide',
+                            'inline-flex rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wide',
                             getStatusBadgeClass(user.isActive)
                           )}
                         >

@@ -539,7 +539,7 @@ export default function LessonManagement() {
             placeholder="Tìm theo tên bài học, kỹ năng điều trị (Pronunciation, Vocab, Oral, Communication)..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-slate-50 border border-slate-200 font-semibold text-slate-700 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs" 
+            className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-slate-50 border border-slate-200 font-normal text-slate-600 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs" 
           />
           {searchQuery && (
             <button 
@@ -577,10 +577,10 @@ export default function LessonManagement() {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" id="lesson-table-box">
         <div className="px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-lg font-bold text-slate-800 font-sans tracking-tight leading-none">Chi tiết cấu trúc bài can thiệp</h3>
+            <h3 className="text-lg font-medium text-slate-800 font-sans tracking-tight leading-none">Chi tiết cấu trúc bài can thiệp</h3>
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Tổng hiển thị {filteredLessons.length} bài học</p>
           </div>
-          <div className="text-[10px] bg-slate-50 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-md font-bold uppercase tracking-wider">
+          <div className="text-[10px] bg-slate-50 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-md font-normal uppercase tracking-wider">
             Chào mừng: Giáo viên & Quản trị viên
           </div>
         </div>
@@ -597,7 +597,7 @@ export default function LessonManagement() {
                 setFilterProgram('ALL');
                 setFilterStatus('ALL');
               }}
-              className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-[#4EACAF] font-black text-xs uppercase rounded-xl transition-all"
+              className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-[#4EACAF] font-medium text-xs uppercase rounded-xl transition-all"
             >
               Hoàn tác chọn bộ lọc
             </button>
@@ -698,7 +698,7 @@ export default function LessonManagement() {
                     <th className="w-[10%] py-5 px-4 text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
+                <tbody className="divide-y divide-gray-50 font-normal text-sm text-slate-650">
                   {paginatedLessons.map((lesson) => {
                     const program = programs.find(p => p.ProgramId === lesson.ProgramId);
 
@@ -712,7 +712,7 @@ export default function LessonManagement() {
                         </td>
                         <td className="py-5 px-4">
                           <div className="max-w-md font-bold space-y-1">
-                            <p className="text-gray-900 font-extrabold leading-snug line-clamp-1">{lesson.LessonName}</p>
+                            <p className="font-medium text-slate-800 leading-snug line-clamp-1">{lesson.LessonName}</p>
                             <p className="text-xs text-gray-400 font-medium line-clamp-2 leading-relaxed">{lesson.Description}</p>
                           </div>
                         </td>
@@ -731,7 +731,7 @@ export default function LessonManagement() {
                         <td className="py-5 px-4">
                           <SkillBadge skill={lesson.TargetSkill} />
                         </td>
-                        <td className="py-5 px-4 font-extrabold text-gray-800">
+                        <td className="py-5 px-4 font-normal text-slate-650">
                           <div className="flex items-center gap-1.5 font-bold">
                             <Clock className="w-4 h-4 text-gray-400" />
                             <span>{lesson.EstimatedDuration} phút</span>
@@ -739,7 +739,7 @@ export default function LessonManagement() {
                         </td>
                         <td className="py-5 px-4">
                           <span className={cn(
-                            "inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
+                            "inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
                             lesson.Status === 'Active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-gray-100 text-gray-400 border border-transparent'
                           )}>
                             {lesson.Status === 'Active' ? '● Hoạt động' : '○ Tạm ngưng'}
@@ -806,7 +806,7 @@ export default function LessonManagement() {
       <div className="bg-orange-50/40 p-6 rounded-[32px] border-2 border-orange-100 max-w-xl mx-auto flex items-center gap-4">
         <Smile className="w-12 h-12 text-orange-400 fill-current shrink-0 animate-bounce" />
         <div className="space-y-1 font-bold">
-          <h4 className="font-extrabold text-gray-800 text-sm">Gợi ý thiết kế lộ trình</h4>
+          <h4 className="font-normal text-slate-650 text-sm">Gợi ý thiết kế lộ trình</h4>
           <p className="text-gray-500 text-xs leading-relaxed font-semibold">
             Các bài tập uốn vòm và sửa ngọng hiệu quả nhất khi được đan xen trong thời lượng từ <strong className="text-emerald-600">15 - 20 phút</strong>. Việc rèn luyện lâu trong môi trường VR có thể gây mỏi cơ của các bé nhi đồng.
           </p>
@@ -924,7 +924,7 @@ export default function LessonManagement() {
                           <div className="space-y-1.5 flex-1 min-w-0">
                             <p className="font-extrabold text-sm text-gray-900 leading-snug">{exe.ExerciseName}</p>
                             <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                              <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                              <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2.5 py-0.5 rounded-full font-normal uppercase tracking-wider">
                                 Loại game: {exe.ExerciseType}
                               </span>
                               <span className="text-[10px] text-gray-400 font-extrabold uppercase">
@@ -1149,7 +1149,7 @@ function StatCard({ title, value, subtitle, icon, bgColor, borderColor }: StatCa
         {icon}
       </div>
       <div>
-        <p className="text-xl font-bold text-slate-800 tracking-tight leading-none">{value}</p>
+        <p className="text-xl font-medium text-slate-800 tracking-tight leading-none">{value}</p>
         <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">{title}</p>
       </div>
     </div>
@@ -1179,7 +1179,7 @@ function SkillBadge({ skill }: { skill: string }) {
 
   return (
     <span className={cn(
-      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap",
+      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium uppercase tracking-wider whitespace-nowrap",
       badgeClass
     )}>
       <Award className="w-3.5 h-3.5" />

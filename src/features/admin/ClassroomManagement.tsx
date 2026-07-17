@@ -606,7 +606,7 @@ export default function ClassroomManagement() {
             placeholder="Tìm theo tên lớp, tên giáo viên, chương trình..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-gray-700 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white" 
+            className="w-full pl-11 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-normal text-slate-600 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white" 
           />
           {searchQuery && (
             <button 
@@ -665,12 +665,12 @@ export default function ClassroomManagement() {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" id="classroom-records-panel">
         <div className="px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-lg font-bold text-slate-800 leading-none">Danh sách lớp giảng dạy</h3>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-2">Tìm thấy {filteredClassrooms.length} phòng học luyện tập VR</p>
+            <h3 className="text-lg font-medium text-slate-800 leading-none">Danh sách lớp giảng dạy</h3>
+            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-2">Tìm thấy {filteredClassrooms.length} phòng học luyện tập VR</p>
           </div>
           <div className="inline-flex items-center gap-2 bg-[#4EACAF]/10 px-4 py-1.5 rounded-full">
             <span className="w-2.5 h-2.5 bg-[#4EACAF] rounded-full animate-pulse" />
-            <span className="text-xs text-[#4EACAF] font-bold uppercase tracking-wider">Hạ tầng điều phối khóa học</span>
+            <span className="text-xs text-[#4EACAF] font-normal uppercase tracking-wider">Hạ tầng điều phối khóa học</span>
           </div>
         </div>
 
@@ -697,7 +697,7 @@ export default function ClassroomManagement() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse" id="classroom-table">
                 <thead>
-                  <tr className="bg-[#FDFCF5]/50 border-b border-gray-100 text-[#555] font-bold text-xs uppercase tracking-widest">
+                  <tr className="bg-[#FDFCF5]/50 border-b border-gray-100 text-slate-550 font-semibold text-xs uppercase tracking-wider">
                     <th
                       onClick={() => handleSort('ClassId')}
                       className="w-[8%] py-5 px-[5px] cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
@@ -774,7 +774,7 @@ export default function ClassroomManagement() {
                     <th className="w-[10%] py-5 px-[5px] text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
+                <tbody className="divide-y divide-gray-50 font-normal text-sm text-slate-650">
                   {paginatedClassrooms.map((cls) => {
                     const teacher = teachers.find(t => t.TeacherId === cls.TeacherId);
                     const program = programs.find(p => p.ProgramId === cls.ProgramId);
@@ -785,11 +785,11 @@ export default function ClassroomManagement() {
                         className="hover:bg-gray-50/40 transition-colors"
                         id={`row-${cls.ClassId}`}
                       >
-                        <td className="py-5 px-[5px] font-mono text-gray-400 font-black text-xs">
+                        <td className="py-5 px-[5px] font-mono text-slate-400 font-normal text-xs">
                           {cls.ClassId}
                         </td>
                          <td className="py-5 px-[5px] max-w-xs">
-                           <p className="font-extrabold text-gray-900 text-base flex items-center gap-2">
+                           <p className="font-medium text-slate-800 text-sm flex items-center gap-2">
                              <span className="p-1.5 bg-orange-50 text-orange-500 rounded-lg">
                                <School className="w-4 h-4" />
                              </span>
@@ -806,8 +806,8 @@ export default function ClassroomManagement() {
                                  referrerPolicy="no-referrer"
                                />
                                <div>
-                                 <p className="text-gray-900 font-extrabold">{teacher.FullName}</p>
-                                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{teacher.Specialty.slice(0, 30)}...</p>
+                                 <p className="font-medium text-slate-800">{teacher.FullName}</p>
+                                 <p className="text-[10px] text-gray-400 font-normal uppercase tracking-wider">{teacher.Specialty.slice(0, 30)}...</p>
                                </div>
                             </div>
                           ) : (
@@ -818,11 +818,11 @@ export default function ClassroomManagement() {
                           <div className="space-y-1 text-xs">
                             <p className="font-medium text-gray-500 flex items-center gap-1.5">
                               <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                              Từ: <span className="font-extrabold text-gray-800">{cls.StartDate}</span>
+                              Từ: <span className="font-normal text-slate-650">{cls.StartDate}</span>
                             </p>
                             <p className="font-medium text-gray-500 flex items-center gap-1.5">
                               <CalendarRange className="w-3.5 h-3.5 text-gray-400" />
-                              Đến: <span className="font-extrabold text-gray-800">{cls.EndDate}</span>
+                              Đến: <span className="font-normal text-slate-650">{cls.EndDate}</span>
                             </p>
                           </div>
                         </td>
@@ -838,7 +838,7 @@ export default function ClassroomManagement() {
                         </td>
                         <td className="py-5 px-[5px]">
                           <span className={cn(
-                            "inline-flex items-center px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider",
+                            "inline-flex items-center px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest",
                             cls.Status === 'Active' ? 'bg-emerald-50 text-emerald-600' :
                             cls.Status === 'Upcoming' ? 'bg-amber-50 text-amber-600' :
                             cls.Status === 'Inactive' ? 'bg-rose-50 text-[#FF8E8E]' :
@@ -986,7 +986,7 @@ export default function ClassroomManagement() {
                          <div className="space-y-2 flex-1 text-center md:text-left">
                             <div>
                               <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-                                 <span className="text-2xl font-black text-gray-900">{selectedClassroomDetail?.className || selectedClass.ClassName}</span>
+                                 <span className="text-2xl font-medium text-slate-800">{selectedClassroomDetail?.className || selectedClass.ClassName}</span>
                                  <span className="px-3 py-0.5 bg-gray-100 text-gray-400 font-black tracking-widest text-[9px] rounded-full uppercase">
                                    ID: {selectedClassroomDetail?.id || selectedClass.ClassId}
                                  </span>
@@ -1118,7 +1118,7 @@ export default function ClassroomManagement() {
                                referrerPolicy="no-referrer"
                              />
                              <div>
-                               <p className="text-gray-900 font-extrabold">{student.FullName}</p>
+                               <p className="font-medium text-slate-800">{student.FullName}</p>
                                <p className="text-xs text-gray-400">
                                  {student.Age} tuổi • Giới tính: {student.Gender === 'Male' ? 'Nam' : 'Nữ'}
                                </p>
@@ -1296,35 +1296,39 @@ export default function ClassroomManagement() {
 }
 
 // Helper stat item component
-function StatItem({ 
-  title, 
-  value, 
-  subtitle, 
-  icon, 
-  bgColor, 
-  borderColor 
-}: { 
-  title: string; 
-  value: number; 
-  subtitle: string; 
-  icon: React.ReactNode; 
-  bgColor: string; 
-  borderColor: string; 
+function StatItem({
+  title,
+  value,
+  subtitle,
+  icon,
+  bgColor,
+  borderColor,
+}: {
+  title: string;
+  value: number | string;
+  subtitle: string;
+  icon: React.ReactNode;
+  bgColor: string;
+  borderColor: string;
 }) {
   return (
     <div className={cn(
-      "p-6 rounded-3xl border-2 flex items-center gap-5 bg-white shadow-sm hover:shadow-md transition-all duration-300",
-      bgColor,
+      'bg-white rounded-[32px] p-6 shadow-sm border relative overflow-hidden group hover:shadow-md transition-all duration-300',
       borderColor
     )}>
-       <div className="p-3 bg-white rounded-2xl shadow-sm border border-gray-50 flex items-center justify-center shrink-0">
-         {icon}
-       </div>
-       <div className="space-y-1">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{title}</p>
-          <p className="text-3xl font-black text-gray-900 tracking-tight leading-none">{value}</p>
-          <p className="text-[10px] font-extrabold text-gray-400 leading-none">{subtitle}</p>
-       </div>
+      <div className={cn('absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-10 transition-transform duration-500 group-hover:scale-150', bgColor)} />
+      <div className="flex items-center gap-5 relative z-10">
+        <div className={cn('p-4 rounded-2xl shadow-inner shrink-0', bgColor)}>
+          {icon}
+        </div>
+        <div className="space-y-0.5">
+          <p className="text-gray-400 font-bold uppercase text-[10px] tracking-wider">{title}</p>
+          <p className="text-3xl font-black text-gray-900 leading-none">
+            {typeof value === 'number' ? value.toLocaleString() : value}
+          </p>
+          <p className="text-[11px] text-gray-500 font-medium pt-1 line-clamp-1">{subtitle}</p>
+        </div>
+      </div>
     </div>
   );
 }

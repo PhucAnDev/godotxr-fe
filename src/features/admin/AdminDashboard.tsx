@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Users, GraduationCap, Layers, Bell, Search, ArrowUpRight, Play, CheckCircle2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Users, GraduationCap, ArrowUpRight, Play, Smile, Shield, Layers } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getUsers } from '../../services/userService';
 import { getChildProfiles } from '../../services/childProfileService';
@@ -19,12 +20,13 @@ interface RecentActivity {
 }
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [totalUsers, setTotalUsers] = useState<number>(0);
   const [totalTeachers, setTotalTeachers] = useState<number>(0);
   const [totalAttempts, setTotalAttempts] = useState<number>(0);
-  const [newUsersThisWeek, setNewUsersThisWeek] = useState<string>('0 Người dùng mới tuần này');
-  const [pendingAccounts, setPendingAccounts] = useState<string>('0 Tài khoản đang chờ duyệt');
-  const [attemptsToday, setAttemptsToday] = useState<string>('0 Lượt buổi hôm nay');
+  const [newUsersThisWeek, setNewUsersThisWeek] = useState<string>('0 mới tuần này');
+  const [pendingAccounts, setPendingAccounts] = useState<string>('0 chờ duyệt');
+  const [attemptsToday, setAttemptsToday] = useState<string>('0 lượt hôm nay');
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -46,12 +48,12 @@ export default function AdminDashboard() {
           setTotalTeachers(teachers.length);
           
           const inactive = allUsers.filter(u => !u.isActive).length;
-          setPendingAccounts(`${inactive} Tài khoản chưa hoạt động`);
+          setPendingAccounts(`${inactive} tài khoản chưa hoạt động`);
           
           const oneWeekAgo = new Date();
           oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
           const thisWeekCount = allUsers.filter(u => new Date(u.createdAt) > oneWeekAgo).length;
-          setNewUsersThisWeek(`+${thisWeekCount} Tài khoản mới tuần này`);
+          setNewUsersThisWeek(`+${thisWeekCount} tài khoản mới tuần này`);
         }
 
         // 2. Fetch children and results
@@ -98,11 +100,11 @@ export default function AdminDashboard() {
           });
 
           setTotalAttempts(sumAttempts);
-          setAttemptsToday(`${sumAttemptsToday} Lượt buổi hôm nay`);
+          setAttemptsToday(`${sumAttemptsToday} lượt hôm nay`);
 
           // Sort activities by completion time
           combinedResults.sort((a, b) => b.rawTime.localeCompare(a.rawTime));
-          setRecentActivities(combinedResults.slice(0, 5));
+          setRecentActivities(combinedResults.slice(0, 8));
         }
       } catch (err) {
         console.error('Error loading dashboard stats:', err);
@@ -120,146 +122,171 @@ export default function AdminDashboard() {
   }, []);
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Header page component */}
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative">
+      {/* 1. Header (Matched styled card container) */}
       <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
-            <Layers className="w-3.5 h-3.5 animate-pulse" />
-            Tổng quan quản trị hệ thống
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-bold uppercase tracking-widest leading-none">
+            <Shield className="w-3.5 h-3.5" />
+            Hệ thống Quản trị
           </div>
-          <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
-            Bảng Điều Khiển <span className="text-[#4EACAF]">Hệ Thống</span>
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
+            Bảng điều khiển <span className="text-[#4EACAF]">Hệ thống</span>
           </h1>
-          <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed mt-1">
-            Quản lý tài nguyên, người dùng và giám sát chỉ số đồng hành GodotXR
+          <p className="text-gray-505 font-medium max-w-2xl text-sm md:text-base leading-relaxed mt-1">
+            Giám sát trạng thái hoạt động, chỉ số người dùng và tài nguyên can thiệp GodotXR.
           </p>
         </div>
-        <div className="flex items-center gap-4 self-stretch sm:self-auto shrink-0">
-          <div className="relative flex-1 sm:flex-initial">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input 
-              type="text" 
-              placeholder="Tìm kiếm hệ thống..." 
-              className="pl-11 pr-4 py-3.5 text-sm rounded-2xl bg-white/60 border border-slate-200 outline-none w-full sm:w-60 focus:bg-white focus:border-[#4EACAF] transition-all font-semibold" 
-            />
+
+        <button
+          onClick={() => navigate('/admin/users')}
+          className="bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-bold py-4 px-8 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[#4EACAF]/20 transition-all hover:scale-105 active:scale-95 shrink-0 cursor-pointer"
+        >
+          <Users className="w-5 h-5" strokeWidth={2} />
+          Quản lý người dùng
+        </button>
+      </div>
+
+      {/* 2. Stats Row (Matched StatItem grids) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <StatItem 
+          title="Tổng người dùng" 
+          value={isLoading ? 0 : totalUsers} 
+          subtitle={isLoading ? "Đang tải dữ liệu..." : newUsersThisWeek} 
+          icon={<Users className="w-5 h-5 text-[#4EACAF]" />} 
+          bgColor="bg-[#4EACAF]/5"
+          borderColor="border-slate-100"
+        />
+        <StatItem 
+          title="Tổng giáo viên" 
+          value={isLoading ? 0 : totalTeachers} 
+          subtitle={isLoading ? "Đang tải dữ liệu..." : pendingAccounts} 
+          icon={<GraduationCap className="w-5 h-5 text-blue-600" />} 
+          bgColor="bg-blue-50/70"
+          borderColor="border-slate-100"
+        />
+        <StatItem 
+          title="Tổng lượt tập" 
+          value={isLoading ? 0 : totalAttempts} 
+          subtitle={isLoading ? "Đang tải dữ liệu..." : attemptsToday} 
+          icon={<Play className="w-5 h-5 text-emerald-600 text-fill-current" />} 
+          bgColor="bg-emerald-50/70"
+          borderColor="border-slate-100"
+        />
+      </div>
+
+      {/* 3. Main Central Table Container */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800 leading-none">Hoạt động rèn luyện gần đây</h3>
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1.5">
+              Danh sách chi tiết kết quả luyện tập của học sinh đồng bộ từ thiết bị VR
+            </p>
           </div>
-          <button className="p-3.5 bg-white/60 border border-slate-200 rounded-2xl relative hover:bg-white transition-colors cursor-pointer shrink-0">
-            <Bell className="w-5 h-5 text-gray-600" />
-            <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-[#FF8E8E] rounded-full ring-2 ring-white animate-pulse" />
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-[#4EACAF] rounded-full animate-pulse" />
+            <span className="text-xs text-[#4EACAF] font-bold uppercase tracking-wider">Hệ thống đồng bộ</span>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          {isLoading ? (
+            <div className="py-20 flex flex-col items-center gap-4 text-slate-400">
+              <span className="text-sm font-bold animate-pulse">Đang tải danh sách hoạt động...</span>
+            </div>
+          ) : recentActivities.length === 0 ? (
+            <div className="py-16 text-center space-y-4">
+              <p className="text-base font-bold text-slate-700">Chưa ghi nhận hoạt động rèn luyện nào!</p>
+              <p className="text-slate-400 text-xs">Hãy để học sinh hoàn thành bài tập VR để cập nhật bảng nhật ký này.</p>
+            </div>
+          ) : (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-500 font-bold text-xs uppercase tracking-wider">
+                  <th className="py-4 px-6">Thời gian</th>
+                  <th className="py-4 px-6">Học sinh</th>
+                  <th className="py-4 px-6">Hành động</th>
+                  <th className="py-4 px-6">Nội dung rèn luyện</th>
+                  <th className="py-4 px-6 text-right">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-sm text-slate-750">
+                {recentActivities.map((act, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/40 transition-colors">
+                    {/* Time */}
+                    <td className="py-4 px-6 font-mono text-slate-400 font-bold text-xs">
+                      {act.time}
+                    </td>
+                    {/* Student */}
+                    <td className="py-4 px-6 font-bold text-slate-800 text-sm">
+                      {act.user}
+                    </td>
+                    {/* Action */}
+                    <td className="py-4 px-6 text-slate-600 font-medium text-sm">
+                      {act.action}
+                    </td>
+                    {/* Target details */}
+                    <td className="py-4 px-6">
+                      <span className="font-mono text-xs text-slate-500 bg-slate-50 p-1 px-2 rounded-lg border border-slate-200">
+                        {act.target}
+                      </span>
+                    </td>
+                    {/* Status badge */}
+                    <td className="py-4 px-6 text-right">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wide">
+                        Đã đồng bộ
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
-      {/* Main Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <AdminStatCard 
-          label="Tổng người dùng" 
-          value={isLoading ? "..." : String(totalUsers)} 
-          growth={isLoading ? "Đang tải dữ liệu..." : newUsersThisWeek} 
-          icon={<Users className="w-6 h-6" />} 
-          color="text-teal-600"
-          bgColor="bg-teal-50 border-teal-100"
-        />
-        <AdminStatCard 
-          label="Tổng giáo viên" 
-          value={isLoading ? "..." : String(totalTeachers)} 
-          growth={isLoading ? "Đang tải dữ liệu..." : pendingAccounts} 
-          icon={<GraduationCap className="w-6 h-6" />} 
-          color="text-blue-600"
-          bgColor="bg-blue-50 border-blue-100"
-        />
-        <AdminStatCard 
-          label="Tổng lượt tập" 
-          value={isLoading ? "..." : String(totalAttempts)} 
-          growth={isLoading ? "Đang tải dữ liệu..." : attemptsToday} 
-          icon={<Play className="w-6 h-6" />} 
-          color="text-emerald-600"
-          bgColor="bg-emerald-50 border-emerald-100"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-         {/* Quick Actions Component */}
-         <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-100 space-y-6">
-            <div>
-              <h4 className="text-lg font-bold text-slate-800">Thao tác quản trị nhanh</h4>
-              <p className="text-xs text-slate-400 mt-1">Điều hệ tới các phân khu quản lý một chạm</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-               <button className="flex items-center justify-between p-5 bg-[#4EACAF] hover:bg-[#3d8a8c] text-white rounded-xl shadow-sm transition-all group cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <Users className="w-5 h-5" />
-                    <span className="font-bold text-sm">Quản lý người dùng</span>
-                  </div>
-                  <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-               </button>
-               <button className="flex items-center justify-between p-5 bg-[#4EACAF] hover:bg-[#3d8a8c] text-white rounded-xl shadow-sm transition-all group cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <Layers className="w-5 h-5" />
-                    <span className="font-bold text-sm">Quản lý lớp học</span>
-                  </div>
-                  <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-               </button>
-            </div>
-         </div>
-
-         {/* Recent System Activity */}
-         <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-100 space-y-5">
-            <div>
-              <h4 className="text-lg font-bold text-slate-800">Hoạt động rèn luyện gần đây</h4>
-              <p className="text-xs text-slate-400 mt-1">Báo cáo trực tiếp lượt nộp kết quả VR của trẻ</p>
-            </div>
-            <div className="space-y-3.5">
-               {recentActivities.length > 0 ? (
-                 recentActivities.map((act, idx) => (
-                   <ActivityItem 
-                     key={idx} 
-                     time={act.time} 
-                     user={act.user} 
-                     action={act.action} 
-                     target={act.target} 
-                   />
-                 ))
-               ) : (
-                 <>
-                   <div className="text-center py-6 text-slate-400 text-xs font-semibold">
-                     Chưa ghi nhận hoạt động rèn luyện nào của học sinh trong hôm nay.
-                   </div>
-                 </>
-               )}
-            </div>
-         </div>
+      {/* Decorative Quote */}
+      <div className="flex items-center justify-center gap-4 bg-orange-50/40 p-6 rounded-[32px] border-2 border-orange-100 max-w-lg mx-auto">
+        <Smile className="w-10 h-10 text-orange-400 fill-current shrink-0 animate-pulse" />
+        <p className="text-gray-500 font-bold text-xs md:text-sm italic leading-snug">
+          "Trẻ em nhận được sự hỗ trợ ngôn ngữ can thiệp sớm tốt nhất nhờ quy trình phối hợp khép kín giữa giáo viên đặc biệt và cha mẹ yêu thương."
+        </p>
       </div>
     </div>
   );
 }
 
-function AdminStatCard({ label, value, growth, icon, color, bgColor }: { label: string; value: string; growth: string; icon: any; color: string; bgColor: string }) {
+function StatItem({
+  title,
+  value,
+  subtitle,
+  icon,
+  bgColor,
+  borderColor,
+}: {
+  title: string;
+  value: number;
+  subtitle: string;
+  icon: React.ReactNode;
+  bgColor: string;
+  borderColor: string;
+}) {
   return (
-    <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-100 relative overflow-hidden group transition-all duration-300 hover:shadow-md">
-      <div className="flex items-center justify-between">
-        <p className="text-slate-400 font-black uppercase text-xs tracking-wider">{label}</p>
-        <div className={cn("p-2.5 rounded-xl border", bgColor, color)}>
+    <div className={cn(
+      'bg-white rounded-[32px] p-6 shadow-sm border relative overflow-hidden group hover:shadow-md transition-all duration-300',
+      borderColor
+    )}>
+      <div className={cn('absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-10 transition-transform duration-500 group-hover:scale-150', bgColor)} />
+      <div className="flex items-center gap-5 relative z-10">
+        <div className={cn('p-4 rounded-2xl shadow-inner shrink-0', bgColor)}>
           {icon}
         </div>
-      </div>
-      <div className="mt-4 space-y-1.5">
-         <p className="text-3xl font-black text-slate-800 tracking-tight">{value}</p>
-         <p className="text-xs font-semibold text-slate-400">{growth}</p>
-      </div>
-    </div>
-  );
-}
-
-function ActivityItem({ time, user, action, target, status }: { time: string; user: string; action: string; target?: string; status?: string }) {
-  return (
-    <div className={cn("p-3 px-4 rounded-xl flex items-center gap-4 text-xs transition-colors hover:bg-slate-50", status === 'warning' ? 'bg-amber-50/70 border border-amber-100' : 'bg-slate-50/50 border border-slate-100')}>
-      <div className="font-mono font-bold text-slate-400 select-none">{time}</div>
-      <div className="flex-1 text-slate-600">
-         <span className={cn("font-bold", status === 'warning' ? 'text-amber-800' : 'text-slate-800')}>{user}</span>
-         <span className="italic"> {action}</span>
-         {target && <span className="font-bold text-slate-800"> "{target}"</span>}
+        <div className="space-y-0.5">
+          <p className="text-gray-405 font-bold uppercase text-[10px] tracking-wider">{title}</p>
+          <p className="text-3xl font-black text-gray-900 leading-none">{value.toLocaleString()}</p>
+          <p className="text-[11px] text-gray-500 font-medium pt-1 line-clamp-1">{subtitle}</p>
+        </div>
       </div>
     </div>
   );

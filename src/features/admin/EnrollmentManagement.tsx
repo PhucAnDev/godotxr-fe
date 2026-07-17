@@ -565,7 +565,7 @@ export default function EnrollmentManagement() {
             placeholder="Tìm theo tên bé, tên lớp học hoặc Id ghi danh..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-gray-700 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white" 
+            className="w-full pl-11 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-normal text-slate-600 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white" 
           />
           {searchQuery && (
             <button 
@@ -615,12 +615,12 @@ export default function EnrollmentManagement() {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" id="enrollment-list-box">
         <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-bold text-slate-800 leading-none">Danh sách ghi danh chi tiết</h3>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1.5">Đang kết xuất {filteredEnrollments.length} hồ sơ ghi học phần</p>
+            <h3 className="text-lg font-medium text-slate-800 leading-none">Danh sách ghi danh chi tiết</h3>
+            <p className="text-xs text-slate-400 font-normal uppercase tracking-wider mt-1.5">Đang kết xuất {filteredEnrollments.length} hồ sơ ghi học phần</p>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-[#4EACAF] rounded-full animate-pulse" />
-            <span className="text-xs text-[#4EACAF] font-bold uppercase tracking-wider">Máy chủ an toàn</span>
+            <span className="text-xs text-[#4EACAF] font-normal uppercase tracking-wider">Máy chủ an toàn</span>
           </div>
         </div>
 
@@ -647,7 +647,7 @@ export default function EnrollmentManagement() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse" id="enrollment-table">
                 <thead>
-                  <tr className="bg-[#FDFCF5]/50 border-b border-gray-100 text-[#555] font-bold text-xs uppercase tracking-widest">
+                  <tr className="bg-[#FDFCF5]/50 border-b border-gray-100 text-slate-550 font-semibold text-xs uppercase tracking-wider">
                     <th className="py-5 px-[5px] w-[5%] whitespace-nowrap">ID</th>
                     <th className="py-5 px-[5px] w-[18%] whitespace-nowrap">Em bé điều trị</th>
                     <th className="py-5 px-[5px] w-[22%] whitespace-nowrap">Lớp tiếp nhận</th>
@@ -657,14 +657,14 @@ export default function EnrollmentManagement() {
                     <th className="py-5 px-[5px] text-right w-[15%] whitespace-nowrap">Tùy chọn</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
+                <tbody className="divide-y divide-gray-50 font-normal text-sm text-slate-650">
                   {paginatedEnrollments.map((enrollment) => {
                     const child = children.find(c => c.ChildId === enrollment.ChildId);
                     const classroom = classrooms.find(cls => cls.ClassId === enrollment.ClassId);
 
                     return (
                       <tr key={enrollment.EnrollmentId} className="hover:bg-gray-50/40 transition-colors">
-                        <td className="py-5 px-[5px] font-mono text-gray-400 font-black text-xs whitespace-nowrap">
+                        <td className="py-5 px-[5px] font-mono text-slate-400 font-normal text-xs whitespace-nowrap">
                           {enrollment.EnrollmentId}
                         </td>
                         <td className="py-5 px-[5px] whitespace-nowrap">
@@ -685,7 +685,7 @@ export default function EnrollmentManagement() {
                           {classroom ? (
                             <div className="space-y-0.5 max-w-[200px]">
                               <p className="text-gray-800 font-extrabold truncate" title={classroom.ClassName}>{classroom.ClassName}</p>
-                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{classroom.ClassId}</p>
+                              <p className="text-[10px] text-gray-400 font-normal uppercase tracking-wider">{classroom.ClassId}</p>
                             </div>
                           ) : (
                             <span className="text-[#FF8E8E] italic text-xs whitespace-nowrap">Bị lỗi lớp học</span>
@@ -694,7 +694,7 @@ export default function EnrollmentManagement() {
                         <td className="py-5 px-[5px] whitespace-nowrap">
                           {child ? (
                             <span className={cn(
-                              "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap",
+                              "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest whitespace-nowrap",
                               child.LearningLevel === 'Beginner' ? 'bg-sky-50 text-sky-600 border border-sky-100' :
                               child.LearningLevel === 'Intermediate' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
                               'bg-purple-50 text-purple-600 border border-purple-100'
@@ -714,7 +714,7 @@ export default function EnrollmentManagement() {
                         </td>
                         <td className="py-5 px-[5px] whitespace-nowrap">
                           <span className={cn(
-                            "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap",
+                            "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wider whitespace-nowrap",
                             enrollment.Status === 'Active' ? 'bg-emerald-50 text-emerald-600' :
                             enrollment.Status === 'Completed' ? 'bg-indigo-50 text-indigo-600' :
                             enrollment.Status === 'Cancelled' ? 'bg-rose-50 text-rose-500' :
@@ -793,7 +793,7 @@ export default function EnrollmentManagement() {
       <div className="bg-orange-50/40 p-6 rounded-[32px] border-2 border-orange-100 max-w-xl mx-auto flex items-center gap-4">
         <Smile className="w-12 h-12 text-orange-400 fill-current shrink-0 animate-bounce" />
         <div className="space-y-1">
-          <h4 className="font-extrabold text-gray-800 text-sm">Ghi chú quản trị viên tuyển sinh</h4>
+          <h4 className="font-normal text-slate-650 text-sm">Ghi chú quản trị viên tuyển sinh</h4>
           <p className="text-gray-500 text-xs font-medium leading-relaxed">
             Các lớp học VR chỉ tiếp nhận các học sinh trong tầm tuổi quy định của Chương trình để bảo toàn tính hiệu quả. Hãy sử dụng hành động <strong className="text-indigo-600">Chuyển lớp</strong> để dịch chuyển hồ sơ của trẻ khi cần thay đổi thời khóa biểu.
           </p>
@@ -871,7 +871,7 @@ export default function EnrollmentManagement() {
                            <div className="space-y-2 flex-1 text-center md:text-left">
                               <div>
                                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-                                   <span className="text-2xl font-black text-gray-900">{child?.FullName || 'Không rõ'}</span>
+                                   <span className="text-2xl font-medium text-slate-800">{child?.FullName || 'Không rõ'}</span>
                                    <span className="px-3 py-0.5 bg-gray-100 text-gray-400 font-black tracking-widest text-[9px] rounded-full uppercase">
                                      Mã Bé: {selectedEnrollment.ChildId}
                                    </span>
@@ -1156,48 +1156,48 @@ export default function EnrollmentManagement() {
 }
 
 // Helper stat item visual representation
-function StatItem({ 
-  title, 
-  value, 
-  subtitle, 
-  icon, 
-  bgColor, 
-  borderColor 
-}: { 
-  title: string; 
-  value: number; 
-  subtitle: string; 
-  icon: React.ReactNode; 
-  bgColor: string; 
+function StatItem({
+  title,
+  value,
+  subtitle,
+  icon,
+  bgColor,
+  borderColor,
+}: {
+  title: string;
+  value: number | string;
+  subtitle: string;
+  icon: React.ReactNode;
+  bgColor: string;
   borderColor: string;
 }) {
   return (
     <div className={cn(
-      "bg-white rounded-[32px] p-6 shadow-sm border relative overflow-hidden group hover:shadow-md transition-all duration-300",
+      'bg-white rounded-[32px] p-6 shadow-sm border relative overflow-hidden group hover:shadow-md transition-all duration-300',
       borderColor
     )}>
-      <div className={cn("absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-10 transition-transform duration-500 group-hover:scale-150", bgColor)} />
-      
+      <div className={cn('absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-10 transition-transform duration-500 group-hover:scale-150', bgColor)} />
       <div className="flex items-center gap-5 relative z-10">
-         <div className={cn("p-4 rounded-2xl shadow-inner shrink-0", bgColor)}>
-            {icon}
-         </div>
-         <div className="space-y-0.5 font-bold">
-            <p className="text-gray-400 font-black uppercase text-[10px] tracking-wider">{title}</p>
-            <p className="text-3xl font-black text-gray-900 leading-none">{value.toLocaleString()}</p>
-            <p className="text-[11px] text-gray-500 font-medium pt-1 line-clamp-1">{subtitle}</p>
-         </div>
+        <div className={cn('p-4 rounded-2xl shadow-inner shrink-0', bgColor)}>
+          {icon}
+        </div>
+        <div className="space-y-0.5">
+          <p className="text-gray-400 font-bold uppercase text-[10px] tracking-wider">{title}</p>
+          <p className="text-3xl font-black text-gray-900 leading-none">
+            {typeof value === 'number' ? value.toLocaleString() : value}
+          </p>
+          <p className="text-[11px] text-gray-500 font-medium pt-1 line-clamp-1">{subtitle}</p>
+        </div>
       </div>
     </div>
   );
 }
 
-// Detail Column Row Item
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1.5 p-4 rounded-xl bg-[#FDFCF5]/60 border border-[#F2ECD8]/40">
        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block font-bold">{label}</span>
-       <span className="font-extrabold text-gray-800 break-all text-sm block">
+       <span className="font-normal text-slate-650 break-all text-sm block">
          {value}
        </span>
     </div>

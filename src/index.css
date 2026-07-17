@@ -21,20 +21,18 @@
 .admin-portal h1 {
   font-family: "Plus Jakarta Sans", "Inter", sans-serif !important;
   font-style: normal !important;
-  font-weight: 700 !important;
+  font-weight: 500 !important;
   font-size: 1.75rem !important;
-  letter-spacing: -0.03em !important;
-  color: #0f172a !important;
-  /* text-slate-900 */
+  letter-spacing: -0.02em !important;
+  color: #1e293b !important; /* text-slate-800 */
 }
 
 .admin-portal h3,
 .admin-portal h4 {
   font-family: "Plus Jakarta Sans", "Inter", sans-serif !important;
   font-style: normal !important;
-  font-weight: 600 !important;
-  color: #1e293b !important;
-  /* text-slate-800 */
+  font-weight: 500 !important;
+  color: #334155 !important; /* text-slate-700 */
 }
 
 /* 2. Compact container card spacing to make it less bulky */

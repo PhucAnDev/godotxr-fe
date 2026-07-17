@@ -69,16 +69,16 @@ export function Sidebar({
       : 'rounded-[24px] text-sm';
 
   const activeItemClass = isAdmin
-    ? 'bg-[#4EACAF] text-white font-black shadow-md shadow-[#4EACAF]/15'
+    ? 'bg-[#4EACAF] text-white font-medium shadow-md shadow-[#4EACAF]/15'
     : isTeacher
-      ? 'bg-[#4EACAF] text-white font-black shadow-lg shadow-[#4EACAF]/20'
-      : 'bg-[#4EACAF] text-white font-black shadow-xl shadow-[#4EACAF]/20';
+      ? 'bg-[#4EACAF] text-white font-medium shadow-lg shadow-[#4EACAF]/20'
+      : 'bg-[#4EACAF] text-white font-medium shadow-xl shadow-[#4EACAF]/20';
 
   const inactiveItemClass = isAdmin
-    ? 'hover:bg-slate-800 text-slate-300 font-medium'
+    ? 'hover:bg-slate-800 text-slate-350 font-normal'
     : isTeacher
-      ? 'hover:bg-[#D7E5E0] text-gray-700 font-bold'
-      : 'hover:bg-[#E5DFCA] text-[#555] font-bold tracking-tight';
+      ? 'hover:bg-[#D7E5E0] text-gray-700 font-medium'
+      : 'hover:bg-[#E5DFCA] text-[#555] font-medium tracking-tight';
 
   return (
     <aside
@@ -143,7 +143,7 @@ export function Sidebar({
                     isActive ? 'text-white opacity-100' : 'opacity-85'
                   )}
                 />
-                <span className="text-left font-bold">{item.label}</span>
+                <span className="text-left">{item.label}</span>
               </button>
 
               {item.children && isExpanded && (
@@ -174,7 +174,7 @@ export function Sidebar({
                             isChildActive ? 'text-white opacity-100' : 'opacity-85'
                           )}
                         />
-                        <span className="text-left text-[15px] font-bold">
+                        <span className="text-left text-[15px]">
                           {child.label}
                         </span>
                       </button>
@@ -203,7 +203,7 @@ export function Sidebar({
               navigate('/parent/settings');
               if (onClose) onClose();
             }}
-            className="w-full flex items-center space-x-3 px-5 py-3 transition-all rounded-[24px] hover:bg-[#E5DFCA] text-[#555] font-bold text-sm tracking-tight cursor-pointer"
+            className="w-full flex items-center space-x-3 px-5 py-3 transition-all rounded-[24px] hover:bg-[#E5DFCA] text-[#555] font-normal text-sm tracking-tight cursor-pointer"
           >
             <Settings className="shrink-0 w-6 h-6 opacity-80" />
             <span className="text-left">Cài đặt</span>
@@ -212,7 +212,7 @@ export function Sidebar({
         <button
           onClick={onLogout}
           className={cn(
-            'w-full flex items-center space-x-3 px-5 py-3 transition-all font-bold cursor-pointer',
+            'w-full flex items-center space-x-3 px-5 py-3 transition-all font-normal cursor-pointer',
             isAdmin
               ? 'rounded-xl text-sm hover:bg-red-950/40 text-red-400'
               : isTeacher
@@ -221,7 +221,7 @@ export function Sidebar({
           )}
         >
           <LogOut className={cn('shrink-0', isAdmin ? 'w-5 h-5' : 'w-6 h-6')} />
-          <span className="text-left font-bold">Đăng xuất</span>
+          <span className="text-left">Đăng xuất</span>
         </button>
       </div>
     </aside>

@@ -465,7 +465,7 @@ export default function ProgramManagement() {
             placeholder="Tìm kiếm chương trình theo tên hoặc mã định danh..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-slate-50 border border-slate-200 font-semibold text-slate-700 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs" 
+            className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-slate-50 border border-slate-200 font-normal text-slate-600 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs" 
           />
           {searchQuery && (
             <button 
@@ -515,7 +515,7 @@ export default function ProgramManagement() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-2xl font-black text-gray-950 italic">Học liệu can thiệp ({filteredPrograms.length})</h3>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Cấu trúc hóa bento thân thiện với trẻ nhỏ</p>
+            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1">Cấu trúc hóa bento thân thiện với trẻ nhỏ</p>
           </div>
           <div className="text-xs bg-[#4EACAF]/10 px-4 py-1.5 rounded-full text-[#4EACAF] font-bold">
             Trách nhiệm: Quản trị viên
@@ -564,13 +564,13 @@ export default function ProgramManagement() {
                           <span className="p-2 bg-[#4EACAF]/10 rounded-xl text-[#4EACAF]">
                             <Baby className="w-4 h-4" />
                           </span>
-                          <span className="text-gray-900 font-extrabold text-xs">
+                          <span className="font-medium text-slate-800 text-xs">
                             {prog.TargetAgeFrom} - {prog.TargetAgeTo} tuổi
                           </span>
                         </div>
 
                         <span className={cn(
-                          "inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
+                          "inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
                           prog.Language === 'Vietnamese' ? 'bg-sky-50 text-sky-600 border border-sky-100' : 'bg-[#FF8E8E]/10 text-[#FF8E8E] border border-[#FF8E8E]/20'
                         )}>
                           <Languages className="w-3 h-3" />
@@ -580,7 +580,7 @@ export default function ProgramManagement() {
 
                       <div className="space-y-2">
                         <div className="flex items-start justify-between gap-2">
-                          <h4 className="text-lg font-black text-gray-900 leading-snug line-clamp-2 hover:text-[#4EACAF] transition-colors">
+                          <h4 className="text-lg font-medium text-slate-800 leading-snug line-clamp-2 hover:text-[#4EACAF] transition-colors">
                             {prog.ProgramName}
                           </h4>
                         </div>
@@ -614,7 +614,7 @@ export default function ProgramManagement() {
                             )}
                           </button>
                           <span className={cn(
-                            "text-[10px] font-black uppercase tracking-widest",
+                            "text-[10px] font-medium uppercase tracking-wider",
                             prog.Status === 'Active' ? 'text-emerald-500' : 'text-gray-400'
                           )}>
                             {prog.Status === 'Active' ? 'Hoạt động' : 'Tạm khóa'}
@@ -756,7 +756,7 @@ export default function ProgramManagement() {
                           <div className="space-y-2 flex-1 min-w-0">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                               <p className="font-extrabold text-gray-900 text-sm leading-tight">{les.LessonName}</p>
-                              <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 self-start sm:self-auto">
+                              <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-normal uppercase tracking-wider shrink-0 self-start sm:self-auto">
                                 {les.VrInteractiveMode}
                               </span>
                             </div>
@@ -949,19 +949,38 @@ interface StatItemProps {
   borderColor: string;
 }
 
-function StatItem({ title, value, subtitle, icon, bgColor, borderColor }: StatItemProps) {
+function StatItem({
+  title,
+  value,
+  subtitle,
+  icon,
+  bgColor,
+  borderColor,
+}: {
+  title: string;
+  value: number | string;
+  subtitle: string;
+  icon: React.ReactNode;
+  bgColor: string;
+  borderColor: string;
+}) {
   return (
     <div className={cn(
-      "p-4 rounded-xl border flex items-center gap-3.5 shadow-sm transition-transform hover:-translate-y-0.5",
-      bgColor,
+      'bg-white rounded-[32px] p-6 shadow-sm border relative overflow-hidden group hover:shadow-md transition-all duration-300',
       borderColor
     )}>
-      <div className="bg-white p-2 border border-slate-100 rounded-lg shadow-sm shrink-0">
-        {icon}
-      </div>
-      <div>
-        <p className="text-xl font-bold text-slate-800 tracking-tight leading-none">{value}</p>
-        <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">{title}</p>
+      <div className={cn('absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-10 transition-transform duration-500 group-hover:scale-150', bgColor)} />
+      <div className="flex items-center gap-5 relative z-10">
+        <div className={cn('p-4 rounded-2xl shadow-inner shrink-0', bgColor)}>
+          {icon}
+        </div>
+        <div className="space-y-0.5">
+          <p className="text-gray-400 font-bold uppercase text-[10px] tracking-wider">{title}</p>
+          <p className="text-3xl font-black text-gray-900 leading-none">
+            {typeof value === 'number' ? value.toLocaleString() : value}
+          </p>
+          <p className="text-[11px] text-gray-500 font-medium pt-1 line-clamp-1">{subtitle}</p>
+        </div>
       </div>
     </div>
   );

@@ -546,7 +546,7 @@ export default function ExerciseTypeManagement() {
                     </span>
                     <span
                       className={cn(
-                        'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-wider leading-none',
+                        'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-widest leading-none',
                         type.IsActive
                           ? 'border border-emerald-100 bg-emerald-50 text-emerald-600'
                           : 'border border-rose-100/40 bg-rose-50 text-[#FF8E8E]'
@@ -632,7 +632,7 @@ export default function ExerciseTypeManagement() {
                       ? 'Thêm Loại Bài Tập'
                       : `Chỉnh Sửa Loại: ${selectedType?.TypeId}`}
                   </h2>
-                  <p className="mt-1 text-xs font-bold uppercase tracking-widest text-gray-400">
+                  <p className="mt-1 text-xs font-normal uppercase tracking-wider text-gray-400">
                     {modalMode === 'add'
                       ? 'Tạo mới dữ liệu cho nhóm bài tập'
                       : 'Cập nhật thông số loại bài tập hiện có'}
@@ -649,7 +649,7 @@ export default function ExerciseTypeManagement() {
               <form onSubmit={handleSaveSubmit} className="app-modal-body space-y-6 p-8" id="type-info-form">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="ml-1 text-xs font-black uppercase tracking-widest text-gray-400">
+                    <label className="ml-1 text-xs font-medium uppercase tracking-wider text-gray-400">
                       Tên loại bài tập <span className="text-[#FF8E8E]">*</span>
                     </label>
                     <input
@@ -663,7 +663,7 @@ export default function ExerciseTypeManagement() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="ml-1 text-xs font-black uppercase tracking-widest text-gray-400">
+                    <label className="ml-1 text-xs font-medium uppercase tracking-wider text-gray-400">
                       Giải thích mô tả cốt lõi <span className="text-[#FF8E8E]">*</span>
                     </label>
                     <textarea
@@ -778,7 +778,7 @@ function StatCardItem({
       )}
     >
       <div className="space-y-1.5">
-        <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+        <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
           {title}
         </p>
         <p className="text-3xl font-black leading-none tracking-tight text-gray-900">

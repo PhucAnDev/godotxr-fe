@@ -422,8 +422,8 @@ export default function SchoolYearManagement() {
             <Layers className="w-7 h-7 text-[#4EACAF]" />
           </div>
           <div>
-            <p className="text-3xl font-black text-gray-900 tracking-tight leading-tight">{totalYears}</p>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1">Tổng năm học</p>
+            <p className="text-3xl font-medium text-slate-800 tracking-tight leading-tight">{totalYears}</p>
+            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1">Tổng năm học</p>
           </div>
         </div>
 
@@ -433,7 +433,7 @@ export default function SchoolYearManagement() {
           </div>
           <div>
             <p className="text-3xl font-black text-emerald-600 tracking-tight leading-tight">{activeCount}</p>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1">Đang hoạt động</p>
+            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1">Đang hoạt động</p>
           </div>
         </div>
 
@@ -443,7 +443,7 @@ export default function SchoolYearManagement() {
           </div>
           <div>
             <p className="text-3xl font-black text-gray-500 tracking-tight leading-tight">{completedCount}</p>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1">Đã kết thúc</p>
+            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1">Đã kết thúc</p>
           </div>
         </div>
       </div>
@@ -489,10 +489,10 @@ export default function SchoolYearManagement() {
       <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden" id="year-table-container">
         <div className="px-10 py-8 border-b border-gray-100 flex items-center justify-between bg-white/50 backdrop-blur-sm">
           <div>
-            <h3 className="text-2xl font-black text-gray-900 leading-none italic">Chi tiết danh mục năm học</h3>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-2">Dữ liệu liên hành tinh quản lý niên khóa trẻ nhỏ</p>
+            <h3 className="text-2xl font-medium text-slate-800 leading-none italic">Chi tiết danh mục năm học</h3>
+            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-2">Dữ liệu liên hành tinh quản lý niên khóa trẻ nhỏ</p>
           </div>
-          <span className="text-xs bg-teal-50 text-teal-600 px-3 py-1 rounded-full font-bold uppercase tracking-wide border border-teal-100/30">
+          <span className="text-xs bg-teal-50 text-teal-600 px-3 py-1 rounded-full font-medium uppercase tracking-wide border border-teal-100/30">
             SCHOOL_YEAR
           </span>
         </div>
@@ -508,7 +508,7 @@ export default function SchoolYearManagement() {
                 setSearchQuery('');
                 setFilterStatus('ALL');
               }}
-              className="px-6 py-2.5 bg-[#4EACAF]/10 hover:bg-[#4EACAF]/20 text-[#4EACAF] font-black text-xs uppercase rounded-xl transition-all"
+              className="px-6 py-2.5 bg-[#4EACAF]/10 hover:bg-[#4EACAF]/20 text-[#4EACAF] font-medium text-xs uppercase rounded-xl transition-all"
             >
               Hủy bộ lọc
             </button>
@@ -594,7 +594,7 @@ export default function SchoolYearManagement() {
                     <th className="py-5 px-[5px] text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
-              <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
+              <tbody className="divide-y divide-gray-50 font-normal text-sm text-slate-650">
                 {filteredYears.map((year) => (
                   <tr key={year.SchoolYearId} className="hover:bg-slate-50/50 transition-colors">
                     
@@ -621,7 +621,7 @@ export default function SchoolYearManagement() {
                     {/* Status Badge */}
                     <td className="py-5 px-[5px]">
                       <span className={cn(
-                        "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border",
+                        "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
                         year.Status === 'Active' && 'bg-emerald-50 text-emerald-600 border-emerald-100',
                         year.Status === 'Upcoming' && 'bg-amber-50 text-amber-600 border-amber-100',
                         year.Status === 'Completed' && 'bg-gray-100 text-gray-500 border-gray-200'

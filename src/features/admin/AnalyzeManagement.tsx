@@ -579,16 +579,16 @@ export default function AnalyzeManagement() {
             <Brain className="h-10 w-10 text-[#4EACAF]" />
             Quản lý Đánh giá trẻ
           </h1>
-          <p className="mt-2 text-sm font-semibold text-slate-500">
+          <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed mt-1">
             Xem nhanh, cập nhật chẩn đoán học tập và đánh giá tiến trình phát triển ngôn ngữ định kỳ của học sinh
           </p>
         </div>
 
         <button
           onClick={openCreateModal}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#4EACAF] hover:bg-[#4EACAF]/90 px-6 py-4 font-black italic text-white transition-all hover:scale-102 hover:shadow-lg shadow-md cursor-pointer text-sm"
+          className="bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black italic tracking-tight py-4 px-8 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[#4EACAF]/20 transition-all hover:scale-105 active:scale-95 shrink-0 cursor-pointer"
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="w-5 h-5" strokeWidth={2.5} />
           Tạo bản đánh giá mới
         </button>
       </div>
@@ -632,7 +632,7 @@ export default function AnalyzeManagement() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm theo họ tên bé hoặc chẩn đoán..."
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3.5 pr-4 pl-11 text-sm font-semibold text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3.5 pr-4 pl-11 text-sm font-normal text-slate-600 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
             />
           </div>
 
@@ -769,7 +769,7 @@ export default function AnalyzeManagement() {
                     <th className="px-[5px] py-4 text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 text-sm font-semibold text-slate-700">
+                <tbody className="divide-y divide-slate-50 font-normal text-sm text-slate-650">
                   {paginatedList.map((item) => (
                     <tr key={item.Id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-[5px] py-5">
@@ -791,7 +791,7 @@ export default function AnalyzeManagement() {
                       <td className="px-[5px] py-5">
                         <span
                           className={cn(
-                            'inline-flex items-center rounded-full px-3 py-1 text-xs font-black uppercase tracking-wider',
+                            'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider',
                             SpeechLevelMap[item.SpeechLevel]?.color || 'bg-slate-100 text-slate-600'
                           )}
                         >
@@ -799,7 +799,7 @@ export default function AnalyzeManagement() {
                         </span>
                       </td>
                       <td className="px-[5px] py-5">
-                        <span className="font-bold text-slate-800 line-clamp-1 max-w-[200px]" title={item.Diagnosis}>
+                        <span className="font-medium text-slate-800 line-clamp-1 max-w-[200px]" title={item.Diagnosis}>
                           {item.Diagnosis || 'Chưa chẩn đoán'}
                         </span>
                       </td>
@@ -895,7 +895,7 @@ export default function AnalyzeManagement() {
                 </div>
                 <div className="flex-1 space-y-3 text-center md:text-left">
                   <div className="space-y-1">
-                    <h3 className="text-2xl font-black text-gray-900">{selectedAnalyze.ChildFullName}</h3>
+                    <h3 className="text-2xl font-medium text-slate-800">{selectedAnalyze.ChildFullName}</h3>
                     <p className="text-gray-400">ID trẻ liên kết: {selectedAnalyze.ChildId}</p>
                   </div>
 
@@ -914,7 +914,7 @@ export default function AnalyzeManagement() {
                 <DetailRow label="Ngày tạo bản ghi" value={formatDateTime(selectedAnalyze.CreatedAt)} />
 
                 <div className="col-span-1 md:col-span-2 space-y-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 border-b pb-1.5">Kết quả đánh giá 6 khía cạnh năng lực</h4>
+                  <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500 border-b pb-1.5">Kết quả đánh giá 6 khía cạnh năng lực</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-bold text-slate-700">
                     <div className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100">
                       <span>Khả năng giao tiếp:</span>
@@ -956,38 +956,38 @@ export default function AnalyzeManagement() {
                 </div>
 
                 <div className="col-span-1 md:col-span-2 space-y-1.5 rounded-2xl border border-blue-100 bg-blue-50/20 p-4">
-                  <span className="block text-[10px] font-black uppercase tracking-widest text-blue-600">Chẩn đoán lâm sàng</span>
-                  <span className="block text-sm font-bold text-slate-800 leading-relaxed">{selectedAnalyze.Diagnosis || 'Không có ghi nhận.'}</span>
+                  <span className="block text-[10px] font-medium uppercase tracking-wider text-blue-600">Chẩn đoán lâm sàng</span>
+                  <span className="block text-sm font-medium text-slate-800 leading-relaxed">{selectedAnalyze.Diagnosis || 'Không có ghi nhận.'}</span>
                 </div>
 
                 <div className="col-span-1 md:col-span-2 space-y-1.5 rounded-2xl border border-indigo-100 bg-indigo-50/20 p-4">
-                  <span className="block text-[10px] font-black uppercase tracking-widest text-indigo-600">Khó khăn hiện tại</span>
-                  <span className="block text-sm font-bold text-slate-800 leading-relaxed">{selectedAnalyze.Difficulties || 'Không có ghi nhận.'}</span>
+                  <span className="block text-[10px] font-medium uppercase tracking-wider text-indigo-600">Khó khăn hiện tại</span>
+                  <span className="block text-sm font-medium text-slate-800 leading-relaxed">{selectedAnalyze.Difficulties || 'Không có ghi nhận.'}</span>
                 </div>
 
                 <div className="space-y-1.5 rounded-2xl border border-[#F2ECD8]/40 bg-[#FDFCF5]/60 p-4">
-                  <span className="block text-[10px] font-black uppercase tracking-widest text-[#4EACAF]">Điểm mạnh của bé</span>
+                  <span className="block text-[10px] font-medium uppercase tracking-wider text-[#4EACAF]">Điểm mạnh của bé</span>
                   <span className="block text-sm font-bold text-gray-800 leading-relaxed">{selectedAnalyze.Strengths || 'Chưa cập nhật.'}</span>
                 </div>
 
                 <div className="space-y-1.5 rounded-2xl border border-rose-100 bg-rose-50/30 p-4">
-                  <span className="block text-[10px] font-black uppercase tracking-widest text-rose-500">Điểm yếu cần lưu ý</span>
+                  <span className="block text-[10px] font-medium uppercase tracking-wider text-rose-500">Điểm yếu cần lưu ý</span>
                   <span className="block text-sm font-bold text-gray-800 leading-relaxed">{selectedAnalyze.Weaknesses || 'Chưa cập nhật.'}</span>
                 </div>
 
                 <div className="col-span-1 md:col-span-2 space-y-1.5 rounded-2xl border border-purple-100 bg-purple-50/20 p-4">
-                  <span className="block text-[10px] font-black uppercase tracking-widest text-purple-600 font-black">Mục tiêu can thiệp</span>
-                  <span className="block text-sm font-bold text-slate-800 leading-relaxed">{selectedAnalyze.InterventionGoals || 'Không có ghi nhận.'}</span>
+                  <span className="block text-[10px] font-medium uppercase tracking-wider text-purple-600 font-black">Mục tiêu can thiệp</span>
+                  <span className="block text-sm font-medium text-slate-800 leading-relaxed">{selectedAnalyze.InterventionGoals || 'Không có ghi nhận.'}</span>
                 </div>
 
                 <div className="col-span-1 md:col-span-2 space-y-1.5 rounded-2xl border border-amber-100 bg-amber-50/40 p-4">
-                  <span className="block text-[10px] font-black uppercase tracking-widest text-amber-600">Khuyến nghị chuyên môn</span>
+                  <span className="block text-[10px] font-medium uppercase tracking-wider text-amber-600">Khuyến nghị chuyên môn</span>
                   <span className="block text-sm font-bold italic text-gray-800 leading-relaxed">"{selectedAnalyze.Recommendation || 'Không có khuyến nghị.'}"</span>
                 </div>
 
                 <div className="col-span-1 md:col-span-2 space-y-1.5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <span className="block text-[10px] font-black uppercase tracking-widest text-slate-500">Ghi chú bổ sung</span>
-                  <span className="block text-sm font-semibold text-slate-700 leading-relaxed">{selectedAnalyze.Notes || 'Không có ghi chú.'}</span>
+                  <span className="block text-[10px] font-medium uppercase tracking-wider text-slate-500">Ghi chú bổ sung</span>
+                  <span className="block text-sm font-normal text-slate-600 leading-relaxed">{selectedAnalyze.Notes || 'Không có ghi chú.'}</span>
                 </div>
               </div>
 
@@ -1032,26 +1032,26 @@ export default function AnalyzeManagement() {
                 />
 
                 <div className="space-y-2">
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-500">
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">
                     Ngày đánh giá
                   </label>
                   <input
                     type="date"
                     value={formState.assessmentDate}
                     onChange={(e) => handleFormChange('assessmentDate', e.target.value)}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-semibold text-slate-700 outline-none focus:border-[#4EACAF] focus:bg-white"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-normal text-slate-600 outline-none focus:border-[#4EACAF] focus:bg-white"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-500">
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">
                     Ngày đánh giá tiếp theo (Hẹn lại)
                   </label>
                   <input
                     type="date"
                     value={formState.nextAssessmentDate}
                     onChange={(e) => handleFormChange('nextAssessmentDate', e.target.value)}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-semibold text-slate-700 outline-none focus:border-[#4EACAF] focus:bg-white"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-normal text-slate-600 outline-none focus:border-[#4EACAF] focus:bg-white"
                   />
                 </div>
 
@@ -1140,81 +1140,81 @@ export default function AnalyzeManagement() {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Chẩn đoán lâm sàng</label>
+                <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">Chẩn đoán lâm sàng</label>
                 <textarea
                   value={formState.diagnosis}
                   onChange={(e) => handleFormChange('diagnosis', e.target.value)}
                   rows={2}
                   placeholder="Chẩn đoán ban đầu về tình trạng ngôn ngữ của bé..."
-                  className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
+                  className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal text-slate-600 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Khó khăn của trẻ</label>
+                <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">Khó khăn của trẻ</label>
                 <textarea
                   value={formState.difficulties}
                   onChange={(e) => handleFormChange('difficulties', e.target.value)}
                   rows={2}
                   placeholder="Các rào cản phát âm hoặc chú ý tập trung của trẻ..."
-                  className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
+                  className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal text-slate-600 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Điểm mạnh của trẻ</label>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">Điểm mạnh của trẻ</label>
                   <textarea
                     value={formState.strengths}
                     onChange={(e) => handleFormChange('strengths', e.target.value)}
                     rows={2}
                     placeholder="Bé phản xạ tốt với trò chơi VR..."
-                    className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
+                    className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal text-slate-600 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Điểm yếu của trẻ</label>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">Điểm yếu của trẻ</label>
                   <textarea
                     value={formState.weaknesses}
                     onChange={(e) => handleFormChange('weaknesses', e.target.value)}
                     rows={2}
                     placeholder="Ngọng âm S, L..."
-                    className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
+                    className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal text-slate-600 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Mục tiêu can thiệp</label>
+                <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">Mục tiêu can thiệp</label>
                 <textarea
                   value={formState.interventionGoals}
                   onChange={(e) => handleFormChange('interventionGoals', e.target.value)}
                   rows={2}
                   placeholder="Phát âm chuẩn âm S trong 1 tuần..."
-                  className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
+                  className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal text-slate-600 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Khuyến nghị chuyên môn</label>
+                <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">Khuyến nghị chuyên môn</label>
                 <textarea
                   value={formState.recommendation}
                   onChange={(e) => handleFormChange('recommendation', e.target.value)}
                   rows={2}
                   placeholder="Phụ huynh đồng hành chơi game VR 15 phút mỗi ngày..."
-                  className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
+                  className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal text-slate-600 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Ghi chú bổ sung</label>
+                <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">Ghi chú bổ sung</label>
                 <textarea
                   value={formState.notes}
                   onChange={(e) => handleFormChange('notes', e.target.value)}
                   rows={2}
                   placeholder="Bố mẹ hỗ trợ nhiệt tình..."
-                  className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
+                  className="resize-y w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal text-slate-600 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
                 />
               </div>
 
@@ -1304,7 +1304,7 @@ function SelectInputField({
 }) {
   return (
     <div className="space-y-2">
-      <label className="block text-xs font-black uppercase tracking-wider text-slate-500">{label}</label>
+      <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">{label}</label>
       <CustomSelect value={value} onChange={onChange} options={options} variant="form" />
     </div>
   );
@@ -1325,13 +1325,13 @@ function InputField({
 }) {
   return (
     <div className="space-y-2">
-      <label className="block text-xs font-black uppercase tracking-wider text-slate-500">{label}</label>
+      <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">{label}</label>
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         inputMode={inputMode}
-        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
+        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal text-slate-600 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
       />
     </div>
   );
@@ -1370,7 +1370,7 @@ function ModalFrame({
               <Info className="h-6 w-6" />
               {title}
             </h2>
-            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-gray-400">{subtitle}</p>
+            <p className="mt-1 text-xs font-normal uppercase tracking-wider text-gray-400">{subtitle}</p>
           </div>
           <button onClick={onClose} className="rounded-full p-2.5 transition-colors hover:bg-white/70">
             <X className="h-6 w-6 text-gray-500" />
@@ -1391,21 +1391,28 @@ function StatItem({
   borderColor,
 }: {
   title: string;
-  value: string | number;
+  value: number | string;
   subtitle: string;
   icon: React.ReactNode;
   bgColor: string;
   borderColor: string;
 }) {
   return (
-    <div className={cn('group relative overflow-hidden rounded-[32px] border bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md', borderColor)}>
-      <div className={cn('absolute -bottom-6 -right-6 h-24 w-24 rounded-full opacity-10 transition-transform duration-500 group-hover:scale-150', bgColor)} />
-      <div className="relative z-10 flex items-center gap-5">
-        <div className={cn('shrink-0 rounded-2xl p-4 shadow-inner', bgColor)}>{icon}</div>
-        <div>
-          <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">{title}</p>
-          <h3 className="mt-1 text-4xl font-black leading-none tracking-tight text-slate-900">{value}</h3>
-          <p className="mt-2 text-xs font-semibold text-slate-500">{subtitle}</p>
+    <div className={cn(
+      'bg-white rounded-[32px] p-6 shadow-sm border relative overflow-hidden group hover:shadow-md transition-all duration-300',
+      borderColor
+    )}>
+      <div className={cn('absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-10 transition-transform duration-500 group-hover:scale-150', bgColor)} />
+      <div className="flex items-center gap-5 relative z-10">
+        <div className={cn('p-4 rounded-2xl shadow-inner shrink-0', bgColor)}>
+          {icon}
+        </div>
+        <div className="space-y-0.5">
+          <p className="text-gray-400 font-bold uppercase text-[10px] tracking-wider">{title}</p>
+          <p className="text-3xl font-black text-gray-900 leading-none">
+            {typeof value === 'number' ? value.toLocaleString() : value}
+          </p>
+          <p className="text-[11px] text-gray-500 font-medium pt-1 line-clamp-1">{subtitle}</p>
         </div>
       </div>
     </div>
@@ -1415,7 +1422,7 @@ function StatItem({
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1.5 rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
-      <span className="block text-[10px] font-black uppercase tracking-widest text-gray-400">{label}</span>
+      <span className="block text-[10px] font-medium uppercase tracking-wider text-gray-400">{label}</span>
       <span className="block text-sm font-bold text-gray-800">{value}</span>
     </div>
   );
