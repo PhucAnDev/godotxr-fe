@@ -24,15 +24,17 @@
   font-weight: 700 !important;
   font-size: 1.75rem !important;
   letter-spacing: -0.03em !important;
-  color: #0f172a !important; /* text-slate-900 */
+  color: #0f172a !important;
+  /* text-slate-900 */
 }
 
-.admin-portal h3, 
+.admin-portal h3,
 .admin-portal h4 {
   font-family: "Plus Jakarta Sans", "Inter", sans-serif !important;
   font-style: normal !important;
   font-weight: 600 !important;
-  color: #1e293b !important; /* text-slate-800 */
+  color: #1e293b !important;
+  /* text-slate-800 */
 }
 
 /* 2. Compact container card spacing to make it less bulky */
@@ -198,18 +200,18 @@
   align-items: start;
 }
 
-.app-modal-form-grid > * {
+.app-modal-form-grid>* {
   min-width: 0;
 }
 
-.app-modal-form-grid > div > label:first-child {
+.app-modal-form-grid>div>label:first-child {
   min-height: 2.75rem;
   display: flex;
   align-items: flex-end;
 }
 
 @media (max-width: 767px) {
-  .app-modal-form-grid > div > label:first-child {
+  .app-modal-form-grid>div>label:first-child {
     min-height: 0;
   }
 }
@@ -371,5 +373,3 @@ select option {
 .parent-portal .font-medium {
   font-weight: 400 !important;
 }
-
-
