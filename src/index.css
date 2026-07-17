@@ -21,7 +21,7 @@
 .admin-portal h1 {
   font-family: "Plus Jakarta Sans", "Inter", sans-serif !important;
   font-style: normal !important;
-  font-weight: 800 !important;
+  font-weight: 700 !important;
   font-size: 1.75rem !important;
   letter-spacing: -0.03em !important;
   color: #0f172a !important; /* text-slate-900 */
@@ -31,7 +31,7 @@
 .admin-portal h4 {
   font-family: "Plus Jakarta Sans", "Inter", sans-serif !important;
   font-style: normal !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
   color: #1e293b !important; /* text-slate-800 */
 }
 
@@ -82,7 +82,7 @@
 /* Simplify search controls container font & style */
 .admin-portal select {
   font-style: normal !important;
-  font-weight: 600 !important;
+  font-weight: 500 !important;
   font-size: 0.75rem !important;
   letter-spacing: 0.05em !important;
   text-transform: uppercase !important;
@@ -104,7 +104,7 @@
 .admin-portal table thead th {
   background-color: #f8fafc !important;
   color: #475569 !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
   font-size: 0.75rem !important;
   letter-spacing: 0.05em !important;
   text-transform: uppercase !important;
@@ -260,7 +260,7 @@
 .teacher-portal h1 {
   font-family: "Space Grotesk", sans-serif !important;
   font-style: normal !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
   color: #1e293b !important;
 }
 
@@ -279,7 +279,7 @@
 .teacher-portal table thead th {
   background-color: #f1f5f9 !important;
   font-family: "Plus Jakarta Sans", sans-serif;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
 }
 
 .teacher-portal table tbody tr:hover {
@@ -322,7 +322,7 @@
 /* Fix styled option inheriting italic/color/weight/transform from select parent */
 select option {
   font-style: normal !important;
-  font-weight: 500 !important;
+  font-weight: 400 !important;
   background-color: #ffffff !important;
   color: #334155 !important;
   font-family: "Plus Jakarta Sans", "Inter", sans-serif !important;
@@ -330,4 +330,46 @@ select option {
   font-size: 0.875rem !important;
   letter-spacing: normal !important;
 }
+
+/* ==========================================================================
+   GLOBAL TYPOGRAPHY FONT-WEIGHT TONE-DOWN
+   Maps excessive/chunky bold weights to standard professional web weights
+   ========================================================================== */
+
+/* Overriding Tailwind utilities for the entire application */
+.font-black,
+.admin-portal .font-black,
+.teacher-portal .font-black,
+.parent-portal .font-black {
+  font-weight: 700 !important;
+}
+
+.font-extrabold,
+.admin-portal .font-extrabold,
+.teacher-portal .font-extrabold,
+.parent-portal .font-extrabold {
+  font-weight: 600 !important;
+}
+
+.font-bold,
+.admin-portal .font-bold,
+.teacher-portal .font-bold,
+.parent-portal .font-bold {
+  font-weight: 500 !important;
+}
+
+.font-semibold,
+.admin-portal .font-semibold,
+.teacher-portal .font-semibold,
+.parent-portal .font-semibold {
+  font-weight: 500 !important;
+}
+
+.font-medium,
+.admin-portal .font-medium,
+.teacher-portal .font-medium,
+.parent-portal .font-medium {
+  font-weight: 400 !important;
+}
+
 

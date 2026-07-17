@@ -36,7 +36,7 @@ export function AuthenticatedLayout({
       exit={{ opacity: 0 }}
       className={cn(
         'flex min-h-screen w-full transition-colors duration-500 font-sans',
-        isAdmin ? 'bg-slate-50 text-slate-900 admin-portal0' :
+        isAdmin ? 'bg-slate-50 text-slate-900 admin-portal' :
           isTeacher ? 'bg-[#F4F9F9] text-gray-800 teacher-portal' :
             'bg-[#FDFCF5] text-[#1D1D1D] parent-portal'
       )}
