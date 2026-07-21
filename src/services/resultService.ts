@@ -101,3 +101,9 @@ export const getResultsByChild = (childId: number) =>
 
 export const getResultsByExercise = (exerciseId: number) =>
   request<ResultResponse[]>(`/api/results/by-exercise/${exerciseId}`);
+
+export const updateResultFeedback = (id: number, feedbackText: string) =>
+  request<ResultResponse>(`/api/results/${id}/feedback`, {
+    method: 'PUT',
+    body: JSON.stringify({ feedbackText }),
+  });

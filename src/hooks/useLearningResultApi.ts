@@ -16,8 +16,13 @@ import {
   getResultsByChild as getResultsByChildService,
   getResultsByExercise as getResultsByExerciseService,
   submitResult as submitResultService,
+  updateResultFeedback as updateResultFeedbackService,
 } from '../services/resultService';
 import { getCurrentUserWithChildrenProfiles as getCurrentUserWithChildrenProfilesService } from '../services/userService';
+import {
+  getChunksBySession as getChunksBySessionService,
+  assessChunk as assessChunkService,
+} from '../services/fileService';
 
 export function useLearningResultApi() {
   const getChildProfiles = useCallback(
@@ -83,6 +88,21 @@ export function useLearningResultApi() {
       getEventLogsByChildService(...args),
     []
   );
+  const updateResultFeedback = useCallback(
+    (...args: Parameters<typeof updateResultFeedbackService>) =>
+      updateResultFeedbackService(...args),
+    []
+  );
+  const getChunksBySession = useCallback(
+    (...args: Parameters<typeof getChunksBySessionService>) =>
+      getChunksBySessionService(...args),
+    []
+  );
+  const assessChunk = useCallback(
+    (...args: Parameters<typeof assessChunkService>) =>
+      assessChunkService(...args),
+    []
+  );
 
   return {
     getChildProfiles,
@@ -98,5 +118,8 @@ export function useLearningResultApi() {
     getPronunciationDetailById,
     getEventLogsByResult,
     getEventLogsByChild,
+    updateResultFeedback,
+    getChunksBySession,
+    assessChunk,
   };
 }
