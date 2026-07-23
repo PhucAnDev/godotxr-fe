@@ -41,6 +41,8 @@ interface Result {
   SessionId: string;
   CompletionStatus: string;
   DurationSeconds: number;
+  errorCount?: number;
+  correctCount?: number;
 }
 
 type RoleView = 'ADMIN' | 'TEACHER' | 'PARENT';
@@ -82,6 +84,8 @@ function mapResultRecord(result: any): Result {
     SessionId: result.sessionId || '',
     CompletionStatus: result.completionStatus || 'Incomplete',
     DurationSeconds: result.durationSeconds || 0,
+    errorCount: result.errorCount,
+    correctCount: result.correctCount,
   };
 }
 
@@ -391,12 +395,15 @@ export default function PronunciationDetailPage() {
                             Ngày hoàn thành: {res.CreatedAt}
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right shrink-0">
                           <div className="text-lg font-black text-slate-800 leading-none">
                             {res.Score}%
                           </div>
                           <div className="text-[10px] text-slate-400 font-bold tracking-tight mt-1">
                             {res.DurationSeconds} giây
+                          </div>
+                          <div className="text-[9px] text-[#4EACAF] font-bold tracking-tight mt-0.5 whitespace-nowrap">
+                            Đúng: {res.correctCount ?? 0} | Sai: {res.errorCount ?? 0}
                           </div>
                         </div>
                       </div>

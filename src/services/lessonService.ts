@@ -10,6 +10,7 @@ export interface LessonResponse {
   targetSkill: string | null;
   estimatedDuration: number;
   status: 'Active' | 'Inactive';
+  maxScore?: number;
   createdAt: string;
   updatedAt: string | null;
 }

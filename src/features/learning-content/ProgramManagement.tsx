@@ -24,7 +24,8 @@ import {
   TrendingUp,
   Workflow,
   Sparkle,
-  Trash2
+  Trash2,
+  Award
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import ActionButton from '../../components/common/ActionButton';
@@ -56,6 +57,7 @@ interface Lesson {
   Description: string;
   DurationMinutes: number;
   VrInteractiveMode: string;
+  MaxScore?: number;
 }
 
 const mapProgram = (program: ProgramResponse): Program => {
@@ -89,6 +91,7 @@ const mapLesson = (lesson: LessonResponse): Lesson => ({
   Description: lesson.description ?? 'Chưa có mô tả bài học.',
   DurationMinutes: lesson.estimatedDuration,
   VrInteractiveMode: lesson.targetSkill?.trim() || 'Tương tác VR',
+  MaxScore: lesson.maxScore,
 });
 
 // Mock Programs
@@ -763,7 +766,7 @@ export default function ProgramManagement() {
                             <p className="text-xs font-bold text-gray-400 leading-relaxed line-clamp-2">{les.Description}</p>
                             <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-extrabold uppercase">
                               <Volume2 className="w-3.5 h-3.5 text-indigo-500" />
-                              Thời lượng kính: {les.DurationMinutes} phút • Mã số: {les.LessonId}
+                              Thời lượng kính: {les.DurationMinutes} phút • Điểm tối đa: {les.MaxScore ?? 100}đ • Mã số: {les.LessonId}
                             </div>
                           </div>
                         </div>

@@ -29,6 +29,8 @@ export interface ResultResponse {
   attemptNumber: number;
   completionStatus: string;
   score: number;
+  errorCount?: number;
+  correctCount?: number;
   startedAt: string | null;
   completedAt: string | null;
   durationSeconds: number;
@@ -65,6 +67,8 @@ export interface SubmitResultPayload {
   exerciseId: number;
   completionStatus: 'Completed' | 'Incomplete';
   score: number;
+  errorCount?: number;
+  correctCount?: number;
   startedAt: string;
   completedAt?: string | null;
   durationSeconds: number;

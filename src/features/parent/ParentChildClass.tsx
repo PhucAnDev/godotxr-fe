@@ -15,7 +15,8 @@ import {
   RefreshCw,
   AlertTriangle,
   Eye,
-  X
+  X,
+  Award
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import CustomSelect from '../../components/common/CustomSelect';
@@ -443,6 +444,10 @@ export default function ParentChildClass() {
                                 <Clock className="w-2.5 h-2.5" />
                                 {les.estimatedDuration} phút
                               </span>
+                              <span className="text-[8px] uppercase font-black text-gray-400 flex items-center gap-1 shrink-0">
+                                <Award className="w-2.5 h-2.5 text-amber-500" />
+                                {les.maxScore ?? 100}đ
+                              </span>
                             </div>
                           </div>
 
@@ -678,12 +683,20 @@ export default function ParentChildClass() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Thời lượng buổi học dự kiến:</span>
                   <span className="text-sm font-bold text-slate-600 flex items-center gap-1.5">
                     <Clock className="w-4 h-4 text-slate-400" />
                     {activeLessonDetail.estimatedDuration} phút
+                  </span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Thang điểm tối đa:</span>
+                  <span className="text-sm font-bold text-slate-850 flex items-center gap-1.5">
+                    <Award className="w-4 h-4 text-amber-500" />
+                    {activeLessonDetail.maxScore ?? 100}đ
                   </span>
                 </div>
 

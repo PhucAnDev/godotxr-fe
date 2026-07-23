@@ -360,6 +360,20 @@ export default function LearningHistory() {
                     )}
                   </div>
                 </th>
+                <th 
+                  onClick={() => handleSort('score')}
+                  className="px-8 py-6 text-sm font-bold text-gray-600 uppercase tracking-widest cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                  title="Sắp xếp theo Điểm"
+                >
+                  <div className="flex items-center gap-1.5">
+                    Điểm / Kết quả
+                    {sortColumn === 'score' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                    ) : (
+                      <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                    )}
+                  </div>
+                </th>
                 <th className="px-8 py-6 text-sm font-bold text-gray-600 uppercase tracking-widest text-right select-none">Tùy chọn</th>
               </tr>
             </thead>
@@ -371,6 +385,12 @@ export default function LearningHistory() {
                   <td className="px-8 py-6 text-gray-500 font-medium">{formatDate(item.completedAt || item.startedAt)}</td>
                   <td className="px-8 py-6">
                      <StatusBadge status={getMappedStatus(item)} />
+                  </td>
+                  <td className="px-8 py-6 text-gray-500 font-medium">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-slate-800">{item.score} / 100</span>
+                      <span className="text-[10px] text-slate-400">Đúng: {item.correctCount ?? 0} | Sai: {item.errorCount ?? 0}</span>
+                    </div>
                   </td>
                   <td className="px-8 py-6 text-right">
                     <ActionButton 

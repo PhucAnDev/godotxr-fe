@@ -56,6 +56,7 @@ interface Lesson {
   Status: 'Active' | 'Inactive';
   CreatedAt: string;
   UpdatedAt: string;
+  MaxScore?: number;
 }
 
 interface Exercise {
@@ -71,6 +72,7 @@ const mapLesson = (lesson: LessonResponse): Lesson => ({
   Description: lesson.description ?? '', TargetSkill: (lesson.targetSkill ?? 'Pronunciation') as Lesson['TargetSkill'],
   EstimatedDuration: lesson.estimatedDuration, Status: lesson.status,
   CreatedAt: lesson.createdAt, UpdatedAt: lesson.updatedAt ?? lesson.createdAt,
+  MaxScore: lesson.maxScore,
 });
 
 // Predefined Mock Programs
@@ -234,6 +236,7 @@ export default function LessonManagement() {
   const [formTargetSkill, setFormTargetSkill] = useState<Lesson['TargetSkill']>('Pronunciation');
   const [formDuration, setFormDuration] = useState<number>(15);
   const [formStatus, setFormStatus] = useState<'Active' | 'Inactive'>('Active');
+  const [formMaxScore, setFormMaxScore] = useState<number>(100);
 
   // Target skill options memo for the CustomSelect input
   const targetSkillOptions = useMemo(() => {
@@ -285,7 +288,7 @@ export default function LessonManagement() {
   const handleToggleStatus = async (lessonId: string) => {
     const lesson = lessons.find(l => l.LessonId === lessonId);
     if (!lesson) return;
-    const result = await updateLesson(Number(lessonId), { lessonName: lesson.LessonName, lessonOrder: lesson.LessonOrder, description: lesson.Description, targetSkill: lesson.TargetSkill, estimatedDuration: lesson.EstimatedDuration, status: lesson.Status === 'Active' ? 'Inactive' : 'Active' });
+    const result = await updateLesson(Number(lessonId), { lessonName: lesson.LessonName, lessonOrder: lesson.LessonOrder, description: lesson.Description, targetSkill: lesson.TargetSkill, estimatedDuration: lesson.EstimatedDuration, status: lesson.Status === 'Active' ? 'Inactive' : 'Active', maxScore: lesson.MaxScore });
     if (result.success && result.data) setLessons(current => current.map(l => l.LessonId === lessonId ? mapLesson(result.data!) : l));
     else triggerToast(result.errors.join(' ') || result.message, 'warning');
   };
@@ -298,6 +301,7 @@ export default function LessonManagement() {
     setFormTargetSkill('Pronunciation');
     setFormDuration(15);
     setFormStatus('Active');
+    setFormMaxScore(100);
     setSelectedLesson(null);
     setModalType('add');
   };
@@ -311,6 +315,7 @@ export default function LessonManagement() {
     setFormTargetSkill(les.TargetSkill);
     setFormDuration(les.EstimatedDuration);
     setFormStatus(les.Status);
+    setFormMaxScore(les.MaxScore ?? 100);
     setModalType('edit');
   };
 
@@ -372,8 +377,12 @@ export default function LessonManagement() {
       triggerToast('Thời lượng ước tính lý tưởng từ 5 đến 120 phút!', 'warning');
       return;
     }
+    if (formMaxScore < 0) {
+      triggerToast('Điểm tối đa không được âm!', 'warning');
+      return;
+    }
 
-    const common = { lessonName: formLessonName.trim(), lessonOrder: formLessonOrder, description: formDesc.trim(), targetSkill: formTargetSkill, estimatedDuration: formDuration, status: formStatus };
+    const common = { lessonName: formLessonName.trim(), lessonOrder: formLessonOrder, description: formDesc.trim(), targetSkill: formTargetSkill, estimatedDuration: formDuration, status: formStatus, maxScore: formMaxScore };
     const result = modalType === 'add'
       ? await createLesson({ ...common, programId: Number(formProgramId) })
       : selectedLesson ? await updateLesson(Number(selectedLesson.LessonId), common) : null;
@@ -607,10 +616,10 @@ export default function LessonManagement() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse" id="lessons-table-body">
                 <thead>
-                  <tr className="bg-[#FDFCF5]/50 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
+                  <tr className="bg-[#FDFCF5]/55 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
                     <th 
                       onClick={() => handleSort('LessonId')}
-                      className="w-[7%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[5%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Mã Số"
                     >
                       <div className="flex items-center gap-1">
@@ -624,7 +633,7 @@ export default function LessonManagement() {
                     </th>
                     <th 
                       onClick={() => handleSort('LessonOrder')}
-                      className="w-[7%] py-5 px-2 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[5%] py-5 px-2 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Thứ tự"
                     >
                       <div className="flex items-center gap-1">
@@ -638,7 +647,7 @@ export default function LessonManagement() {
                     </th>
                     <th 
                       onClick={() => handleSort('LessonName')}
-                      className="w-[25%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[23%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Tiêu đề bài học"
                     >
                       <div className="flex items-center gap-1">
@@ -652,7 +661,7 @@ export default function LessonManagement() {
                     </th>
                     <th 
                       onClick={() => handleSort('ProgramId')}
-                      className="w-[18%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[15%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Chương trình"
                     >
                       <div className="flex items-center gap-1">
@@ -666,7 +675,7 @@ export default function LessonManagement() {
                     </th>
                     <th 
                       onClick={() => handleSort('TargetSkill')}
-                      className="w-[15%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[13%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Mục tiêu kỹ năng"
                     >
                       <div className="flex items-center gap-1">
@@ -684,8 +693,22 @@ export default function LessonManagement() {
                       title="Sắp xếp theo Thời lượng"
                     >
                       <div className="flex items-center gap-1">
-                        Thời Lượng Quy Định
+                        Thời Lượng
                         {sortColumn === 'EstimatedDuration' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('MaxScore')}
+                      className="w-[11%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Điểm tối đa"
+                    >
+                      <div className="flex items-center gap-1">
+                        Điểm tối đa
+                        {sortColumn === 'MaxScore' ? (
                           sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
                         ) : (
                           <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
@@ -736,6 +759,9 @@ export default function LessonManagement() {
                             <Clock className="w-4 h-4 text-gray-400" />
                             <span>{lesson.EstimatedDuration} phút</span>
                           </div>
+                        </td>
+                        <td className="py-5 px-4 font-bold text-slate-650">
+                          <span>{lesson.MaxScore ?? 100}đ</span>
                         </td>
                         <td className="py-5 px-4">
                           <span className={cn(
@@ -1051,7 +1077,7 @@ export default function LessonManagement() {
                       />
                     </div>
 
-                    <div className="app-modal-form-grid grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="app-modal-form-grid grid grid-cols-1 md:grid-cols-4 gap-6">
                       
                       {/* Target Skill badge category */}
                       <div className="space-y-2">
@@ -1078,6 +1104,22 @@ export default function LessonManagement() {
                           max={120}
                           value={formDuration}
                           onChange={(e) => setFormDuration(parseInt(e.target.value) || 15)}
+                          className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
+                        />
+                      </div>
+
+                      {/* Max Score */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
+                          Điểm tối đa <span className="text-[#FF8E8E]">*</span>
+                        </label>
+                        <input 
+                          type="number" 
+                          required
+                          min={0}
+                          max={1000}
+                          value={formMaxScore}
+                          onChange={(e) => setFormMaxScore(parseFloat(e.target.value) || 100)}
                           className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
                         />
                       </div>

@@ -83,6 +83,8 @@ interface LearningResult {
   InteractionLog: string; // JSON or text representation of interaction sequence
   FeedbackText: string;
   CreatedAt: string;
+  ErrorCount?: number;
+  CorrectCount?: number;
 }
 
 type RoleView = 'ADMIN' | 'TEACHER' | 'PARENT';
@@ -165,6 +167,8 @@ function mapResultRecord(result: ResultResponse): LearningResult {
     InteractionLog: result.interactionLog ?? '',
     FeedbackText: result.feedbackText ?? '',
     CreatedAt: completedAt || startedAt,
+    ErrorCount: result.errorCount,
+    CorrectCount: result.correctCount,
   };
 }
 
@@ -1248,6 +1252,9 @@ export default function LearningResultManagement() {
                                 />
                               </div>
                             )}
+                            <span className="text-[10px] text-gray-450 font-bold mt-1 text-slate-400">
+                              Đúng: {itm.CorrectCount ?? 0} | Sai: {itm.ErrorCount ?? 0}
+                            </span>
                           </div>
                         </td>
 
@@ -1593,7 +1600,7 @@ export default function LearningResultManagement() {
                 </div>
 
                 {/* Section C: Numeric indicators detail */}
-                <div className="bg-[#FDFCF5] p-5 rounded-[28px] border border-gray-100 grid grid-cols-2 sm:grid-cols-4 gap-6 font-bold text-center">
+                <div className="bg-[#FDFCF5] p-5 rounded-[28px] border border-gray-100 grid grid-cols-2 sm:grid-cols-6 gap-6 font-bold text-center">
 
                   <div className="space-y-1 border-r border-gray-100 last:border-0">
                     <p className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">Nỗ lực thứ</p>
@@ -1603,6 +1610,16 @@ export default function LearningResultManagement() {
                   <div className="space-y-1 border-r border-gray-100 last:border-0">
                     <p className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">Thời gian tương tác</p>
                     <p className="text-2xl font-black text-gray-800">{selectedResult.DurationSeconds} giây</p>
+                  </div>
+
+                  <div className="space-y-1 border-r border-gray-100 last:border-0">
+                    <p className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">Phát âm đúng</p>
+                    <p className="text-2xl font-black text-emerald-500">{selectedResult.CorrectCount ?? 0} từ</p>
+                  </div>
+
+                  <div className="space-y-1 border-r border-gray-100 last:border-0">
+                    <p className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">Phát âm sai</p>
+                    <p className="text-2xl font-black text-rose-500">{selectedResult.ErrorCount ?? 0} từ</p>
                   </div>
 
                   <div className="space-y-1 border-r border-gray-100 last:border-0">

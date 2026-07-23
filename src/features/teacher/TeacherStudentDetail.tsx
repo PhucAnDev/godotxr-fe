@@ -69,6 +69,8 @@ type Result = {
   DurationSeconds: number;
   FeedbackText: string;
   CreatedAt: string;
+  ErrorCount?: number;
+  CorrectCount?: number;
 };
 
 type Analysis = {
@@ -181,6 +183,8 @@ function mapResultRecord(
       formatDateTime(result.completedAt) ||
       formatDateTime(result.startedAt) ||
       '',
+    ErrorCount: result.errorCount,
+    CorrectCount: result.correctCount,
   };
 }
 
@@ -946,16 +950,21 @@ export default function TeacherStudentDetail({
                               {result.DurationSeconds} giây
                             </td>
                             <td className="py-5 px-6 text-center">
-                              <strong
-                                className={cn(
-                                  'text-base italic',
-                                  result.Score >= 85
-                                    ? 'text-[#4EACAF]'
-                                    : 'text-rose-500'
-                                )}
-                              >
-                                {result.Score}đ
-                              </strong>
+                              <div className="flex flex-col items-center">
+                                <strong
+                                  className={cn(
+                                    'text-base italic leading-none',
+                                    result.Score >= 85
+                                      ? 'text-[#4EACAF]'
+                                      : 'text-rose-500'
+                                  )}
+                                >
+                                  {result.Score}đ
+                                </strong>
+                                <span className="text-[10px] text-gray-400 font-bold mt-1 font-sans">
+                                  Đúng: {result.CorrectCount ?? 0} | Sai: {result.ErrorCount ?? 0}
+                                </span>
+                              </div>
                             </td>
                             <td className="py-5 px-10 text-right">
                               <button

@@ -17,6 +17,7 @@ export type Lesson = {
   TargetSkill?: string;
   EstimatedDuration?: number;
   Status: string;
+  maxScore?: number;
 };
 
 export type Exercise = {
