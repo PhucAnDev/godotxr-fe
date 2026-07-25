@@ -73,10 +73,9 @@ export default function LoginView({
                 className="relative z-10 rounded-[32px] overflow-hidden border-[12px] border-white shadow-[0_24px_60px_-15px_rgba(0,0,0,0.12)] bg-white"
               >
                 <img 
-                  src="https://images.unsplash.com/photo-1593508512255-86ab42a8e620?q=80&w=1200&auto=format&fit=crop" 
+                  src="/Kinh-Meta-Quest-3-128GB-tham-gia-thuc-te-ao-metaverser.webp" 
                   alt="Kid in VR"
                   className="w-full aspect-[3/2] object-cover transition-transform duration-1000 group-hover:scale-105"
-                  referrerPolicy="no-referrer"
                 />
               </motion.div>
 

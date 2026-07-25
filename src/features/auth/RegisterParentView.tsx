@@ -137,10 +137,9 @@ export default function RegisterParentView({ onBackToLogin, onRegisterSuccess }:
                 className="relative z-10 rounded-[64px] overflow-hidden border-[16px] border-white shadow-[0_40px_100px_-20px_rgba(0,0,0,0.15)] bg-white"
               >
                 <img 
-                  src="https://images.unsplash.com/photo-1593508512255-86ab42a8e620?q=80&w=1200&auto=format&fit=crop" 
+                  src="/Kinh-Meta-Quest-3-128GB-tham-gia-thuc-te-ao-metaverser.webp" 
                   alt="Kid in virtual reality headset"
                   className="w-full aspect-square object-cover transition-transform duration-1000 group-hover:scale-105"
-                  referrerPolicy="no-referrer"
                 />
                 
                 <div className="absolute inset-x-0 bottom-0 p-10 bg-gradient-to-t from-black/60 to-transparent">
