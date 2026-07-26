@@ -231,12 +231,12 @@ export default function LessonManagement() {
   // Form input field state
   const [formProgramId, setFormProgramId] = useState('');
   const [formLessonName, setFormLessonName] = useState('');
-  const [formLessonOrder, setFormLessonOrder] = useState<number>(1);
+  const [formLessonOrder, setFormLessonOrder] = useState<number | ''>(1);
   const [formDesc, setFormDesc] = useState('');
   const [formTargetSkill, setFormTargetSkill] = useState<Lesson['TargetSkill']>('Pronunciation');
-  const [formDuration, setFormDuration] = useState<number>(15);
+  const [formDuration, setFormDuration] = useState<number | ''>(15);
   const [formStatus, setFormStatus] = useState<'Active' | 'Inactive'>('Active');
-  const [formMaxScore, setFormMaxScore] = useState<number>(100);
+  const [formMaxScore, setFormMaxScore] = useState<number | ''>(100);
 
   // Target skill options memo for the CustomSelect input
   const targetSkillOptions = useMemo(() => {
@@ -365,7 +365,7 @@ export default function LessonManagement() {
       triggerToast('Vui lòng điền tên tiêu đề bài học!', 'warning');
       return;
     }
-    if (formLessonOrder <= 0) {
+    if (formLessonOrder === '' || formLessonOrder <= 0) {
       triggerToast('Thứ tự bài học phải lớn hơn 0!', 'warning');
       return;
     }
@@ -373,16 +373,24 @@ export default function LessonManagement() {
       triggerToast('Hãy mô tả một vài nét cơ bản cho giáo viên biết!', 'warning');
       return;
     }
-    if (formDuration < 5 || formDuration > 120) {
+    if (formDuration === '' || formDuration < 5 || formDuration > 120) {
       triggerToast('Thời lượng ước tính lý tưởng từ 5 đến 120 phút!', 'warning');
       return;
     }
-    if (formMaxScore < 0) {
+    if (formMaxScore === '' || formMaxScore < 0) {
       triggerToast('Điểm tối đa không được âm!', 'warning');
       return;
     }
 
-    const common = { lessonName: formLessonName.trim(), lessonOrder: formLessonOrder, description: formDesc.trim(), targetSkill: formTargetSkill, estimatedDuration: formDuration, status: formStatus, maxScore: formMaxScore };
+    const common = {
+      lessonName: formLessonName.trim(),
+      lessonOrder: Number(formLessonOrder),
+      description: formDesc.trim(),
+      targetSkill: formTargetSkill,
+      estimatedDuration: Number(formDuration),
+      status: formStatus,
+      maxScore: Number(formMaxScore)
+    };
     const result = modalType === 'add'
       ? await createLesson({ ...common, programId: Number(formProgramId) })
       : selectedLesson ? await updateLesson(Number(selectedLesson.LessonId), common) : null;
@@ -1055,7 +1063,10 @@ export default function LessonManagement() {
                           min={1}
                           max={50}
                           value={formLessonOrder}
-                          onChange={(e) => setFormLessonOrder(parseInt(e.target.value) || 1)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormLessonOrder(val === '' ? '' : (parseInt(val) || 0));
+                          }}
                           className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
                         />
                       </div>
@@ -1103,7 +1114,10 @@ export default function LessonManagement() {
                           min={5}
                           max={120}
                           value={formDuration}
-                          onChange={(e) => setFormDuration(parseInt(e.target.value) || 15)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormDuration(val === '' ? '' : (parseInt(val) || 0));
+                          }}
                           className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
                         />
                       </div>
@@ -1119,7 +1133,10 @@ export default function LessonManagement() {
                           min={0}
                           max={1000}
                           value={formMaxScore}
-                          onChange={(e) => setFormMaxScore(parseFloat(e.target.value) || 100)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormMaxScore(val === '' ? '' : (parseFloat(val) || 0));
+                          }}
                           className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
                         />
                       </div>

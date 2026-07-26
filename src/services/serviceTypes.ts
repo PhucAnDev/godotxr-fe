@@ -152,6 +152,12 @@ const TRANSLATIONS: Record<string, string> = {
   "result submitted successfully.": "Kết quả đã được nộp thành công.",
   "submit failed.": "Nộp kết quả thất bại.",
   "finalized results cannot be permanently deleted.": "Kết quả đã hoàn tất không thể xóa vĩnh viễn.",
+
+  // Network / HTTP Errors
+  "failed to fetch": "Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối mạng.",
+  "http 500": "Lỗi hệ thống từ máy chủ (HTTP 500). Vui lòng thử lại sau.",
+  "http 400": "Yêu cầu không hợp lệ (HTTP 400).",
+  "http 404": "Không tìm thấy tài nguyên yêu cầu (HTTP 404).",
 };
 
 const ERROR_TRANSLATIONS: Record<string, string> = {
@@ -196,11 +202,20 @@ export function fromResponse<T>(response: ApiResponse<T>): ServiceResult<T> {
 }
 
 export function fromError<T>(error: unknown): ServiceResult<T> {
-  if (error instanceof ApiError) {
+  const isApiError = error && typeof error === 'object' && 'name' in error && (error as any).name === 'ApiError';
+  if (error instanceof ApiError || isApiError) {
+    const apiErr = error as ApiError;
+    return {
+      success: false,
+      message: translateMessage(apiErr.message),
+      errors: (apiErr.errors ?? []).map(translateError),
+    };
+  }
+  if (error instanceof Error) {
     return {
       success: false,
       message: translateMessage(error.message),
-      errors: (error.errors ?? []).map(translateError),
+      errors: [],
     };
   }
   return {
