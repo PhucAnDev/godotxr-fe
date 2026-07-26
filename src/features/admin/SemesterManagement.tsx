@@ -215,7 +215,7 @@ export default function SemesterManagement() {
   const [formTeacherId, setFormTeacherId] = useState('TCH-001');
   const [formClassId, setFormClassId] = useState('CLS-002');
   const [formSemesterName, setFormSemesterName] = useState('');
-  const [formClassCount, setFormClassCount] = useState<number>(4);
+  const [formClassCount, setFormClassCount] = useState<number | ''>(4);
   const [formDescription, setFormDescription] = useState('');
   const [formStartDate, setFormStartDate] = useState('');
   const [formEndDate, setFormEndDate] = useState('');
@@ -288,6 +288,10 @@ export default function SemesterManagement() {
     }
     if (new Date(formStartDate) >= new Date(formEndDate)) {
       triggerToast('Ngày bắt đầu phải trước ngày kết thúc học kỳ!', 'warning');
+      return;
+    }
+    if (formClassCount === '' || Number(formClassCount) <= 0 || Number(formClassCount) > 30) {
+      triggerToast('Cơ số lớp trong học kỳ phải từ 1 đến 30!', 'warning');
       return;
     }
 
@@ -995,7 +999,10 @@ export default function SemesterManagement() {
                         min={1}
                         max={30}
                         value={formClassCount}
-                        onChange={(e) => setFormClassCount(Number(e.target.value) || 1)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFormClassCount(val === '' ? '' : (parseInt(val) || 0));
+                        }}
                         className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none focus:border-[#4EACAF] text-sm focus:bg-white"
                       />
                     </div>

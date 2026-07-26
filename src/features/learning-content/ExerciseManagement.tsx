@@ -365,7 +365,7 @@ export default function ExerciseManagement() {
     useState<Exercise['TargetSkill']>('Pronunciation');
   const [exFormLanguage, setExFormLanguage] =
     useState<Exercise['Language']>('Vietnamese');
-  const [exFormDuration, setExFormDuration] = useState<number>(120);
+  const [exFormDuration, setExFormDuration] = useState<number | ''>(120);
   const [exFormStatus, setExFormStatus] = useState<Exercise['Status']>('Active');
 
   const [qstFormExerciseId, setQstFormExerciseId] = useState('');
@@ -772,7 +772,7 @@ export default function ExerciseManagement() {
       triggerToast('Bài học hoặc loại bài tập chưa hợp lệ!', 'warning');
       return;
     }
-    if (exFormDuration <= 0) {
+    if (exFormDuration === '' || exFormDuration <= 0) {
       triggerToast('Thời hạn phải lớn hơn 0 giây!', 'warning');
       return;
     }
@@ -787,7 +787,7 @@ export default function ExerciseManagement() {
       difficultyLevel: exFormDifficulty,
       targetSkill: exFormTargetSkill,
       language: exFormLanguage,
-      durationLimit: exFormDuration,
+      durationLimit: Number(exFormDuration),
       status: exFormStatus,
     };
 
@@ -1956,9 +1956,10 @@ export default function ExerciseManagement() {
                         type="number"
                         min="1"
                         value={exFormDuration}
-                        onChange={(event) =>
-                          setExFormDuration(Number(event.target.value))
-                        }
+                        onChange={(event) => {
+                          const val = event.target.value;
+                          setExFormDuration(val === '' ? '' : (parseInt(val) || 0));
+                        }}
                         className="w-full rounded-2xl border-2 border-transparent bg-[#FDFCF5] px-5 py-4 font-bold text-gray-700 outline-none focus:border-[#4EACAF] focus:bg-white"
                       />
                     </FormField>

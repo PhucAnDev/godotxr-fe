@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Search,
@@ -65,6 +65,7 @@ interface Exercise {
   DurationLimit?: number;
   Status?: string;
   CreatedAt?: string;
+  LessonId?: string;
 }
 
 interface LearningResult {
@@ -144,6 +145,7 @@ function mapExerciseRecord(exercise: ExerciseResponse): Exercise {
     DurationLimit: exercise.durationLimit,
     Status: exercise.status,
     CreatedAt: exercise.createdAt,
+    LessonId: String(exercise.lessonId),
   };
 }
 
@@ -742,6 +744,13 @@ export default function LearningResultManagement() {
     }, 4000);
   };
 
+  const selectedResultMaxScore = useMemo(() => {
+    if (!selectedResult) return 100;
+    const lessonId = selectedResult.LessonId || (selectedResult.ExerciseId ? (getExerciseInfo(selectedResult.ExerciseId) as Exercise).LessonId : null);
+    const lesson = lessonId ? lessons.find(l => String(l.id) === lessonId) : null;
+    return lesson?.maxScore ?? 100;
+  }, [selectedResult, lessons, exercises]);
+
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative" id="result-management-view">
 
@@ -821,7 +830,7 @@ export default function LearningResultManagement() {
       </div>
 
       {/* 2. Kid-friendly visual Statistics indicators depending on role scope */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
         {/* Total attempts count card */}
         <div className="bg-white rounded-[32px] p-6 border-b-4 border-[#4EACAF] shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
@@ -831,17 +840,6 @@ export default function LearningResultManagement() {
           <div>
             <p className="text-3xl font-medium text-slate-800 tracking-tight leading-none">{totalAttempts}</p>
             <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1.5">Tổng lượt luyện</p>
-          </div>
-        </div>
-
-        {/* Average Score rating card */}
-        <div className="bg-white rounded-[32px] p-6 border-b-4 border-[#FF8E8E] shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
-          <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center shrink-0">
-            <Award className="w-7 h-7 text-[#FF8E8E]" />
-          </div>
-          <div>
-            <p className="text-3xl font-medium text-slate-800 tracking-tight leading-none">{averageScore}/100</p>
-            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1.5">Điểm số trung bình</p>
           </div>
         </div>
 
@@ -1185,6 +1183,10 @@ export default function LearningResultManagement() {
                     const itemTitle = isExercise ? exe.ExerciseName : les.LessonName;
                     const itemSubtitle = isExercise ? exe.TargetSkill : les.TargetSkill;
 
+                    const itmLessonId = itm.LessonId || (itm.ExerciseId ? (exe as Exercise).LessonId : null);
+                    const itmLessonObj = itmLessonId ? lessons.find(l => String(l.id) === itmLessonId) : null;
+                    const itmMaxScore = itmLessonObj?.maxScore ?? 100;
+
                     return (
                       <tr key={itm.ResultId} className="hover:bg-slate-50/50 transition-colors">
 
@@ -1237,7 +1239,7 @@ export default function LearningResultManagement() {
                           <div className="inline-flex items-center justify-center flex-col">
                             <span className={cn(
                               "font-black text-base italic",
-                              itm.Score >= 90 ? 'text-emerald-500' : itm.Score >= 70 ? 'text-indigo-500' : 'text-rose-500'
+                              itm.Score >= (itmMaxScore * 0.9) ? 'text-emerald-500' : itm.Score >= (itmMaxScore * 0.7) ? 'text-indigo-500' : 'text-rose-500'
                             )}>
                               {itm.Score > 0 ? `${itm.Score}` : '—'}
                             </span>
@@ -1246,9 +1248,9 @@ export default function LearningResultManagement() {
                                 <div
                                   className={cn(
                                     "h-full rounded-full",
-                                    itm.Score >= 90 ? 'bg-emerald-500' : itm.Score >= 70 ? 'bg-indigo-500' : 'bg-rose-500'
+                                    itm.Score >= (itmMaxScore * 0.9) ? 'bg-emerald-500' : itm.Score >= (itmMaxScore * 0.7) ? 'bg-indigo-500' : 'bg-rose-500'
                                   )}
-                                  style={{ width: `${itm.Score}%` }}
+                                  style={{ width: `${Math.min(100, Math.max(0, (itm.Score / itmMaxScore) * 100))}%` }}
                                 />
                               </div>
                             )}
@@ -1623,12 +1625,12 @@ export default function LearningResultManagement() {
                   </div>
 
                   <div className="space-y-1 border-r border-gray-100 last:border-0">
-                    <p className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">Điểm dải sóng âm</p>
+                    <p className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">Điểm số</p>
                     <p className={cn(
                       "text-2xl font-black italic",
-                      selectedResult.Score >= 90 ? 'text-emerald-500' : selectedResult.Score >= 70 ? 'text-[#4EACAF]' : 'text-[#FF8E8E]'
+                      selectedResult.Score >= (selectedResultMaxScore * 0.9) ? 'text-emerald-500' : selectedResult.Score >= (selectedResultMaxScore * 0.7) ? 'text-[#4EACAF]' : 'text-[#FF8E8E]'
                     )}>
-                      {selectedResult.Score} / 100
+                      {selectedResult.Score} / {selectedResultMaxScore}
                     </p>
                   </div>
 
