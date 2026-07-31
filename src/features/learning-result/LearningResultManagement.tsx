@@ -105,6 +105,22 @@ function formatDateTime(value: string | null | undefined): string {
   return value.replace('T', ' ').slice(0, 19);
 }
 
+// ponytail: Using regex for date parsing is simpler, but a library like date-fns or native Intl.DateTimeFormat would be more robust for internationalized locales.
+function formatDateTimeDMY(value: string | null | undefined): string {
+  if (!value) return '';
+  const dateTimeMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:\s|T)(\d{2}):(\d{2}):(\d{2})/);
+  if (dateTimeMatch) {
+    const [_, y, m, d, hr, min, sec] = dateTimeMatch;
+    return `${d}/${m}/${y} ${hr}:${min}:${sec}`;
+  }
+  const dateMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (dateMatch) {
+    const [_, y, m, d] = dateMatch;
+    return `${d}/${m}/${y}`;
+  }
+  return value;
+}
+
 function mapDifficultyLevel(level: string): Exercise['DifficultyLevel'] {
   const normalized = level.trim().toLowerCase();
 
@@ -510,6 +526,47 @@ export default function LearningResultManagement() {
     };
   };
 
+  // Recalculate attemptNumber based on chronological completedAt (or startedAt/createdAt) for each child's results on the same lessonId
+  // ponytail: Storing and updating attempt counters dynamically inside React state is a quick and effective FE workaround, but standard practice is to track attempts atomically inside backend db schemas.
+  const resultsWithCalculatedAttempts = useMemo(() => {
+    const groupsByChild: Record<string, LearningResult[]> = {};
+    for (const r of results) {
+      if (!groupsByChild[r.ChildId]) {
+        groupsByChild[r.ChildId] = [];
+      }
+      groupsByChild[r.ChildId].push(r);
+    }
+
+    const processedResults: LearningResult[] = [];
+
+    for (const childId in groupsByChild) {
+      const childResults = groupsByChild[childId];
+      const sortedChildResults = [...childResults].sort((a, b) => {
+        const timeA = a.CompletedAt || a.StartedAt || a.CreatedAt || '';
+        const timeB = b.CompletedAt || b.StartedAt || b.CreatedAt || '';
+        return timeA.localeCompare(timeB);
+      });
+
+      const lessonAttemptCounters: Record<string, number> = {};
+
+      for (const r of sortedChildResults) {
+        const lessonId = r.LessonId || (r.ExerciseId ? exercises.find(e => e.ExerciseId === r.ExerciseId)?.LessonId : null) || 'unknown';
+
+        if (!lessonAttemptCounters[lessonId]) {
+          lessonAttemptCounters[lessonId] = 0;
+        }
+        lessonAttemptCounters[lessonId] += 1;
+
+        processedResults.push({
+          ...r,
+          AttemptNumber: lessonAttemptCounters[lessonId]
+        });
+      }
+    }
+
+    return processedResults;
+  }, [results, exercises]);
+
   // ROLE-BASED FILTERING LOGIC
   // - Admin: Xem tất cả.
   // - Teacher (Giáo viên phụ trách): Xem các bé thuộc lớp phụ trách. Giả lập xem các bé: Bảo Nam, Anh Thư, Minh Khang (CHD-003, CHD-004, CHD-005)
@@ -520,7 +577,7 @@ export default function LearningResultManagement() {
   };
 
   // Active results list depending on Role and input Search Query & Dropdowns
-  const displayResults = getRoleFilteredResults(results).filter(item => {
+  const displayResults = getRoleFilteredResults(resultsWithCalculatedAttempts).filter(item => {
     const child = getChildInfo(item.ChildId);
     let itemName = '';
     let itemSkill = '';
@@ -618,7 +675,7 @@ export default function LearningResultManagement() {
   const allTargetSkills = Array.from(new Set(exercises.map(e => e.TargetSkill)));
 
   // STATISTICS CALCULATIONS (Based on ROLE-FILTERED subset for accuracy)
-  const roleSubset = getRoleFilteredResults(results);
+  const roleSubset = getRoleFilteredResults(resultsWithCalculatedAttempts);
   const totalAttempts = roleSubset.length;
 
   const completedCount = roleSubset.filter(r => r.CompletionStatus === 'Completed').length;
@@ -705,14 +762,16 @@ export default function LearningResultManagement() {
     showToast('Đã lưu ý kiến nhận xét can thiệp thành công!', 'success');
   };
 
+  // ponytail: Storing logs as a structured JSON/BSON array in the DB would be a cleaner senior-dev alternative rather than splitting a pipe-delimited string.
   const getResultInteractionLog = (result: LearningResult | null): string => {
     if (!result) return '';
 
-    return (
+    const logStr =
       result.InteractionLog ||
       formatEventLogs(eventLogsByResultId[result.ResultId]) ||
-      ''
-    );
+      '';
+
+    return logStr.replace(/\s*\|\s*/g, ' |\n');
   };
 
   const handleSimulateAudioPlay = (res: LearningResult) => {
@@ -812,21 +871,7 @@ export default function LearningResultManagement() {
           </p>
         </div>
 
-        <div className="bg-[#E2F2F3] border border-[#C5E1E3] px-5 py-4 rounded-[24px] flex items-center gap-3 shadow-inner self-start lg:self-center">
-          <UserSquare2 className="w-5 h-5 text-[#4EACAF]" />
-          <div className="space-y-1">
-            <p className="text-[11px] font-black text-[#264E50] uppercase tracking-[0.24em]">
-              Current data scope
-            </p>
-            <p className="text-sm font-extrabold text-[#264E50]">
-              {currentRoleView === 'ADMIN' && 'All learning results'}
-              {currentRoleView === 'TEACHER' &&
-                'Children in assigned classrooms'}
-              {currentRoleView === 'PARENT' &&
-                'Children linked to this parent account'}
-            </p>
-          </div>
-        </div>
+
       </div>
 
       {/* 2. Kid-friendly visual Statistics indicators depending on role scope */}
@@ -868,7 +913,7 @@ export default function LearningResultManagement() {
       </div>
 
       {/* Alert informing details or limits based on roles */}
-      <div className="bg-[#FFFDF5] p-5.5 rounded-[28px] border border-amber-200/50 flex gap-4 text-xs font-bold leading-relaxed text-gray-600">
+      {/* <div className="bg-[#FFFDF5] p-5.5 rounded-[28px] border border-amber-200/50 flex gap-4 text-xs font-bold leading-relaxed text-gray-600">
         <Info className="w-6 h-6 text-amber-500 shrink-0" />
         <div className="space-y-1">
           <p className="text-gray-800 font-black uppercase text-[10px] tracking-wider">
@@ -896,7 +941,7 @@ export default function LearningResultManagement() {
             </span>
           )}
         </div>
-      </div>
+      </div> */}
 
       {/* 3. Multi option Search and advanced filter block */}
       <div className="bg-white rounded-[36px] p-6.5 shadow-sm border border-gray-100 space-y-5" id="results-filter-bar">
@@ -906,12 +951,16 @@ export default function LearningResultManagement() {
 
           <div className="relative flex-1">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+            {/* ponytail: Using a ref callback to set 'padding-left' with 'important' bypasses global stylesheets forcing standard padding. */}
             <input
+              ref={(el) => {
+                if (el) el.style.setProperty('padding-left', '3.5rem', 'important');
+              }}
               type="text"
               placeholder="Tìm theo tên học sinh, bé cưng hoặc tên bài tập (VD: Nông trại, Leo, sáo...)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-14 pr-12 py-4 rounded-2xl bg-[#FDFCF5] border-2 border-transparent font-bold text-gray-700 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
+              className="w-full pr-12 py-4 rounded-2xl bg-[#FDFCF5] border-2 border-transparent font-bold text-gray-700 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
             />
             {searchQuery && (
               <button
@@ -924,19 +973,7 @@ export default function LearningResultManagement() {
             )}
           </div>
 
-          {/* Child Profile filter if multiple children/students */}
-          {children.length > 0 && (
-            <CustomSelect
-              value={filterChildId}
-              onChange={setFilterChildId}
-              variant="form"
-              options={[
-                { value: 'ALL', label: 'Tất cả học sinh' },
-                ...children.map((c) => ({ value: c.ChildId, label: c.FullName })),
-              ]}
-              className="w-full md:w-60"
-            />
-          )}
+
 
           {/* Completion Status */}
           <CustomSelect
@@ -958,35 +995,9 @@ export default function LearningResultManagement() {
         {/* Filters Row 2 - Dropdowns */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1.5">
 
-          {/* Filter Difficulty */}
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Độ khó bài tập:</label>
-            <CustomSelect
-              value={filterDifficulty}
-              onChange={setFilterDifficulty}
-              variant="form"
-              options={[
-                { value: 'ALL', label: 'TẤT CẢ ĐỘ KHÓ' },
-                { value: 'Dễ', label: 'DỄ (KID LEVEL 1)' },
-                { value: 'Trung bình', label: 'TRUNG BÌNH (LEVEL 2)' },
-                { value: 'Khó', label: 'KHÓ (LEVEL 3)' }
-              ]}
-            />
-          </div>
 
-          {/* Filter Target Skill */}
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Khảo sát dải tần can thiệp:</label>
-            <CustomSelect
-              value={filterSkill}
-              onChange={setFilterSkill}
-              variant="form"
-              options={[
-                { value: 'ALL', label: 'TẤT CẢ KỸ NĂNG' },
-                ...allTargetSkills.map((sk) => ({ value: sk, label: sk }))
-              ]}
-            />
-          </div>
+
+
 
           {/* Filter Date range */}
           <div className="space-y-2">
@@ -1030,16 +1041,20 @@ export default function LearningResultManagement() {
       </div>
 
       {/* 4. Elegant Learning Results Table */}
-      <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden" id="results-table-container">
+      {/* ponytail: Designing compact tables with tighter py-4 px-6 padding makes page scaling look uniform across management layouts. */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" id="results-table-container">
 
-        <div className="px-10 py-8 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/50 backdrop-blur-sm">
+        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white/50 backdrop-blur-sm">
           <div>
-            <h3 className="text-2xl font-medium text-slate-800 leading-none italic">Danh sách kết quả can thiệp chi tiết</h3>
-            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-2">Dòng dữ liệu mộc lưu vết VR headset, nỗ lực sửa ngọng của trẻ nhỏ</p>
+            <h3 className="text-lg font-bold text-slate-800 leading-none">Danh sách kết quả can thiệp chi tiết</h3>
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1.5">
+              Đang hiển thị {displayResults.length} trong {results.length} kết quả luyện tập
+            </p>
           </div>
-          <span className="text-xs bg-indigo-50 text-indigo-600 px-3.5 py-1.5 rounded-full font-normal uppercase tracking-wider border border-indigo-100/30 self-start sm:self-center">
-            API_DATABASE: RESULT ({displayResults.length} dòng)
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="w-2 h-2 bg-[#4EACAF] rounded-full animate-pulse" />
+            <span className="text-xs text-[#4EACAF] font-bold uppercase tracking-wider">Hệ thống đồng bộ</span>
+          </div>
         </div>
 
         {apiError ? (
@@ -1069,14 +1084,14 @@ export default function LearningResultManagement() {
             <div className="overflow-x-auto text-left">
               <table className="w-full border-collapse" id="results-table-element">
                 <thead>
-                  <tr className="bg-[#FDFCF5]/60 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
+                  <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-500 font-bold text-xs uppercase tracking-wider">
                     <th
                       onClick={() => handleSort('ResultId')}
-                      className="py-5 px-10 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="py-4 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Mã kết quả"
                     >
                       <div className="flex items-center gap-1.5">
-                        Mã kết quả
+                        Mã
                         {sortColumn === 'ResultId' ? (
                           sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
                         ) : (
@@ -1086,11 +1101,11 @@ export default function LearningResultManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('ChildId')}
-                      className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="py-4 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Học sinh"
                     >
                       <div className="flex items-center gap-1.5">
-                        Tên Học Sinh Bé
+                        Tên Học Sinh
                         {sortColumn === 'ChildId' ? (
                           sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
                         ) : (
@@ -1100,7 +1115,7 @@ export default function LearningResultManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('ExerciseId')}
-                      className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="py-4 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Bài tập"
                     >
                       <div className="flex items-center gap-1.5">
@@ -1114,7 +1129,7 @@ export default function LearningResultManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('AttemptNumber')}
-                      className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
+                      className="py-4 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
                       title="Sắp xếp theo Lượt thử"
                     >
                       <div className="flex items-center justify-center gap-1.5">
@@ -1128,11 +1143,11 @@ export default function LearningResultManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('Score')}
-                      className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
+                      className="py-4 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
                       title="Sắp xếp theo Điểm"
                     >
                       <div className="flex items-center justify-center gap-1.5">
-                        Điểm số thu âm
+                        Điểm số
                         {sortColumn === 'Score' ? (
                           sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
                         ) : (
@@ -1142,7 +1157,7 @@ export default function LearningResultManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('DurationSeconds')}
-                      className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="py-4 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Thời lượng"
                     >
                       <div className="flex items-center gap-1.5">
@@ -1154,12 +1169,12 @@ export default function LearningResultManagement() {
                         )}
                       </div>
                     </th>
-                    <th className="py-5 px-6 select-none">
+                    <th className="py-4 px-6 select-none">
                       Trạng thái
                     </th>
                     <th
                       onClick={() => handleSort('CompletedAt')}
-                      className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="py-4 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Thời điểm nộp"
                     >
                       <div className="flex items-center gap-1.5">
@@ -1171,7 +1186,7 @@ export default function LearningResultManagement() {
                         )}
                       </div>
                     </th>
-                    <th className="py-5 px-10 text-right select-none">Tùy chọn</th>
+                    <th className="py-4 px-6 text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 font-normal text-sm text-slate-650">
@@ -1191,12 +1206,12 @@ export default function LearningResultManagement() {
                       <tr key={itm.ResultId} className="hover:bg-slate-50/50 transition-colors">
 
                         {/* Result ID */}
-                        <td className="py-5 px-10 font-mono text-gray-400 font-extrabold text-xs">
+                        <td className="py-4 px-6 font-mono text-gray-400 font-extrabold text-xs">
                           {itm.ResultId}
                         </td>
 
                         {/* Child Name & Learning level */}
-                        <td className="py-5 px-6">
+                        <td className="py-4 px-6">
                           <div className="font-extrabold text-gray-900 text-sm md:text-base mb-0.5 leading-none">
                             {chd.FullName}
                           </div>
@@ -1206,7 +1221,7 @@ export default function LearningResultManagement() {
                         </td>
 
                         {/* Exercise/Lesson Name & difficulty */}
-                        <td className="py-5 px-6">
+                        <td className="py-4 px-6">
                           <div className="font-normal text-slate-650 leading-tight mb-1 text-xs md:text-sm">
                             {itemTitle}
                           </div>
@@ -1228,14 +1243,14 @@ export default function LearningResultManagement() {
                         </td>
 
                         {/* Attempt number */}
-                        <td className="py-5 px-6 text-center font-mono">
+                        <td className="py-4 px-6 text-center font-mono">
                           <span className="px-2 py-0.5 bg-gray-100 rounded-md text-xs font-extrabold">
                             Lần {itm.AttemptNumber}
                           </span>
                         </td>
 
                         {/* Score metric with colorful circle indicator */}
-                        <td className="py-5 px-6 text-center">
+                        <td className="py-4 px-6 text-center">
                           <div className="inline-flex items-center justify-center flex-col">
                             <span className={cn(
                               "font-black text-base italic",
@@ -1254,29 +1269,29 @@ export default function LearningResultManagement() {
                                 />
                               </div>
                             )}
-                            <span className="text-[10px] text-gray-450 font-bold mt-1 text-slate-400">
+                            <span className="text-[10px] text-gray-455 font-bold mt-1 text-slate-400">
                               Đúng: {itm.CorrectCount ?? 0} | Sai: {itm.ErrorCount ?? 0}
                             </span>
                           </div>
                         </td>
 
                         {/* Duration in seconds */}
-                        <td className="py-5 px-6 text-gray-500 font-mono text-xs">
+                        <td className="py-4 px-6 text-gray-500 font-mono text-xs">
                           {itm.DurationSeconds} giây
                         </td>
 
                         {/* Completion status */}
-                        <td className="py-5 px-6">
+                        <td className="py-4 px-6">
                           {renderStatusBadge(itm.CompletionStatus)}
                         </td>
 
                         {/* Time submitted */}
-                        <td className="py-5 px-6 text-xs text-gray-400 font-medium">
-                          {itm.CompletedAt ? itm.CompletedAt : 'Đang xử lý...'}
+                        <td className="py-4 px-6 text-xs text-gray-400 font-medium">
+                          {itm.CompletedAt ? formatDateTimeDMY(itm.CompletedAt) : 'Đang xử lý...'}
                         </td>
 
                         {/* Actions toolbox */}
-                        <td className="py-5 px-10 text-right">
+                        <td className="py-4 px-6 text-right">
                           <div className="flex items-center justify-end gap-1.5">
 
                             {/* Main view modal button */}
@@ -1328,7 +1343,7 @@ export default function LearningResultManagement() {
               </table>
             </div>
 
-            <div className="px-10 pb-8 border-t border-slate-50">
+            <div className="px-6 pb-6 border-t border-slate-50">
               <Pagination
                 currentPage={currentPage}
                 totalItems={displayResults.length}
@@ -1496,118 +1511,10 @@ export default function LearningResultManagement() {
 
                 </div>
 
-                {/* Section B: Playback Simulation Controls (Stunning Interactive Widgets!) */}
-                <div className="bg-gradient-to-br from-[#4EACAF]/5 to-[#FF8E8E]/5 p-6 rounded-[32px] border border-[#4EACAF]/10 space-y-4">
-                  <h4 className="text-sm font-black text-gray-700 uppercase tracking-widest flex items-center gap-2">
-                    <BrainCircuit className="w-4 h-4 text-[#4EACAF]" />
-                    Trực quan dải tần âm học & Không gian replay can thiệp
-                  </h4>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                    {/* Audio recording player simulation card */}
-                    <div className="bg-white p-4.5 rounded-2xl border border-gray-100 flex flex-col justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500">
-                          <Music className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-black text-gray-700">AudioRecordUrl</p>
-                          <p className="text-[11px] text-gray-400 font-medium truncate max-w-[250px]">
-                            {selectedResult.AudioRecordUrl || "Chưa có tệp nộp bài..."}
-                          </p>
-                        </div>
-                      </div>
-
-                      {selectedResult.AudioRecordUrl ? (
-                        <div className="space-y-2 mt-2">
-                          {/* Mini simulated audio player dashboard */}
-                          <div className="bg-slate-50 p-2.5 rounded-xl flex items-center gap-3">
-                            <button
-                              type="button"
-                              onClick={() => handleSimulateAudioPlay(selectedResult)}
-                              className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
-                            >
-                              {playingAudioId === selectedResult.ResultId ? (
-                                <Activity className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <Play className="w-4 h-4 fill-white ml-0.5" />
-                              )}
-                            </button>
-                            <div className="flex-1 space-y-1">
-                              <div className="flex items-center justify-between text-[10px] text-gray-400 font-bold font-mono">
-                                <span>{playingAudioId === selectedResult.ResultId ? '00:03' : '00:00'}</span>
-                                <span>00:10 (Mô phỏng)</span>
-                              </div>
-                              <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                <div
-                                  className={cn("h-full bg-emerald-500 rounded-full", playingAudioId === selectedResult.ResultId && "w-1/3 transition-all duration-[4s]")}
-                                  style={{ width: playingAudioId === selectedResult.ResultId ? '100%' : '0%' }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-rose-400 italic">Học sinh chưa hoàn thành nộp bản thu giọng mộc.</span>
-                      )}
-                    </div>
-
-                    {/* 3D VR simulation dynamic representation replay card */}
-                    <div className="bg-white p-4.5 rounded-2xl border border-gray-100 flex flex-col justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-500">
-                          <Tv className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-black text-gray-700">ReplayDataUrl (Tọa độ môi kính)</p>
-                          <p className="text-[11px] text-gray-400 font-medium truncate max-w-[250px]">
-                            {selectedResult.ReplayDataUrl || "Không có tệp replay..."}
-                          </p>
-                        </div>
-                      </div>
-
-                      {selectedResult.ReplayDataUrl ? (
-                        <div className="space-y-1 mt-2">
-                          <button
-                            type="button"
-                            onClick={() => handleSimulate3DReplay(selectedResult)}
-                            className={cn(
-                              "w-full py-2.5 rounded-xl font-medium text-xs uppercase tracking-wide transition-all border flex items-center justify-center gap-2",
-                              playingReplayId === selectedResult.ResultId
-                                ? "bg-indigo-600 text-white"
-                                : "bg-indigo-50 border-indigo-100 text-indigo-600 hover:bg-indigo-500 hover:text-white"
-                            )}
-                          >
-                            {playingReplayId === selectedResult.ResultId ? (
-                              <>
-                                <Activity className="w-4 h-4 animate-bounce" />
-                                Đang mô tả Replay 3D...
-                              </>
-                            ) : (
-                              <>
-                                <Play className="w-4 h-4" />
-                                Phát replay tương tác VR
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-rose-400 italic">Game chưa có dải xuất thần tọa độ.</span>
-                      )}
-                    </div>
-
-                  </div>
-
-                </div>
 
                 {/* Section C: Numeric indicators detail */}
-                <div className="bg-[#FDFCF5] p-5 rounded-[28px] border border-gray-100 grid grid-cols-2 sm:grid-cols-6 gap-6 font-bold text-center">
-
-                  <div className="space-y-1 border-r border-gray-100 last:border-0">
-                    <p className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">Nỗ lực thứ</p>
-                    <p className="text-2xl font-black text-gray-800">Lượt {selectedResult.AttemptNumber}</p>
-                  </div>
+                <div className="bg-[#FDFCF5] p-5 rounded-[28px] border border-gray-100 grid grid-cols-2 sm:grid-cols-5 gap-6 font-bold text-center">
 
                   <div className="space-y-1 border-r border-gray-100 last:border-0">
                     <p className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">Thời gian tương tác</p>
@@ -1637,7 +1544,7 @@ export default function LearningResultManagement() {
                   <div className="space-y-1 border-r border-gray-100 last:border-0">
                     <p className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">Hoàn thành lúc</p>
                     <p className="text-sm font-black text-gray-700 font-mono mt-1 leading-snug">
-                      {selectedResult.CompletedAt || "Chưa gửi nộp"}
+                      {formatDateTimeDMY(selectedResult.CompletedAt) || "Chưa gửi nộp"}
                     </p>
                   </div>
 
@@ -1647,7 +1554,7 @@ export default function LearningResultManagement() {
                 <div className="space-y-2">
                   <label className="text-xs font-black text-[#264E50] uppercase tracking-widest ml-1 flex items-center gap-1">
                     <FolderOpen className="w-4 h-4 text-[#4EACAF]" />
-                    Interaction Log (Vết logs tương tác vật lý ghi nhận từ ứng dụng VR)
+                    Vết logs tương tác vật lý ghi nhận từ ứng dụng VR
                   </label>
                   <div className="p-4 bg-gray-900 text-slate-100 rounded-2xl font-mono text-xs whitespace-pre-line leading-relaxed shadow-inner border-2 border-slate-800">
                     {getResultInteractionLog(selectedResult) || "Hệ thống chưa ghi nhận vết log bấm hoặc phát âm ở phiên tập này..."}
@@ -1797,7 +1704,7 @@ export default function LearningResultManagement() {
                 </div>
 
                 <div className="border-t border-slate-100 pt-5 space-y-5 max-h-[60vh] overflow-y-auto pr-1">
-                  
+
                   {/* Grid of styled modern cards */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {activeMetaPopup.type === 'lesson' && activeMetaPopup.lesson && (
@@ -1961,8 +1868,8 @@ export default function LearningResultManagement() {
                       </span>
                     </div>
                     <p className="text-sm text-slate-700 font-extrabold leading-relaxed whitespace-pre-line">
-                      {activeMetaPopup.type === 'lesson' 
-                        ? (activeMetaPopup.lesson?.description || 'Không có mô tả chi tiết giáo trình cho bài học này.') 
+                      {activeMetaPopup.type === 'lesson'
+                        ? (activeMetaPopup.lesson?.description || 'Không có mô tả chi tiết giáo trình cho bài học này.')
                         : (activeMetaPopup.exercise?.Instruction || 'Không có mô tả chi tiết hướng dẫn học tập cho bài tập này.')
                       }
                     </p>
