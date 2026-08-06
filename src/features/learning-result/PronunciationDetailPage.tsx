@@ -146,6 +146,21 @@ export default function PronunciationDetailPage() {
             })();
 
         const mapped = childRecords.map(mapChildRecord);
+        
+        // Add temporary test child (ID 8) for testing AI features
+        if (!mapped.some(c => Number(c.ChildId) === 8)) {
+          mapped.push({
+            ChildId: '8',
+            FullName: 'Bé Test AI (ID 8 - Tạm)',
+            Age: 6,
+            Gender: 'Male',
+            LearningLevel: 'PreSchool',
+            Status: 'Active',
+            CreatedAt: '',
+            UpdatedAt: ''
+          });
+        }
+
         setChildren(mapped);
         if (mapped.length > 0) {
           setSelectedChildId(Number(mapped[0].ChildId));
@@ -167,14 +182,45 @@ export default function PronunciationDetailPage() {
       setIsApiLoading(true);
       setApiError(null);
       try {
-        const res = await getResultsByChild(selectedChildId);
-        if (res.success && res.data) {
-          setResults(res.data.map(mapResultRecord));
+        if (selectedChildId === 8) {
+          // Inject mock session for testing child ID 8
+          setResults([{
+            ResultId: '9999',
+            ChildId: '8',
+            SessionId: 'TestSession2',
+            Score: 100,
+            DurationSeconds: 15,
+            CompletionStatus: 'Completed',
+            correctCount: 4,
+            errorCount: 0,
+            FeedbackText: 'Test Session cho Bé ID 8',
+            CreatedAt: new Date().toLocaleDateString('vi-VN')
+          }]);
         } else {
-          setResults([]);
+          const res = await getResultsByChild(selectedChildId);
+          if (res.success && res.data) {
+            setResults(res.data.map(mapResultRecord));
+          } else {
+            setResults([]);
+          }
         }
       } catch (err) {
-        setApiError('Không thể tải danh sách session học của trẻ.');
+        if (selectedChildId === 8) {
+          setResults([{
+            ResultId: '9999',
+            ChildId: '8',
+            SessionId: 'TestSession2',
+            Score: 100,
+            DurationSeconds: 15,
+            CompletionStatus: 'Completed',
+            correctCount: 4,
+            errorCount: 0,
+            FeedbackText: 'Test Session cho Bé ID 8',
+            CreatedAt: new Date().toLocaleDateString('vi-VN')
+          }]);
+        } else {
+          setApiError('Không thể tải danh sách session học của trẻ.');
+        }
       } finally {
         setIsApiLoading(false);
       }
@@ -199,10 +245,14 @@ export default function PronunciationDetailPage() {
     setChunkAssessments({});
     setFeedbackInput(result.FeedbackText || '');
 
-    try {
       const res = await getChunksBySession(Number(result.ChildId), result.SessionId);
       if (res.success && res.data) {
-        setChunks(res.data);
+        // Map and rewrite internal Docker MinIO URL to public domain for browser access
+        const formattedChunks = res.data.map((chunk: any) => ({
+          ...chunk,
+          chunkUrl: chunk.chunkUrl?.replace('http://minio:9000', 'https://minio.103-162-30-111.sslip.io')
+        }));
+        setChunks(formattedChunks);
       } else {
         setChunks([]);
         showToast('Không tìm thấy file chunk nào của session này.', 'warn');
