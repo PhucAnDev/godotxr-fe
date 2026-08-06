@@ -245,6 +245,7 @@ export default function PronunciationDetailPage() {
     setChunkAssessments({});
     setFeedbackInput(result.FeedbackText || '');
 
+    try {
       const res = await getChunksBySession(Number(result.ChildId), result.SessionId);
       if (res.success && res.data) {
         // Map and rewrite internal Docker MinIO URL to public domain for browser access
