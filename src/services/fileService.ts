@@ -24,11 +24,28 @@ async function request<T>(
   }
 }
 
+async function rawRequest<T>(
+  endpoint: string,
+  options?: RequestInit
+): Promise<ServiceResult<T>> {
+  try {
+    const rawData = await apiRequest<any>(endpoint, options);
+    return {
+      success: true,
+      message: 'Success',
+      errors: [],
+      data: rawData as T,
+    };
+  } catch (error) {
+    return fromError(error);
+  }
+}
+
 export const getChunksBySession = (childProfileId: number, sessionId: string) =>
-  request<ChunkResponse[]>(`/api/files/chunks/${childProfileId}/${sessionId}`);
+  rawRequest<ChunkResponse[]>(`/api/files/chunks/${childProfileId}/${sessionId}`);
 
 export const assessChunk = (payload: AssessChunkPayload) =>
-  request<any>('/api/files/chunks/assess', {
+  rawRequest<any>('/api/files/chunks/assess', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
