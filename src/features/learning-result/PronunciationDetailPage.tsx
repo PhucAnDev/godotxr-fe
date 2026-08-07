@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
@@ -11,6 +11,7 @@ import {
   CheckCircle, 
   Play, 
   Smile, 
+  Pause,
   ShieldAlert, 
   User, 
   Sparkles,
@@ -118,6 +119,10 @@ export default function PronunciationDetailPage() {
   const [referenceTexts, setReferenceTexts] = useState<Record<number, string>>({});
   const [chunkAssessments, setChunkAssessments] = useState<Record<number, any>>({});
   const [assessingChunkIndex, setAssessingChunkIndex] = useState<number | null>(null);
+  
+  // Custom Audio playback state
+  const [playingChunkIndex, setPlayingChunkIndex] = useState<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // General loading & error
   const [isApiLoading, setIsApiLoading] = useState(true);
@@ -286,6 +291,44 @@ export default function PronunciationDetailPage() {
       });
     };
   }, [chunks]);
+
+  // Handle playing audio chunk via Custom Audio Player
+  const handlePlayChunk = (url: string, index: number) => {
+    if (playingChunkIndex === index) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      setPlayingChunkIndex(null);
+      return;
+    }
+
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+
+    const audio = new Audio(url);
+    audioRef.current = audio;
+    setPlayingChunkIndex(index);
+
+    audio.play().catch(err => {
+      console.error("Audio playback failed:", err);
+      showToast("Không thể phát âm thanh này.", "warn");
+      setPlayingChunkIndex(null);
+    });
+
+    audio.onended = () => {
+      setPlayingChunkIndex(null);
+    };
+  };
+
+  // Stop playback on unmount or session change
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, [selectedChildId, expandedResultId]);
 
   // Save feedback/comments
   const handleSaveFeedback = async (resultId: string) => {
@@ -615,14 +658,30 @@ export default function PronunciationDetailPage() {
                               </div>
                             </div>
                             
-                            {/* Audio player */}
-                            <div className="w-full sm:w-auto">
-                              <audio 
-                                controls 
-                                src={chunk.chunkUrl}
-                                className="w-full max-w-[280px] h-9 outline-none"
-                              />
-                            </div>
+                            {/* Custom Audio player button */}
+                            <div className="w-full sm:w-auto flex items-center">
+                               <button
+                                 onClick={() => handlePlayChunk(chunk.chunkUrl, cIndex)}
+                                 className={cn(
+                                   "flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer",
+                                   playingChunkIndex === cIndex
+                                     ? "bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-100/80"
+                                     : "bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100/80"
+                                 )}
+                               >
+                                 {playingChunkIndex === cIndex ? (
+                                   <>
+                                     <Pause className="w-3.5 h-3.5 animate-pulse" />
+                                     <span>Đang phát...</span>
+                                   </>
+                                 ) : (
+                                   <>
+                                     <Play className="w-3.5 h-3.5" />
+                                     <span>Nghe ghi âm</span>
+                                   </>
+                                 )}
+                               </button>
+                             </div>
                           </div>
 
                           {/* AI assessment form & feedback visualization */}
