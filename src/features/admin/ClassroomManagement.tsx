@@ -600,13 +600,12 @@ export default function ClassroomManagement() {
       {/* 3. Search and filtering system */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4" id="classroom-filters">
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4.5 h-4.5" />
           <input 
             type="text" 
             placeholder="Tìm theo tên lớp, tên giáo viên, chương trình..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-normal text-slate-600 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white" 
+            className="w-full pl-4 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-normal text-slate-600 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white" 
           />
           {searchQuery && (
             <button 

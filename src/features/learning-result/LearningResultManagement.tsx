@@ -950,17 +950,12 @@ export default function LearningResultManagement() {
         <div className="flex flex-col md:flex-row gap-4">
 
           <div className="relative flex-1">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-            {/* ponytail: Using a ref callback to set 'padding-left' with 'important' bypasses global stylesheets forcing standard padding. */}
             <input
-              ref={(el) => {
-                if (el) el.style.setProperty('padding-left', '3.5rem', 'important');
-              }}
               type="text"
               placeholder="Tìm theo tên học sinh, bé cưng hoặc tên bài tập (VD: Nông trại, Leo, sáo...)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pr-12 py-4 rounded-2xl bg-[#FDFCF5] border-2 border-transparent font-bold text-gray-700 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
+              className="w-full pl-5 pr-12 py-4 rounded-2xl bg-[#FDFCF5] border-2 border-transparent font-bold text-gray-700 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
             />
             {searchQuery && (
               <button

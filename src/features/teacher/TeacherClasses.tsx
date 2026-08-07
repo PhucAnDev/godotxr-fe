@@ -613,13 +613,12 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
       <div className="rounded-[28px] border border-white/70 bg-white p-6 shadow-sm">
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_220px_220px]">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Tìm theo tên lớp, chương trình, học kỳ hoặc mã lớp"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-10 text-sm font-semibold text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-4 pr-10 text-sm font-semibold text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
             />
             {searchQuery && (
               <button

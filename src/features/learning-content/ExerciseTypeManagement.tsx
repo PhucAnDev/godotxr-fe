@@ -460,13 +460,12 @@ export default function ExerciseTypeManagement() {
 
       <div className="flex flex-col gap-4 rounded-[36px] border border-gray-100 bg-white p-6 shadow-sm md:flex-row">
         <div className="relative flex-1">
-          <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Tìm kiếm phân loại theo tên hoặc nội dung hướng dẫn..."
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            className="w-full rounded-2xl border-2 border-transparent bg-[#FDFCF5] py-4 pl-14 pr-6 text-sm font-bold text-gray-700 outline-none transition-all placeholder:text-gray-400 focus:border-[#4EACAF] focus:bg-white"
+            className="w-full rounded-2xl border-2 border-transparent bg-[#FDFCF5] py-4 pl-5 pr-6 text-sm font-bold text-gray-700 outline-none transition-all placeholder:text-gray-400 focus:border-[#4EACAF] focus:bg-white"
           />
           {searchQuery && (
             <button

@@ -147,13 +147,13 @@ export default function RoleManagement() {
       {/* 3. Tìm kiếm & lọc */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4.5 h-4.5" />
+
           <input
             type="text"
             placeholder="Tìm theo vai trò, mô tả chi tiết, mã ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-normal text-slate-600 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white"
+            className="w-full pl-4 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-normal text-slate-600 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white"
           />
           {searchQuery && (
             <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-gray-200/60 rounded-full hover:bg-gray-200">

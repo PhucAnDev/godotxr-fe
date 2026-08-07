@@ -462,13 +462,12 @@ export default function ProgramManagement() {
       <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 space-y-3">
         {/* Search Input */}
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input 
             type="text" 
             placeholder="Tìm kiếm chương trình theo tên hoặc mã định danh..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-slate-50 border border-slate-200 font-normal text-slate-600 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs" 
+            className="w-full pl-4 pr-10 py-2.5 rounded-lg bg-slate-50 border border-slate-200 font-normal text-slate-600 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs" 
           />
           {searchQuery && (
             <button 

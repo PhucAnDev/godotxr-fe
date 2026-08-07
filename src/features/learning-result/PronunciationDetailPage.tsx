@@ -716,25 +716,34 @@ export default function PronunciationDetailPage() {
                                   <div className="p-2 bg-emerald-50/50 rounded-lg border border-emerald-100/50">
                                     <div className="text-xs font-bold text-slate-400">Độ chính xác</div>
                                     <div className="text-sm font-black text-emerald-600 mt-0.5">
-                                      {assessment.pronunciationAssessment?.accuracyScore || assessment.PronunciationAssessment?.AccuracyScore}%
+                                      {assessment.pronunciationAssessment?.accuracyScore ?? 
+                                       assessment.PronunciationAssessment?.AccuracyScore ?? 
+                                       assessment.AccuracyScore ?? 0}%
                                     </div>
                                   </div>
                                   <div className="p-2 bg-indigo-50/50 rounded-lg border border-indigo-100/50">
                                     <div className="text-xs font-bold text-slate-400">Phát âm</div>
                                     <div className="text-sm font-black text-indigo-600 mt-0.5">
-                                      {assessment.pronunciationAssessment?.pronunciationScore || assessment.PronunciationAssessment?.PronunciationScore}%
+                                      {assessment.pronunciationAssessment?.pronunciationScore ?? 
+                                       assessment.PronunciationAssessment?.PronunciationScore ?? 
+                                       assessment.PronScore ?? 
+                                       assessment.PronunciationScore ?? 0}%
                                     </div>
                                   </div>
                                   <div className="p-2 bg-purple-50/50 rounded-lg border border-purple-100/50">
                                     <div className="text-xs font-bold text-slate-400">Trôi chảy</div>
                                     <div className="text-sm font-black text-purple-600 mt-0.5">
-                                      {assessment.pronunciationAssessment?.fluencyScore || assessment.PronunciationAssessment?.FluencyScore}%
+                                      {assessment.pronunciationAssessment?.fluencyScore ?? 
+                                       assessment.PronunciationAssessment?.FluencyScore ?? 
+                                       assessment.FluencyScore ?? 0}%
                                     </div>
                                   </div>
                                   <div className="p-2 bg-teal-50/50 rounded-lg border border-teal-100/50">
                                     <div className="text-xs font-bold text-slate-400">Hoàn thành</div>
                                     <div className="text-sm font-black text-teal-600 mt-0.5">
-                                      {assessment.pronunciationAssessment?.completenessScore || assessment.PronunciationAssessment?.CompletenessScore}%
+                                      {assessment.pronunciationAssessment?.completenessScore ?? 
+                                       assessment.PronunciationAssessment?.CompletenessScore ?? 
+                                       assessment.CompletenessScore ?? 0}%
                                     </div>
                                   </div>
                                 </div>
@@ -745,7 +754,9 @@ export default function PronunciationDetailPage() {
                                   <div className="flex flex-wrap gap-2">
                                     {(assessment.words || assessment.Words || []).map((wObj: any, wIdx: number) => {
                                       const wordText = wObj.word || wObj.Word;
-                                      const score = wObj.pronunciationAssessment?.accuracyScore || wObj.PronunciationAssessment?.AccuracyScore || 0;
+                                      const score = wObj.pronunciationAssessment?.accuracyScore ?? 
+                                                    wObj.PronunciationAssessment?.AccuracyScore ?? 
+                                                    wObj.AccuracyScore ?? 0;
                                       const isCorrect = score >= 80;
                                       const isMedium = score >= 50 && score < 80;
 

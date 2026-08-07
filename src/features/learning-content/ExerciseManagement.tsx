@@ -1143,13 +1143,12 @@ export default function ExerciseManagement() {
         </h3>
 
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Tìm kiếm theo tên bài tập, kỹ năng hoặc hướng dẫn..."
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            className="w-full rounded-2xl border-2 border-transparent bg-slate-50 py-3.5 pl-11 pr-11 text-xs font-normal text-slate-600 outline-none transition-all placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
+            className="w-full rounded-2xl border-2 border-transparent bg-slate-50 py-3.5 pl-4 pr-11 text-xs font-normal text-slate-600 outline-none transition-all placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
           />
           {searchQuery && (
             <button

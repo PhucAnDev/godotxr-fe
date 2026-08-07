@@ -626,13 +626,12 @@ export default function AnalyzeManagement() {
         <div className="flex flex-wrap items-center justify-between gap-4 pb-6">
           {/* Search */}
           <div className="relative w-full max-w-md">
-            <Search className="absolute top-1/2 left-4 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm theo họ tên bé hoặc chẩn đoán..."
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3.5 pr-4 pl-11 text-sm font-normal text-slate-600 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3.5 pr-4 pl-4 text-sm font-normal text-slate-600 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
             />
           </div>
 

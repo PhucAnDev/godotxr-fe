@@ -1,34 +1,23 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  LineChart, 
-  Line, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
-} from 'recharts';
-import { 
-  TrendingUp, 
-  Search, 
-  X, 
-  SlidersHorizontal, 
-  Info, 
-  CheckCircle, 
-  Award, 
-  Clock, 
-  Smile, 
-  ShieldAlert, 
-  Download, 
-  Calendar, 
-  ListRestart, 
-  Eye, 
-  ChevronDown, 
-  BrainCircuit, 
+
+import {
+  TrendingUp,
+  Search,
+  X,
+  SlidersHorizontal,
+  Info,
+  CheckCircle,
+  Award,
+  Clock,
+  Smile,
+  ShieldAlert,
+  Download,
+  Calendar,
+  ListRestart,
+  Eye,
+  ChevronDown,
+  BrainCircuit,
   ExternalLink,
   Zap,
   Target,
@@ -157,7 +146,7 @@ export default function ProgressAnalysis() {
     setIsLoading(true);
     try {
       let fetchedChildren: ChildProfileResponse[] = [];
-      
+
       // 1. Fetch children based on role view
       if (currentRoleView === 'PARENT') {
         const res = await getMyChildProfiles();
@@ -205,9 +194,9 @@ export default function ProgressAnalysis() {
           'Excellent': 95
         };
         const score = scoreMap[a.pronunciationAbility] || 70;
-        const progressLevel: Analysis['ProgressLevel'] = 
+        const progressLevel: Analysis['ProgressLevel'] =
           (a.pronunciationAbility === 'Good' || a.pronunciationAbility === 'Excellent') ? 'Improving' :
-          (a.pronunciationAbility === 'Average') ? 'Stable' : 'Need Support';
+            (a.pronunciationAbility === 'Average') ? 'Stable' : 'Need Support';
 
         return {
           AnalysisId: String(a.id),
@@ -256,7 +245,7 @@ export default function ProgressAnalysis() {
   const filteredAnalysesList = useMemo(() => {
     return analyses.filter(item => {
       const kid = getChildDetails(item.ChildId);
-      
+
       // Filter by role scope first
       const isAvailableInRole = getRoleFilteredChildren.some(c => c.ChildId === item.ChildId);
       if (!isAvailableInRole) return false;
@@ -362,33 +351,7 @@ export default function ProgressAnalysis() {
     );
   };
 
-  // Recharts responsive weekly dataset matching current selection
-  const chartsData = useMemo(() => {
-    const relevantAnalyses = selectedChildId === 'ALL'
-      ? analyses
-      : analyses.filter(a => a.ChildId === selectedChildId);
 
-    if (relevantAnalyses.length === 0) {
-      return [
-        { week: 'Tuần 1', score: 60, completed: 2 },
-        { week: 'Tuần 2', score: 62, completed: 3 },
-        { week: 'Tuần 3', score: 65, completed: 4 },
-        { week: 'Tuần 4', score: 68, completed: 5 },
-        { week: 'Tuần 5', score: 72, completed: 6 },
-        { week: 'Tuần 6', score: 75, completed: 6 }
-      ];
-    }
-
-    const sorted = [...relevantAnalyses].sort((a, b) => 
-      new Date(a.CreatedAt).getTime() - new Date(b.CreatedAt).getTime()
-    );
-
-    return sorted.map((a, index) => ({
-      week: `Lần ĐG ${index + 1}`,
-      score: a.AverageScore,
-      completed: a.CompletedExercises
-    }));
-  }, [analyses, selectedChildId]);
 
   // Actions simulations
   const handleOpenAnalysisModal = (an: Analysis) => {
@@ -405,8 +368,8 @@ export default function ProgressAnalysis() {
   };
 
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative text-left" id="progress-analysis-view">
-      
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative text-left" id="progress-analysis-view">
+
       {/* Dynamic Toast Feedback Overlay */}
       <AnimatePresence>
         {toastMessage && (
@@ -431,8 +394,8 @@ export default function ProgressAnalysis() {
                 )}
               </div>
               <p className="flex-1 min-w-0 font-extrabold italic">{toastMessage.text}</p>
-              <button 
-                onClick={() => setToastMessage(null)} 
+              <button
+                onClick={() => setToastMessage(null)}
                 className="p-1 hover:bg-white/10 rounded-full transition-colors text-white"
               >
                 <X className="w-5 h-5" />
@@ -444,7 +407,7 @@ export default function ProgressAnalysis() {
 
       {/* Header Block showcasing beautiful modern rounded theme */}
       <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
-        
+
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             <TrendingUp className="w-3.5 h-3.5 animate-pulse" />
@@ -458,86 +421,36 @@ export default function ProgressAnalysis() {
           </p>
         </div>
 
-        {/* Dynamic Role Switcher segment */}
-        {actualRole !== 'PARENT' && (
-          <div className="bg-[#E2F2F3] border border-[#C5E1E3] p-1.5 rounded-[24px] flex flex-col sm:flex-row items-stretch sm:items-center gap-1 shadow-inner self-start lg:self-center shrink-0">
-            <div className="px-4 py-2 italic font-black text-xs text-[#264E50] uppercase tracking-wider self-center hidden sm:block">
-              Giao diện kiểm toán:
-            </div>
-            <div className="flex gap-1">
-              {[
-                { role: 'ADMIN', label: 'Admin' },
-                { role: 'TEACHER', label: 'Cô giáo' },
-                { role: 'PARENT', label: 'Phụ huynh' }
-              ].map((vRole) => (
-                <button
-                  key={vRole.role}
-                  onClick={() => {
-                    setCurrentRoleView(vRole.role as any);
-                    showToast(`Chuyển cấu hình phân quyền xem: ${vRole.label}`, 'info');
-                  }}
-                  className={cn(
-                    "px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer",
-                    currentRoleView === vRole.role 
-                      ? "bg-[#4EACAF] text-white shadow-sm font-extrabold italic scale-105" 
-                      : "text-[#264E50]/60 hover:text-[#264E50] hover:bg-white/40"
-                  )}
-                >
-                  {vRole.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-      </div>
-
-      {/* Helpful Safety Constraints Statement for GodotXR */}
-      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60 flex gap-3 text-xs leading-relaxed text-slate-500">
-        <Info className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
-        <div className="space-y-1">
-          <p className="text-slate-700 font-bold uppercase text-[10px] tracking-wider">Lưu ý nghiệp vụ sư phạm:</p>
-          <span>Dữ liệu và chỉ số tiến độ tự động tóm tắt từ hệ ghi nhận âm thanh headset VR của ứng dụng độc lập GodotXR. Các nhận xét không đóng vai trò chẩn đoán y học lâm sàng mà chỉ hỗ trợ nâng cao hiệu suất dạy học của giáo viên đồng hành rèn luyện ngôn ngữ.</span>
-        </div>
-      </div>
-
-      {/* 2. Interactive Child Selector Dropdown inside beautiful accent container */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
-        
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-lg flex items-center justify-center shrink-0">
+        {/* Child Selector Dropdown on the right side of the Header */}
+        <div className="bg-white/60 p-4 rounded-3xl border border-white/80 shadow-sm flex items-center gap-3 self-start lg:self-center shrink-0">
+          <div className="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center shrink-0">
             <Baby className="w-5 h-5" />
           </div>
-          <div>
-            <h4 className="font-bold text-[11px] text-slate-400 uppercase tracking-wider leading-none">Học viên rèn luyện lựa chọn:</h4>
-            <p className="text-sm font-semibold text-slate-700 mt-1.5 leading-none">
-              {selectedChildId === 'ALL' ? 'Hiển thị dữ liệu gộp tất cả trẻ em' : `Đang lọc riêng hồ sơ: ${getChildDetails(selectedChildId).FullName}`}
-            </p>
+          <div className="space-y-1">
+            <h4 className="font-bold text-[10px] text-slate-400 uppercase tracking-wider leading-none">Học viên rèn luyện:</h4>
+            <CustomSelect
+              value={selectedChildId}
+              onChange={(val) => {
+                setSelectedChildId(val);
+                showToast(`Đã tải dải dữ liệu của học viên: ${val === 'ALL' ? 'Tất cả học viên' : getChildDetails(val).FullName}`, 'success');
+              }}
+              options={[
+                { value: 'ALL', label: '🌟 TẤT CẢ HỌC SINH MẦM NON' },
+                ...getRoleFilteredChildren.map((kd) => ({
+                  value: kd.ChildId,
+                  label: `👶 ${kd.FullName} (${kd.Age}t) - ${kd.LearningLevel}`
+                }))
+              ]}
+              className="min-w-[240px] font-black"
+            />
           </div>
         </div>
-
-        {/* Dynamic Selector Dropdown element */}
-        <CustomSelect
-          value={selectedChildId}
-          onChange={(val) => {
-            setSelectedChildId(val);
-            showToast(`Đã tải dải dữ liệu của học viên: ${val === 'ALL' ? 'Tất cả học viên' : getChildDetails(val).FullName}`, 'success');
-          }}
-          options={[
-            { value: 'ALL', label: '🌟 TẤT CẢ HỌC SINH MẦM NON' },
-            ...getRoleFilteredChildren.map((kd) => ({
-              value: kd.ChildId,
-              label: `👶 ${kd.FullName} (${kd.Age}t) - ${kd.LearningLevel}`
-            }))
-          ]}
-          className="min-w-[240px] w-full md:w-auto font-black"
-        />
 
       </div>
 
       {/* 3. Kid-friendly colorful Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
         {/* Total assign exercises */}
         <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
           <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center shrink-0 border border-teal-100">
@@ -546,19 +459,6 @@ export default function ProgressAnalysis() {
           <div>
             <p className="text-2xl font-black text-slate-800 leading-none">{metrics.totalEx}</p>
             <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Tổng bài tập</p>
-          </div>
-        </div>
-
-        {/* Total complete exercises */}
-        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
-          <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0 border border-emerald-100">
-            <CheckCircle className="w-5 h-5 text-emerald-600" />
-          </div>
-          <div>
-            <p className="text-2xl font-black text-[#34A853] leading-none">
-              {metrics.completedEx} <span className="text-xs text-slate-400 font-normal">({metrics.totalEx > 0 ? Math.round((metrics.completedEx/metrics.totalEx)*100) : 0}%)</span>
-            </p>
-            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Nhiệm vụ đạt</p>
           </div>
         </div>
 
@@ -588,203 +488,23 @@ export default function ProgressAnalysis() {
           </div>
         </div>
 
-        {/* Level rating */}
-        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex flex-col justify-center items-start gap-1 transition-transform hover:-translate-y-1">
-          <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Tiến bộ chung</span>
-          <div className="mt-1">
-            {renderProgressLevelBadge(metrics.level)}
-          </div>
-        </div>
-
       </div>
 
-      {/* 4. Beautiful Recharts Visualization Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        {/* Line chart: average score weekly progression */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between space-y-6">
-          
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <div className="space-y-1">
-              <span className="text-[10px] text-[#4EACAF] font-bold uppercase tracking-wider block">Ghi nhận tiến độ</span>
-              <h4 className="text-base font-bold text-slate-800 font-sans">Xu hướng điểm số phát âm hàng tuần</h4>
-            </div>
-            <div className="w-9 h-9 bg-teal-50 rounded-lg flex items-center justify-center text-[#4EACAF] border border-teal-100">
-              <TrendingUp className="w-4.5 h-4.5" />
-            </div>
-          </div>
 
-          <div className="h-[280px] w-full" id="score-line-chart">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartsData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EFEFEF" />
-                <XAxis 
-                  dataKey="week" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#888', fontSize: 11, fontWeight: 700 }}
-                  dy={10}
-                />
-                <YAxis 
-                  domain={[30, 100]}
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#888', fontSize: 11 }}
-                  unit="đ"
-                />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '16px', border: 'none', background: '#334155', color: '#fff', fontSize: '11px', fontWeight: 'bold', boxShadow: '0 8px 16px -2px rgb(0 0 0 / 0.1)' }}
-                  cursor={{ stroke: '#4EACAF', strokeWidth: 1.5, strokeDasharray: '4 4' }}
-                />
-                <Legend 
-                  verticalAlign="top" 
-                  align="right" 
-                  iconType="circle"
-                  wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', color: '#555', textTransform: 'uppercase', paddingBottom: '10px' }}
-                />
-                <Line 
-                  name="Điểm bình quân" 
-                  type="monotone" 
-                  dataKey="score" 
-                  stroke="#4EACAF" 
-                  strokeWidth={4.5} 
-                  activeDot={{ r: 8 }}
-                  dot={{ r: 5, strokeWidth: 2, stroke: '#fff', fill: '#4EACAF' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-        </div>
-
-        {/* Bar chart: completed exercises progression */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between space-y-6">
-          
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <div className="space-y-1">
-              <span className="text-[10px] text-[#FF8E8E] font-bold uppercase tracking-wider block">Khảo sát chăm chỉ</span>
-              <h4 className="text-base font-bold text-slate-800 font-sans">Số lượng bài tập hoàn thành hàng tuần</h4>
-            </div>
-            <div className="w-9 h-9 bg-rose-50 rounded-lg flex items-center justify-center text-[#FF8E8E] border border-rose-100">
-              <CheckCircle className="w-4.5 h-4.5" />
-            </div>
-          </div>
-
-          <div className="h-[280px] w-full" id="completed-bar-chart">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartsData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EFEFEF" />
-                <XAxis 
-                  dataKey="week" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#888', fontSize: 11, fontWeight: 700 }}
-                  dy={10}
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#888', fontSize: 11 }}
-                  unit="b"
-                />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '16px', border: 'none', background: '#334155', color: '#fff', fontSize: '11px', fontWeight: 'bold' }}
-                />
-                <Legend 
-                  verticalAlign="top" 
-                  align="right" 
-                  iconType="circle"
-                  wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', color: '#555', textTransform: 'uppercase', paddingBottom: '10px' }}
-                />
-                <Bar 
-                  name="Bài thi đạt" 
-                  dataKey="completed" 
-                  fill="#FF8E8E" 
-                  radius={[12, 12, 0, 0]} 
-                  maxBarSize={32}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* 5. Custom Analysis cards showing focus details on strengths / weaknesses / recommendations */}
-      {selectedChildId !== 'ALL' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in slide-in-from-bottom-2 duration-300">
-          
-          {/* Strengths card */}
-          {analyses.find(a => a.ChildId === selectedChildId) ? (
-            (() => {
-              const currentAnalysisItem = analyses.find(a => a.ChildId === selectedChildId)!;
-              return (
-                <>
-                  {/* Card Strengths */}
-                  <div className="bg-[#F2FAF4] border-t-4 border-[#34A853] p-5 rounded-2xl space-y-3.5 shadow-sm">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 bg-[#E3F6E9] rounded-lg flex items-center justify-center text-[#34A853]">
-                        <Sparkles className="w-4.5 h-4.5" />
-                      </div>
-                      <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider">Ưu điểm nổi bật</h4>
-                    </div>
-                    <p className="text-sm font-semibold text-slate-600 leading-relaxed block">
-                      &ldquo;{currentAnalysisItem.Strengths}&rdquo;
-                    </p>
-                  </div>
-
-                  {/* Card Weaknesses */}
-                  <div className="bg-[#FFF2F2] border-t-4 border-[#FF8E8E] p-5 rounded-2xl space-y-3.5 shadow-sm">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 bg-[#FFEBEB] rounded-lg flex items-center justify-center text-[#FF8E8E]">
-                        <ShieldAlert className="w-4.5 h-4.5" />
-                      </div>
-                      <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider">Lỗi khẩu hình cần cải thiện</h4>
-                    </div>
-                    <p className="text-sm font-semibold text-slate-600 leading-relaxed block">
-                      &ldquo;{currentAnalysisItem.Weaknesses}&rdquo;
-                    </p>
-                  </div>
-
-                  {/* Card Recommendations */}
-                  <div className="bg-[#F2FAFB] border-t-4 border-[#4EACAF] p-5 rounded-2xl space-y-3.5 shadow-sm">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 bg-teal-50 rounded-lg flex items-center justify-center text-[#4EACAF]">
-                        <BrainCircuit className="w-4.5 h-4.5" />
-                      </div>
-                      <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider">Khuyến nghị phương pháp học</h4>
-                    </div>
-                    <p className="text-sm font-semibold text-slate-600 leading-relaxed block">
-                      &ldquo;{currentAnalysisItem.Recommendation}&rdquo;
-                    </p>
-                  </div>
-                </>
-              );
-            })()
-          ) : (
-            <div className="col-span-3 bg-slate-50 p-6 rounded-xl border border-slate-200 text-center text-sm font-bold text-slate-500">
-              Chưa có hồ sơ chắt lọc tiến độ cho học sinh được chọn lựa này trong hệ dữ liệu hiện hữu.
-            </div>
-          )}
-
-        </div>
-      )}
 
       {/* 6. Multi functional search & search filter options for the table analysis rows */}
       <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex flex-col md:flex-row gap-3" id="table-search-box-wrap">
-        
+
         <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input 
-            type="text" 
-            placeholder="Tìm kiếm dòng nhật ký phân tích (Ví dụ: Leo, Sophia, vần uô, Cần hỗ trợ...)" 
+          <input
+            type="text"
+            placeholder="Tìm kiếm dòng nhật ký phân tích (Ví dụ: Leo, Sophia, vần uô, Cần hỗ trợ...)"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-10 py-2 rounded-lg bg-slate-50 border border-slate-200 font-medium text-slate-700 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs" 
+            className="w-full pl-4 pr-10 py-2 rounded-lg bg-slate-50 border border-slate-200 font-medium text-slate-700 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs"
           />
           {searchQuery && (
-            <button 
+            <button
               onClick={() => setSearchQuery('')}
               className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-gray-250 hover:bg-gray-200 rounded-full transition-colors font-sans hover:text-rose-500"
             >
@@ -825,7 +545,7 @@ export default function ProgressAnalysis() {
 
       {/* 6. Robust Table list of historical and current Analysis instances */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" id="analysis-table-block">
-        
+
         <div className="px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/50 backdrop-blur-sm">
           <div>
             <h3 className="text-lg font-bold text-slate-800 font-sans tracking-tight leading-none">Sổ tay tổng duyệt phân tích tiến độ</h3>
@@ -849,7 +569,7 @@ export default function ProgressAnalysis() {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-[#FDFCF5]/60 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
-                  <th 
+                  <th
                     onClick={() => handleSort('AnalysisId')}
                     className="py-5 px-10 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                     title="Sắp xếp theo Mã phân tích"
@@ -863,7 +583,7 @@ export default function ProgressAnalysis() {
                       )}
                     </div>
                   </th>
-                  <th 
+                  <th
                     onClick={() => handleSort('ChildId')}
                     className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                     title="Sắp xếp theo Học sinh"
@@ -877,7 +597,7 @@ export default function ProgressAnalysis() {
                       )}
                     </div>
                   </th>
-                  <th 
+                  <th
                     onClick={() => handleSort('TotalExercises')}
                     className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
                     title="Sắp xếp theo Tổng bài chơi"
@@ -891,7 +611,7 @@ export default function ProgressAnalysis() {
                       )}
                     </div>
                   </th>
-                  <th 
+                  <th
                     onClick={() => handleSort('CompletedExercises')}
                     className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
                     title="Sắp xếp theo Đã vượt ải"
@@ -906,7 +626,7 @@ export default function ProgressAnalysis() {
                     </div>
                   </th>
                   <th className="py-5 px-6 text-center select-none">Tỷ lệ</th>
-                  <th 
+                  <th
                     onClick={() => handleSort('AverageScore')}
                     className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
                     title="Sắp xếp theo Điểm trung bình"
@@ -920,7 +640,7 @@ export default function ProgressAnalysis() {
                       )}
                     </div>
                   </th>
-                  <th 
+                  <th
                     onClick={() => handleSort('ProgressLevel')}
                     className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                     title="Sắp xếp theo Mức độ tiến bộ"
@@ -934,7 +654,7 @@ export default function ProgressAnalysis() {
                       )}
                     </div>
                   </th>
-                  <th 
+                  <th
                     onClick={() => handleSort('LastAnalyzedAt')}
                     className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                     title="Sắp xếp theo Thời điểm kiểm định"
@@ -955,10 +675,10 @@ export default function ProgressAnalysis() {
                 {sortedAnalysesList.map((anItem) => {
                   const subChild = getChildDetails(anItem.ChildId);
                   const completionPercentage = anItem.TotalExercises > 0 ? Math.round((anItem.CompletedExercises / anItem.TotalExercises) * 100) : 0;
-                  
+
                   return (
                     <tr key={anItem.AnalysisId} className="hover:bg-slate-50/50 transition-colors">
-                      
+
                       {/* Analysis ID */}
                       <td className="py-5 px-10 font-mono text-gray-400 text-xs font-black">
                         {anItem.AnalysisId}
@@ -1017,7 +737,7 @@ export default function ProgressAnalysis() {
                       {/* Action buttons */}
                       <td className="py-5 px-10 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          
+
                           {/* Details interactive modal trigger */}
                           <ActionButton
                             type="view"
@@ -1063,7 +783,7 @@ export default function ProgressAnalysis() {
       <AnimatePresence>
         {isDetailOpen && selectedAnalysis && (
           <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/20 animate-in fade-in duration-300 overflow-y-auto w-full h-full">
-            
+
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1071,7 +791,7 @@ export default function ProgressAnalysis() {
               className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-3xl overflow-hidden border border-gray-100 flex flex-col my-8"
               id="analysis-detail-modal"
             >
-              
+
               {/* Modal header */}
               <div className="bg-[#E2F2F3] px-8 py-6 flex items-center justify-between border-b border-[#C5E1E3] text-gray-900">
                 <div className="space-y-1">
@@ -1083,7 +803,7 @@ export default function ProgressAnalysis() {
                     Tổng duyệt kiểm tra tiến trình #{selectedAnalysis.AnalysisId}
                   </h2>
                 </div>
-                <button 
+                <button
                   onClick={() => setIsDetailOpen(false)}
                   className="p-2 hover:bg-white/50 rounded-full transition-colors shrink-0"
                 >
@@ -1093,7 +813,7 @@ export default function ProgressAnalysis() {
 
               {/* Modal assessment body with responsive columns */}
               <div className="app-modal-body p-8 space-y-6 overflow-y-auto max-h-[70vh]">
-                
+
                 {/* Child mini metadata panel */}
                 <div className="bg-[#FDFCF5] p-5.5 rounded-3xl border border-yellow-105 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3.5">
@@ -1118,7 +838,7 @@ export default function ProgressAnalysis() {
 
                 {/* Sub statistics grid showing assessment details */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  
+
                   <div className="bg-slate-50 p-4 rounded-2xl">
                     <span className="text-[10px] text-gray-450 block uppercase font-black tracking-wider mb-1">Mục bài thi cử</span>
                     <strong className="text-slate-800 font-black text-lg">{selectedAnalysis.TotalExercises} cụm bài</strong>
@@ -1137,44 +857,6 @@ export default function ProgressAnalysis() {
                   <div className="bg-slate-50 p-4 rounded-2xl">
                     <span className="text-[10px] text-gray-450 block uppercase font-black tracking-wider mb-1">Dải điểm kiểm định</span>
                     <strong className="text-slate-800 font-black text-lg">{selectedAnalysis.AverageScore}/100đ</strong>
-                  </div>
-
-                </div>
-
-                {/* Structured Text components highlighting constraints perfectly */}
-                <div className="space-y-4">
-                  
-                  {/* Strength container */}
-                  <div className="bg-emerald-50 border-l-4 border-emerald-500 p-5 rounded-2xl space-y-1.5">
-                    <div className="flex items-center gap-2 text-[#34A853] font-black text-xs uppercase tracking-wider">
-                      <Sparkles className="w-4 h-4" />
-                      Ưu điểm dải âm/phản xạ ghi nhận được:
-                    </div>
-                    <p className="text-sm font-bold text-gray-700 leading-relaxed italic block">
-                      &ldquo;{selectedAnalysis.Strengths}&rdquo;
-                    </p>
-                  </div>
-
-                  {/* Weaknesses container */}
-                  <div className="bg-rose-50 border-l-4 border-rose-400 p-5 rounded-2xl space-y-1.5">
-                    <div className="flex items-center gap-2 text-rose-500 font-black text-xs uppercase tracking-wider">
-                      <ShieldAlert className="w-4 h-4" />
-                      Nhược điểm khẩu hình / hơi phát cần hiệu chỉnh:
-                    </div>
-                    <p className="text-sm font-bold text-gray-700 leading-relaxed italic block">
-                      &ldquo;{selectedAnalysis.Weaknesses}&rdquo;
-                    </p>
-                  </div>
-
-                  {/* Recommendation container */}
-                  <div className="bg-indigo-50 border-l-4 border-indigo-400 p-5 rounded-2xl space-y-1.5">
-                    <div className="flex items-center gap-2 text-indigo-600 font-black text-xs uppercase tracking-wider">
-                      <BrainCircuit className="w-4 h-4" />
-                      Phương hướng rèn luyện đồng hành tiếp theo:
-                    </div>
-                    <p className="text-sm font-bold text-gray-700 leading-relaxed italic block">
-                      &ldquo;{selectedAnalysis.Recommendation}&rdquo;
-                    </p>
                   </div>
 
                 </div>

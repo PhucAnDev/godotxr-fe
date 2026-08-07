@@ -452,13 +452,12 @@ export default function SchoolYearManagement() {
       <div className="bg-white rounded-[36px] p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4">
         {/* Search block */}
         <div className="relative flex-1">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input 
             type="text" 
             placeholder="Tìm kiếm năm học theo niên khóa hoặc mã hệ thống..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-14 pr-6 py-4 rounded-2xl bg-[#FDFCF5] border-2 border-transparent font-bold text-gray-700 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm" 
+            className="w-full pl-5 pr-6 py-4 rounded-2xl bg-[#FDFCF5] border-2 border-transparent font-bold text-gray-700 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm" 
           />
           {searchQuery && (
             <button 
