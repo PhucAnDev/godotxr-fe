@@ -97,6 +97,7 @@ export default function PronunciationDetailPage() {
     updateResultFeedback,
     getChunksBySession,
     assessChunk,
+    downloadAudioChunk,
   } = useLearningResultApi();
 
   // Selected state
@@ -248,11 +249,21 @@ export default function PronunciationDetailPage() {
     try {
       const res = await getChunksBySession(Number(result.ChildId), result.SessionId);
       if (res.success && res.data) {
-        // Map and rewrite internal Docker MinIO URL to public domain for browser access
-        const formattedChunks = res.data.map((chunk: any) => ({
-          ...chunk,
-          chunkUrl: chunk.chunkUrl?.replace('http://minio:9000', 'https://minio.103-162-30-111.sslip.io')
-        }));
+        // Fetch audio chunks using hook & service wrapper instead of raw fetch
+        const formattedChunks = await Promise.all(
+          res.data.map(async (chunk: any) => {
+            const blobRes = await downloadAudioChunk(Number(result.ChildId), result.SessionId, chunk.chunkIndex);
+            if (blobRes.success && blobRes.data) {
+              const blobUrl = URL.createObjectURL(blobRes.data);
+              return { ...chunk, chunkUrl: blobUrl };
+            }
+            // Fallback: rewrite minio:9000 to public domain
+            return {
+              ...chunk,
+              chunkUrl: chunk.chunkUrl?.replace('http://minio:9000', 'https://minio.103-162-30-111.sslip.io')
+            };
+          })
+        );
         setChunks(formattedChunks);
       } else {
         setChunks([]);
@@ -264,6 +275,17 @@ export default function PronunciationDetailPage() {
       setLoadingChunks(false);
     }
   };
+
+  // Clean up object URLs to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      chunks.forEach(chunk => {
+        if (chunk.chunkUrl && chunk.chunkUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(chunk.chunkUrl);
+        }
+      });
+    };
+  }, [chunks]);
 
   // Save feedback/comments
   const handleSaveFeedback = async (resultId: string) => {

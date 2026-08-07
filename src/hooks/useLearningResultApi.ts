@@ -22,6 +22,7 @@ import { getCurrentUserWithChildrenProfiles as getCurrentUserWithChildrenProfile
 import {
   getChunksBySession as getChunksBySessionService,
   assessChunk as assessChunkService,
+  downloadAudioChunk as downloadAudioChunkService,
 } from '../services/fileService';
 
 export function useLearningResultApi() {
@@ -103,6 +104,11 @@ export function useLearningResultApi() {
       assessChunkService(...args),
     []
   );
+  const downloadAudioChunk = useCallback(
+    (...args: Parameters<typeof downloadAudioChunkService>) =>
+      downloadAudioChunkService(...args),
+    []
+  );
 
   return {
     getChildProfiles,
@@ -121,5 +127,6 @@ export function useLearningResultApi() {
     updateResultFeedback,
     getChunksBySession,
     assessChunk,
+    downloadAudioChunk,
   };
 }

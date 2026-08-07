@@ -150,3 +150,44 @@ export async function apiRequest<T>(
 
   return body;
 }
+
+export async function apiBlobRequest(
+  endpoint: string,
+  options: RequestInit = {},
+  retryOnUnauthorized = true
+): Promise<Blob> {
+  const token = localStorage.getItem('auth_token');
+  const authHeader: Record<string, string> = token
+    ? { Authorization: `Bearer ${token}` }
+    : {};
+
+  let response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      ...authHeader,
+      ...(options.headers || {}),
+    },
+  });
+
+  if (response.status === 401 && retryOnUnauthorized) {
+    const newAccessToken = await tryRefreshAccessToken();
+
+    if (newAccessToken) {
+      response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers: {
+          Authorization: `Bearer ${newAccessToken}`,
+          ...(options.headers || {}),
+        },
+      });
+    } else {
+      notifyAuthExpired();
+    }
+  }
+
+  if (!response.ok) {
+    throw new ApiError(response.status, `HTTP ${response.status}`);
+  }
+
+  return await response.blob();
+}
