@@ -482,7 +482,7 @@ export default function SemesterManagement() {
   }, [filteredSemesters, currentPage, pageSize]);
 
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative" id="semester-root-view">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative" id="semester-root-view">
       
       {/* Dynamic Toast Feedback Overlay */}
       <AnimatePresence>
@@ -522,7 +522,7 @@ export default function SemesterManagement() {
       </AnimatePresence>
 
       {/* 1. Header Hero Panel */}
-      <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             <BookOpen className="w-3.5 h-3.5" />
@@ -547,48 +547,48 @@ export default function SemesterManagement() {
       </div>
 
       {/* 2. Kid-friendly visual Statistics indicators */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total semesters */}
-        <div className="bg-white rounded-[32px] p-6 border-b-4 border-[#4EACAF] shadow-sm flex items-center gap-5">
-          <div className="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center shrink-0">
-            <FolderOpen className="w-7 h-7 text-[#4EACAF]" />
+        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
+          <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center shrink-0 border border-teal-100">
+            <FolderOpen className="w-5 h-5 text-[#4EACAF]" />
           </div>
           <div>
-            <p className="text-3xl font-medium text-slate-800 tracking-tight leading-none">{totalSemesters}</p>
-            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1.5">Tổng học kỳ</p>
+            <p className="text-2xl font-black text-slate-800 leading-none">{totalSemesters}</p>
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Tổng học kỳ</p>
           </div>
         </div>
 
         {/* Active Semesters */}
-        <div className="bg-white rounded-[32px] p-6 border-b-4 border-emerald-500 shadow-sm flex items-center gap-5">
-          <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center shrink-0">
-            <Activity className="w-7 h-7 text-emerald-500" />
+        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
+          <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0 border border-emerald-100">
+            <Activity className="w-5 h-5 text-emerald-500" />
           </div>
           <div>
-            <p className="text-3xl font-black text-emerald-600 tracking-tight leading-none">{activeSemesters}</p>
-            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1.5">Đang diễn ra</p>
+            <p className="text-2xl font-black text-emerald-600 leading-none">{activeSemesters}</p>
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Đang diễn ra</p>
           </div>
         </div>
 
         {/* Total Class Count in Semesters */}
-        <div className="bg-white rounded-[32px] p-6 border-b-4 border-amber-500 shadow-sm flex items-center gap-5">
-          <div className="w-14 h-14 bg-amber-55 rounded-2xl flex items-center justify-center shrink-[#FFF2E2]">
-            <Layers className="w-7 h-7 text-amber-55 bg-amber-50 text-amber-500 rounded-lg p-1" />
+        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
+          <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center shrink-0 border border-amber-100">
+            <Layers className="w-5 h-5 text-amber-500" />
           </div>
           <div>
-            <p className="text-3xl font-black text-amber-600 tracking-tight leading-none">{totalClassesInSemesters}</p>
-            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1.5">Tổng số lớp gán</p>
+            <p className="text-2xl font-black text-amber-600 leading-none">{totalClassesInSemesters}</p>
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Tổng số lớp gán</p>
           </div>
         </div>
 
         {/* Unique teachers involved */}
-        <div className="bg-white rounded-[32px] p-6 border-b-4 border-sky-500 shadow-sm flex items-center gap-5">
-          <div className="w-14 h-14 bg-sky-50 rounded-2xl flex items-center justify-center shrink-0">
-            <User className="w-7 h-7 text-sky-500" />
+        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
+          <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center shrink-0 border border-sky-100">
+            <User className="w-5 h-5 text-sky-500" />
           </div>
           <div>
-            <p className="text-3xl font-black text-sky-600 tracking-tight leading-none">{uniqueTeachersCount}</p>
-            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1.5">Giáo viên đồng hành VR</p>
+            <p className="text-2xl font-black text-sky-600 leading-none">{uniqueTeachersCount}</p>
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Giáo viên đồng hành VR</p>
           </div>
         </div>
       </div>
@@ -649,7 +649,7 @@ export default function SemesterManagement() {
       </div>
 
       {/* 4. Elegant Semesters Table */}
-      <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden" id="semester-table-card">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden" id="semester-table-card">
         <div className="px-10 py-8 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/50 backdrop-blur-sm">
           <div>
             <h3 className="text-2xl font-medium text-slate-800 leading-none italic">Quản lý Lộ trình Học kỳ</h3>

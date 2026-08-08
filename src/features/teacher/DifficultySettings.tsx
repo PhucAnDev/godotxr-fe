@@ -48,7 +48,7 @@ export default function DifficultySettings() {
   };
 
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24">
       <div className="space-y-2">
         <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Tùy Chỉnh Độ Khó Bài Tập</h1>
         <p className="text-gray-500 text-lg">Điều chỉnh mức độ khó cho các bài tập của lớp bạn.</p>
@@ -56,7 +56,7 @@ export default function DifficultySettings() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {modules.map((mod) => (
-          <div key={mod.id} className="bg-white rounded-[40px] shadow-xl border border-gray-100 overflow-hidden group">
+          <div key={mod.id} className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden group">
             {/* Header */}
             <div className={cn("p-8 bg-gradient-to-br transition-all group-hover:scale-105 duration-500", mod.color, "from-white/10 to-transparent border-b border-gray-100")}>
               <div className="flex items-center gap-6">

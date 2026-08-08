@@ -355,7 +355,7 @@ export default function ExerciseTypeManagement() {
 
   return (
     <div
-      className="relative space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700"
+      className="relative space-y-4 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700"
       id="exercise-type-root"
     >
       <AnimatePresence>
@@ -397,7 +397,7 @@ export default function ExerciseTypeManagement() {
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col justify-between gap-6 rounded-[40px] border border-white/60 bg-white/40 p-8 shadow-sm backdrop-blur-md lg:flex-row lg:items-center md:p-10">
+      <div className="flex flex-col justify-between gap-6 rounded-xl border border-white/60 bg-white/40 p-8 shadow-sm backdrop-blur-md lg:flex-row lg:items-center md:p-10">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full bg-[#4EACAF]/10 px-4 py-1.5 text-xs font-black uppercase tracking-widest leading-none text-[#4EACAF]">
             <Activity className="w-3.5 h-3.5 animate-pulse" />
@@ -771,7 +771,7 @@ function StatCardItem({
   return (
     <div
       className={cn(
-        'flex items-center justify-between gap-4 rounded-[32px] border p-6 shadow-sm',
+        'flex items-center justify-between gap-4 rounded-xl border p-6 shadow-sm',
         bgColor,
         borderColor
       )}

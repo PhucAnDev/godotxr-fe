@@ -811,7 +811,7 @@ export default function LearningResultManagement() {
   }, [selectedResult, lessons, exercises]);
 
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative" id="result-management-view">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative" id="result-management-view">
 
       {/* Dynamic Toast Feedback Overlay */}
       <AnimatePresence>
@@ -857,7 +857,7 @@ export default function LearningResultManagement() {
       </AnimatePresence>
 
       {/* Hero Header Unit */}
-      <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-3">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             <TrendingUp className="w-3.5 h-3.5" />
@@ -871,42 +871,66 @@ export default function LearningResultManagement() {
           </p>
         </div>
 
+        {/* Child Selector Dropdown on the right side of the Header */}
+        <div className="bg-white/60 p-4 rounded-3xl border border-white/85 shadow-sm flex items-center gap-3 self-start lg:self-center shrink-0">
+          <div className="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center shrink-0">
+            <UserSquare2 className="w-5 h-5" />
+          </div>
+          <div className="space-y-1">
+            <h4 className="font-bold text-[10px] text-slate-400 uppercase tracking-wider leading-none">Học viên rèn luyện:</h4>
+            <CustomSelect
+              value={filterChildId}
+              onChange={(val) => {
+                setFilterChildId(val);
+                showToast(`Đã tải dải dữ liệu của học viên: ${val === 'ALL' ? 'Tất cả học viên' : getChildInfo(val).FullName}`, 'success');
+              }}
+              options={[
+                { value: 'ALL', label: '🌟 TẤT CẢ HỌC SINH MẦM NON' },
+                ...children.map((kd) => ({
+                  value: kd.ChildId,
+                  label: `👶 ${kd.FullName} (${kd.Age}t) - ${kd.LearningLevel}`
+                }))
+              ]}
+              className="min-w-[240px] font-black"
+            />
+          </div>
+        </div>
 
       </div>
 
       {/* 2. Kid-friendly visual Statistics indicators depending on role scope */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
         {/* Total attempts count card */}
-        <div className="bg-white rounded-[32px] p-6 border-b-4 border-[#4EACAF] shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
-          <div className="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center shrink-0">
-            <Activity className="w-7 h-7 text-[#4EACAF]" />
+        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
+          <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center shrink-0 border border-teal-100">
+            <Activity className="w-5 h-5 text-[#4EACAF]" />
           </div>
           <div>
-            <p className="text-3xl font-medium text-slate-800 tracking-tight leading-none">{totalAttempts}</p>
-            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1.5">Tổng lượt luyện</p>
+            <p className="text-2xl font-black text-slate-800 leading-none">{totalAttempts}</p>
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Tổng lượt luyện</p>
           </div>
         </div>
 
         {/* Total play duration minutes */}
-        <div className="bg-white rounded-[32px] p-6 border-b-4 border-indigo-400 shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
-          <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center shrink-0">
-            <Clock className="w-7 h-7 text-indigo-500" />
+        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
+          <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center shrink-0 border border-rose-100">
+            <Clock className="w-5 h-5 text-[#FF8E8E]" />
           </div>
           <div>
-            <p className="text-3xl font-medium text-slate-800 tracking-tight leading-none">{formattedTotalMinutes} phút</p>
-            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1.5">Tổng giờ tương tác</p>
+            <p className="text-2xl font-black text-slate-800 leading-none">{formattedTotalMinutes} phút</p>
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Tổng giờ tương tác</p>
           </div>
         </div>
 
         {/* Completion rate metrics card */}
-        <div className="bg-white rounded-[32px] p-6 border-b-4 border-emerald-500 shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
-          <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center shrink-0">
-            <ThumbsUp className="w-7 h-7 text-emerald-500" />
+        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
+          <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0 border border-indigo-100">
+            <ThumbsUp className="w-5 h-5 text-indigo-500" />
           </div>
           <div>
-            <p className="text-3xl font-black text-emerald-600 tracking-tight leading-none">{completionRate}%</p>
-            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1.5">Tỷ lệ hoàn thành</p>
+            <p className="text-2xl font-black text-emerald-600 leading-none">{completionRate}%</p>
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Tỷ lệ hoàn thành</p>
           </div>
         </div>
 
@@ -944,100 +968,77 @@ export default function LearningResultManagement() {
       </div> */}
 
       {/* 3. Multi option Search and advanced filter block */}
-      <div className="bg-white rounded-[36px] p-6.5 shadow-sm border border-gray-100 space-y-5" id="results-filter-bar">
+      <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex flex-col md:flex-row gap-3" id="results-filter-bar">
 
-        {/* Realtime filter row 1 */}
-        <div className="flex flex-col md:flex-row gap-4">
-
-          <div className="relative flex-1">
-            <input
-              type="text"
-              placeholder="Tìm theo tên học sinh, bé cưng hoặc tên bài tập (VD: Nông trại, Leo, sáo...)"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-5 pr-12 py-4 rounded-2xl bg-[#FDFCF5] border-2 border-transparent font-bold text-gray-700 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-5 top-1/2 -translate-y-1/2 p-1.5 bg-gray-200/50 hover:bg-gray-200 rounded-full transition-colors"
-                title="Hủy từ khóa"
-              >
-                <X className="w-4.5 h-4.5 text-gray-600" />
-              </button>
-            )}
-          </div>
-
-
-
-          {/* Completion Status */}
-          <CustomSelect
-            value={filterStatus}
-            onChange={setFilterStatus}
-            variant="form"
-            options={[
-              { value: 'ALL', label: 'Tất cả trạng thái' },
-              { value: 'Completed', label: 'Đã thành công' },
-              { value: 'InProgress', label: 'Đang dở dang' },
-              { value: 'Failed', label: 'Chưa đạt yêu cầu' },
-              { value: 'NeedReview', label: 'Chờ giáo viên duyệt' }
-            ]}
-            className="w-full md:w-60"
+        <div className="relative flex-1">
+          <input
+            type="text"
+            placeholder="Tìm theo tên học sinh, bé cưng hoặc tên bài tập (VD: Nông trại, Leo, sáo...)"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-4 pr-10 py-2 rounded-lg bg-slate-50 border border-slate-200 font-medium text-slate-700 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs"
           />
-
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-gray-250 hover:bg-gray-200 rounded-full transition-colors font-sans hover:text-rose-500"
+            >
+              <X className="w-3.5 h-3.5 text-gray-500" />
+            </button>
+          )}
         </div>
 
-        {/* Filters Row 2 - Dropdowns */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1.5">
+        {/* Completion Status */}
+        <CustomSelect
+          value={filterStatus}
+          onChange={setFilterStatus}
+          options={[
+            { value: 'ALL', label: 'Trạng thái (TẤT CẢ)' },
+            { value: 'Completed', label: 'ĐÃ THÀNH CÔNG' },
+            { value: 'InProgress', label: 'ĐANG DỞ DANG' },
+            { value: 'Failed', label: 'CHƯA ĐẠT YÊU CẦU' },
+            { value: 'NeedReview', label: 'CHỜ GIÁO VIÊN DUYỆT' }
+          ]}
+          className="w-full md:w-56"
+        />
 
-
-
-
-
-          {/* Filter Date range */}
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Khoảng thời gian nộp bài:</label>
-            <CustomSelect
-              value={filterDateRange}
-              onChange={setFilterDateRange}
-              variant="form"
-              options={[
-                { value: 'ALL', label: 'TẤT CẢ THỜI GIAN' },
-                { value: 'TODAY', label: 'HÔM NAY (31/05/2026)' },
-                { value: '3DAYS', label: '3 NGÀY GẦN NHẤT' },
-                { value: '7DAYS', label: '7 NGÀY GẦN NHẤT' }
-              ]}
-            />
-          </div>
-
-        </div>
+        {/* Filter Date range */}
+        <CustomSelect
+          value={filterDateRange}
+          onChange={setFilterDateRange}
+          options={[
+            { value: 'ALL', label: 'Thời gian (TẤT CẢ)' },
+            { value: 'TODAY', label: 'HÔM NAY (31/05/2026)' },
+            { value: '3DAYS', label: '3 NGÀY GẦN NHẤT' },
+            { value: '7DAYS', label: '7 NGÀY GẦN NHẤT' }
+          ]}
+          className="w-full md:w-56"
+        />
 
         {/* Clear filter helper button if any filter is active */}
         {(searchQuery || filterStatus !== 'ALL' || filterDifficulty !== 'ALL' || filterSkill !== 'ALL' || filterDateRange !== 'ALL' || filterChildId !== 'ALL') && (
-          <div className="flex items-center justify-end pt-1">
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setFilterStatus('ALL');
-                setFilterDifficulty('ALL');
-                setFilterSkill('ALL');
-                setFilterDateRange('ALL');
-                setFilterChildId('ALL');
-                showToast('Đã xóa bỏ toàn bộ màng lọc!', 'info');
-              }}
-              className="inline-flex items-center gap-1.5 text-xs text-[#FF8E8E] font-medium uppercase tracking-wider hover:underline"
-            >
-              <ListRestart className="w-3.5 h-3.5" />
-              Reset toàn bộ màng lọc dữ liệu
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              setFilterStatus('ALL');
+              setFilterDifficulty('ALL');
+              setFilterSkill('ALL');
+              setFilterDateRange('ALL');
+              setFilterChildId('ALL');
+              showToast('Đã dọn dẹp các màng lọc bảng!', 'info');
+            }}
+            className="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0"
+          >
+            <ListRestart className="w-4 h-4" />
+            Xóa lọc
+          </button>
         )}
 
       </div>
 
       {/* 4. Elegant Learning Results Table */}
       {/* ponytail: Designing compact tables with tighter py-4 px-6 padding makes page scaling look uniform across management layouts. */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" id="results-table-container">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden" id="results-table-container">
 
         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white/50 backdrop-blur-sm">
           <div>

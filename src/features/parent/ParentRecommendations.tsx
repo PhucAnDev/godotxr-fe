@@ -309,10 +309,10 @@ export default function ParentRecommendations() {
   }
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 text-left" id="parent-recommendations-view">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 text-left" id="parent-recommendations-view">
       
       {/* 1. Header Card */}
-      <div className="bg-white/45 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/70 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
+      <div className="bg-white/45 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/70 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
         <div className="space-y-3">
           <div className="flex items-center gap-2.5">
             <span className="text-xs bg-[#FF8E8E]/10 text-[#FF8E8E] px-3.5 py-1 rounded-full font-black uppercase tracking-wider flex items-center gap-1">
@@ -354,7 +354,7 @@ export default function ParentRecommendations() {
 
       {/* 3. Summary metrics cards */}
       {isDataLoading ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center space-y-3 bg-white/20 rounded-[32px] p-10 border border-slate-100/50">
+        <div className="flex flex-col items-center justify-center py-20 text-center space-y-3 bg-white/20 rounded-xl p-10 border border-slate-100/50">
           <RefreshCw className="w-8 h-8 text-[#4EACAF] animate-spin" />
           <p className="text-xs text-slate-500 font-bold">Đang tính toán các chỉ số rèn luyện của bé...</p>
         </div>
@@ -370,7 +370,7 @@ export default function ParentRecommendations() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="recommendations-summary-cards">
             
             {/* Metric 1: Average Score */}
-            <div className="bg-white rounded-[32px] p-6 border-b-4 border-[#FFA800] shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
+            <div className="bg-white rounded-xl p-6 border-b-4 border-[#FFA800] shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
               <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center shrink-0 text-[#FFA800]">
                 <Award className="w-7 h-7" />
               </div>
@@ -381,7 +381,7 @@ export default function ParentRecommendations() {
             </div>
 
             {/* Metric 2: Progress level */}
-            <div className="bg-white rounded-[32px] p-6 border-b-4 border-indigo-400 shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
+            <div className="bg-white rounded-xl p-6 border-b-4 border-indigo-400 shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
               <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center shrink-0 text-indigo-500">
                 <TrendingUp className="w-7 h-7" />
               </div>
@@ -398,7 +398,7 @@ export default function ParentRecommendations() {
             </div>
 
             {/* Metric 3: Tasks completed */}
-            <div className="bg-white rounded-[32px] p-6 border-b-4 border-teal-400 shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
+            <div className="bg-white rounded-xl p-6 border-b-4 border-teal-400 shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
               <div className="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center shrink-0 text-[#4EACAF]">
                 <CheckCircle className="w-7 h-7" />
               </div>
@@ -411,7 +411,7 @@ export default function ParentRecommendations() {
             </div>
 
             {/* Metric 4: Total practice time */}
-            <div className="bg-white rounded-[32px] p-6 border-b-4 border-[#FF8E8E] shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
+            <div className="bg-white rounded-xl p-6 border-b-4 border-[#FF8E8E] shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
               <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center shrink-0 text-[#FF8E8E]">
                 <Clock className="w-7 h-7" />
               </div>
@@ -427,10 +427,10 @@ export default function ParentRecommendations() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
             {/* Left Section (2/3 width) - Detailed Strengths, Weaknesses, Pedagogical advice */}
-            <div className="lg:col-span-2 space-y-8">
+            <div className="lg:col-span-2 space-y-4">
               
               {/* Analysis box for Strengths vs Areas to improve */}
-              <div className="bg-white rounded-[40px] p-8 md:p-10 border border-gray-100 shadow-sm space-y-8">
+              <div className="bg-white rounded-xl p-8 md:p-10 border border-gray-100 shadow-sm space-y-4">
                 <div className="border-b border-gray-50 pb-5">
                   <h3 className="text-2xl font-black text-gray-950 italic">Dấu mộc ngôn từ của con</h3>
                   <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Phân tích chuyên môn cụ thể về dải phát âm của trẻ</p>
@@ -499,10 +499,10 @@ export default function ParentRecommendations() {
             </div>
 
             {/* Right Section (1/3 width) - Suggested exercises and reason */}
-            <div className="space-y-8">
+            <div className="space-y-4">
               
               {/* Suggested Exercises List */}
-              <div className="bg-white rounded-[40px] p-8 border border-gray-100 shadow-sm space-y-6">
+              <div className="bg-white rounded-xl p-8 border border-gray-100 shadow-sm space-y-4">
                 <div className="border-b border-gray-50 pb-4">
                   <h3 className="text-xl font-black text-gray-900 leading-none italic">Bài tập nên luyện tiếp</h3>
                   <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Huấn tự chuyên biệt cho con</p>
@@ -543,7 +543,7 @@ export default function ParentRecommendations() {
               </div>
 
               {/* 6. Recent direct feedback list */}
-              <div className="bg-[#4EACAF]/5 rounded-[40px] p-8 border border-[#4EACAF]/20 shadow-sm space-y-6">
+              <div className="bg-[#4EACAF]/5 rounded-xl p-8 border border-[#4EACAF]/20 shadow-sm space-y-4">
                 <div className="border-b border-[#4EACAF]/10 pb-4">
                   <h3 className="text-xl font-black text-[#264E50] leading-none italic flex items-center gap-2">
                     <MessageSquare className="w-5 h-5 text-[#4EACAF]" />

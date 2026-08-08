@@ -233,7 +233,7 @@ export default function UserManagement() {
   }, [modalType]);
 
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative">
 
       {/* Toast Notification Banner */}
       <AnimatePresence>
@@ -268,7 +268,7 @@ export default function UserManagement() {
       </AnimatePresence>
 
       {/* 1. Header */}
-      <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             <Shield className="w-3.5 h-3.5" />
@@ -328,14 +328,14 @@ export default function UserManagement() {
       </div>
 
       {/* 3. Search & Filters */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center">
+      <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex flex-col md:flex-row gap-3">
         <div className="relative flex-1">
           <input
             type="text"
             placeholder="Tìm theo tên người dùng, email, sđt..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-4 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-gray-700 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white"
+            className="w-full pl-4 pr-10 py-2 rounded-lg bg-slate-50 border border-slate-200 font-medium text-slate-700 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs"
           />
           {searchQuery && (
             <button
@@ -630,7 +630,7 @@ export default function UserManagement() {
       </div>
 
       {/* Decorative Quote */}
-      <div className="flex items-center justify-center gap-4 bg-orange-50/40 p-6 rounded-[32px] border-2 border-orange-100 max-w-lg mx-auto">
+      <div className="flex items-center justify-center gap-4 bg-orange-50/40 p-6 rounded-xl border-2 border-orange-100 max-w-lg mx-auto">
         <Smile className="w-10 h-10 text-orange-400 fill-current shrink-0 animate-pulse" />
         <p className="text-gray-500 font-bold text-xs md:text-sm italic leading-snug">
           "Trẻ em nhận được sự hỗ trợ ngôn ngữ can thiệp sớm tốt nhất nhờ quy trình phối hợp khép kín giữa giáo viên đặc biệt và cha mẹ yêu thương."
@@ -1022,7 +1022,6 @@ function DetailModalBody({
             </button>
           </div>
         </div>
-
         <DetailRow label="Số điện thoại" value={user.phone || '—'} />
         <DetailRow label="Thời điểm khởi tạo" value={formatDateDMY(user.createdAt)} />
         <DetailRow label="Cập nhật lần cuối" value={formatDateDMY(user.updatedAt || '') || '—'} />
@@ -1059,30 +1058,26 @@ function StatItem({
   subtitle,
   icon,
   bgColor,
-  borderColor,
+  borderColor = 'border-slate-100',
 }: {
   title: string;
   value: number;
   subtitle: string;
   icon: React.ReactNode;
   bgColor: string;
-  borderColor: string;
+  borderColor?: string;
 }) {
   return (
-    <div className={cn(
-      'bg-white rounded-[32px] p-6 shadow-sm border relative overflow-hidden group hover:shadow-md transition-all duration-300',
-      borderColor
-    )}>
-      <div className={cn('absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-10 transition-transform duration-500 group-hover:scale-150', bgColor)} />
-      <div className="flex items-center gap-5 relative z-10">
-        <div className={cn('p-4 rounded-2xl shadow-inner shrink-0', bgColor)}>
-          {icon}
-        </div>
-        <div className="space-y-0.5">
-          <p className="text-gray-400 font-bold uppercase text-[10px] tracking-wider">{title}</p>
-          <p className="text-3xl font-black text-gray-900 leading-none">{value.toLocaleString()}</p>
-          <p className="text-[11px] text-gray-500 font-medium pt-1 line-clamp-1">{subtitle}</p>
-        </div>
+    <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
+      <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border', bgColor, borderColor)}>
+        {icon}
+      </div>
+      <div>
+        <p className="text-2xl font-black text-slate-800 leading-none">
+          {value.toLocaleString()}
+        </p>
+        <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">{title}</p>
+        {subtitle && <p className="text-[10px] text-slate-400 font-medium mt-1 leading-none">{subtitle}</p>}
       </div>
     </div>
   );

@@ -232,7 +232,7 @@ export default function ProfileManagement() {
   };
 
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative text-left">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative text-left">
       
       {/* Notifications */}
       {alertConfig && (
@@ -260,7 +260,7 @@ export default function ProfileManagement() {
       )}
 
       {/* Header card with refresh button */}
-      <div className="bg-white/45 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/70 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
+      <div className="bg-white/45 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/70 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
         <div className="space-y-2">
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">Quản Lý Hồ Sơ Của Bé</h1>
           <p className="text-gray-500 font-bold text-sm">
@@ -290,7 +290,7 @@ export default function ProfileManagement() {
               <div 
                 key={child.id} 
                 className={cn(
-                  "rounded-[32px] p-8 shadow-lg cursor-pointer transition-all hover:scale-105 active:scale-95 group relative border-2 border-transparent",
+                  "rounded-xl p-8 shadow-lg cursor-pointer transition-all hover:scale-105 active:scale-95 group relative border-2 border-transparent",
                   cardBg
                 )}
               >
@@ -335,7 +335,7 @@ export default function ProfileManagement() {
           {/* Add profile card */}
           <button 
             onClick={openCreateModal}
-            className="rounded-[32px] bg-sky-50 border-4 border-dashed border-sky-300 p-8 flex flex-col items-center justify-center gap-4 group hover:bg-sky-100 transition-all cursor-pointer h-full min-h-[160px]"
+            className="rounded-xl bg-sky-50 border-4 border-dashed border-sky-300 p-8 flex flex-col items-center justify-center gap-4 group hover:bg-sky-100 transition-all cursor-pointer h-full min-h-[160px]"
           >
             <div className="w-16 h-16 rounded-full bg-sky-200 flex items-center justify-center text-sky-600 transition-transform group-hover:scale-110">
               <Plus className="w-8 h-8" />

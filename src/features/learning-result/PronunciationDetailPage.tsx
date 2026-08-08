@@ -389,7 +389,7 @@ export default function PronunciationDetailPage() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-24 relative" id="pronunciation-details-view">
+    <div className="space-y-4 animate-in fade-in duration-500 pb-24 relative" id="pronunciation-details-view">
       
       {/* Toast Notification */}
       <AnimatePresence>

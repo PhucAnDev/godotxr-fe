@@ -571,7 +571,7 @@ export default function ChildManagement() {
     filterStatus !== 'ALL';
 
   return (
-    <div className="relative space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="relative space-y-4 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <AnimatePresence>
         {alertConfig && (
           <motion.div
@@ -611,7 +611,7 @@ export default function ChildManagement() {
         )}
       </AnimatePresence>
 
-      <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             <Baby className="h-3.5 w-3.5" />
@@ -1034,7 +1034,7 @@ export default function ChildManagement() {
             onClose={handleCloseModal}
             accent="purple"
           >
-            <div className="space-y-8 p-8 md:p-10">
+            <div className="space-y-4 p-8 md:p-10">
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#4EACAF]/15 bg-[#4EACAF]/5 px-4 py-3 text-sm text-slate-600">
                 <span>
                   Hồ sơ học tập được cập nhật trực tuyến theo thời gian thực.
@@ -1529,32 +1529,26 @@ function StatItem({
   subtitle,
   icon,
   bgColor,
-  borderColor,
+  borderColor = 'border-slate-100',
 }: {
   title: string;
   value: number | string;
   subtitle: string;
   icon: React.ReactNode;
   bgColor: string;
-  borderColor: string;
+  borderColor?: string;
 }) {
   return (
-    <div className={cn(
-      'bg-white rounded-[32px] p-6 shadow-sm border relative overflow-hidden group hover:shadow-md transition-all duration-300',
-      borderColor
-    )}>
-      <div className={cn('absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-10 transition-transform duration-500 group-hover:scale-150', bgColor)} />
-      <div className="flex items-center gap-5 relative z-10">
-        <div className={cn('p-4 rounded-2xl shadow-inner shrink-0', bgColor)}>
-          {icon}
-        </div>
-        <div className="space-y-0.5">
-          <p className="text-gray-400 font-bold uppercase text-[10px] tracking-wider">{title}</p>
-          <p className="text-3xl font-black text-gray-900 leading-none">
-            {typeof value === 'number' ? value.toLocaleString() : value}
-          </p>
-          <p className="text-[11px] text-gray-500 font-medium pt-1 line-clamp-1">{subtitle}</p>
-        </div>
+    <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
+      <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border', bgColor, borderColor)}>
+        {icon}
+      </div>
+      <div>
+        <p className="text-2xl font-black text-slate-800 leading-none">
+          {typeof value === 'number' ? value.toLocaleString() : value}
+        </p>
+        <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">{title}</p>
+        {subtitle && <p className="text-[10px] text-slate-400 font-medium mt-1 leading-none">{subtitle}</p>}
       </div>
     </div>
   );

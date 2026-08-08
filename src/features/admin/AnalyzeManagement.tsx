@@ -551,7 +551,7 @@ export default function AnalyzeManagement() {
   }, [filteredList, currentPage, pageSize]);
 
   return (
-    <div className="space-y-8 py-2">
+    <div className="space-y-4 py-2">
       {/* Alert toast */}
       <AnimatePresence>
         {alertConfig && (
@@ -607,22 +607,20 @@ export default function AnalyzeManagement() {
           title="Trẻ chậm nói mức độ nặng"
           value={severeDelayCount}
           subtitle="Cần can thiệp tích cực"
-          icon={<Clock className="h-6 w-6 text-white" />}
+          icon={<Clock className="h-5 w-5 text-white" />}
           bgColor="bg-rose-500"
-          borderColor="border-rose-100 hover:border-rose-200"
         />
         <StatItem
           title="Học viên xuất sắc"
           value={excellentCount}
           subtitle="Sở hữu ít nhất 1 kỹ năng xuất sắc"
-          icon={<Award className="h-6 w-6 text-white" />}
+          icon={<Award className="h-5 w-5 text-white" />}
           bgColor="bg-emerald-500"
-          borderColor="border-emerald-100 hover:border-emerald-200"
         />
       </div>
 
       {/* Filter and Table Container */}
-      <div className="rounded-[36px] border border-slate-100 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4 pb-6">
           {/* Search */}
           <div className="relative w-full max-w-md">
@@ -631,7 +629,7 @@ export default function AnalyzeManagement() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm theo họ tên bé hoặc chẩn đoán..."
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3.5 pr-4 pl-4 text-sm font-normal text-slate-600 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
+              className="w-full pl-4 pr-4 py-2 rounded-lg bg-slate-50 border border-slate-200 font-medium text-slate-700 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs"
             />
           </div>
 
@@ -872,7 +870,7 @@ export default function AnalyzeManagement() {
             onClose={handleCloseModal}
             accent="purple"
           >
-            <div className="space-y-8 p-8 md:p-10">
+            <div className="space-y-4 p-8 md:p-10">
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-purple-100 bg-purple-50/40 px-4 py-3 text-sm text-slate-600">
                 <span>Dữ liệu chẩn đoán và năng lực lâm sàng của trẻ.</span>
                 {isDetailLoading && (
@@ -1387,32 +1385,26 @@ function StatItem({
   subtitle,
   icon,
   bgColor,
-  borderColor,
+  borderColor = 'border-slate-100',
 }: {
   title: string;
   value: number | string;
   subtitle: string;
   icon: React.ReactNode;
   bgColor: string;
-  borderColor: string;
+  borderColor?: string;
 }) {
   return (
-    <div className={cn(
-      'bg-white rounded-[32px] p-6 shadow-sm border relative overflow-hidden group hover:shadow-md transition-all duration-300',
-      borderColor
-    )}>
-      <div className={cn('absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-10 transition-transform duration-500 group-hover:scale-150', bgColor)} />
-      <div className="flex items-center gap-5 relative z-10">
-        <div className={cn('p-4 rounded-2xl shadow-inner shrink-0', bgColor)}>
-          {icon}
-        </div>
-        <div className="space-y-0.5">
-          <p className="text-gray-400 font-bold uppercase text-[10px] tracking-wider">{title}</p>
-          <p className="text-3xl font-black text-gray-900 leading-none">
-            {typeof value === 'number' ? value.toLocaleString() : value}
-          </p>
-          <p className="text-[11px] text-gray-500 font-medium pt-1 line-clamp-1">{subtitle}</p>
-        </div>
+    <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
+      <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border', bgColor, borderColor)}>
+        {icon}
+      </div>
+      <div>
+        <p className="text-2xl font-black text-slate-800 leading-none">
+          {typeof value === 'number' ? value.toLocaleString() : value}
+        </p>
+        <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">{title}</p>
+        {subtitle && <p className="text-[10px] text-slate-400 font-medium mt-1 leading-none">{subtitle}</p>}
       </div>
     </div>
   );

@@ -566,13 +566,13 @@ export default function RoleUserManagementPage({
   };
 
   return (
-    <div className="relative space-y-12 animate-in fade-in slide-in-from-bottom-4 pb-24 duration-700">
+    <div className="relative space-y-4 animate-in fade-in slide-in-from-bottom-4 pb-24 duration-700">
       <ToastBanner
         alertConfig={alertConfig}
         onClose={() => setAlertConfig(null)}
       />
 
-      <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             {config.badgeIcon}
@@ -665,14 +665,14 @@ export default function RoleUserManagementPage({
         />
       </div>
 
-      <div className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm lg:flex-row lg:items-center">
+      <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex flex-col md:flex-row gap-3">
         <div className="relative flex-1">
           <input
             type="text"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder={config.searchPlaceholder}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-4 pr-10 text-sm font-semibold text-gray-700 outline-none transition-all placeholder:text-gray-400 focus:border-[#4EACAF] focus:bg-white"
+            className="w-full pl-4 pr-10 py-2 rounded-lg bg-slate-50 border border-slate-200 font-medium text-slate-700 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs"
           />
           {searchQuery && (
             <button

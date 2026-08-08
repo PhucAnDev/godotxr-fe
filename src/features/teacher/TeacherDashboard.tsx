@@ -195,7 +195,7 @@ export default function TeacherDashboard() {
   }, []);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-4 animate-in fade-in duration-300">
       {/* Page Header Component */}
       <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-100">
         <div>

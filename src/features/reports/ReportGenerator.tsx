@@ -50,7 +50,7 @@ export default function ReportGenerator() {
         </div>
 
         {/* Report Preview */}
-        <div className="bg-gray-100 rounded-[32px] p-12 overflow-hidden relative">
+        <div className="bg-gray-100 rounded-xl p-12 overflow-hidden relative">
            <div className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-16 space-y-10">
               <div className="flex justify-between items-start">
                  <div>

@@ -670,7 +670,7 @@ export default function TeacherClassDetail({
 
   return (
     <div
-      className="relative space-y-10 pb-24 text-left animate-in fade-in slide-in-from-bottom-4 duration-700"
+      className="relative space-y-4 pb-24 text-left animate-in fade-in slide-in-from-bottom-4 duration-700"
       id="class-detail-page"
     >
       <AnimatePresence>
@@ -712,7 +712,7 @@ export default function TeacherClassDetail({
         )}
       </AnimatePresence>
 
-      <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm md:p-8">
+      <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm md:p-8">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
           <div className="space-y-3">
             <button
@@ -1156,7 +1156,7 @@ export default function TeacherClassDetail({
       )}
 
       {activeTab === 'RESULTS' && (
-        <div className="overflow-hidden rounded-[32px] border border-gray-100 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
           <div className="border-b border-gray-50 bg-white/50 px-8 py-6">
             <h3 className="text-2xl font-black italic leading-none text-gray-900">
               Kết quả luyện tập gần đây
@@ -1256,7 +1256,7 @@ export default function TeacherClassDetail({
       {activeTab === 'ANALYSES' && (
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
           {childrenInClass.length === 0 ? (
-            <div className="rounded-[32px] border border-slate-100 bg-white p-8 text-sm font-semibold text-slate-400 shadow-sm">
+            <div className="rounded-xl border border-slate-100 bg-white p-8 text-sm font-semibold text-slate-400 shadow-sm">
               Chưa có học sinh nào trong lớp để phân tích.
             </div>
           ) : (
@@ -1268,7 +1268,7 @@ export default function TeacherClassDetail({
               return (
                 <div
                   key={child.ChildId}
-                  className="space-y-4 rounded-[32px] border border-gray-100 bg-white p-8 shadow-sm"
+                  className="space-y-4 rounded-xl border border-gray-100 bg-white p-8 shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-4 border-b pb-4">
                     <div>
@@ -1340,7 +1340,7 @@ export default function TeacherClassDetail({
       )}
 
       {activeTab === 'PROGRAM' && (
-        <div className="space-y-8 rounded-[32px] border border-gray-100 bg-white p-8 shadow-sm md:p-10">
+        <div className="space-y-4 rounded-xl border border-gray-100 bg-white p-8 shadow-sm md:p-10">
           <div className="max-w-2xl space-y-4">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#4EACAF]/10 px-3.5 py-1 text-xs font-black uppercase tracking-widest leading-none text-[#4EACAF]">
               <Sparkles className="h-3.5 w-3.5" />

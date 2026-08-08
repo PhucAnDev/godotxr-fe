@@ -426,7 +426,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
 
   return (
     <div
-      className="relative space-y-10 pb-24 text-left animate-in fade-in slide-in-from-bottom-4 duration-700"
+      className="relative space-y-4 pb-24 text-left animate-in fade-in slide-in-from-bottom-4 duration-700"
       id="teacher-classes-view"
     >
       <AnimatePresence>
@@ -468,7 +468,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col justify-between gap-8 rounded-[32px] border border-white/60 bg-white/70 p-8 shadow-sm backdrop-blur-md lg:flex-row lg:items-center">
+      <div className="flex flex-col justify-between gap-8 rounded-xl border border-white/60 bg-white/70 p-8 shadow-sm backdrop-blur-md lg:flex-row lg:items-center">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full bg-[#4EACAF]/10 px-4 py-1.5 text-xs font-black uppercase tracking-widest leading-none text-[#4EACAF]">
             <GraduationCap className="h-3.5 w-3.5" />
@@ -655,7 +655,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
       </div>
 
       {teacherClassesList.length === 0 ? (
-        <div className="rounded-[32px] border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm">
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm">
           <p className="text-lg font-black text-slate-700">
             Không có lớp học nào phù hợp với bộ lọc hiện tại.
           </p>
@@ -683,7 +683,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                 key={classroom.id}
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-sm"
+                className="overflow-hidden rounded-xl border border-white/80 bg-white shadow-sm"
               >
                 <div className="space-y-5 p-8">
                   <div className="flex flex-wrap items-center gap-2">

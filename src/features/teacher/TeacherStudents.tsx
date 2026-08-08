@@ -353,7 +353,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
 
   if (isLoading) {
     return (
-      <div className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-sm">
+      <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
         <div className="flex items-center gap-3 text-slate-600">
           <TrendingUp className="h-5 w-5 animate-pulse text-[#4EACAF]" />
           <span className="font-semibold">
@@ -365,8 +365,8 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
   }
 
   return (
-    <div className="space-y-8" id="teacher-students-container">
-      <div className="relative overflow-hidden rounded-[40px] border-2 border-white/80 bg-gradient-to-r from-[#4EACAF]/10 to-[#FF8E8E]/10 p-8 shadow-sm">
+    <div className="space-y-4" id="teacher-students-container">
+      <div className="relative overflow-hidden rounded-3xl border border-white/80 bg-gradient-to-r from-[#4EACAF]/10 to-[#FF8E8E]/10 p-8 shadow-sm">
         <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-teal-100/30 blur-3xl" />
         <div className="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
           <div className="space-y-2">
@@ -420,7 +420,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <motion.div
           whileHover={{ y: -4 }}
-          className="flex items-center gap-5 rounded-[32px] border-2 border-slate-50 bg-white p-6 shadow-sm"
+          className="flex items-center gap-5 rounded-xl border border-slate-100 bg-white p-6 shadow-sm"
         >
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#4EACAF]/10 text-[#4EACAF]">
             <GraduationCap className="h-8 w-8" />
@@ -437,7 +437,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
 
         <motion.div
           whileHover={{ y: -4 }}
-          className="flex items-center gap-5 rounded-[32px] border-2 border-slate-50 bg-white p-6 shadow-sm"
+          className="flex items-center gap-5 rounded-xl border border-slate-100 bg-white p-6 shadow-sm"
         >
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-500">
             <TrendingUp className="h-8 w-8" />
@@ -454,7 +454,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
 
         <motion.div
           whileHover={{ y: -4 }}
-          className="flex items-center gap-5 rounded-[32px] border-2 border-slate-50 bg-white p-6 shadow-sm"
+          className="flex items-center gap-5 rounded-xl border border-slate-100 bg-white p-6 shadow-sm"
         >
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 text-sky-500">
             <Sparkles className="h-8 w-8" />
@@ -469,7 +469,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
 
         <motion.div
           whileHover={{ y: -4 }}
-          className="flex items-center gap-5 rounded-[32px] border-2 border-slate-50 bg-white p-6 shadow-sm"
+          className="flex items-center gap-5 rounded-xl border border-slate-100 bg-white p-6 shadow-sm"
         >
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-pink-50 text-pink-500">
             <Heart className="h-8 w-8" />
@@ -483,7 +483,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
         </motion.div>
       </div>
 
-      <div className="flex flex-col justify-between gap-4 rounded-[32px] border-b-4 border-gray-100 bg-white p-6 shadow-sm md:flex-row md:items-center">
+      <div className="flex flex-col justify-between gap-4 rounded-xl border border-slate-100 bg-white p-6 shadow-sm md:flex-row md:items-center">
         <div className="relative max-w-md flex-1">
           <input
             type="text"
@@ -547,7 +547,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
           </p>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-4">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
             {paginatedChildren.map((child) => {
               const parent = parentById[child.ParentUserId];
@@ -558,7 +558,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   whileHover={{ y: -6 }}
-                  className="flex flex-col justify-between rounded-[40px] border-b-8 border-gray-100 bg-white p-8 shadow-sm transition-all hover:border-b-8 hover:border-[#4EACAF]/40"
+                  className="flex flex-col justify-between rounded-xl border border-slate-100 bg-white p-8 shadow-sm transition-all hover:border-[#4EACAF]/40"
                 >
                   <div className="space-y-6">
                     <div className="flex flex-wrap items-center justify-between gap-2.5">

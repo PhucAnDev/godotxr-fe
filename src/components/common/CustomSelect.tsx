@@ -15,6 +15,7 @@ export interface CustomSelectProps {
   className?: string;
   variant?: 'filter' | 'form';
   disabled?: boolean;
+  placement?: 'bottom' | 'top' | 'auto';
 }
 
 export default function CustomSelect({
@@ -23,10 +24,31 @@ export default function CustomSelect({
   options,
   className,
   variant = 'filter',
-  disabled = false
+  disabled = false,
+  placement = 'auto'
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [calculatedPlacement, setCalculatedPlacement] = useState<'bottom' | 'top'>('bottom');
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (placement === 'auto') {
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          const spaceBelow = window.innerHeight - rect.bottom;
+          // If space below is less than 240px and there is more space above, open top
+          if (spaceBelow < 240 && rect.top > spaceBelow) {
+            setCalculatedPlacement('top');
+          } else {
+            setCalculatedPlacement('bottom');
+          }
+        }
+      } else {
+        setCalculatedPlacement(placement);
+      }
+    }
+  }, [isOpen, placement]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -73,11 +95,14 @@ export default function CustomSelect({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 5 }}
+            initial={{ opacity: 0, y: calculatedPlacement === 'top' ? -5 : 5 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 5 }}
+            exit={{ opacity: 0, y: calculatedPlacement === 'top' ? -5 : 5 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-50 mt-1.5 w-full bg-white border border-slate-200/80 rounded-2xl shadow-xl max-h-60 overflow-y-auto p-1.5 space-y-0.5"
+            className={cn(
+              "absolute z-50 w-full bg-white border border-slate-200/80 rounded-2xl shadow-xl max-h-60 overflow-y-auto p-1.5 space-y-0.5",
+              calculatedPlacement === 'top' ? "bottom-full mb-1.5" : "mt-1.5"
+            )}
           >
             {options.map((opt) => {
               const isSelected = opt.value === value;

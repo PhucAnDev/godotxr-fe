@@ -213,7 +213,7 @@ export default function ParentDashboard() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 text-left">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 text-left">
       
       {/* Title & Children switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -241,7 +241,7 @@ export default function ParentDashboard() {
       )}
 
       {errorMessage && (
-        <div className="bg-rose-50 border border-rose-100 rounded-[32px] p-6 flex gap-4 text-rose-800 text-sm font-bold items-center max-w-2xl mx-auto">
+        <div className="bg-rose-50 border border-rose-100 rounded-xl p-6 flex gap-4 text-rose-800 text-sm font-bold items-center max-w-2xl mx-auto">
           <AlertTriangle className="w-6 h-6 text-rose-500 shrink-0" />
           <span>{errorMessage}</span>
           <button 
@@ -255,7 +255,7 @@ export default function ParentDashboard() {
       )}
 
       {!isLoading && children.length === 0 && !errorMessage && (
-        <div className="bg-white rounded-[32px] p-12 text-center max-w-xl mx-auto border border-gray-150 shadow-sm space-y-4">
+        <div className="bg-white rounded-xl p-12 text-center max-w-xl mx-auto border border-gray-150 shadow-sm space-y-4">
           <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
             <AlertTriangle className="w-8 h-8" />
           </div>
@@ -271,8 +271,8 @@ export default function ParentDashboard() {
         <>
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Child Profile Card */}
-            <div className="lg:col-span-2 bg-[#4EACAF] rounded-[32px] p-1 shadow-lg h-full">
-              <div className="bg-white rounded-[31px] p-8 h-full flex flex-col sm:flex-row items-center sm:items-start gap-6 relative">
+            <div className="lg:col-span-2 bg-[#4EACAF] rounded-xl p-1 shadow-lg h-full">
+              <div className="bg-white rounded-[28px] p-8 h-full flex flex-col sm:flex-row items-center sm:items-start gap-6 relative">
                 {isResultsLoading && (
                   <div className="absolute top-4 right-4 animate-spin text-[#4EACAF]">
                     <RefreshCw className="w-4 h-4" />
@@ -330,7 +330,7 @@ export default function ParentDashboard() {
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             {/* Streak View */}
-            <div className="lg:col-span-2 bg-white rounded-[32px] p-8 shadow-sm border border-gray-100 space-y-6">
+            <div className="lg:col-span-2 bg-white rounded-xl p-8 shadow-sm border border-gray-100 space-y-6">
               <h4 className="text-lg font-bold">Chuỗi hàng tuần</h4>
               <div className="flex items-center justify-between gap-2 px-2">
                 {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map((day) => {
@@ -356,7 +356,7 @@ export default function ParentDashboard() {
             </div>
 
             {/* Start Button Area */}
-            <div className="lg:col-span-3 bg-white rounded-[32px] p-8 shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="lg:col-span-3 bg-white rounded-xl p-8 shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="space-y-1">
                 <h4 className="text-xl font-bold flex items-center gap-3 text-slate-800">Thông tin bài luyện VR hôm nay</h4>
                 <p className="text-sm text-gray-500 font-bold">Giám sát và xem nhiệm vụ được thiết lập sẵn trên kính VR.</p>
@@ -374,7 +374,7 @@ export default function ParentDashboard() {
           </div>
 
           {/* Activity Chart */}
-          <div className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
             <h4 className="text-lg font-bold mb-8">Hoạt động luyện tập hàng tuần</h4>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -426,7 +426,7 @@ export default function ParentDashboard() {
 
 function StatCard({ label, value, subtext, color, textColor }: { label: string; value: string; subtext: string; color: string; textColor: string }) {
   return (
-    <div className={cn("rounded-[32px] p-6 flex flex-col justify-center items-center text-center shadow-sm border border-transparent", color, textColor)}>
+    <div className={cn("rounded-xl p-6 flex flex-col justify-center items-center text-center shadow-sm border border-transparent", color, textColor)}>
       <p className="text-[10px] font-black opacity-80 uppercase tracking-widest mb-2">{label}</p>
       <p className="text-2xl font-black">{value}</p>
       {subtext && <p className="text-xs font-bold opacity-75 mt-1">{subtext}</p>}

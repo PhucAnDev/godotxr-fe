@@ -3,7 +3,7 @@ import { cn } from '../../lib/utils';
 
 export default function LessonReview() {
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-gray-100">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Chi Tiết Xem Lại Buổi Học VR</h1>
@@ -14,7 +14,7 @@ export default function LessonReview() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Video Player Side */}
         <div className="xl:col-span-2 space-y-4">
-          <div className="relative group bg-black rounded-[32px] overflow-hidden shadow-2xl aspect-video border-[12px] border-white">
+          <div className="relative group bg-black rounded-xl overflow-hidden shadow-2xl aspect-video border-[12px] border-white">
             <img 
               src="https://images.unsplash.com/photo-1592478411213-6153e4ebc07d?q=80&w=2000&auto=format&fit=crop" 
               alt="Review Session" 
@@ -61,7 +61,7 @@ export default function LessonReview() {
 
         {/* Details Sidebar */}
         <div className="space-y-6">
-          <div className="bg-[#FFF3E0] rounded-[32px] p-8 shadow-sm border border-orange-100/50">
+          <div className="bg-[#FFF3E0] rounded-xl p-8 shadow-sm border border-orange-100/50">
             <h4 className="text-lg font-bold mb-4 flex items-center gap-2">
               <FileText className="w-5 h-5 text-orange-400" />
               Thông tin phiên học
@@ -73,7 +73,7 @@ export default function LessonReview() {
             </div>
           </div>
 
-          <div className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
             <h4 className="text-lg font-bold mb-2 flex items-center gap-2">
               <Volume2 className="w-5 h-5 text-blue-400" />
               Điểm Luyện Âm & Ghi Âm
@@ -94,7 +94,7 @@ export default function LessonReview() {
             </div>
           </div>
 
-          <div className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
             <h4 className="text-lg font-bold mb-2 flex items-center gap-2">
               <Activity className="w-5 h-5 text-purple-400" />
               Nhật Ký Tương Tác VR

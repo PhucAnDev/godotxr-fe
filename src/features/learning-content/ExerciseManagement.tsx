@@ -1026,7 +1026,7 @@ export default function ExerciseManagement() {
   };
 
   return (
-    <div className="relative space-y-12 pb-24 font-sans animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="relative space-y-4 pb-24 font-sans animate-in fade-in slide-in-from-bottom-4 duration-700">
       <AnimatePresence>
         {alertConfig && (
           <motion.div
@@ -1066,7 +1066,7 @@ export default function ExerciseManagement() {
         )}
       </AnimatePresence>
 
-      <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             <Activity className="w-3.5 h-3.5 animate-pulse" />
@@ -2419,7 +2419,7 @@ function StatCardItem({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-5 rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm">
+    <div className="flex items-center gap-5 rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
       <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-50">
         {icon}
       </div>

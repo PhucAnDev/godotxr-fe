@@ -446,7 +446,7 @@ export default function LessonManagement() {
   }, [sortedLessons, currentPage, pageSize]);
 
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative" id="lesson-view-root">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative" id="lesson-view-root">
       
       {/* Toast Alert Banner */}
       <AnimatePresence>
@@ -486,7 +486,7 @@ export default function LessonManagement() {
       </AnimatePresence>
 
       {/* 1. Header (GodotXR Premium Kid-friendly Aesthetics) */}
-      <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             <BookOpen className="w-3.5 h-3.5" />
@@ -836,7 +836,7 @@ export default function LessonManagement() {
       </div>
 
       {/* Decorative cute quote card */}
-      <div className="bg-orange-50/40 p-6 rounded-[32px] border-2 border-orange-100 max-w-xl mx-auto flex items-center gap-4">
+      <div className="bg-orange-50/40 p-6 rounded-xl border-2 border-orange-100 max-w-xl mx-auto flex items-center gap-4">
         <Smile className="w-12 h-12 text-orange-400 fill-current shrink-0 animate-bounce" />
         <div className="space-y-1 font-bold">
           <h4 className="font-normal text-slate-650 text-sm">Gợi ý thiết kế lộ trình</h4>

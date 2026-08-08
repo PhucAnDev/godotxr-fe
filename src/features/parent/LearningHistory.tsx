@@ -243,7 +243,7 @@ export default function LearningHistory() {
   ];
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 text-left">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 text-left">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Lịch sử Học Tập Của Bé</h1>
@@ -260,7 +260,7 @@ export default function LearningHistory() {
       </div>
 
       {/* Filters bar */}
-      <div className="bg-[#E2F2F3] rounded-[32px] p-6 shadow-inner border border-[#C5E1E3] grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+      <div className="bg-[#E2F2F3] rounded-xl p-6 shadow-inner border border-[#C5E1E3] grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
         <div className="space-y-2">
           <label className="text-xs font-black text-[#264E50] uppercase tracking-wide ml-1">Chọn bé:</label>
           <CustomSelect
@@ -295,12 +295,12 @@ export default function LearningHistory() {
 
       {/* Table & states */}
       {isLoading && sortedHistory.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 space-y-4 bg-white rounded-[32px] border border-gray-100 shadow-sm">
+        <div className="flex flex-col items-center justify-center py-24 space-y-4 bg-white rounded-xl border border-gray-100 shadow-sm">
           <RefreshCw className="h-10 w-10 text-[#4EACAF] animate-spin" />
           <p className="text-gray-500 font-bold">Đang tải lịch sử học tập...</p>
         </div>
       ) : (
-        <div className="bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#F8FAFC]">

@@ -560,7 +560,7 @@ export default function TeacherStudentDetail({
 
   return (
     <div
-      className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 text-left relative"
+      className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 text-left relative"
       id="student-detail-workspace"
     >
       <AnimatePresence>
@@ -605,7 +605,7 @@ export default function TeacherStudentDetail({
         )}
       </AnimatePresence>
 
-      <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-4">
           <button
             onClick={() => {
@@ -685,7 +685,7 @@ export default function TeacherStudentDetail({
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white rounded-[32px] p-6 border-b-4 border-[#4EACAF] shadow-sm flex items-center gap-5">
+            <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex items-center gap-5">
               <div className="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center shrink-0">
                 <BookOpen className="w-7 h-7 text-[#4EACAF]" />
               </div>
@@ -699,7 +699,7 @@ export default function TeacherStudentDetail({
               </div>
             </div>
 
-            <div className="bg-white rounded-[32px] p-6 border-b-4 border-[#FF8E8E] shadow-sm flex items-center gap-5">
+            <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex items-center gap-5">
               <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center shrink-0">
                 <Award className="w-7 h-7 text-[#FF8E8E]" />
               </div>
@@ -713,7 +713,7 @@ export default function TeacherStudentDetail({
               </div>
             </div>
 
-            <div className="bg-white rounded-[32px] p-6 border-b-4 border-[#F4B740] shadow-sm flex items-center gap-5">
+            <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex items-center gap-5">
               <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center shrink-0">
                 <Clock className="w-7 h-7 text-[#F4B740]" />
               </div>
@@ -727,7 +727,7 @@ export default function TeacherStudentDetail({
               </div>
             </div>
 
-            <div className="bg-white rounded-[32px] p-6 border-b-4 border-[#20D0D4] shadow-sm flex items-center gap-5">
+            <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex items-center gap-5">
               <div className="w-14 h-14 bg-cyan-50 rounded-2xl flex items-center justify-center shrink-0">
                 <TrendingUp className="w-7 h-7 text-[#20D0D4]" />
               </div>
@@ -807,7 +807,7 @@ export default function TeacherStudentDetail({
             </div>
           </div>
 
-          <div className="bg-white rounded-[32px] p-2 border border-gray-100 hover:shadow-inner flex flex-col sm:flex-row gap-1">
+          <div className="bg-white rounded-xl p-2 border border-gray-100 hover:shadow-inner flex flex-col sm:flex-row gap-1">
             {[
               { tab: 'OVERVIEW', label: 'Tổng quan', icon: Smile },
               { tab: 'HISTORY', label: 'Lịch sử', icon: Activity },
@@ -837,10 +837,10 @@ export default function TeacherStudentDetail({
             })}
           </div>
 
-          <div className="space-y-8 text-left">
+          <div className="space-y-4 text-left">
             {activeTab === 'OVERVIEW' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="bg-white p-8 rounded-[36px] border border-gray-150 relative space-y-4">
+                <div className="bg-white p-8 rounded-xl border border-gray-150 relative space-y-4">
                   <h3 className="text-xl font-black text-emerald-600 uppercase tracking-tight flex items-center gap-2">
                     <ThumbsUp className="w-5.5 h-5.5 text-emerald-500" />
                     Điểm mạnh nổi bật
@@ -858,7 +858,7 @@ export default function TeacherStudentDetail({
                   </div>
                 </div>
 
-                <div className="bg-white p-8 rounded-[36px] border border-gray-150 relative space-y-4">
+                <div className="bg-white p-8 rounded-xl border border-gray-150 relative space-y-4">
                   <h3 className="text-xl font-black text-rose-500 uppercase tracking-tight flex items-center gap-2">
                     <ThumbsDown className="w-5.5 h-5.5 text-rose-400" />
                     Điểm cần lưu ý
@@ -1085,7 +1085,7 @@ export default function TeacherStudentDetail({
             )}
 
             {activeTab === 'PROGRESS' && (
-              <div className="bg-white rounded-[40px] p-8 md:p-10 shadow-sm border border-gray-100 space-y-8">
+              <div className="bg-white rounded-xl p-8 md:p-10 shadow-sm border border-gray-100 space-y-4">
                 <div className="space-y-2">
                   <h3 className="text-2xl font-black text-[#4EACAF] italic">
                     Tổng hợp tiến trình

@@ -368,7 +368,7 @@ export default function ProgressAnalysis() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative text-left" id="progress-analysis-view">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative text-left" id="progress-analysis-view">
 
       {/* Dynamic Toast Feedback Overlay */}
       <AnimatePresence>
@@ -406,7 +406,7 @@ export default function ProgressAnalysis() {
       </AnimatePresence>
 
       {/* Header Block showcasing beautiful modern rounded theme */}
-      <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
 
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
@@ -544,7 +544,7 @@ export default function ProgressAnalysis() {
       </div>
 
       {/* 6. Robust Table list of historical and current Analysis instances */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" id="analysis-table-block">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden" id="analysis-table-block">
 
         <div className="px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/50 backdrop-blur-sm">
           <div>

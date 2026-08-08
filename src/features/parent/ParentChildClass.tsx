@@ -230,10 +230,10 @@ export default function ParentChildClass() {
   const displayEnrollmentStatus = enrollment?.status ?? '—';
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 text-left" id="parent-child-classroom-container">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 text-left" id="parent-child-classroom-container">
 
       {/* Header */}
-      <div className="bg-white/45 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/70 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
+      <div className="bg-white/45 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/70 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
         <div className="space-y-3">
           <div className="flex items-center gap-2.5">
             <span className="text-xs bg-[#4EACAF]/10 text-[#4EACAF] px-3.5 py-1 rounded-full font-black uppercase tracking-wider">
@@ -282,7 +282,7 @@ export default function ParentChildClass() {
 
       {/* Error */}
       {errorMessage && (
-        <div className="bg-rose-50 border border-rose-100 rounded-[32px] p-6 flex gap-4 text-rose-800 text-sm font-bold items-center max-w-2xl mx-auto">
+        <div className="bg-rose-50 border border-rose-100 rounded-xl p-6 flex gap-4 text-rose-800 text-sm font-bold items-center max-w-2xl mx-auto">
           <AlertTriangle className="w-6 h-6 text-rose-500 shrink-0" />
           <span>{errorMessage}</span>
           <button
@@ -297,7 +297,7 @@ export default function ParentChildClass() {
 
       {/* No children */}
       {!isPageLoading && children.length === 0 && !errorMessage && (
-        <div className="bg-white rounded-[32px] p-12 text-center max-w-xl mx-auto border border-gray-150 shadow-sm space-y-4">
+        <div className="bg-white rounded-xl p-12 text-center max-w-xl mx-auto border border-gray-150 shadow-sm space-y-4">
           <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
             <AlertTriangle className="w-8 h-8" />
           </div>
@@ -311,7 +311,7 @@ export default function ParentChildClass() {
 
       {/* Not enrolled */}
       {!isPageLoading && selectedChild && noEnrollment && (
-        <div className="bg-white rounded-[32px] p-12 text-center max-w-xl mx-auto border border-gray-150 shadow-sm space-y-4">
+        <div className="bg-white rounded-xl p-12 text-center max-w-xl mx-auto border border-gray-150 shadow-sm space-y-4">
           <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto">
             <School className="w-8 h-8 text-gray-400" />
           </div>
@@ -328,10 +328,10 @@ export default function ParentChildClass() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* Left/Middle - Classroom & Lesson timeline */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-4">
 
             {/* Class info card */}
-            <div className="bg-white rounded-[40px] p-8 border border-gray-100 shadow-sm relative overflow-hidden space-y-6">
+            <div className="bg-white rounded-xl p-8 border border-gray-100 shadow-sm relative overflow-hidden space-y-6">
               <div className="absolute top-0 right-0 w-36 h-36 bg-emerald-500/5 rounded-full -mr-10 -mt-10 pointer-events-none" />
 
               <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-50 pb-5">
@@ -380,7 +380,7 @@ export default function ParentChildClass() {
             </div>
 
             {/* Lesson timeline & exercises */}
-            <div className="bg-white rounded-[40px] p-8 md:p-10 border border-gray-100 shadow-sm space-y-8 relative">
+            <div className="bg-white rounded-xl p-8 md:p-10 border border-gray-100 shadow-sm space-y-4 relative">
               {isLessonsLoading && (
                 <div className="absolute top-4 right-4 animate-spin text-[#4EACAF]">
                   <RefreshCw className="w-4 h-4" />
@@ -468,7 +468,7 @@ export default function ParentChildClass() {
                   </div>
 
                   {/* Right: Exercises for selected lesson */}
-                  <div className="bg-[#FDFCF6]/50 rounded-[32px] p-6 border-2 border-dashed border-[#F2ECD8] space-y-5">
+                  <div className="bg-[#FDFCF6]/50 rounded-xl p-6 border-2 border-dashed border-[#F2ECD8] space-y-4">
                     <div className="border-b border-[#F2ECD8] pb-4">
                       <span className="text-[10px] text-amber-600 font-black uppercase tracking-wider block">Bài tập tương ứng trong bài:</span>
                       <h4 className="text-base font-black text-gray-800 leading-tight italic mt-1">
@@ -537,10 +537,10 @@ export default function ParentChildClass() {
           </div>
 
           {/* Right sidebar - Teacher & Program */}
-          <div className="space-y-8">
+          <div className="space-y-4">
 
             {/* Teacher card */}
-            <div className="bg-white rounded-[40px] p-8 border border-gray-100 shadow-sm relative overflow-hidden space-y-6">
+            <div className="bg-white rounded-xl p-8 border border-gray-100 shadow-sm relative overflow-hidden space-y-6">
               <div className="absolute top-0 left-0 w-32 h-32 bg-indigo-500/5 rounded-full -ml-8 -mt-8 pointer-events-none" />
 
               <div className="flex items-center gap-4">
@@ -600,7 +600,7 @@ export default function ParentChildClass() {
 
             {/* Program card */}
             {classroomDetail && (
-              <div className="bg-[#FFFDF5]/40 rounded-[40px] p-8 border border-yellow-100 shadow-sm relative space-y-6">
+              <div className="bg-[#FFFDF5]/40 rounded-xl p-8 border border-yellow-100 shadow-sm relative space-y-6">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center shrink-0">
                     <BookMarked className="w-6 h-6" />
@@ -642,7 +642,7 @@ export default function ParentChildClass() {
       {activeLessonDetail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div
-            className="bg-white w-full max-w-2xl rounded-[36px] border border-slate-100 shadow-2xl p-8 relative flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300"
+            className="bg-white w-full max-w-2xl rounded-xl border border-slate-100 shadow-2xl p-8 relative flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300"
             onClick={(e) => e.stopPropagation()}
           >
             <button

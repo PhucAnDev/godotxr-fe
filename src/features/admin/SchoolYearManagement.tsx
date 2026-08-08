@@ -351,7 +351,7 @@ export default function SchoolYearManagement() {
   }, [schoolYears, searchQuery, filterStatus, sortColumn, sortDirection]);
 
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative" id="school-year-root">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative" id="school-year-root">
       
       {/* Dynamic Toast Feedback Overlay */}
       <AnimatePresence>
@@ -391,7 +391,7 @@ export default function SchoolYearManagement() {
       </AnimatePresence>
 
       {/* 1. Header Hero Panel */}
-      <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
             <Calendar className="w-3.5 h-3.5" />
@@ -416,40 +416,40 @@ export default function SchoolYearManagement() {
       </div>
 
       {/* 2. Kid-friendly visual Statistics indicators */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="bg-white rounded-[32px] p-6 border-b-4 border-[#4EACAF] shadow-sm flex items-center gap-5">
-          <div className="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center shrink-0">
-            <Layers className="w-7 h-7 text-[#4EACAF]" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
+          <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center shrink-0 border border-teal-100">
+            <Layers className="w-5 h-5 text-[#4EACAF]" />
           </div>
           <div>
-            <p className="text-3xl font-medium text-slate-800 tracking-tight leading-tight">{totalYears}</p>
-            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1">Tổng năm học</p>
+            <p className="text-2xl font-black text-slate-800 leading-none">{totalYears}</p>
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Tổng năm học</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-[32px] p-6 border-b-4 border-emerald-500 shadow-sm flex items-center gap-5">
-          <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center shrink-0">
-            <CheckCircle className="w-7 h-7 text-emerald-500" />
+        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
+          <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0 border border-emerald-100">
+            <CheckCircle className="w-5 h-5 text-emerald-500" />
           </div>
           <div>
-            <p className="text-3xl font-black text-emerald-600 tracking-tight leading-tight">{activeCount}</p>
-            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1">Đang hoạt động</p>
+            <p className="text-2xl font-black text-emerald-600 leading-none">{activeCount}</p>
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Đang hoạt động</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-[32px] p-6 border-b-4 border-gray-400 shadow-sm flex items-center gap-5">
-          <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center shrink-0">
-            <Clock className="w-7 h-7 text-gray-400" />
+        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
+          <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center shrink-0 border border-gray-200">
+            <Clock className="w-5 h-5 text-gray-400" />
           </div>
           <div>
-            <p className="text-3xl font-black text-gray-500 tracking-tight leading-tight">{completedCount}</p>
-            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1">Đã kết thúc</p>
+            <p className="text-2xl font-black text-gray-500 leading-none">{completedCount}</p>
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Đã kết thúc</p>
           </div>
         </div>
       </div>
 
       {/* 3. Search & filter bar */}
-      <div className="bg-white rounded-[36px] p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4">
+      <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex flex-col md:flex-row gap-3">
         {/* Search block */}
         <div className="relative flex-1">
           <input 
@@ -457,12 +457,12 @@ export default function SchoolYearManagement() {
             placeholder="Tìm kiếm năm học theo niên khóa hoặc mã hệ thống..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-5 pr-6 py-4 rounded-2xl bg-[#FDFCF5] border-2 border-transparent font-bold text-gray-700 placeholder-gray-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm" 
+            className="w-full pl-4 pr-10 py-2 rounded-lg bg-slate-50 border border-slate-200 font-medium text-slate-700 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs" 
           />
           {searchQuery && (
             <button 
               onClick={() => setSearchQuery('')}
-              className="absolute right-5 top-1/2 -translate-y-1/2 p-1 bg-gray-200/60 rounded-full hover:bg-gray-200"
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-gray-200/60 rounded-full hover:bg-gray-200"
             >
               <X className="w-3.5 h-3.5 text-gray-500" />
             </button>
@@ -485,7 +485,7 @@ export default function SchoolYearManagement() {
       </div>
 
       {/* 4. Elegant School Year Table list view */}
-      <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden" id="year-table-container">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden" id="year-table-container">
         <div className="px-10 py-8 border-b border-gray-100 flex items-center justify-between bg-white/50 backdrop-blur-sm">
           <div>
             <h3 className="text-2xl font-medium text-slate-800 leading-none italic">Chi tiết danh mục năm học</h3>
