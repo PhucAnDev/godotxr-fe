@@ -548,15 +548,7 @@ export default function ProgramManagement() {
 
       {/* 4. Grid card view of program lists */}
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-2xl font-black text-gray-950 italic">Học liệu can thiệp ({filteredPrograms.length})</h3>
-            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-1">Cấu trúc hóa bento thân thiện với trẻ nhỏ</p>
-          </div>
-          <div className="text-xs bg-[#4EACAF]/10 px-4 py-1.5 rounded-full text-[#4EACAF] font-bold">
-            Trách nhiệm: Quản trị viên
-          </div>
-        </div>
+
 
         {filteredPrograms.length === 0 ? (
           <div className="bg-white rounded-[40px] py-24 text-center space-y-4 border border-gray-100">
@@ -589,7 +581,7 @@ export default function ProgramManagement() {
                         title="Sắp xếp theo Mã chương trình"
                       >
                         <div className="flex items-center gap-1.5">
-                          Mã chương trình
+                          Mã
                           {sortColumn === 'ProgramId' ? (
                             sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
                           ) : (
@@ -639,7 +631,7 @@ export default function ProgramManagement() {
                           )}
                         </div>
                       </th>
-                      <th className="py-5 px-4 select-none text-left">Số phòng 3D</th>
+                      <th className="py-5 px-4 select-none text-left">Số lớp</th>
                       <th
                         onClick={() => handleSort('CreatedAt')}
                         className="py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-left"
@@ -708,7 +700,7 @@ export default function ProgramManagement() {
                           {/* Lesson count */}
                           <td className="py-5 px-4">
                             <span className="px-2.5 py-1 bg-gray-100 rounded-lg text-xs font-black">
-                              {lessonCount} phòng 3D
+                              {lessonCount} lớp
                             </span>
                           </td>
                           {/* CreatedAt */}
