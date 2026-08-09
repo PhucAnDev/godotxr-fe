@@ -25,7 +25,10 @@ import {
   Workflow,
   Sparkle,
   Trash2,
-  Award
+  Award,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import ActionButton from '../../components/common/ActionButton';
@@ -113,6 +116,19 @@ export default function ProgramManagement() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
+
+  // Sorting states
+  const [sortColumn, setSortColumn] = useState<string>('ProgramId');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
 
   // Auto-reset page when filters change
   useEffect(() => {
@@ -344,6 +360,24 @@ export default function ProgramManagement() {
     return matchesSearch && matchesLanguage && matchesStatus && matchesAge;
   });
 
+  const sortedPrograms = useMemo(() => {
+    const data = [...filteredPrograms];
+    data.sort((a, b) => {
+      let valA: any = a[sortColumn as keyof Program] ?? '';
+      let valB: any = b[sortColumn as keyof Program] ?? '';
+
+      if (typeof valA === 'string') {
+        valA = valA.toLowerCase();
+        valB = valB.toLowerCase();
+      }
+
+      if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return data;
+  }, [filteredPrograms, sortColumn, sortDirection]);
+
   const totalPages = Math.max(1, Math.ceil(filteredPrograms.length / pageSize));
 
   useEffect(() => {
@@ -354,8 +388,8 @@ export default function ProgramManagement() {
 
   const paginatedPrograms = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
-    return filteredPrograms.slice(startIndex, startIndex + pageSize);
-  }, [filteredPrograms, currentPage, pageSize]);
+    return sortedPrograms.slice(startIndex, startIndex + pageSize);
+  }, [sortedPrograms, currentPage, pageSize]);
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative" id="program-view-root">
@@ -544,131 +578,212 @@ export default function ProgramManagement() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {paginatedPrograms.map((prog) => {
-                const lessonCount = lessonsByProgramId[prog.ProgramId]?.length || 0;
-                return (
-                  <motion.div
-                    key={prog.ProgramId}
-                    whileHover={{ y: -8, scale: 1.01 }}
-                    className={cn(
-                      "bg-white rounded-[40px] border p-8 flex flex-col justify-between gap-6 shadow-sm hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 relative overflow-hidden",
-                      prog.Status === 'Inactive' ? 'border-gray-200/60 opacity-85 bg-gray-50/20' : 'border-gray-100'
-                    )}
-                  >
-                    {/* Decorative background circle */}
-                    <div className="absolute -top-12 -right-12 w-28 h-28 rounded-full bg-[#4EACAF]/5 pointer-events-none" />
-
-                    {/* Header info (Age from-to, Lang) */}
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden" id="programs-table-container">
+              <div className="overflow-x-auto text-left">
+                <table className="w-full border-collapse" id="programs-table">
+                  <thead>
+                    <tr className="bg-[#FDFCF5]/60 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
+                      <th
+                        onClick={() => handleSort('ProgramId')}
+                        className="py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-left"
+                        title="Sắp xếp theo Mã chương trình"
+                      >
                         <div className="flex items-center gap-1.5">
-                          <span className="p-2 bg-[#4EACAF]/10 rounded-xl text-[#4EACAF]">
-                            <Baby className="w-4 h-4" />
-                          </span>
-                          <span className="font-medium text-slate-800 text-xs">
-                            {prog.TargetAgeFrom} - {prog.TargetAgeTo} tuổi
-                          </span>
+                          Mã chương trình
+                          {sortColumn === 'ProgramId' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                          ) : (
+                            <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                          )}
                         </div>
-
-                        <span className={cn(
-                          "inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
-                          prog.Language === 'Vietnamese' ? 'bg-sky-50 text-sky-600 border border-sky-100' : 'bg-[#FF8E8E]/10 text-[#FF8E8E] border border-[#FF8E8E]/20'
-                        )}>
-                          <Languages className="w-3 h-3" />
-                          {prog.Language === 'Vietnamese' ? 'VN-Tiếng Việt' : 'EN-English'}
-                        </span>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="text-lg font-medium text-slate-800 leading-snug line-clamp-2 hover:text-[#4EACAF] transition-colors">
-                            {prog.ProgramName}
-                          </h4>
-                        </div>
-                        <p className="text-gray-500 font-bold text-xs leading-relaxed line-clamp-4">
-                          {prog.Description}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Program stats & togglers */}
-                    <div className="space-y-5 pt-4 border-t border-gray-50">
-                      <div className="flex items-center justify-between text-xs font-bold text-gray-400">
-                        <div className="flex items-center gap-1">
-                          <Bookmark className="w-3.5 h-3.5 text-gray-400" />
-                          <span>{lessonCount} phòng 3D thực hành</span>
-                        </div>
-                        <span className="font-mono text-[10px]">{prog.ProgramId}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <button 
-                            onClick={() => handleToggleStatus(prog.ProgramId)}
-                            className="p-1 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
-                            title="Bật tắt trạng thái nhanh"
-                          >
-                            {prog.Status === 'Active' ? (
-                              <ToggleRight className="w-8 h-8 text-[#4EACAF]" />
-                            ) : (
-                              <ToggleLeft className="w-8 h-8 text-gray-300" />
-                            )}
-                          </button>
-                          <span className={cn(
-                            "text-[10px] font-medium uppercase tracking-wider",
-                            prog.Status === 'Active' ? 'text-emerald-500' : 'text-gray-400'
-                          )}>
-                            {prog.Status === 'Active' ? 'Hoạt động' : 'Tạm khóa'}
-                          </span>
-                        </div>
-
+                      </th>
+                      <th
+                        onClick={() => handleSort('ProgramName')}
+                        className="py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-left"
+                        title="Sắp xếp theo Tên chương trình"
+                      >
                         <div className="flex items-center gap-1.5">
-                          <button 
-                            onClick={() => handleOpenLessons(prog)}
-                            className="px-3.5 py-2.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-colors"
-                            title="Xem bài học"
-                          >
-                            <Play className="w-3.5 h-3.5" />
-                            Xem bài học
-                          </button>
-
-                          <ActionButton
-                            type="edit"
-                            onClick={() => handleOpenEdit(prog)}
-                            title="Chỉnh sửa thông số"
-                          />
-
-                          <ActionButton
-                            type="delete"
-                            onClick={() => handleOpenDelete(prog)}
-                            title="Xóa chương trình học"
-                          />
+                          Tên chương trình
+                          {sortColumn === 'ProgramName' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                          ) : (
+                            <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                          )}
                         </div>
-                      </div>
-                    </div>
+                      </th>
+                      <th
+                        onClick={() => handleSort('TargetAgeFrom')}
+                        className="py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-left"
+                        title="Sắp xếp theo Độ tuổi"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          Độ tuổi mục tiêu
+                          {sortColumn === 'TargetAgeFrom' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                          ) : (
+                            <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                          )}
+                        </div>
+                      </th>
+                      <th
+                        onClick={() => handleSort('Language')}
+                        className="py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-left"
+                        title="Sắp xếp theo Ngôn ngữ"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          Ngôn ngữ
+                          {sortColumn === 'Language' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                          ) : (
+                            <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                          )}
+                        </div>
+                      </th>
+                      <th className="py-5 px-4 select-none text-left">Số phòng 3D</th>
+                      <th
+                        onClick={() => handleSort('CreatedAt')}
+                        className="py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-left"
+                        title="Sắp xếp theo Ngày tạo"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          Ngày tạo
+                          {sortColumn === 'CreatedAt' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                          ) : (
+                            <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                          )}
+                        </div>
+                      </th>
+                      <th className="py-5 px-4 select-none text-left">Trạng thái</th>
+                      <th className="py-5 px-4 text-right select-none">Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50 font-normal text-sm text-slate-655">
+                    {paginatedPrograms.map((prog) => {
+                      const lessonCount = lessonsByProgramId[prog.ProgramId]?.length || 0;
+                      return (
+                        <tr
+                          key={prog.ProgramId}
+                          className={cn(
+                            "hover:bg-slate-50/50 transition-colors",
+                            prog.Status === 'Inactive' && "bg-gray-50/30 opacity-90"
+                          )}
+                        >
+                          {/* Program ID */}
+                          <td className="py-5 px-4 font-mono text-gray-400 font-extrabold text-xs">
+                            {prog.ProgramId}
+                          </td>
+                          {/* Program Name & Description */}
+                          <td className="py-5 px-4 max-w-sm">
+                            <div className="font-extrabold text-[#111] leading-tight mb-1 text-sm md:text-base">
+                              {prog.ProgramName}
+                            </div>
+                            <p className="text-[11px] text-gray-450 font-bold line-clamp-2 leading-relaxed">
+                              {prog.Description || "Chưa có mô tả chi tiết."}
+                            </p>
+                          </td>
+                          {/* Target Age */}
+                          <td className="py-5 px-4">
+                            <div className="flex items-center gap-1.5">
+                              <span className="p-1.5 bg-[#4EACAF]/10 rounded-lg text-[#4EACAF] flex items-center justify-center shrink-0">
+                                <Baby className="w-3.5 h-3.5" />
+                              </span>
+                              <span className="font-extrabold text-slate-800 text-xs">
+                                {prog.TargetAgeFrom} - {prog.TargetAgeTo} tuổi
+                              </span>
+                            </div>
+                          </td>
+                          {/* Language */}
+                          <td className="py-5 px-4">
+                            <span className={cn(
+                              "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                              prog.Language === 'Vietnamese' 
+                                ? 'bg-sky-50 text-sky-600 border-sky-100' 
+                                : 'bg-red-50 text-red-600 border-red-100'
+                            )}>
+                              <Languages className="w-3 h-3" />
+                              {prog.Language === 'Vietnamese' ? 'VN-Tiếng Việt' : 'EN-English'}
+                            </span>
+                          </td>
+                          {/* Lesson count */}
+                          <td className="py-5 px-4">
+                            <span className="px-2.5 py-1 bg-gray-100 rounded-lg text-xs font-black">
+                              {lessonCount} phòng 3D
+                            </span>
+                          </td>
+                          {/* CreatedAt */}
+                          <td className="py-5 px-4 text-gray-500 font-mono text-xs">
+                            {formatDateDMY(prog.CreatedAt)}
+                          </td>
+                          {/* Status */}
+                          <td className="py-5 px-4">
+                            <div className="flex items-center gap-2">
+                              <button 
+                                onClick={() => handleToggleStatus(prog.ProgramId)}
+                                className="p-0.5 hover:bg-gray-100 rounded-lg text-gray-650 transition-colors"
+                                title="Bật tắt trạng thái"
+                                type="button"
+                              >
+                                {prog.Status === 'Active' ? (
+                                  <ToggleRight className="w-7 h-7 text-[#4EACAF]" />
+                                ) : (
+                                  <ToggleLeft className="w-7 h-7 text-gray-300" />
+                                )}
+                              </button>
+                              <span className={cn(
+                                "text-[10px] font-medium uppercase tracking-wider",
+                                prog.Status === 'Active' ? 'text-emerald-500' : 'text-gray-400'
+                              )}>
+                                {prog.Status === 'Active' ? 'Hoạt động' : 'Tạm khóa'}
+                              </span>
+                            </div>
+                          </td>
+                          {/* Actions */}
+                          <td className="py-5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button 
+                                onClick={() => handleOpenLessons(prog)}
+                                className="px-2.5 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-extrabold flex items-center gap-1 transition-colors"
+                                title="Xem bài học"
+                                type="button"
+                              >
+                                <Play className="w-3.5 h-3.5" />
+                                Xem bài học
+                              </button>
 
-                    {/* Created At footer ribbon */}
-                    <div className="text-[9px] text-gray-300 font-extrabold uppercase tracking-wide self-end">
-                      Tạo lập: {formatDateDMY(prog.CreatedAt)}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
+                              <ActionButton
+                                type="edit"
+                                onClick={() => handleOpenEdit(prog)}
+                                title="Sửa"
+                              />
 
-            <div className="bg-white rounded-[40px] p-6 border border-slate-100 mt-6 overflow-hidden">
-              <Pagination
-                currentPage={currentPage}
-                totalItems={filteredPrograms.length}
-                pageSize={pageSize}
-                onPageChange={setCurrentPage}
-                onPageSizeChange={(size) => {
-                  setPageSize(size);
-                  setCurrentPage(1);
-                }}
-                itemLabel="chương trình"
-              />
+                              <ActionButton
+                                type="delete"
+                                onClick={() => handleOpenDelete(prog)}
+                                title="Xóa"
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              
+              <div className="p-4 border-t border-slate-100 bg-white">
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={filteredPrograms.length}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setCurrentPage(1);
+                  }}
+                  itemLabel="chương trình"
+                />
+              </div>
             </div>
           </>
         )}
