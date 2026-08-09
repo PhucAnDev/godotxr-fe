@@ -546,15 +546,7 @@ export default function ProgressAnalysis() {
       {/* 6. Robust Table list of historical and current Analysis instances */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden" id="analysis-table-block">
 
-        <div className="px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/50 backdrop-blur-sm">
-          <div>
-            <h3 className="text-lg font-bold text-slate-800 font-sans tracking-tight leading-none">Sổ tay tổng duyệt phân tích tiến độ</h3>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Dòng tập hợp kết quả chấm duyệt đồng hành của giáo viên</p>
-          </div>
-          <span className="text-[10px] bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md font-bold uppercase tracking-wider border border-slate-200/50">
-            Tổng số: {filteredAnalysesList.length} dòng dữ liệu
-          </span>
-        </div>
+        
 
         {filteredAnalysesList.length === 0 ? (
           <div className="py-24 text-center space-y-4">

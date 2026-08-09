@@ -612,16 +612,7 @@ export default function EnrollmentManagement() {
 
       {/* 4. Table view of mock data */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" id="enrollment-list-box">
-        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-medium text-slate-800 leading-none">Danh sách ghi danh chi tiết</h3>
-            <p className="text-xs text-slate-400 font-normal uppercase tracking-wider mt-1.5">Đang kết xuất {filteredEnrollments.length} hồ sơ ghi học phần</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-[#4EACAF] rounded-full animate-pulse" />
-            <span className="text-xs text-[#4EACAF] font-normal uppercase tracking-wider">Máy chủ an toàn</span>
-          </div>
-        </div>
+        
 
         {filteredEnrollments.length === 0 ? (
           <div className="py-24 text-center space-y-4">

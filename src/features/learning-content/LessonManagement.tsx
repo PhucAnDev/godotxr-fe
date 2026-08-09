@@ -591,15 +591,7 @@ export default function LessonManagement() {
 
       {/* 4. Interactive table list cards */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" id="lesson-table-box">
-        <div className="px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h3 className="text-lg font-medium text-slate-800 font-sans tracking-tight leading-none">Chi tiết cấu trúc bài can thiệp</h3>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Tổng hiển thị {filteredLessons.length} bài học</p>
-          </div>
-          <div className="text-[10px] bg-slate-50 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-md font-normal uppercase tracking-wider">
-            Chào mừng: Giáo viên & Quản trị viên
-          </div>
-        </div>
+        
 
         {filteredLessons.length === 0 ? (
           <div className="py-24 text-center space-y-4">

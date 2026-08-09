@@ -486,15 +486,7 @@ export default function SchoolYearManagement() {
 
       {/* 4. Elegant School Year Table list view */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden" id="year-table-container">
-        <div className="px-10 py-8 border-b border-gray-100 flex items-center justify-between bg-white/50 backdrop-blur-sm">
-          <div>
-            <h3 className="text-2xl font-medium text-slate-800 leading-none italic">Chi tiết danh mục năm học</h3>
-            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-2">Dữ liệu liên hành tinh quản lý niên khóa trẻ nhỏ</p>
-          </div>
-          <span className="text-xs bg-teal-50 text-teal-600 px-3 py-1 rounded-full font-medium uppercase tracking-wide border border-teal-100/30">
-            SCHOOL_YEAR
-          </span>
-        </div>
+        
 
         {filteredYears.length === 0 ? (
           <div className="py-24 text-center space-y-4">

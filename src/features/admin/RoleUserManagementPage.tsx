@@ -714,23 +714,7 @@ export default function RoleUserManagementPage({
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-        <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-6 py-5">
-          <div>
-            <h3 className="text-lg font-bold leading-none text-slate-800">
-              {config.listTitle}
-            </h3>
-            <p className="mt-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
-              Đang hiển thị {filteredUsers.length} trong tổng số {totalUsers}{' '}
-              {config.itemLabel}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-teal-500" />
-            <span className="text-xs font-bold uppercase tracking-wider text-teal-600">
-              {config.listSignalLabel}
-            </span>
-          </div>
-        </div>
+        
 
         {isLoading ? (
           <div className="flex min-h-[320px] items-center justify-center gap-3 text-slate-500">

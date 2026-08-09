@@ -650,12 +650,7 @@ export default function SemesterManagement() {
 
       {/* 4. Elegant Semesters Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden" id="semester-table-card">
-        <div className="px-10 py-8 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/50 backdrop-blur-sm">
-          <div>
-            <h3 className="text-2xl font-medium text-slate-800 leading-none italic">Quản lý Lộ trình Học kỳ</h3>
-            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-2">Phân công giáo án và quản lý lộ trình rèn luyện phát âm cho trẻ</p>
-          </div>
-        </div>
+        
 
         {filteredSemesters.length === 0 ? (
           <div className="py-24 text-center space-y-4">

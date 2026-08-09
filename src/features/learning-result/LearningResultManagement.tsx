@@ -1040,18 +1040,7 @@ export default function LearningResultManagement() {
       {/* ponytail: Designing compact tables with tighter py-4 px-6 padding makes page scaling look uniform across management layouts. */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden" id="results-table-container">
 
-        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white/50 backdrop-blur-sm">
-          <div>
-            <h3 className="text-lg font-bold text-slate-800 leading-none">Danh sách kết quả can thiệp chi tiết</h3>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1.5">
-              Đang hiển thị {displayResults.length} trong {results.length} kết quả luyện tập
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="w-2 h-2 bg-[#4EACAF] rounded-full animate-pulse" />
-            <span className="text-xs text-[#4EACAF] font-bold uppercase tracking-wider">Hệ thống đồng bộ</span>
-          </div>
-        </div>
+        
 
         {apiError ? (
           <div className="mx-6 mt-6 rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-bold text-amber-700">

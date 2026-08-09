@@ -1223,19 +1223,7 @@ export default function ExerciseManagement() {
       </div>
 
       <div className="overflow-hidden rounded-[40px] border border-slate-100 bg-white shadow-sm">
-        <div className="flex flex-col justify-between gap-4 border-b border-gray-50 px-8 py-6 sm:flex-row sm:items-center">
-          <div>
-            <h3 className="text-xl font-bold tracking-tight text-slate-800">
-              Chi tiết bài tập luyện nói
-            </h3>
-            <p className="mt-1 text-[11px] font-normal uppercase tracking-wider text-gray-400">
-              Đang hiển thị {filteredExercises.length} bài tập theo bộ lọc
-            </p>
-          </div>
-          <span className="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider text-slate-500">
-            API-backed content
-          </span>
-        </div>
+        
 
         {filteredExercises.length === 0 ? (
           <div className="space-y-5 py-20 text-center">

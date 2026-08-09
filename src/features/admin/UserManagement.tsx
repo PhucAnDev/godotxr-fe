@@ -375,31 +375,21 @@ export default function UserManagement() {
               { value: 'Locked', label: 'Đã khóa' },
             ]}
           />
+          {/* Refresh button */}
+          <button
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="p-2.5 hover:bg-slate-50 border border-slate-100 rounded-xl transition-colors text-slate-400 hover:text-[#4EACAF] shrink-0"
+            title="Làm mới dữ liệu"
+          >
+            <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
+          </button>
         </div>
       </div>
 
       {/* 4. Users Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-bold text-slate-800 leading-none">Danh sách người dùng</h3>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1.5">
-              Đang hiển thị {filteredUsers.length} trong {totalCount} người dùng
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleRefresh}
-              disabled={isLoading}
-              className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-[#4EACAF]"
-              title="Làm mới dữ liệu"
-            >
-              <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
-            </button>
-            <span className="w-2 h-2 bg-[#4EACAF] rounded-full animate-pulse" />
-            <span className="text-xs text-[#4EACAF] font-bold uppercase tracking-wider">Hệ thống đồng bộ</span>
-          </div>
-        </div>
+        
 
         {/* Loading state */}
         {isLoading ? (

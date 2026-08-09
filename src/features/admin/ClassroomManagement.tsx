@@ -662,16 +662,7 @@ export default function ClassroomManagement() {
 
       {/* 4. Classroom Records Table & grid card component */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" id="classroom-records-panel">
-        <div className="px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h3 className="text-lg font-medium text-slate-800 leading-none">Danh sách lớp giảng dạy</h3>
-            <p className="text-xs text-gray-400 font-normal uppercase tracking-wider mt-2">Tìm thấy {filteredClassrooms.length} phòng học luyện tập VR</p>
-          </div>
-          <div className="inline-flex items-center gap-2 bg-[#4EACAF]/10 px-4 py-1.5 rounded-full">
-            <span className="w-2.5 h-2.5 bg-[#4EACAF] rounded-full animate-pulse" />
-            <span className="text-xs text-[#4EACAF] font-normal uppercase tracking-wider">Hạ tầng điều phối khóa học</span>
-          </div>
-        </div>
+        
 
         {filteredClassrooms.length === 0 ? (
           <div className="py-24 text-center space-y-4" id="classroom-empty-state">

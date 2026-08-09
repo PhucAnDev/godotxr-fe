@@ -753,22 +753,7 @@ export default function ChildManagement() {
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
-          <div>
-            <h3 className="text-lg font-bold leading-none text-slate-800">
-              Danh sách trẻ cần can thiệp âm
-            </h3>
-            <p className="mt-1.5 text-xs font-normal uppercase tracking-wider text-slate-400">
-              Hiển thị {filteredChildren.length} hồ sơ phù hợp bộ lọc
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-[#4EACAF]" />
-            <span className="text-xs font-normal uppercase tracking-wider text-[#4EACAF]">
-              Hệ thống đồng bộ
-            </span>
-          </div>
-        </div>
+        
 
         {isLoading ? (
           <div className="space-y-4 px-6 py-16 text-center">
