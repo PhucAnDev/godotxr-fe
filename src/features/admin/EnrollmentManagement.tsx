@@ -1081,10 +1081,12 @@ export default function EnrollmentManagement() {
                         variant="form"
                         options={[
                           { value: '', label: '-- Chọn một lớp học --' },
-                          ...classrooms.map(cls => ({
-                            value: cls.ClassId,
-                            label: `${cls.ClassName} (${cls.ClassId})`
-                          }))
+                          ...classrooms
+                            .filter(cls => cls.Status === 'Active' || cls.ClassId === formClassId)
+                            .map(cls => ({
+                              value: cls.ClassId,
+                              label: `${cls.ClassName} (${cls.ClassId})`
+                            }))
                         ]}
                       />
                     </div>
