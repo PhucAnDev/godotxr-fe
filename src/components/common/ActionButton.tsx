@@ -12,7 +12,8 @@ import {
   TrendingUp,
   Check,
   Plus,
-  History
+  History,
+  UserPlus
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -29,7 +30,8 @@ export type ActionButtonType =
   | 'trend'
   | 'approve'
   | 'add'
-  | 'history';
+  | 'history'
+  | 'enroll';
 
 interface ActionButtonProps {
   type: ActionButtonType;
@@ -95,6 +97,10 @@ const typeConfigs: Record<ActionButtonType, {
   history: {
     icon: History,
     defaultClass: 'text-indigo-600 hover:bg-indigo-50 bg-transparent',
+  },
+  enroll: {
+    icon: UserPlus,
+    defaultClass: 'text-violet-600 hover:bg-violet-50 bg-transparent',
   }
 };
 

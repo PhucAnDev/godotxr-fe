@@ -11,14 +11,18 @@
 /* Dynamic style tuning depending on active portal */
 
 /* ==========================================
-   ADMIN PORTAL STANDARDIZATION (Sleek, Professional, Compact)
+   PORTAL STANDARDIZATION (Sleek, Professional, Compact - Baseline Admin Style)
    ========================================== */
-.admin-portal {
+.admin-portal,
+.teacher-portal,
+.parent-portal {
   font-family: "Plus Jakarta Sans", "Inter", sans-serif;
 }
 
-/* 1. Page Headers in Admin: Non-italic, sharp display tracking-tight */
-.admin-portal h1 {
+/* 1. Page Headers: Non-italic, sharp display tracking-tight */
+.admin-portal h1,
+.teacher-portal h1,
+.parent-portal h1 {
   font-family: "Plus Jakarta Sans", "Inter", sans-serif !important;
   font-style: normal !important;
   font-weight: 500 !important;
@@ -28,7 +32,11 @@
 }
 
 .admin-portal h3,
-.admin-portal h4 {
+.teacher-portal h3,
+.parent-portal h3,
+.admin-portal h4,
+.teacher-portal h4,
+.parent-portal h4 {
   font-family: "Plus Jakarta Sans", "Inter", sans-serif !important;
   font-style: normal !important;
   font-weight: 500 !important;
@@ -36,30 +44,52 @@
 }
 
 /* 2. Compact container card spacing to make it less bulky */
-.admin-portal .rounded-\[40px\] {
+.admin-portal .rounded-\[40px\],
+.teacher-portal .rounded-\[40px\],
+.parent-portal .rounded-\[40px\] {
   border-radius: 16px !important;
 }
 
-.admin-portal .rounded-3xl {
+.admin-portal .rounded-3xl,
+.teacher-portal .rounded-3xl,
+.parent-portal .rounded-3xl {
   border-radius: 12px !important;
 }
 
 .admin-portal .p-8,
-.admin-portal .p-10 {
+.teacher-portal .p-8,
+.parent-portal .p-8,
+.admin-portal .p-10,
+.teacher-portal .p-10,
+.parent-portal .p-10 {
   padding: 1.5rem !important;
 }
 
-.admin-portal .pt-10 {
+.admin-portal .pt-10,
+.teacher-portal .pt-10,
+.parent-portal .pt-10 {
   padding-top: 1.5rem !important;
 }
 
 /* 3. Input & Select sanitization */
 .admin-portal select,
+.teacher-portal select,
+.parent-portal select,
 .admin-portal input[type="text"],
+.teacher-portal input[type="text"],
+.parent-portal input[type="text"],
 .admin-portal input[type="email"],
+.teacher-portal input[type="email"],
+.parent-portal input[type="email"],
 .admin-portal input[type="password"],
+.teacher-portal input[type="password"],
+.parent-portal input[type="password"],
 .admin-portal input[type="date"],
-.admin-portal textarea {
+.teacher-portal input[type="date"],
+.parent-portal input[type="date"],
+.admin-portal textarea,
+.teacher-portal textarea,
+.parent-portal textarea {
   background-color: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
   border-radius: 10px !important;
@@ -73,14 +103,22 @@
 }
 
 .admin-portal select:focus,
+.teacher-portal select:focus,
+.parent-portal select:focus,
 .admin-portal input:focus,
-.admin-portal textarea:focus {
+.teacher-portal input:focus,
+.parent-portal input:focus,
+.admin-portal textarea:focus,
+.teacher-portal textarea:focus,
+.parent-portal textarea:focus {
   border-color: #4EACAF !important;
   box-shadow: 0 0 0 2px rgba(78, 172, 175, 0.15) !important;
 }
 
 /* Simplify search controls container font & style */
-.admin-portal select {
+.admin-portal select,
+.teacher-portal select,
+.parent-portal select {
   font-style: normal !important;
   font-weight: 500 !important;
   font-size: 0.75rem !important;
@@ -97,49 +135,67 @@
   -moz-appearance: none !important;
 }
 
-/* 4. Table elements standardization (High-legibility rows) */
-.admin-portal table {
+/* 4. Table elements standardization (Compact high-legibility rows matching Parent Management) */
+.admin-portal table,
+.teacher-portal table,
+.parent-portal table {
   width: 100% !important;
   font-size: 0.8125rem !important;
   border-collapse: collapse !important;
 }
 
-.admin-portal table thead th {
+.admin-portal table thead th,
+.teacher-portal table thead th,
+.parent-portal table thead th {
   background-color: #f8fafc !important;
   color: #475569 !important;
   font-weight: 600 !important;
   font-size: 0.75rem !important;
   letter-spacing: 0.05em !important;
   text-transform: uppercase !important;
-  padding: 0.875rem 1rem !important;
+  padding: 1.25rem 5px !important; /* Compact horizontal cell spacing standardized from Parent Management */
   border-bottom: 2px solid #edf2f7 !important;
 }
 
-.admin-portal table tbody tr {
+.admin-portal table tbody tr,
+.teacher-portal table tbody tr,
+.parent-portal table tbody tr {
   border-bottom: 1px solid #f1f5f9 !important;
   transition: background-color 0.15s ease-in-out !important;
 }
 
-.admin-portal table tbody tr:hover {
+.admin-portal table tbody tr:hover,
+.teacher-portal table tbody tr:hover,
+.parent-portal table tbody tr:hover {
   background-color: #f1f5f9 / 70 !important;
 }
 
-.admin-portal table td {
-  padding: 0.75rem 1rem !important;
+.admin-portal table td,
+.teacher-portal table td,
+.parent-portal table td {
+  padding: 1.25rem 5px !important; /* Compact horizontal cell spacing standardized from Parent Management */
   vertical-align: middle !important;
 }
 
 /* Button & badges simplification */
-.admin-portal .rounded-2xl {
+.admin-portal .rounded-2xl,
+.teacher-portal .rounded-2xl,
+.parent-portal .rounded-2xl {
   border-radius: 12px !important;
 }
 
-.admin-portal button:not(.cursor-pointer) {
+.admin-portal button:not(.cursor-pointer),
+.teacher-portal button:not(.cursor-pointer),
+.parent-portal button:not(.cursor-pointer) {
   cursor: pointer;
 }
 
 .admin-portal .shadow-lg,
-.admin-portal .shadow-xl {
+.teacher-portal .shadow-lg,
+.parent-portal .shadow-lg,
+.admin-portal .shadow-xl,
+.teacher-portal .shadow-xl,
+.parent-portal .shadow-xl {
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05) !important;
 }
 
@@ -157,7 +213,9 @@
 }
 
 /* Modals */
-.admin-portal .fixed.inset-0.bg-black\/30 {
+.admin-portal .fixed.inset-0.bg-black\/30,
+.teacher-portal .fixed.inset-0.bg-black\/30,
+.parent-portal .fixed.inset-0.bg-black\/30 {
   backdrop-filter: blur(4px) !important;
   background-color: rgba(15, 23, 42, 0.45) !important;
 }
@@ -250,56 +308,6 @@
   min-height: 100%;
   flex-direction: column;
   justify-content: space-between;
-}
-
-
-/* ==========================================
-   TEACHER PORTAL STANDARDIZATION (Clear, Clinical, structured)
-   ========================================== */
-.teacher-portal {
-  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
-}
-
-.teacher-portal h1 {
-  font-family: "Space Grotesk", sans-serif !important;
-  font-style: normal !important;
-  font-weight: 600 !important;
-  color: #1e293b !important;
-}
-
-.teacher-portal .rounded-\[40px\] {
-  border-radius: 20px !important;
-}
-
-.teacher-portal .rounded-3xl {
-  border-radius: 16px !important;
-}
-
-.teacher-portal .p-10 {
-  padding: 2rem !important;
-}
-
-.teacher-portal table thead th {
-  background-color: #f1f5f9 !important;
-  font-family: "Plus Jakarta Sans", sans-serif;
-  font-weight: 600 !important;
-}
-
-.teacher-portal table tbody tr:hover {
-  background-color: rgba(78, 172, 175, 0.04) !important;
-}
-
-
-/* ==========================================
-   PARENT PORTAL STANDARDIZATION (Warm, friendly)
-   ========================================== */
-.parent-portal {
-  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
-}
-
-/* Keep the bubbly roundings and gorgeous soft shadow cards */
-.parent-portal .rounded-\[40px\] {
-  border-radius: 40px !important;
 }
 
 

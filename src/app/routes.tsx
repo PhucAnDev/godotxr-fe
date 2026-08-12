@@ -15,7 +15,6 @@ import ParentManagement from '../features/admin/ParentManagement';
 import ChildManagement from '../features/admin/ChildManagement';
 import AnalyzeManagement from '../features/admin/AnalyzeManagement';
 import ClassroomManagement from '../features/admin/ClassroomManagement';
-import EnrollmentManagement from '../features/admin/EnrollmentManagement';
 import SchoolYearManagement from '../features/admin/SchoolYearManagement';
 import SemesterManagement from '../features/admin/SemesterManagement';
 import TeacherDashboard from '../features/teacher/TeacherDashboard';
@@ -170,7 +169,7 @@ export function AppRoutes() {
             <Route path="children" element={<ChildManagement />} />
             <Route path="analyzes" element={<AnalyzeManagement />} />
             <Route path="classrooms" element={<ClassroomManagement />} />
-            <Route path="enrollments" element={<EnrollmentManagement />} />
+            <Route path="enrollments" element={<Navigate to="../classrooms" replace />} />
             <Route path="programs" element={<ProgramManagement />} />
             <Route path="lessons" element={<LessonManagement />} />
             <Route path="exercises" element={<ExerciseManagement />} />

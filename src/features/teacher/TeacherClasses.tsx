@@ -426,7 +426,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
 
   return (
     <div
-      className="relative space-y-4 pb-24 text-left animate-in fade-in slide-in-from-bottom-4 duration-700"
+      className="relative space-y-4 pb-24 text-left"
       id="teacher-classes-view"
     >
       <AnimatePresence>

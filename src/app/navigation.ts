@@ -271,12 +271,6 @@ export const adminSidebarItems: SidebarItem[] = [
     path: '/admin/classrooms',
   },
   {
-    id: 'ENROLLMENT_MANAGEMENT',
-    label: 'Quản lý ghi danh',
-    icon: FileText,
-    path: '/admin/enrollments',
-  },
-  {
     id: 'SEMESTER_MANAGEMENT',
     label: 'Quản lý học kỳ',
     icon: FolderOpen,
