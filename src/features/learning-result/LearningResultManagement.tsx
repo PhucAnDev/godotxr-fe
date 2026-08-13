@@ -42,10 +42,23 @@ import { getSessionUser } from '../../lib/authSession';
 import { getLessons } from '../../services/lessonService';
 import type { ChildProfileResponse } from '../../services/childProfileService';
 import type { EventLogResponse } from '../../services/eventLogService';
-import type { ExerciseResponse } from '../../services/exerciseService';
 import type { ResultResponse } from '../../services/resultService';
 import type { PagedResponse, ServiceResult } from '../../services/serviceTypes';
 import type { LessonResponse } from '../../services/lessonService';
+
+export interface ExerciseResponse {
+  id: number;
+  exerciseName?: string;
+  lessonName?: string;
+  difficultyLevel?: string;
+  targetSkill?: string;
+  language?: string;
+  instruction?: string;
+  durationLimit?: number;
+  status?: string;
+  createdAt?: string;
+  lessonId?: number;
+}
 
 // DB Interfaces according to specification
 interface Child {
@@ -153,15 +166,15 @@ function mapChildRecord(child: ChildProfileResponse): Child {
 function mapExerciseRecord(exercise: ExerciseResponse): Exercise {
   return {
     ExerciseId: String(exercise.id),
-    ExerciseName: exercise.exerciseName,
-    DifficultyLevel: mapDifficultyLevel(exercise.difficultyLevel),
-    TargetSkill: exercise.targetSkill,
-    Language: exercise.language,
-    Instruction: exercise.instruction,
-    DurationLimit: exercise.durationLimit,
-    Status: exercise.status,
-    CreatedAt: exercise.createdAt,
-    LessonId: String(exercise.lessonId),
+    ExerciseName: exercise.exerciseName || exercise.lessonName || `Bài học #${exercise.id}`,
+    DifficultyLevel: mapDifficultyLevel(exercise.difficultyLevel || 'Easy'),
+    TargetSkill: exercise.targetSkill || 'Pronunciation',
+    Language: exercise.language || 'Vietnamese',
+    Instruction: exercise.instruction || '',
+    DurationLimit: exercise.durationLimit || 0,
+    Status: (exercise.status || 'Active') as any,
+    CreatedAt: exercise.createdAt || '',
+    LessonId: String(exercise.lessonId || exercise.id),
   };
 }
 

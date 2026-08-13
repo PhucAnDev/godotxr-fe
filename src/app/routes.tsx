@@ -30,8 +30,7 @@ import ProfileManagement from '../features/parent/ProfileManagement';
 import LearningHistory from '../features/parent/LearningHistory';
 import ProgramManagement from '../features/learning-content/ProgramManagement';
 import LessonManagement from '../features/learning-content/LessonManagement';
-import ExerciseManagement from '../features/learning-content/ExerciseManagement';
-import ExerciseTypeManagement from '../features/learning-content/ExerciseTypeManagement';
+import AssetManagement from '../features/learning-content/AssetManagement';
 import LearningResultManagement from '../features/learning-result/LearningResultManagement';
 import PronunciationDetailPage from '../features/learning-result/PronunciationDetailPage';
 import ProgressAnalysis from '../features/learning-result/ProgressAnalysis';
@@ -146,8 +145,8 @@ export function AppRoutes() {
             <Route path="progress" element={<ProgressAnalysis />} />
             <Route path="pronunciation" element={<PronunciationDetailPage />} />
             <Route path="lessons" element={<LessonManagement />} />
-            <Route path="exercises" element={<ExerciseManagement />} />
-            <Route path="questions" element={<Navigate to="../exercises" replace />} />
+            <Route path="assets" element={<AssetManagement />} />
+            <Route path="questions" element={<Navigate to="../assets" replace />} />
             <Route path="difficulty" element={<DifficultySettings />} />
             <Route path="reports" element={<ReportGenerator />} />
             <Route path="lesson-review" element={<LessonReview />} />
@@ -172,9 +171,8 @@ export function AppRoutes() {
             <Route path="enrollments" element={<Navigate to="../classrooms" replace />} />
             <Route path="programs" element={<ProgramManagement />} />
             <Route path="lessons" element={<LessonManagement />} />
-            <Route path="exercises" element={<ExerciseManagement />} />
-            <Route path="exercise-types" element={<ExerciseTypeManagement />} />
-            <Route path="questions" element={<Navigate to="../exercises" replace />} />
+            <Route path="assets" element={<AssetManagement />} />
+            <Route path="questions" element={<Navigate to="../assets" replace />} />
             <Route path="school-years" element={<SchoolYearManagement />} />
             <Route path="semesters" element={<SemesterManagement />} />
             <Route path="reports" element={<ReportGenerator />} />

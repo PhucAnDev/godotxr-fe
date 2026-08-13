@@ -25,8 +25,7 @@ import { getLessonsByProgram, type LessonResponse } from '../../services/lessonS
 import type { ChildProfileResponse } from '../../services/childProfileService';
 import { getEnrollmentsByChild, type EnrollmentResponse } from '../../services/enrollmentService';
 import { getClassroomById, type ClassroomResponse } from '../../services/classroomService';
-import { getExercises, type ExerciseResponse } from '../../services/exerciseService';
-import { getExerciseQuestions, type ExerciseQuestionResponse } from '../../services/exerciseQuestionService';
+import { getLessonSlots, type LessonSlotResponse } from '../../services/lessonSlotService';
 import { getUserById, type UserResponse } from '../../services/userService';
 
 const formatDateDMY = (dateStr: string): string => {
@@ -57,9 +56,9 @@ export default function ParentChildClass() {
   const [noEnrollment, setNoEnrollment] = useState(false);
 
   const [activeLessonDetail, setActiveLessonDetail] = useState<LessonResponse | null>(null);
-  const [activeExerciseDetail, setActiveExerciseDetail] = useState<ExerciseResponse | null>(null);
+  const [activeExerciseDetail, setActiveExerciseDetail] = useState<any | null>(null);
 
-  const [exerciseQuestions, setExerciseQuestions] = useState<ExerciseQuestionResponse[]>([]);
+  const [exerciseQuestions, setExerciseQuestions] = useState<any[]>([]);
   const [isQuestionsLoading, setIsQuestionsLoading] = useState(false);
 
   const [teacherDetail, setTeacherDetail] = useState<UserResponse | null>(null);
@@ -147,48 +146,28 @@ export default function ParentChildClass() {
     })),
     [children]);
 
-  const [exercises, setExercises] = useState<ExerciseResponse[]>([]);
-  const [isExercisesLoading, setIsExercisesLoading] = useState(false);
+  const [slots, setSlots] = useState<LessonSlotResponse[]>([]);
+  const [isSlotsLoading, setIsSlotsLoading] = useState(false);
 
-  // Fetch real exercises from API when selectedLessonId changes
+  // Fetch real slots from API when selectedLessonId changes
   useEffect(() => {
-    const fetchExercises = async (lessonId: number) => {
-      setIsExercisesLoading(true);
-      const res = await getExercises(1, 100, lessonId);
+    const fetchSlots = async (lessonId: number) => {
+      setIsSlotsLoading(true);
+      const res = await getLessonSlots(lessonId);
       if (res.success && res.data) {
-        setExercises(res.data.items);
+        setSlots(res.data);
       } else {
-        setExercises([]);
+        setSlots([]);
       }
-      setIsExercisesLoading(false);
+      setIsSlotsLoading(false);
     };
 
     if (selectedLessonId) {
-      void fetchExercises(selectedLessonId);
+      void fetchSlots(selectedLessonId);
     } else {
-      setExercises([]);
+      setSlots([]);
     }
   }, [selectedLessonId]);
-
-  // Fetch exercise questions when activeExerciseDetail changes (when modal opens)
-  useEffect(() => {
-    const fetchQuestions = async (exerciseId: number) => {
-      setIsQuestionsLoading(true);
-      const res = await getExerciseQuestions(1, 100, exerciseId);
-      if (res.success && res.data) {
-        setExerciseQuestions(res.data.items);
-      } else {
-        setExerciseQuestions([]);
-      }
-      setIsQuestionsLoading(false);
-    };
-
-    if (activeExerciseDetail) {
-      void fetchQuestions(activeExerciseDetail.id);
-    } else {
-      setExerciseQuestions([]);
-    }
-  }, [activeExerciseDetail]);
 
   // Fetch teacher details when classroomDetail changes
   useEffect(() => {
@@ -467,63 +446,51 @@ export default function ParentChildClass() {
                     </div>
                   </div>
 
-                  {/* Right: Exercises for selected lesson */}
+                  {/* Right: Slots for selected lesson */}
                   <div className="bg-[#FDFCF6]/50 rounded-xl p-6 border-2 border-dashed border-[#F2ECD8] space-y-4">
                     <div className="border-b border-[#F2ECD8] pb-4">
-                      <span className="text-[10px] text-amber-600 font-black uppercase tracking-wider block">Bài tập tương ứng trong bài:</span>
+                      <span className="text-[10px] text-amber-600 font-black uppercase tracking-wider block">Các Spawner vật phẩm trong bài học:</span>
                       <h4 className="text-base font-black text-gray-800 leading-tight italic mt-1">
                         {lessons.find(l => l.id === selectedLessonId)?.lessonOrder}. {lessons.find(l => l.id === selectedLessonId)?.lessonName}
                       </h4>
                     </div>
 
                     <div className="space-y-3.5">
-                      {isExercisesLoading ? (
+                      {isSlotsLoading ? (
                         <div className="py-12 text-center text-gray-400 font-bold italic text-sm flex flex-col items-center justify-center gap-2">
                           <RefreshCw className="h-6 w-6 text-[#4EACAF] animate-spin" />
-                          <p>Đang tải bài tập...</p>
+                          <p>Đang tải danh sách Spawner...</p>
                         </div>
-                      ) : exercises.length === 0 ? (
+                      ) : slots.length === 0 ? (
                         <div className="py-6 text-center text-gray-400 italic font-semibold text-xs leading-relaxed space-y-2">
                           <Compass className="w-8 h-8 text-[#FFA800] mx-auto opacity-40" />
-                          <p>Bé không có bài tập 3D nào đặc biệt trong chương này.</p>
+                          <p>Chưa cấu hình các spawner vật phẩm cho bài học này.</p>
                         </div>
                       ) : (
-                        exercises.map((ex) => (
-                          <div key={ex.id} className="bg-white p-4 rounded-2xl border border-gray-100 space-y-3 relative group">
+                        slots.map((slot) => (
+                          <div key={slot.id} className="bg-white p-4 rounded-2xl border border-gray-100 space-y-3 relative group">
                             <div className="flex items-start justify-between gap-4">
                               <div className="space-y-0.5 flex-1 min-w-0 pr-6">
                                 <strong className="text-gray-800 font-extrabold text-xs block leading-snug truncate">
-                                  🧩 {ex.exerciseName}
+                                  📦 Spawner: {slot.slotName}
                                 </strong>
-                                <span className="text-[9px] text-[#4EACAF] font-bold block">{ex.targetSkill}</span>
-                              </div>
-
-                              <div className="flex items-center gap-1 shrink-0">
-                                <span className={cn(
-                                  'text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded',
-                                  ex.difficultyLevel === 'Easy' ? 'bg-emerald-50 text-emerald-600' :
-                                    ex.difficultyLevel === 'Medium' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-500'
-                                )}>
-                                  {ex.difficultyLevel === 'Easy' ? 'Mức Dễ' : ex.difficultyLevel === 'Medium' ? 'Bình thường' : 'Vượt khó'}
-                                </span>
-
-                                <button
-                                  type="button"
-                                  onClick={() => setActiveExerciseDetail(ex)}
-                                  className="p-1 hover:bg-slate-50 text-slate-400 hover:text-[#4EACAF] rounded-lg transition-colors opacity-60 md:opacity-0 md:group-hover:opacity-100"
-                                  title="Xem chi tiết bài tập"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                </button>
+                                <span className="text-[9px] text-[#4EACAF] font-bold block">VR Key: {slot.slotIdentifier}</span>
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-between text-[9px] text-gray-400 font-bold border-t border-slate-50 pt-2 leading-none">
-                              <span>Ngôn ngữ: <strong className="text-gray-600">{ex.language === 'Vietnamese' ? 'Tiếng Việt' : ex.language}</strong></span>
-                              <span className="flex items-center gap-1 text-slate-500">
-                                <Hourglass className="w-3 h-3" />
-                                {ex.durationLimit}s giới hạn
-                              </span>
+                            <div className="flex flex-col text-[11px] text-gray-500 font-semibold border-t border-slate-50 pt-2 space-y-1">
+                              {slot.itemAsset ? (
+                                <>
+                                  <p className="text-emerald-700">
+                                    🎯 Vật phẩm: <strong className="text-emerald-950">{slot.itemAsset.name}</strong>
+                                  </p>
+                                  <p className="text-slate-600">
+                                    🗣️ Từ chuẩn: <strong className="text-slate-800">"{slot.itemAsset.answerSentence}"</strong>
+                                  </p>
+                                </>
+                              ) : (
+                                <span className="text-slate-400 italic">Chưa gán mô hình 3D</span>
+                              )}
                             </div>
                           </div>
                         ))

@@ -107,10 +107,13 @@ export async function apiRequest<T>(
     ? { Authorization: `Bearer ${token}` }
     : {};
 
+  const isFormData = options.body instanceof FormData;
+  const contentTypeHeader = isFormData ? {} : { 'Content-Type': 'application/json' };
+
   let response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...contentTypeHeader,
       ...authHeader,
       ...(options.headers || {}),
     },
@@ -123,7 +126,7 @@ export async function apiRequest<T>(
       response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers: {
-          'Content-Type': 'application/json',
+          ...contentTypeHeader,
           Authorization: `Bearer ${newAccessToken}`,
           ...(options.headers || {}),
         },
@@ -133,22 +136,41 @@ export async function apiRequest<T>(
     }
   }
 
-  let body: ApiResponse<T>;
+  let body: any;
   try {
-    body = (await response.json()) as ApiResponse<T>;
+    body = await response.json();
   } catch {
     throw new ApiError(response.status, `HTTP ${response.status}`);
   }
 
   if (!response.ok) {
+    console.error("API Request URL:", `${API_BASE_URL}${endpoint}`);
+    console.error("API Request Options:", options);
+    console.error("API Error details:", body);
+    
+    // Flatten validation errors if it's in the default ValidationProblemDetails format
+    let errorArray: string[] = [];
+    if (body.errors) {
+      if (Array.isArray(body.errors)) {
+        errorArray = body.errors;
+      } else if (typeof body.errors === 'object') {
+        errorArray = Object.entries(body.errors).flatMap(([key, messages]) => {
+          if (Array.isArray(messages)) {
+            return messages.map(msg => `${key}: ${msg}`);
+          }
+          return [`${key}: ${messages}`];
+        });
+      }
+    }
+
     throw new ApiError(
       response.status,
-      body.message || `HTTP ${response.status}`,
-      body.errors ?? []
+      body.message || body.title || `HTTP ${response.status}`,
+      errorArray
     );
   }
 
-  return body;
+  return body as ApiResponse<T>;
 }
 
 export async function apiBlobRequest(

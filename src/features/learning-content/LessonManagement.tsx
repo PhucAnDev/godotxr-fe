@@ -29,14 +29,22 @@ import {
   RefreshCw,
   ArrowUp,
   ArrowDown,
-  ArrowUpDown
+  ArrowUpDown,
+  Boxes,
+  Image as ImageIcon,
+  Camera,
+  Layout
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import ActionButton from '../../components/common/ActionButton';
 import Pagination from '../../components/common/Pagination';
 import CustomSelect from '../../components/common/CustomSelect';
-import { useLessonManagementApi, type LessonResponse } from '../../hooks/useLessonManagementApi';
-import { getExercises, type ExerciseResponse } from '../../services/exerciseService';
+import { useLessonManagementApi } from '../../hooks/useLessonManagementApi';
+import { 
+  getLessonImages, uploadLessonImage, deleteLessonImage, 
+  getLessonSlots, configureLessonSlot, assignItemToSlot 
+} from '../../services/lessonSlotService';
+import { getItemAssets, type ItemAssetResponse } from '../../services/itemAssetService';
 
 // DB Interfaces
 interface Program {
@@ -188,8 +196,22 @@ export default function LessonManagement() {
   const { getLessons, getPrograms, createLesson, updateLesson, deleteLesson } = useLessonManagementApi();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
-  const [exercises, setExercises] = useState<ExerciseResponse[]>([]);
-  const [isExercisesLoading, setIsExercisesLoading] = useState(false);
+  // VR Configuration states
+  const [lessonImages, setLessonImages] = useState<any[]>([]);
+  const [lessonSlots, setLessonSlots] = useState<any[]>([]);
+  const [itemAssets, setItemAssets] = useState<ItemAssetResponse[]>([]);
+  const [isLoadingVrConfig, setIsLoadingVrConfig] = useState(false);
+  const [vrModalTab, setVrModalTab] = useState<'angles' | 'slots'>('angles');
+  
+  // Angle image form state
+  const [newAngleName, setNewAngleName] = useState('');
+  const [newAngleFile, setNewAngleFile] = useState<File | null>(null);
+  
+  // Slot configuration form state
+  const [newSlotId, setNewSlotId] = useState('');
+  const [newSlotName, setNewSlotName] = useState('');
+  const [newSlotImageId, setNewSlotImageId] = useState<number | null>(null);
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
@@ -322,14 +344,119 @@ export default function LessonManagement() {
   const handleOpenExercises = async (les: Lesson) => {
     setSelectedLesson(les);
     setModalType('exercises');
-    setIsExercisesLoading(true);
-    const result = await getExercises(1, 100, Number(les.LessonId));
-    if (result.success && result.data) {
-      setExercises(result.data.items);
-    } else {
-      setExercises([]);
+    setVrModalTab('angles');
+    setIsLoadingVrConfig(true);
+    
+    // Fetch item assets library if not loaded
+    if (!assetsLoaded) {
+      const assetResult = await getItemAssets(1, 1000);
+      if (assetResult.success && assetResult.data) {
+        setItemAssets(assetResult.data.items);
+        setAssetsLoaded(true);
+      }
     }
-    setIsExercisesLoading(false);
+    
+    // Fetch angle images and slots
+    const imagesPromise = getLessonImages(Number(les.LessonId));
+    const slotsPromise = getLessonSlots(Number(les.LessonId));
+    
+    const [imagesRes, slotsRes] = await Promise.all([imagesPromise, slotsPromise]);
+    
+    if (imagesRes.success && imagesRes.data) {
+      setLessonImages(imagesRes.data);
+    } else {
+      setLessonImages([]);
+    }
+    
+    if (slotsRes.success && slotsRes.data) {
+      setLessonSlots(slotsRes.data);
+    } else {
+      setLessonSlots([]);
+    }
+    
+    setIsLoadingVrConfig(false);
+  };
+
+  const refreshVrConfig = async (lessonId: number) => {
+    const imagesPromise = getLessonImages(lessonId);
+    const slotsPromise = getLessonSlots(lessonId);
+    const [imagesRes, slotsRes] = await Promise.all([imagesPromise, slotsPromise]);
+    if (imagesRes.success && imagesRes.data) setLessonImages(imagesRes.data);
+    if (slotsRes.success && slotsRes.data) setLessonSlots(slotsRes.data);
+  };
+
+  const handleUploadAngle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLesson || !newAngleName.trim() || !newAngleFile) {
+      triggerToast('Vui lòng điền tên góc chụp và chọn tệp ảnh!', 'warning');
+      return;
+    }
+    setIsLoadingVrConfig(true);
+    const formData = new FormData();
+    formData.append('AngleName', newAngleName.trim());
+    formData.append('ImageFile', newAngleFile);
+    
+    const result = await uploadLessonImage(Number(selectedLesson.LessonId), formData);
+    setIsLoadingVrConfig(false);
+    if (result.success) {
+      triggerToast('Tải lên ảnh góc chụp thành công!');
+      setNewAngleName('');
+      setNewAngleFile(null);
+      refreshVrConfig(Number(selectedLesson.LessonId));
+    } else {
+      triggerToast(result.errors.join(' ') || 'Tải ảnh lên thất bại', 'warning');
+    }
+  };
+
+  const handleDeleteAngle = async (imageId: number) => {
+    if (!selectedLesson) return;
+    if (!window.confirm('Bạn có chắc muốn xóa góc chụp này? Các Spawner liên kết với góc chụp này sẽ bị mất góc chụp tham chiếu.')) return;
+    setIsLoadingVrConfig(true);
+    const result = await deleteLessonImage(Number(selectedLesson.LessonId), imageId);
+    setIsLoadingVrConfig(false);
+    if (result.success) {
+      triggerToast('Xóa góc chụp thành công!');
+      refreshVrConfig(Number(selectedLesson.LessonId));
+    } else {
+      triggerToast(result.errors.join(' ') || 'Xóa góc chụp thất bại', 'warning');
+    }
+  };
+
+  const handleAddSlot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLesson || !newSlotId.trim() || !newSlotName.trim()) {
+      triggerToast('Vui lòng điền mã Spawner và tên Spawner!', 'warning');
+      return;
+    }
+    setIsLoadingVrConfig(true);
+    const result = await configureLessonSlot(Number(selectedLesson.LessonId), {
+      slotIdentifier: newSlotId.trim(),
+      slotName: newSlotName.trim(),
+      lessonImageId: newSlotImageId
+    });
+    setIsLoadingVrConfig(false);
+    if (result.success) {
+      triggerToast('Thêm điểm xuất hiện Spawner thành công!');
+      setNewSlotId('');
+      setNewSlotName('');
+      setNewSlotImageId(null);
+      refreshVrConfig(Number(selectedLesson.LessonId));
+    } else {
+      triggerToast(result.errors.join(' ') || 'Thêm Spawner thất bại', 'warning');
+    }
+  };
+
+  const handleAssignItem = async (slotId: number, itemAssetId: number | null) => {
+    if (!selectedLesson) return;
+    setIsLoadingVrConfig(true);
+    const result = await assignItemToSlot(Number(selectedLesson.LessonId), slotId, itemAssetId);
+    setIsLoadingVrConfig(false);
+    if (result.success) {
+      triggerToast('Gán vật phẩm cho Spawner thành công!');
+      refreshVrConfig(Number(selectedLesson.LessonId));
+    } else {
+      triggerToast(result.errors.join(' ') || 'Gán vật phẩm thất bại', 'warning');
+    }
   };
 
   const handleCloseModal = () => {
@@ -860,18 +987,18 @@ export default function LessonManagement() {
                   <h2 className="text-2xl font-black italic tracking-tight flex items-center gap-2">
                     {modalType === 'add' && <Plus className="w-6 h-6 text-[#4EACAF]" />}
                     {modalType === 'edit' && <Edit3 className="w-6 h-6 text-sky-500" />}
-                    {modalType === 'exercises' && <BookOpen className="w-6 h-6 text-indigo-500" />}
+                    {modalType === 'exercises' && <Boxes className="w-6 h-6 text-indigo-500" />}
                     {modalType === 'delete' && <Trash2 className="w-6 h-6 text-rose-500" />}
                     
                     {modalType === 'add' && 'Tạo phân cảnh bài học mới'}
                     {modalType === 'edit' && `Sửa thông số bài học: ${selectedLesson?.LessonId}`}
-                    {modalType === 'exercises' && 'Thực nghiệm game tương tác'}
+                    {modalType === 'exercises' && 'Cấu hình phân cảnh học tập VR'}
                     {modalType === 'delete' && 'Xác nhận xóa bài học'}
                   </h2>
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
                     {modalType === 'add' && 'Thiết lập nội dung và gán lớp kỹ năng rèn nói cho bài học'}
                     {modalType === 'edit' && 'Cập nhật lại thông tin thứ tự và thời lượng can thiệp của bài giảng'}
-                    {modalType === 'exercises' && 'Chi tiết các trò chơi tương tác ảo đi kèm bài giảng'}
+                    {modalType === 'exercises' && 'Quản lý góc chụp phòng học và cấu hình Spawner vật phẩm 3D cho Client VR'}
                     {modalType === 'delete' && 'Hành động này không thể khôi phục và có thể ảnh hưởng đến kết quả học tập'}
                   </p>
                 </div>
@@ -886,93 +1013,255 @@ export default function LessonManagement() {
 
               {/* Modal Body conditional rendering */}
               {modalType === 'exercises' && selectedLesson ? (
-                <div className="app-modal-body p-8 md:p-10 space-y-6" id="modal-exercises-view">
-                  <div className="bg-indigo-50 p-5 rounded-3xl border border-indigo-100 flex items-center gap-4 text-indigo-700">
-                    <GraduationCap className="w-10 h-10 shrink-0 text-indigo-600" />
-                    <div>
-                      <h4 className="font-extrabold text-sm uppercase tracking-wider text-indigo-900">Chi tiết lộ trình bài tập bổ trợ</h4>
-                      <p className="text-xs font-bold text-indigo-600/90 mt-1 leading-relaxed">
-                        Danh sách bài tập tương tác ảo VR đi kèm trong giáo án <strong className="text-indigo-900">#{selectedLesson.LessonOrder}</strong> nhằm thúc đẩy sự rèn luyện tự nhiên nhất.
-                      </p>
-                    </div>
+                <div className="app-modal-body p-6 md:p-8 space-y-6 max-h-[70vh] overflow-y-auto" id="modal-exercises-view">
+                  {/* Tab Selectors */}
+                  <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200/50">
+                    <button
+                      onClick={() => setVrModalTab('angles')}
+                      className={cn(
+                        "flex-1 py-3 px-4 rounded-xl text-sm font-bold tracking-tight transition-all flex items-center justify-center gap-2",
+                        vrModalTab === 'angles' 
+                          ? "bg-white text-slate-800 shadow-sm" 
+                          : "text-slate-500 hover:text-slate-700"
+                      )}
+                    >
+                      <Camera className="w-4 h-4 text-blue-500" />
+                      Ảnh góc chụp ({lessonImages.length})
+                    </button>
+                    <button
+                      onClick={() => setVrModalTab('slots')}
+                      className={cn(
+                        "flex-1 py-3 px-4 rounded-xl text-sm font-bold tracking-tight transition-all flex items-center justify-center gap-2",
+                        vrModalTab === 'slots' 
+                          ? "bg-white text-slate-800 shadow-sm" 
+                          : "text-slate-500 hover:text-slate-700"
+                      )}
+                    >
+                      <Boxes className="w-4 h-4 text-blue-500" />
+                      Điểm Spawner ({lessonSlots.length})
+                    </button>
                   </div>
 
-                  <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
-                    {(() => {
-                      if (isExercisesLoading) {
-                        return (
-                          <div className="flex justify-center items-center py-10 text-gray-450">
-                            <RefreshCw className="w-6 h-6 animate-spin text-[#4EACAF]" />
-                            <span className="ml-2.5 font-bold text-sm text-slate-500">Đang tải danh sách bài tập...</span>
+                  {isLoadingVrConfig ? (
+                    <div className="flex flex-col justify-center items-center py-16 space-y-3">
+                      <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+                      <span className="font-bold text-slate-500 text-sm">Đang đồng bộ phân cảnh VR...</span>
+                    </div>
+                  ) : vrModalTab === 'angles' ? (
+                    /* --- ANGLES TAB --- */
+                    <div className="space-y-6">
+                      {/* Form Upload Angle Image */}
+                      <form onSubmit={handleUploadAngle} className="bg-slate-50 p-5 rounded-3xl border border-slate-200/50 space-y-4">
+                        <h4 className="font-extrabold text-sm text-slate-800 flex items-center gap-1.5">
+                          <Plus className="w-4.5 h-4.5 text-blue-500" />
+                          Đăng ký góc chụp tổng thể mới
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tên góc chụp</label>
+                            <input
+                              type="text"
+                              placeholder="Ví dụ: Góc kệ sách, Kệ trái cây..."
+                              value={newAngleName}
+                              onChange={(e) => setNewAngleName(e.target.value)}
+                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:border-blue-500 text-slate-800"
+                            />
                           </div>
-                        );
-                      }
-
-                      const dbExercises = exercises.length > 0 
-                        ? exercises 
-                        : (MOCK_EXERCISES_BY_LESSON[selectedLesson.LessonId] || []);
-
-                      if (dbExercises.length === 0) {
-                        return (
-                          <div className="text-center py-10 text-gray-400 italic font-bold">
-                            Chưa cập nhật dữ liệu game tương tác VR cho học phần này!
-                          </div>
-                        );
-                      }
-
-                      const normalized = dbExercises.map(exe => {
-                        if ('ExerciseId' in exe) {
-                          return exe as Exercise;
-                        }
-                        const realExe = exe as ExerciseResponse;
-                        const typeLabel = 
-                          realExe.typeId === 1 ? 'Speech Recognition' :
-                          realExe.typeId === 2 ? 'Interactive Card' :
-                          realExe.typeId === 3 ? 'Pronunciation Guide' :
-                          realExe.typeId === 4 ? 'Bouncing Match' : 'Speech Recognition';
-                          
-                        const score = 
-                          realExe.difficultyLevel === 'Easy' ? 80 :
-                          realExe.difficultyLevel === 'Medium' ? 85 :
-                          realExe.difficultyLevel === 'Hard' ? 90 : 80;
-                          
-                        return {
-                          ExerciseId: `EXE-${realExe.id}`,
-                          ExerciseName: realExe.exerciseName,
-                          ExerciseType: typeLabel as Exercise['ExerciseType'],
-                          ScoreToPass: score
-                        };
-                      });
-
-                      return normalized.map((exe) => (
-                        <div key={exe.ExerciseId} className="bg-[#FDFCF5] p-5 rounded-3xl border border-gray-100 flex items-start justify-between gap-4">
-                          <div className="space-y-1.5 flex-1 min-w-0">
-                            <p className="font-extrabold text-sm text-gray-900 leading-snug">{exe.ExerciseName}</p>
-                            <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                              <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2.5 py-0.5 rounded-full font-normal uppercase tracking-wider">
-                                Loại game: {exe.ExerciseType}
-                              </span>
-                              <span className="text-[10px] text-gray-400 font-extrabold uppercase">
-                                Mã: {exe.ExerciseId}
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Chọn ảnh chụp thực tế</label>
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                id="angleFile"
+                                onChange={(e) => setNewAngleFile(e.target.files?.[0] || null)}
+                                className="hidden"
+                              />
+                              <label
+                                htmlFor="angleFile"
+                                className="flex items-center gap-2 border border-slate-200 hover:border-slate-300 bg-white px-4 py-2 rounded-xl cursor-pointer font-semibold text-slate-650 text-sm hover:bg-slate-50 transition-colors"
+                              >
+                                Choose File
+                              </label>
+                              <span className="text-xs text-slate-500 truncate max-w-[150px]">
+                                {newAngleFile ? newAngleFile.name : 'Chưa chọn tệp'}
                               </span>
                             </div>
                           </div>
-                          
-                          <div className="text-right shrink-0">
-                            <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">Điểm qua môn</p>
-                            <p className="text-lg font-black text-[#4EACAF]">{exe.ScoreToPass}%</p>
+                        </div>
+                        <div className="flex justify-end pt-1">
+                          <button
+                            type="submit"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+                          >
+                            Tải lên góc chụp
+                          </button>
+                        </div>
+                      </form>
+
+                      {/* List of Angle Images */}
+                      <div className="space-y-3">
+                        <h4 className="font-extrabold text-slate-700 text-sm uppercase tracking-wider">Danh sách góc chụp đã có</h4>
+                        {lessonImages.length === 0 ? (
+                          <div className="text-center py-10 text-slate-400 font-bold italic text-sm">
+                            Chưa có góc chụp nào được đăng ký cho bài học này.
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {lessonImages.map((img) => {
+                              const fullImgUrl = img.imageUrl.startsWith('http')
+                                ? img.imageUrl
+                                : `${import.meta.env.VITE_API_BASE_URL || ''}${img.imageUrl}`;
+                              return (
+                                <div key={img.id} className="group relative bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm flex flex-col">
+                                  <div className="aspect-video w-full bg-slate-100 overflow-hidden relative">
+                                    <img 
+                                      src={fullImgUrl} 
+                                      alt={img.angleName} 
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteAngle(img.id)}
+                                      className="absolute top-2.5 right-2.5 bg-rose-500 hover:bg-rose-600 text-white p-2 rounded-xl shadow-md transition-colors cursor-pointer"
+                                      title="Xóa góc chụp"
+                                    >
+                                      <Trash2 className="w-4.5 h-4.5" />
+                                    </button>
+                                  </div>
+                                  <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                                    <span className="font-bold text-sm text-slate-800">{img.angleName}</span>
+                                    <span className="text-[10px] text-slate-400 font-mono">ID: {img.id}</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    /* --- SLOTS TAB --- */
+                    <div className="space-y-6">
+                      {/* Form Add Slot */}
+                      <form onSubmit={handleAddSlot} className="bg-slate-50 p-5 rounded-3xl border border-slate-200/50 space-y-4">
+                        <h4 className="font-extrabold text-sm text-slate-800 flex items-center gap-1.5">
+                          <Plus className="w-4.5 h-4.5 text-blue-500" />
+                          Cấu hình điểm Spawner (Slot) xuất hiện
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Mã Spawner (VR ID) <span className="text-red-500">*</span></label>
+                            <input
+                              type="text"
+                              placeholder="Ví dụ: ShelfLeft/SlotA..."
+                              value={newSlotId}
+                              onChange={(e) => setNewSlotId(e.target.value)}
+                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:border-blue-500 text-slate-800"
+                              required
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tên hiển thị spawner <span className="text-red-500">*</span></label>
+                            <input
+                              type="text"
+                              placeholder="Ví dụ: Kệ trái cây - Vị trí táo..."
+                              value={newSlotName}
+                              onChange={(e) => setNewSlotName(e.target.value)}
+                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:border-blue-500 text-slate-800"
+                              required
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Thuộc góc chụp nào?</label>
+                            <select
+                              value={newSlotImageId || ''}
+                              onChange={(e) => setNewSlotImageId(e.target.value ? Number(e.target.value) : null)}
+                              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium outline-none focus:border-blue-500 text-slate-800"
+                            >
+                              <option value="">-- Chọn góc chụp để đánh dấu --</option>
+                              {lessonImages.map((img) => (
+                                <option key={img.id} value={img.id}>{img.angleName}</option>
+                              ))}
+                            </select>
                           </div>
                         </div>
-                      ));
-                    })()}
-                  </div>
+                        <div className="flex justify-end pt-1">
+                          <button
+                            type="submit"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+                          >
+                            Đăng ký Spawner
+                          </button>
+                        </div>
+                      </form>
 
-                  <div className="flex justify-end pt-4 border-t border-gray-50">
+                      {/* List of Registered Slots */}
+                      <div className="space-y-3">
+                        <h4 className="font-extrabold text-slate-700 text-sm uppercase tracking-wider">Định vị & Gán mô hình 3D cho Spawner</h4>
+                        {lessonSlots.length === 0 ? (
+                          <div className="text-center py-10 text-slate-400 font-bold italic text-sm">
+                            Chưa cấu hình điểm xuất hiện Spawner nào cho bài học này.
+                          </div>
+                        ) : (
+                          <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                            {lessonSlots.map((slot) => {
+                              const assignedImg = lessonImages.find(img => img.id === slot.lessonImageId);
+                              return (
+                                <div key={slot.id} className="bg-[#FDFCF5] p-4 rounded-2xl border border-slate-200/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                  <div className="space-y-1.5 flex-1 min-w-0">
+                                    <div className="flex items-center flex-wrap gap-2">
+                                      <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider">
+                                        {slot.slotIdentifier}
+                                      </span>
+                                      <strong className="text-sm text-slate-850">{slot.slotName}</strong>
+                                    </div>
+                                    
+                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400 font-medium">
+                                      {assignedImg ? (
+                                        <span className="flex items-center gap-1 text-slate-500">
+                                          <Camera className="w-3.5 h-3.5" />
+                                          Góc: <strong className="text-slate-700 font-extrabold">{assignedImg.angleName}</strong>
+                                        </span>
+                                      ) : (
+                                        <span className="text-amber-500 font-bold italic">Chưa liên kết góc chụp</span>
+                                      )}
+                                      <span className="text-slate-300">|</span>
+                                      <span>ID: {slot.id}</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Select 3D Asset Dropdown */}
+                                  <div className="flex items-center gap-2 min-w-[260px]">
+                                    <span className="text-xs font-bold text-slate-400 uppercase shrink-0">Vật phẩm:</span>
+                                    <select
+                                      value={slot.itemAssetId || ''}
+                                      onChange={(e) => handleAssignItem(slot.id, e.target.value ? Number(e.target.value) : null)}
+                                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-blue-500 text-slate-800"
+                                    >
+                                      <option value="">-- [Không gán vật phẩm] --</option>
+                                      {itemAssets.map((asset) => (
+                                        <option key={asset.id} value={asset.id}>
+                                          {asset.name} ("{asset.answerSentence}")
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end pt-4 border-t border-gray-100">
                     <button 
                       onClick={handleCloseModal}
-                      className="py-4 px-8 bg-gray-100 hover:bg-gray-200 text-gray-600 font-extrabold rounded-2xl transition-all uppercase text-xs tracking-wider"
+                      className="py-3 px-6 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl transition-all text-xs uppercase tracking-wider cursor-pointer"
                     >
-                      Đóng Học Phần
+                      Đóng cấu hình
                     </button>
                   </div>
                 </div>

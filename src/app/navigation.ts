@@ -45,9 +45,7 @@ export type Screen =
   | 'ENROLLMENT_MANAGEMENT'
   | 'PROGRAM_MANAGEMENT'
   | 'LESSON_MANAGEMENT'
-  | 'EXERCISE_MANAGEMENT'
-  | 'EXERCISE_TYPE_MANAGEMENT'
-  | 'EXERCISE_QUESTION_MANAGEMENT'
+  | 'ASSET_MANAGEMENT'
   | 'SCHOOL_YEAR_MANAGEMENT'
   | 'SEMESTER_MANAGEMENT'
   | 'LEARNING_RESULT_MANAGEMENT'
@@ -186,10 +184,10 @@ export const teacherSidebarItems: SidebarItem[] = [
     path: '/teacher/lessons',
   },
   {
-    id: 'EXERCISE_MANAGEMENT',
-    label: 'Quản lý bài tập và câu hỏi',
-    icon: BookOpen,
-    path: '/teacher/exercises',
+    id: 'ASSET_MANAGEMENT',
+    label: 'Thư viện vật phẩm 3D',
+    icon: FolderOpen,
+    path: '/teacher/assets',
   },
   {
     id: 'DIFFICULTY',
@@ -295,16 +293,10 @@ export const adminSidebarItems: SidebarItem[] = [
     path: '/admin/lessons',
   },
   {
-    id: 'EXERCISE_MANAGEMENT',
-    label: 'Quản lý bài tập và câu hỏi',
-    icon: BookOpen,
-    path: '/admin/exercises',
-  },
-  {
-    id: 'EXERCISE_TYPE_MANAGEMENT',
-    label: 'Quản lý loại bài tập',
-    icon: Tags,
-    path: '/admin/exercise-types',
+    id: 'ASSET_MANAGEMENT',
+    label: 'Thư viện vật phẩm 3D',
+    icon: FolderOpen,
+    path: '/admin/assets',
   },
   {
     id: 'LEARNING_RESULT_MANAGEMENT',

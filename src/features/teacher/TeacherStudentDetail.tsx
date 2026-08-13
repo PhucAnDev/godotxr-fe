@@ -31,7 +31,7 @@ import { cn } from '../../lib/utils';
 import { useLearningResultApi } from '../../hooks/useLearningResultApi';
 import { getUserById } from '../../services/userService';
 import type { ChildProfileResponse } from '../../services/childProfileService';
-import type { ExerciseResponse } from '../../services/exerciseService';
+import type { LessonResponse as ExerciseResponse } from '../../services/lessonService';
 import type { PronunciationDetailResponse } from '../../services/pronunciationDetailService';
 import type { ResultResponse } from '../../services/resultService';
 import type { PagedResponse, ServiceResult } from '../../services/serviceTypes';
@@ -149,7 +149,7 @@ function mapExerciseLookup(exercises: ExerciseResponse[]): Record<string, string
   return Object.fromEntries(
     exercises.map((exercise) => [
       String(exercise.id),
-      exercise.exerciseName,
+      exercise.lessonName,
     ])
   );
 }

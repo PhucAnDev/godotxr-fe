@@ -1,0 +1,648 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Plus, Search, Trash2, Edit, Play, Pause, 
+  Volume2, Boxes, Upload, X, ChevronLeft, ChevronRight 
+} from 'lucide-react';
+import { 
+  getItemAssets, createItemAsset, updateItemAsset, deleteItemAsset, type ItemAssetResponse 
+} from '../../services/itemAssetService';
+
+// Declare model-viewer type for TypeScript
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'model-viewer': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
+        src?: string;
+        alt?: string;
+        'auto-rotate'?: boolean | string;
+        'camera-controls'?: boolean | string;
+        'ar'?: boolean | string;
+        'shadow-intensity'?: string;
+        'environment-image'?: string;
+        'exposure'?: string;
+        'interaction-prompt'?: string;
+      }, HTMLElement>;
+    }
+  }
+}
+
+export default function AssetManagement() {
+  const [assets, setAssets] = useState<ItemAssetResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 8;
+
+  // Modals state
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isViewerModalOpen, setIsViewerModalOpen] = useState(false);
+  const [editingAsset, setEditingAsset] = useState<ItemAssetResponse | null>(null);
+  const [viewingModelUrl, setViewingModelUrl] = useState<string | null>(null);
+  const [viewingModelName, setViewingModelName] = useState<string>('');
+
+  // Form fields
+  const [name, setName] = useState('');
+  const [answerSentence, setAnswerSentence] = useState('');
+  const [modelFile, setModelFile] = useState<File | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Cache busting version state
+  const [assetVersions, setAssetVersions] = useState<Record<number, number>>({});
+
+  const getBustedUrl = (url: string | null, assetId: number) => {
+    if (!url) return null;
+    const version = assetVersions[assetId] || 0;
+    const base = url.startsWith('http')
+      ? url
+      : `${import.meta.env.VITE_API_BASE_URL || ''}${url}`;
+    return version > 0 ? `${base}?v=${version}` : base;
+  };
+
+  // Audio state
+  const [playingAudioId, setPlayingAudioId] = useState<number | null>(null);
+  const audioPlayersRef = useRef<{ [key: number]: HTMLAudioElement }>({});
+
+  // Load model-viewer script from Google CDN
+  useEffect(() => {
+    const existingScript = document.getElementById('model-viewer-script');
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.id = 'model-viewer-script';
+      script.type = 'module';
+      script.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js';
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // Fetch assets
+  const fetchAssets = async () => {
+    setLoading(true);
+    const result = await getItemAssets(page, pageSize);
+    if (result.success && result.data) {
+      setAssets(result.data.items);
+      setTotalPages(result.data.totalPages);
+      setTotalCount(result.data.totalCount);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchAssets();
+  }, [page]);
+
+  // Audio player control
+  const toggleAudio = (assetId: number, audioUrl: string) => {
+    const player = audioPlayersRef.current[assetId];
+    
+    // Stop any other playing audio
+    if (playingAudioId !== null && playingAudioId !== assetId) {
+      const otherPlayer = audioPlayersRef.current[playingAudioId];
+      if (otherPlayer) {
+        otherPlayer.pause();
+        otherPlayer.currentTime = 0;
+      }
+    }
+
+    if (player) {
+      if (playingAudioId === assetId) {
+        player.pause();
+        setPlayingAudioId(null);
+      } else {
+        player.play().catch(() => {});
+        setPlayingAudioId(assetId);
+      }
+    } else {
+      // Create new audio instance with cache buster
+      const fullUrl = getBustedUrl(audioUrl, assetId) || '';
+        
+      const newAudio = new Audio(fullUrl);
+      newAudio.addEventListener('ended', () => {
+        setPlayingAudioId(null);
+      });
+      audioPlayersRef.current[assetId] = newAudio;
+      newAudio.play().catch(() => {});
+      setPlayingAudioId(assetId);
+    }
+  };
+
+  // Cleanup audios on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(audioPlayersRef.current).forEach(p => p.pause());
+    };
+  }, []);
+
+  // Filter items locally by search term
+  const filteredAssets = assets.filter(asset => 
+    asset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    asset.answerSentence.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Form submit handler
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitError(null);
+
+    if (!name.trim()) {
+      setSubmitError('Vui lòng nhập tên vật phẩm.');
+      return;
+    }
+    if (!answerSentence.trim()) {
+      setSubmitError('Vui lòng nhập từ khóa/câu phát âm.');
+      return;
+    }
+    if (!editingAsset && !modelFile) {
+      setSubmitError('Vui lòng chọn tệp 3D (.glb/.gltf).');
+      return;
+    }
+
+    setSubmitting(true);
+    const formData = new FormData();
+    formData.append('Name', name.trim());
+    formData.append('AnswerSentence', answerSentence.trim());
+    
+    if (modelFile) {
+      formData.append('ModelFile', modelFile);
+    }
+    if (imageFile) {
+      formData.append('ImageFile', imageFile);
+    }
+    if (audioFile) {
+      formData.append('AudioFile', audioFile);
+    }
+
+    console.log("Submitting FormData entries:");
+    for (let [key, value] of (formData as any).entries()) {
+      if (value instanceof File) {
+        console.log(key, `File: name=${value.name}, size=${value.size}, type=${value.type}`);
+      } else {
+        console.log(key, value);
+      }
+    }
+
+    let result;
+    if (editingAsset) {
+      result = await updateItemAsset(editingAsset.id, formData);
+    } else {
+      result = await createItemAsset(formData);
+    }
+
+    setSubmitting(false);
+
+    if (result.success) {
+      setIsFormModalOpen(false);
+      
+      if (editingAsset) {
+        // Clear cached audio player if it exists so next play will load new audio
+        if (audioPlayersRef.current[editingAsset.id]) {
+          audioPlayersRef.current[editingAsset.id].pause();
+          delete audioPlayersRef.current[editingAsset.id];
+        }
+        // Increment version to force cache busting for all updated assets
+        setAssetVersions(prev => ({
+          ...prev,
+          [editingAsset.id]: (prev[editingAsset.id] || 0) + 1
+        }));
+      }
+
+      resetForm();
+      fetchAssets();
+    } else {
+      setSubmitError(result.errors.join(', ') || 'Đã xảy ra lỗi khi lưu.');
+    }
+  };
+
+  // Delete handler
+  const handleDelete = async (id: number) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa vật phẩm này khỏi thư viện?')) {
+      try {
+        const result = await deleteItemAsset(id);
+        if (result.success) {
+          fetchAssets();
+        } else {
+          alert(result.errors.join(', ') || 'Xóa vật phẩm thất bại.');
+        }
+      } catch (err: any) {
+        alert(err.message || 'Xóa vật phẩm thất bại.');
+      }
+    }
+  };
+
+  const openCreateModal = () => {
+    setEditingAsset(null);
+    resetForm();
+    setIsFormModalOpen(true);
+  };
+
+  const openEditModal = (asset: ItemAssetResponse) => {
+    setEditingAsset(asset);
+    setName(asset.name);
+    setAnswerSentence(asset.answerSentence);
+    setModelFile(null);
+    setImageFile(null);
+    setAudioFile(null);
+    setSubmitError(null);
+    setIsFormModalOpen(true);
+  };
+
+  const resetForm = () => {
+    setName('');
+    setAnswerSentence('');
+    setModelFile(null);
+    setImageFile(null);
+    setAudioFile(null);
+    setSubmitError(null);
+  };
+
+  const openViewer = (asset: ItemAssetResponse) => {
+    const fullUrl = getBustedUrl(asset.modelUrl, asset.id) || '';
+    setViewingModelUrl(fullUrl);
+    setViewingModelName(asset.name);
+    setIsViewerModalOpen(true);
+  };
+
+  return (
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Top Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200/50 shadow-sm">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <Boxes className="h-8 w-8 text-blue-500" />
+            Thư viện vật phẩm 3D
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">
+            Quản lý và cập nhật động các mô hình 3D, hình ảnh và âm thanh phát âm mẫu cho các spawner trong bài học.
+          </p>
+        </div>
+        <button
+          onClick={openCreateModal}
+          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-5 py-3 rounded-xl shadow-md hover:shadow-lg transition-all transform active:scale-95"
+        >
+          <Plus className="h-5 w-5" />
+          Thêm vật phẩm
+        </button>
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div className="flex bg-white dark:bg-slate-950 p-4 rounded-xl border border-slate-200/50 shadow-sm items-center gap-3">
+        <Search className="text-slate-400 h-5 w-5 ml-1" />
+        <input
+          type="text"
+          placeholder="Tìm kiếm vật phẩm theo tên hoặc từ khóa phát âm..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full border-none outline-none text-slate-800 dark:text-slate-100 bg-transparent text-base placeholder-slate-400"
+        />
+      </div>
+
+      {/* Grid of Items */}
+      {loading ? (
+        <div className="flex justify-center items-center h-96">
+          <div className="relative w-16 h-16">
+            <div className="absolute top-0 left-0 w-full h-full border-4 border-blue-500/20 rounded-full"></div>
+            <div className="absolute top-0 left-0 w-full h-full border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        </div>
+      ) : filteredAssets.length === 0 ? (
+        <div className="flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900/30 rounded-2xl border-2 border-dashed border-slate-200 p-16 text-center">
+          <Boxes className="h-16 w-16 text-slate-300 dark:text-slate-700 mb-4" />
+          <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300">Không tìm thấy vật phẩm nào</h3>
+          <p className="text-slate-400 mt-1 max-w-sm">
+            Thư viện đang trống hoặc không có vật phẩm nào khớp với tìm kiếm của bạn. Hãy nhấn nút "Thêm vật phẩm" để tạo mới.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {filteredAssets.map((asset) => {
+            const fullImageUrl = getBustedUrl(asset.imageUrl, asset.id);
+            const fullModelUrl = getBustedUrl(asset.modelUrl, asset.id) || '';
+
+            return (
+              <div 
+                key={asset.id} 
+                className="group flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-1 transition-all duration-300"
+              >
+                {/* 3D Preview container */}
+                <div className="relative aspect-video w-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center border-b border-slate-200/50 dark:border-slate-800/50">
+                  {fullImageUrl ? (
+                    <img 
+                      src={fullImageUrl} 
+                      alt={asset.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                    />
+                  ) : (
+                    // Futuristic Live 3D Preview on Card!
+                    <div className="w-full h-full p-1">
+                      <model-viewer
+                        src={fullModelUrl}
+                        alt={asset.name}
+                        shadow-intensity="1"
+                        interaction-prompt="none"
+                        camera-controls={false}
+                        auto-rotate={true}
+                        style={{ width: '100%', height: '100%', outline: 'none' }}
+                      />
+                    </div>
+                  )}
+                  {/* Actions Float Trigger */}
+                  <button
+                    onClick={() => openViewer(asset)}
+                    className="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur-sm text-white font-medium text-xs px-2.5 py-1.5 rounded-lg opacity-90 hover:opacity-100 transition-opacity"
+                  >
+                    Xem 3D
+                  </button>
+                </div>
+
+                {/* Details Body */}
+                <div className="p-4 flex-1 flex flex-col justify-between space-y-4">
+                  <div>
+                    <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg leading-tight">
+                      {asset.name}
+                    </h3>
+                    
+                    {/* Pronunciation Target block */}
+                    <div className="mt-2 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100/50 dark:border-blue-900/30 px-3 py-2 rounded-xl">
+                      <div className="text-[10px] uppercase font-bold text-blue-500 tracking-wider">
+                        Từ khóa đọc chuẩn
+                      </div>
+                      <div className="text-sm font-semibold text-blue-900 dark:text-blue-300 mt-0.5">
+                        "{asset.answerSentence}"
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions Buttons bar */}
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex gap-2">
+                      {asset.audioUrl && (
+                        <button
+                          onClick={() => toggleAudio(asset.id, asset.audioUrl!)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            playingAudioId === asset.id 
+                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' 
+                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
+                          }`}
+                          title="Nghe phát âm mẫu"
+                        >
+                          {playingAudioId === asset.id ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => openEditModal(asset)}
+                        className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"
+                        title="Sửa thông tin"
+                      >
+                        <Edit className="h-4.5 w-4.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(asset.id)}
+                        className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
+                        title="Xóa vật phẩm"
+                      >
+                        <Trash2 className="h-4.5 w-4.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Pagination controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-6 py-4 rounded-xl shadow-sm">
+          <div className="text-sm text-slate-500 dark:text-slate-400">
+            Hiển thị <span className="font-semibold text-slate-700 dark:text-slate-200">{filteredAssets.length}</span> / {totalCount} vật phẩm
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="p-2 border border-slate-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800 dark:text-slate-300"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <span className="flex items-center px-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+              Trang {page} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="p-2 border border-slate-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800 dark:text-slate-300"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Form Modal (Create & Edit) */}
+      {isFormModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-8">
+            <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 px-6 py-4">
+              <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+                {editingAsset ? 'Sửa thông tin vật phẩm 3D' : 'Thêm vật phẩm 3D mới'}
+              </h3>
+              <button 
+                onClick={() => setIsFormModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+              {submitError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-red-600 rounded-full"></span>
+                  {submitError}
+                </div>
+              )}
+
+              {/* Asset Name input */}
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Tên vật phẩm <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ví dụ: Quả Chuối, Khủng Long..."
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 dark:bg-slate-950 text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500 transition-colors"
+                  required
+                />
+              </div>
+
+              {/* Target answer sentence input */}
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Từ khóa / Câu đọc mẫu (cho trẻ) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={answerSentence}
+                  onChange={(e) => setAnswerSentence(e.target.value)}
+                  placeholder="Ví dụ: quả chuối, đây là quả chuối..."
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 dark:bg-slate-950 text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500 transition-colors"
+                  required
+                />
+              </div>
+
+              {/* 3D Model file upload */}
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Mô hình 3D (.glb / .gltf) <span className="text-red-500">{editingAsset ? '' : '*'}</span>
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="file"
+                    accept=".glb,.gltf"
+                    id="modelFile"
+                    onChange={(e) => setModelFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                  <label 
+                    htmlFor="modelFile" 
+                    className="flex items-center gap-2 border border-slate-200 hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700 dark:bg-slate-950 px-4 py-2.5 rounded-xl cursor-pointer font-medium text-slate-600 dark:text-slate-300 text-sm hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Chọn tệp 3D
+                  </label>
+                  <span className="text-sm text-slate-500 truncate">
+                    {modelFile ? modelFile.name : (editingAsset ? 'Giữ tệp cũ (Không đổi)' : 'Chưa chọn tệp')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Preview image file upload */}
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Ảnh xem trước (Thumbnail - Tùy chọn)
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="imageFile"
+                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                  <label 
+                    htmlFor="imageFile" 
+                    className="flex items-center gap-2 border border-slate-200 hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700 dark:bg-slate-950 px-4 py-2.5 rounded-xl cursor-pointer font-medium text-slate-600 dark:text-slate-300 text-sm hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Chọn ảnh
+                  </label>
+                  <span className="text-sm text-slate-500 truncate">
+                    {imageFile ? imageFile.name : (editingAsset?.imageUrl ? 'Giữ ảnh cũ' : 'Chưa chọn ảnh')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Audio file upload */}
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Âm thanh phát âm mẫu (Audio - Tùy chọn)
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    id="audioFile"
+                    onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                  <label 
+                    htmlFor="audioFile" 
+                    className="flex items-center gap-2 border border-slate-200 hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700 dark:bg-slate-950 px-4 py-2.5 rounded-xl cursor-pointer font-medium text-slate-600 dark:text-slate-300 text-sm hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Chọn tệp âm thanh
+                  </label>
+                  <span className="text-sm text-slate-500 truncate">
+                    {audioFile ? audioFile.name : (editingAsset?.audioUrl ? 'Giữ âm thanh cũ' : 'Chưa chọn tệp')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsFormModalOpen(false)}
+                  disabled={submitting}
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 font-semibold rounded-xl transition-colors disabled:opacity-50"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-md transition-all disabled:opacity-50"
+                >
+                  {submitting && (
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  )}
+                  {editingAsset ? 'Lưu thay đổi' : 'Tạo mới'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Model Viewer Modal (Full Interactive Preview) */}
+      {isViewerModalOpen && viewingModelUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
+          <div className="bg-slate-900 w-full max-w-4xl h-[70vh] rounded-3xl overflow-hidden flex flex-col shadow-2xl relative border border-slate-800">
+            {/* Header */}
+            <div className="flex justify-between items-center bg-slate-950 border-b border-slate-800 px-6 py-4">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <Boxes className="text-blue-500 h-6 w-6" />
+                Mô hình 3D: {viewingModelName}
+              </h3>
+              <button 
+                onClick={() => setIsViewerModalOpen(false)}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            {/* 3D Canvas Body */}
+            <div className="flex-1 w-full bg-slate-950 relative">
+              <model-viewer
+                src={viewingModelUrl}
+                alt={viewingModelName}
+                shadow-intensity="1.5"
+                camera-controls="true"
+                auto-rotate="true"
+                ar="true"
+                style={{ width: '100%', height: '100%', outline: 'none' }}
+              />
+            </div>
+            
+            {/* Help prompt */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-slate-950/80 backdrop-blur-sm px-4 py-2 rounded-full border border-slate-800 text-[11px] font-medium text-slate-400 tracking-wider">
+              DRAG TO ROTATE | PINCH TO ZOOM | SHIFT + DRAG TO PAN
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

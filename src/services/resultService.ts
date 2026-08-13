@@ -103,8 +103,7 @@ export const getResultById = (id: number) =>
 export const getResultsByChild = (childId: number) =>
   request<ResultResponse[]>(`/api/results/by-child/${childId}`);
 
-export const getResultsByExercise = (exerciseId: number) =>
-  request<ResultResponse[]>(`/api/results/by-exercise/${exerciseId}`);
+
 
 export const updateResultFeedback = (id: number, feedbackText: string) =>
   request<ResultResponse>(`/api/results/${id}/feedback`, {
