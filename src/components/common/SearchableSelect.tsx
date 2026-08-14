@@ -115,7 +115,7 @@ export default function SearchableSelect({
             exit={{ opacity: 0, y: calculatedPlacement === 'top' ? -5 : 5 }}
             transition={{ duration: 0.15 }}
             className={cn(
-              "absolute z-50 w-full bg-white border border-slate-200 rounded-2xl shadow-xl flex flex-col overflow-hidden max-h-64",
+              "absolute z-50 w-full bg-white border border-slate-200 rounded-2xl shadow-xl flex flex-col overflow-hidden max-h-80",
               calculatedPlacement === 'top' ? "bottom-full mb-1.5" : "mt-1.5"
             )}
           >
@@ -142,7 +142,7 @@ export default function SearchableSelect({
             </div>
 
             {/* Options List */}
-            <div className="overflow-y-auto p-1.5 space-y-0.5 max-h-48">
+            <div className="overflow-y-auto p-1.5 space-y-0.5 max-h-64">
               {filteredOptions.length === 0 ? (
                 <div className="text-center py-4 text-slate-400 font-bold italic text-xs">
                   Không tìm thấy kết quả

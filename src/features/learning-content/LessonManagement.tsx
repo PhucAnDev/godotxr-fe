@@ -1220,7 +1220,7 @@ export default function LessonManagement() {
                                   </div>
 
                                   {/* Select 3D Asset Dropdown */}
-                                  <div className="flex items-center gap-2 min-w-[280px]">
+                                  <div className="flex items-center gap-2 min-w-[360px] md:min-w-[400px]">
                                     <span className="text-xs font-bold text-slate-400 uppercase shrink-0">Vật phẩm:</span>
                                     <SearchableSelect
                                       value={slot.itemAssetId || ''}
