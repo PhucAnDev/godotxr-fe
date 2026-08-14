@@ -53,7 +53,7 @@ export const assessChunk = (payload: AssessChunkPayload) =>
 export const downloadAudioChunk = async (childProfileId: number, sessionId: string, chunkIndex: number): Promise<ServiceResult<Blob>> => {
   try {
     const blob = await apiBlobRequest(`/api/files/chunks/${childProfileId}/${sessionId}/${chunkIndex}/DownloadChunk`);
-    return { success: true, message: 'Success', data: blob };
+    return { success: true, message: 'Success', errors: [], data: blob };
   } catch (error) {
     return fromError(error);
   }

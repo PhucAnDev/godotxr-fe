@@ -472,9 +472,8 @@ export default function ParentChildClass() {
                             <div className="flex items-start justify-between gap-4">
                               <div className="space-y-0.5 flex-1 min-w-0 pr-6">
                                 <strong className="text-gray-800 font-extrabold text-xs block leading-snug truncate">
-                                  📦 Spawner: {slot.slotName}
+                                  📦 Vị trí: {slot.slotName}
                                 </strong>
-                                <span className="text-[9px] text-[#4EACAF] font-bold block">VR Key: {slot.slotIdentifier}</span>
                               </div>
                             </div>
 

@@ -58,6 +58,9 @@ export interface ExerciseResponse {
   status?: string;
   createdAt?: string;
   lessonId?: number;
+  teacherId?: number;
+  typeId?: number;
+  updatedAt?: string | null;
 }
 
 // DB Interfaces according to specification

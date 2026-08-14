@@ -17,7 +17,6 @@ export interface LessonSlotResponse {
   id: number;
   lessonId: number;
   lessonImageId: number | null;
-  slotIdentifier: string;
   slotName: string;
   itemAssetId: number | null;
   itemAsset: ItemAssetResponse | null;
@@ -35,27 +34,27 @@ async function request<T>(
 }
 
 export const getLessonImages = (lessonId: number) =>
-  request<LessonImageResponse[]>(`/api/lessons/${lessonId}/images`);
+  request<LessonImageResponse[]>(`/api/lesson-images/${lessonId}`);
 
 export const uploadLessonImage = (lessonId: number, formData: FormData) =>
-  request<LessonImageResponse>(`/api/lessons/${lessonId}/images`, {
+  request<LessonImageResponse>(`/api/lesson-images/${lessonId}`, {
     method: 'POST',
     body: formData,
   });
 
 export const deleteLessonImage = (lessonId: number, imageId: number) =>
-  request<boolean>(`/api/lessons/${lessonId}/images/${imageId}`, {
+  request<boolean>(`/api/lesson-images/${lessonId}/${imageId}`, {
     method: 'DELETE',
   });
 
 export const getLessonSlots = (lessonId: number) =>
-  request<LessonSlotResponse[]>(`/api/lessons/${lessonId}/slots`);
+  request<LessonSlotResponse[]>(`/api/lesson-slots/${lessonId}`);
 
 export const configureLessonSlot = (
   lessonId: number,
-  payload: { slotIdentifier: string; slotName: string; lessonImageId?: number | null }
+  payload: { slotName: string; lessonImageId?: number | null }
 ) =>
-  request<LessonSlotResponse>(`/api/lessons/${lessonId}/slots`, {
+  request<LessonSlotResponse>(`/api/lesson-slots/${lessonId}`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -65,7 +64,7 @@ export const assignItemToSlot = (
   slotId: number,
   itemAssetId: number | null
 ) =>
-  request<LessonSlotResponse>(`/api/lessons/${lessonId}/slots/${slotId}/assign`, {
+  request<LessonSlotResponse>(`/api/lesson-slots/${lessonId}/${slotId}/assign`, {
     method: 'PUT',
     body: JSON.stringify({ itemAssetId }),
   });

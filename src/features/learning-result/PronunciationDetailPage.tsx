@@ -28,15 +28,19 @@ interface Child {
   FullName: string;
   Age: number;
   LearningLevel: string;
+  Gender?: string;
+  Status?: string;
+  CreatedAt?: string;
+  UpdatedAt?: string;
 }
 
 interface Result {
   ResultId: string;
   ChildId: string;
-  ExerciseId: string;
+  ExerciseId?: string;
   Score: number;
-  AudioRecordUrl: string;
-  ReplayDataUrl: string;
+  AudioRecordUrl?: string;
+  ReplayDataUrl?: string;
   FeedbackText: string;
   CreatedAt: string;
   SessionId: string;

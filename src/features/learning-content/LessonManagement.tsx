@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  BookOpen, 
-  Plus, 
-  Search, 
-  ChevronDown, 
-  X, 
-  Edit3, 
-  ToggleLeft, 
-  ToggleRight, 
-  Check, 
-  AlertTriangle, 
-  Eye, 
+import {
+  BookOpen,
+  Plus,
+  Search,
+  ChevronDown,
+  X,
+  Edit3,
+  ToggleLeft,
+  ToggleRight,
+  Check,
+  AlertTriangle,
+  Eye,
   Calendar,
   Sparkles,
   Smile,
@@ -39,10 +39,10 @@ import { cn } from '../../lib/utils';
 import ActionButton from '../../components/common/ActionButton';
 import Pagination from '../../components/common/Pagination';
 import CustomSelect from '../../components/common/CustomSelect';
-import { useLessonManagementApi } from '../../hooks/useLessonManagementApi';
-import { 
-  getLessonImages, uploadLessonImage, deleteLessonImage, 
-  getLessonSlots, configureLessonSlot, assignItemToSlot 
+import { useLessonManagementApi, type LessonResponse } from '../../hooks/useLessonManagementApi';
+import {
+  getLessonImages, uploadLessonImage, deleteLessonImage,
+  getLessonSlots, configureLessonSlot, assignItemToSlot
 } from '../../services/lessonSlotService';
 import { getItemAssets, type ItemAssetResponse } from '../../services/itemAssetService';
 
@@ -202,13 +202,12 @@ export default function LessonManagement() {
   const [itemAssets, setItemAssets] = useState<ItemAssetResponse[]>([]);
   const [isLoadingVrConfig, setIsLoadingVrConfig] = useState(false);
   const [vrModalTab, setVrModalTab] = useState<'angles' | 'slots'>('angles');
-  
+
   // Angle image form state
   const [newAngleName, setNewAngleName] = useState('');
   const [newAngleFile, setNewAngleFile] = useState<File | null>(null);
-  
+
   // Slot configuration form state
-  const [newSlotId, setNewSlotId] = useState('');
   const [newSlotName, setNewSlotName] = useState('');
   const [newSlotImageId, setNewSlotImageId] = useState<number | null>(null);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
@@ -263,10 +262,10 @@ export default function LessonManagement() {
   // Target skill options memo for the CustomSelect input
   const targetSkillOptions = useMemo(() => {
     const defaultOptions = [
-      { value: 'Pronunciation', label: 'Pronunciation (Phát âm)' },
-      { value: 'Vocabulary', label: 'Vocabulary (Từ vựng)' },
-      { value: 'Oral Motor', label: 'Oral Motor (Hàm miệng)' },
-      { value: 'Communication', label: 'Communication (Giao tiếp)' }
+      { value: 'Pronunciation', label: 'Phát âm' },
+      { value: 'Vocabulary', label: 'Từ vựng' },
+      { value: 'Oral Motor', label: 'Hàm miệng' },
+      { value: 'Communication', label: 'Giao tiếp' }
     ];
     if (formTargetSkill && !defaultOptions.some(opt => opt.value === formTargetSkill)) {
       return [...defaultOptions, { value: formTargetSkill, label: formTargetSkill }];
@@ -297,12 +296,12 @@ export default function LessonManagement() {
   // Statistic Computations
   const totalLessons = lessons.length;
   const activeLessons = lessons.filter(l => l.Status === 'Active').length;
-  
+
   // Calculate average duration
-  const avgDuration = totalLessons > 0 
+  const avgDuration = totalLessons > 0
     ? Math.round(lessons.reduce((sum, l) => sum + l.EstimatedDuration, 0) / totalLessons)
     : 0;
-  
+
   // Clean target skills count
   const targetSkillsCount = new Set(lessons.map(l => l.TargetSkill)).size;
 
@@ -346,7 +345,7 @@ export default function LessonManagement() {
     setModalType('exercises');
     setVrModalTab('angles');
     setIsLoadingVrConfig(true);
-    
+
     // Fetch item assets library if not loaded
     if (!assetsLoaded) {
       const assetResult = await getItemAssets(1, 1000);
@@ -355,25 +354,25 @@ export default function LessonManagement() {
         setAssetsLoaded(true);
       }
     }
-    
+
     // Fetch angle images and slots
     const imagesPromise = getLessonImages(Number(les.LessonId));
     const slotsPromise = getLessonSlots(Number(les.LessonId));
-    
+
     const [imagesRes, slotsRes] = await Promise.all([imagesPromise, slotsPromise]);
-    
+
     if (imagesRes.success && imagesRes.data) {
       setLessonImages(imagesRes.data);
     } else {
       setLessonImages([]);
     }
-    
+
     if (slotsRes.success && slotsRes.data) {
       setLessonSlots(slotsRes.data);
     } else {
       setLessonSlots([]);
     }
-    
+
     setIsLoadingVrConfig(false);
   };
 
@@ -395,7 +394,7 @@ export default function LessonManagement() {
     const formData = new FormData();
     formData.append('AngleName', newAngleName.trim());
     formData.append('ImageFile', newAngleFile);
-    
+
     const result = await uploadLessonImage(Number(selectedLesson.LessonId), formData);
     setIsLoadingVrConfig(false);
     if (result.success) {
@@ -424,25 +423,23 @@ export default function LessonManagement() {
 
   const handleAddSlot = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedLesson || !newSlotId.trim() || !newSlotName.trim()) {
-      triggerToast('Vui lòng điền mã Spawner và tên Spawner!', 'warning');
+    if (!selectedLesson || !newSlotName.trim()) {
+      triggerToast('Vui lòng điền tên Spawner!', 'warning');
       return;
     }
     setIsLoadingVrConfig(true);
     const result = await configureLessonSlot(Number(selectedLesson.LessonId), {
-      slotIdentifier: newSlotId.trim(),
       slotName: newSlotName.trim(),
       lessonImageId: newSlotImageId
     });
     setIsLoadingVrConfig(false);
     if (result.success) {
-      triggerToast('Thêm điểm xuất hiện Spawner thành công!');
-      setNewSlotId('');
+      triggerToast('Thêm vị trí đặt vật phẩm thành công!');
       setNewSlotName('');
       setNewSlotImageId(null);
       refreshVrConfig(Number(selectedLesson.LessonId));
     } else {
-      triggerToast(result.errors.join(' ') || 'Thêm Spawner thất bại', 'warning');
+      triggerToast(result.errors.join(' ') || 'Thêm vị trí thất bại', 'warning');
     }
   };
 
@@ -452,7 +449,7 @@ export default function LessonManagement() {
     const result = await assignItemToSlot(Number(selectedLesson.LessonId), slotId, itemAssetId);
     setIsLoadingVrConfig(false);
     if (result.success) {
-      triggerToast('Gán vật phẩm cho Spawner thành công!');
+      triggerToast('Gán vật phẩm 3D thành công!');
       refreshVrConfig(Number(selectedLesson.LessonId));
     } else {
       triggerToast(result.errors.join(' ') || 'Gán vật phẩm thất bại', 'warning');
@@ -532,8 +529,13 @@ export default function LessonManagement() {
   // Filtering Search computation logic
   const filteredLessons = lessons.filter(item => {
     const program = programs.find(p => p.ProgramId === item.ProgramId);
-    const searchString = `${item.LessonName} ${item.TargetSkill} ${item.LessonId}`.toLowerCase();
-    
+    const skillLabel = item.TargetSkill === 'Pronunciation' ? 'phát âm' :
+                       item.TargetSkill === 'Vocabulary' ? 'từ vựng' :
+                       item.TargetSkill === 'Oral Motor' ? 'hàm miệng cơ môi miệng' :
+                       item.TargetSkill === 'Communication' ? 'giao tiếp' :
+                       item.TargetSkill;
+    const searchString = `${item.LessonName} ${item.TargetSkill} ${skillLabel} ${item.LessonId}`.toLowerCase();
+
     const matchesSearch = searchString.includes(searchQuery.toLowerCase());
     const matchesProgram = filterProgram === 'ALL' || item.ProgramId === filterProgram;
     const matchesStatus = filterStatus === 'ALL' || item.Status === filterStatus;
@@ -574,7 +576,7 @@ export default function LessonManagement() {
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative" id="lesson-view-root">
-      
+
       {/* Toast Alert Banner */}
       <AnimatePresence>
         {alertConfig && (
@@ -601,8 +603,8 @@ export default function LessonManagement() {
               <div className="flex-1 min-w-0 font-bold">
                 <p className="italic text-sm tracking-tight text-white leading-snug">{alertConfig.message}</p>
               </div>
-              <button 
-                onClick={() => setAlertConfig(null)} 
+              <button
+                onClick={() => setAlertConfig(null)}
                 className="p-1 hover:bg-white/10 rounded-full transition-colors text-white shrink-0"
               >
                 <X className="w-5 h-5" />
@@ -627,7 +629,7 @@ export default function LessonManagement() {
           </p>
         </div>
 
-        <button 
+        <button
           onClick={handleOpenAdd}
           className="bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black italic tracking-tight py-4 px-8 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[#4EACAF]/20 transition-all hover:scale-105 active:scale-95 shrink-0 cursor-pointer"
           id="add-lesson-btn"
@@ -639,35 +641,35 @@ export default function LessonManagement() {
 
       {/* 2. Soft pastel rounded statistic cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Tổng Bài Học" 
-          value={totalLessons} 
-          subtitle="Giáo án lưu hành" 
-          icon={<BookOpen className="w-6 h-6 text-[#4EACAF]" />} 
+        <StatCard
+          title="Tổng Bài Học"
+          value={totalLessons}
+          subtitle="Giáo án lưu hành"
+          icon={<BookOpen className="w-6 h-6 text-[#4EACAF]" />}
           bgColor="bg-teal-50"
           borderColor="border-teal-100"
         />
-        <StatCard 
-          title="Đang Hoạt Động" 
-          value={activeLessons} 
-          subtitle="Đang liên kết ở các lớp" 
-          icon={<Smile className="w-6 h-6 text-emerald-500" />} 
+        <StatCard
+          title="Đang Hoạt Động"
+          value={activeLessons}
+          subtitle="Đang liên kết ở các lớp"
+          icon={<Smile className="w-6 h-6 text-emerald-500" />}
           bgColor="bg-emerald-50"
           borderColor="border-emerald-100"
         />
-        <StatCard 
-          title="Thời Lượng Trung Bình" 
-          value={`${avgDuration} phút`} 
-          subtitle="Học giả lý thuyết & VR" 
-          icon={<Clock className="w-6 h-6 text-indigo-500" />} 
+        <StatCard
+          title="Thời Lượng Trung Bình"
+          value={`${avgDuration} phút`}
+          subtitle="Học giả lý thuyết & VR"
+          icon={<Clock className="w-6 h-6 text-indigo-500" />}
           bgColor="bg-indigo-50"
           borderColor="border-indigo-100"
         />
-        <StatCard 
-          title="Kỹ Năng Mục Tiêu" 
-          value={targetSkillsCount} 
-          subtitle="Các nhóm bổ trợ khẩu hình" 
-          icon={<Award className="w-6 h-6 text-[#FF8E8E]" />} 
+        <StatCard
+          title="Kỹ Năng Mục Tiêu"
+          value={targetSkillsCount}
+          subtitle="Các nhóm bổ trợ khẩu hình"
+          icon={<Award className="w-6 h-6 text-[#FF8E8E]" />}
           bgColor="bg-rose-50"
           borderColor="border-rose-100"
         />
@@ -677,15 +679,15 @@ export default function LessonManagement() {
       <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 space-y-3">
         {/* Search Input bar */}
         <div className="relative">
-          <input 
-            type="text" 
-            placeholder="Tìm theo tên bài học, kỹ năng điều trị (Pronunciation, Vocab, Oral, Communication)..." 
+          <input
+            type="text"
+            placeholder="Tìm theo tên bài học, kỹ năng điều trị (Phát âm, Từ vựng, Hàm miệng, Giao tiếp)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-4 pr-10 py-2.5 rounded-lg bg-slate-50 border border-slate-200 font-normal text-slate-600 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs" 
+            className="w-full pl-4 pr-10 py-2.5 rounded-lg bg-slate-50 border border-slate-200 font-normal text-slate-600 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs"
           />
           {searchQuery && (
-            <button 
+            <button
               onClick={() => setSearchQuery('')}
               className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-gray-250 hover:bg-gray-200 rounded-full transition-colors cursor-pointer"
             >
@@ -718,7 +720,7 @@ export default function LessonManagement() {
 
       {/* 4. Interactive table list cards */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" id="lesson-table-box">
-        
+
 
         {filteredLessons.length === 0 ? (
           <div className="py-24 text-center space-y-4">
@@ -726,7 +728,7 @@ export default function LessonManagement() {
               <BookOpen className="w-8 h-8 text-gray-300" />
             </div>
             <p className="text-xl font-black text-gray-700 text-center font-extrabold pb-1">Không tìm thấy bài học nào cho bộ lọc hiện hành</p>
-            <button 
+            <button
               onClick={() => {
                 setSearchQuery('');
                 setFilterProgram('ALL');
@@ -743,7 +745,7 @@ export default function LessonManagement() {
               <table className="w-full text-left border-collapse" id="lessons-table-body">
                 <thead>
                   <tr className="bg-[#FDFCF5]/55 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
-                    <th 
+                    <th
                       onClick={() => handleSort('LessonId')}
                       className="w-[5%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Mã Số"
@@ -757,7 +759,7 @@ export default function LessonManagement() {
                         )}
                       </div>
                     </th>
-                    <th 
+                    <th
                       onClick={() => handleSort('LessonOrder')}
                       className="w-[5%] py-5 px-2 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Thứ tự"
@@ -771,7 +773,7 @@ export default function LessonManagement() {
                         )}
                       </div>
                     </th>
-                    <th 
+                    <th
                       onClick={() => handleSort('LessonName')}
                       className="w-[23%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Tiêu đề bài học"
@@ -785,7 +787,7 @@ export default function LessonManagement() {
                         )}
                       </div>
                     </th>
-                    <th 
+                    <th
                       onClick={() => handleSort('ProgramId')}
                       className="w-[15%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Chương trình"
@@ -799,7 +801,7 @@ export default function LessonManagement() {
                         )}
                       </div>
                     </th>
-                    <th 
+                    <th
                       onClick={() => handleSort('TargetSkill')}
                       className="w-[13%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Mục tiêu kỹ năng"
@@ -813,7 +815,7 @@ export default function LessonManagement() {
                         )}
                       </div>
                     </th>
-                    <th 
+                    <th
                       onClick={() => handleSort('EstimatedDuration')}
                       className="w-[10%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Thời lượng"
@@ -827,7 +829,7 @@ export default function LessonManagement() {
                         )}
                       </div>
                     </th>
-                    <th 
+                    <th
                       onClick={() => handleSort('MaxScore')}
                       className="w-[11%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Điểm tối đa"
@@ -899,7 +901,7 @@ export default function LessonManagement() {
                         </td>
                         <td className="py-5 px-4 text-right">
                           <div className="flex items-center justify-end gap-1 px-1">
-                            <button 
+                            <button
                               onClick={() => handleToggleStatus(lesson.LessonId)}
                               className="p-2.5 hover:bg-teal-50 text-teal-600 rounded-xl transition-colors shrink-0"
                               title="Bật tắt trạng thái hoạt động nhanh"
@@ -969,7 +971,7 @@ export default function LessonManagement() {
       <AnimatePresence>
         {modalType && (
           <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/10 animate-in fade-in duration-300 overflow-y-auto w-full h-full" id="lesson-modal-overlay">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 12 }}
@@ -980,8 +982,8 @@ export default function LessonManagement() {
               <div className={cn(
                 "px-8 py-6 flex items-center justify-between border-b",
                 modalType === 'add' ? 'bg-[#4EACAF]/10 border-[#4EACAF]/10 text-gray-900' :
-                modalType === 'edit' ? 'bg-sky-50 border-sky-100 text-gray-900' :
-                modalType === 'delete' ? 'bg-rose-50 border-rose-100 text-gray-900' : 'bg-indigo-50 border-indigo-100 text-gray-900'
+                  modalType === 'edit' ? 'bg-sky-50 border-sky-100 text-gray-900' :
+                    modalType === 'delete' ? 'bg-rose-50 border-rose-100 text-gray-900' : 'bg-indigo-50 border-indigo-100 text-gray-900'
               )}>
                 <div>
                   <h2 className="text-2xl font-black italic tracking-tight flex items-center gap-2">
@@ -989,9 +991,9 @@ export default function LessonManagement() {
                     {modalType === 'edit' && <Edit3 className="w-6 h-6 text-sky-500" />}
                     {modalType === 'exercises' && <Boxes className="w-6 h-6 text-indigo-500" />}
                     {modalType === 'delete' && <Trash2 className="w-6 h-6 text-rose-500" />}
-                    
-                    {modalType === 'add' && 'Tạo phân cảnh bài học mới'}
-                    {modalType === 'edit' && `Sửa thông số bài học: ${selectedLesson?.LessonId}`}
+
+                    {modalType === 'add' && 'Tạo bài học mới'}
+                    {modalType === 'edit' && `Sửa thông tin bài học: ${selectedLesson?.LessonId}`}
                     {modalType === 'exercises' && 'Cấu hình phân cảnh học tập VR'}
                     {modalType === 'delete' && 'Xác nhận xóa bài học'}
                   </h2>
@@ -1002,8 +1004,8 @@ export default function LessonManagement() {
                     {modalType === 'delete' && 'Hành động này không thể khôi phục và có thể ảnh hưởng đến kết quả học tập'}
                   </p>
                 </div>
-                <button 
-                  onClick={handleCloseModal} 
+                <button
+                  onClick={handleCloseModal}
                   className="p-2.5 hover:bg-white/70 rounded-full transition-colors"
                   id="lesson-modal-close"
                 >
@@ -1020,8 +1022,8 @@ export default function LessonManagement() {
                       onClick={() => setVrModalTab('angles')}
                       className={cn(
                         "flex-1 py-3 px-4 rounded-xl text-sm font-bold tracking-tight transition-all flex items-center justify-center gap-2",
-                        vrModalTab === 'angles' 
-                          ? "bg-white text-slate-800 shadow-sm" 
+                        vrModalTab === 'angles'
+                          ? "bg-white text-slate-800 shadow-sm"
                           : "text-slate-500 hover:text-slate-700"
                       )}
                     >
@@ -1032,13 +1034,13 @@ export default function LessonManagement() {
                       onClick={() => setVrModalTab('slots')}
                       className={cn(
                         "flex-1 py-3 px-4 rounded-xl text-sm font-bold tracking-tight transition-all flex items-center justify-center gap-2",
-                        vrModalTab === 'slots' 
-                          ? "bg-white text-slate-800 shadow-sm" 
+                        vrModalTab === 'slots'
+                          ? "bg-white text-slate-800 shadow-sm"
                           : "text-slate-500 hover:text-slate-700"
                       )}
                     >
                       <Boxes className="w-4 h-4 text-blue-500" />
-                      Điểm Spawner ({lessonSlots.length})
+                      Vị trí vật phẩm ({lessonSlots.length})
                     </button>
                   </div>
 
@@ -1115,9 +1117,9 @@ export default function LessonManagement() {
                               return (
                                 <div key={img.id} className="group relative bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm flex flex-col">
                                   <div className="aspect-video w-full bg-slate-100 overflow-hidden relative">
-                                    <img 
-                                      src={fullImgUrl} 
-                                      alt={img.angleName} 
+                                    <img
+                                      src={fullImgUrl}
+                                      alt={img.angleName}
                                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                     />
                                     <button
@@ -1147,22 +1149,11 @@ export default function LessonManagement() {
                       <form onSubmit={handleAddSlot} className="bg-slate-50 p-5 rounded-3xl border border-slate-200/50 space-y-4">
                         <h4 className="font-extrabold text-sm text-slate-800 flex items-center gap-1.5">
                           <Plus className="w-4.5 h-4.5 text-blue-500" />
-                          Cấu hình điểm Spawner (Slot) xuất hiện
+                          Thêm vị trí đặt vật phẩm mới
                         </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-1.5">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Mã Spawner (VR ID) <span className="text-red-500">*</span></label>
-                            <input
-                              type="text"
-                              placeholder="Ví dụ: ShelfLeft/SlotA..."
-                              value={newSlotId}
-                              onChange={(e) => setNewSlotId(e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:border-blue-500 text-slate-800"
-                              required
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tên hiển thị spawner <span className="text-red-500">*</span></label>
+                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tên vị trí vật phẩm (Tên gợi nhớ) <span className="text-red-500">*</span></label>
                             <input
                               type="text"
                               placeholder="Ví dụ: Kệ trái cây - Vị trí táo..."
@@ -1191,17 +1182,17 @@ export default function LessonManagement() {
                             type="submit"
                             className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
                           >
-                            Đăng ký Spawner
+                            Đăng ký vị trí
                           </button>
                         </div>
                       </form>
 
                       {/* List of Registered Slots */}
                       <div className="space-y-3">
-                        <h4 className="font-extrabold text-slate-700 text-sm uppercase tracking-wider">Định vị & Gán mô hình 3D cho Spawner</h4>
+                        <h4 className="font-extrabold text-slate-700 text-sm uppercase tracking-wider">Danh sách vị trí & Gán mô hình 3D</h4>
                         {lessonSlots.length === 0 ? (
                           <div className="text-center py-10 text-slate-400 font-bold italic text-sm">
-                            Chưa cấu hình điểm xuất hiện Spawner nào cho bài học này.
+                            Chưa cấu hình vị trí đặt vật phẩm nào cho bài học này.
                           </div>
                         ) : (
                           <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
@@ -1211,12 +1202,9 @@ export default function LessonManagement() {
                                 <div key={slot.id} className="bg-[#FDFCF5] p-4 rounded-2xl border border-slate-200/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                                   <div className="space-y-1.5 flex-1 min-w-0">
                                     <div className="flex items-center flex-wrap gap-2">
-                                      <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider">
-                                        {slot.slotIdentifier}
-                                      </span>
                                       <strong className="text-sm text-slate-850">{slot.slotName}</strong>
                                     </div>
-                                    
+
                                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400 font-medium">
                                       {assignedImg ? (
                                         <span className="flex items-center gap-1 text-slate-500">
@@ -1257,7 +1245,7 @@ export default function LessonManagement() {
                   )}
 
                   <div className="flex justify-end pt-4 border-t border-gray-100">
-                    <button 
+                    <button
                       onClick={handleCloseModal}
                       className="py-3 px-6 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl transition-all text-xs uppercase tracking-wider cursor-pointer"
                     >
@@ -1278,14 +1266,14 @@ export default function LessonManagement() {
                   </div>
 
                   <div className="app-modal-actions pt-6 border-t border-gray-150 flex gap-4">
-                    <button 
+                    <button
                       type="button"
                       onClick={handleCloseModal}
                       className="flex-1 py-4 border-4 border-gray-100 hover:border-gray-200 text-gray-400 hover:text-gray-600 font-extrabold rounded-2xl transition-all uppercase text-xs tracking-wider cursor-pointer"
                     >
                       Hủy bỏ
                     </button>
-                    <button 
+                    <button
                       type="button"
                       onClick={handleDeleteLesson}
                       className="flex-1 py-4 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-2xl shadow-xl shadow-rose-500/15 transition-all text-sm uppercase tracking-wider cursor-pointer"
@@ -1298,7 +1286,7 @@ export default function LessonManagement() {
                 /* Modal Body: ADD OR EDIT FORM rendering */
                 <form onSubmit={handleSaveLesson} className="app-modal-body p-8 md:p-10 space-y-6" id="lesson-add-edit-form">
                   <div className="space-y-4">
-                    
+
                     {/* Program Selection drop-down */}
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
@@ -1316,16 +1304,16 @@ export default function LessonManagement() {
                     </div>
 
                     <div className="app-modal-form-grid grid grid-cols-1 md:grid-cols-3 gap-6">
-                      
+
                       {/* Lesson Name */}
                       <div className="md:col-span-2 space-y-2">
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
                           Tiêu đề bài học <span className="text-[#FF8E8E]">*</span>
                         </label>
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           required
-                          placeholder="Ví dụ: Đọc trơn tru thanh ngã, lisp sọc..." 
+                          placeholder="Ví dụ: Đọc trơn tru thanh ngã, lisp sọc..."
                           value={formLessonName}
                           onChange={(e) => setFormLessonName(e.target.value)}
                           className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 placeholder-gray-300 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
@@ -1337,8 +1325,8 @@ export default function LessonManagement() {
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
                           Thứ tự bài học <span className="text-[#FF8E8E]">*</span>
                         </label>
-                        <input 
-                          type="number" 
+                        <input
+                          type="number"
                           required
                           min={1}
                           max={50}
@@ -1358,10 +1346,10 @@ export default function LessonManagement() {
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
                         Mô tả chi tiết bài học <span className="text-[#FF8E8E]">*</span>
                       </label>
-                      <textarea 
+                      <textarea
                         required
                         rows={3}
-                        placeholder="Tóm tắt kịch bản tương tác game và phân bổ kỹ năng để phụ huynh tiện theo dõi..." 
+                        placeholder="Tóm tắt kịch bản tương tác game và phân bổ kỹ năng để phụ huynh tiện theo dõi..."
                         value={formDesc}
                         onChange={(e) => setFormDesc(e.target.value)}
                         className="resize-y w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 placeholder-gray-300 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
@@ -1369,7 +1357,7 @@ export default function LessonManagement() {
                     </div>
 
                     <div className="app-modal-form-grid grid grid-cols-1 md:grid-cols-4 gap-6">
-                      
+
                       {/* Target Skill badge category */}
                       <div className="space-y-2">
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
@@ -1388,8 +1376,8 @@ export default function LessonManagement() {
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
                           Thời lượng ước tính (Phút) <span className="text-[#FF8E8E]">*</span>
                         </label>
-                        <input 
-                          type="number" 
+                        <input
+                          type="number"
                           required
                           min={5}
                           max={120}
@@ -1407,8 +1395,8 @@ export default function LessonManagement() {
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
                           Điểm tối đa <span className="text-[#FF8E8E]">*</span>
                         </label>
-                        <input 
-                          type="number" 
+                        <input
+                          type="number"
                           required
                           min={0}
                           max={1000}
@@ -1442,14 +1430,14 @@ export default function LessonManagement() {
 
                   {/* Submit and Cancel block button bar */}
                   <div className="app-modal-actions pt-6 border-t border-gray-150 flex gap-4">
-                    <button 
+                    <button
                       type="button"
                       onClick={handleCloseModal}
                       className="flex-1 py-4 border-4 border-gray-100 hover:border-gray-200 text-gray-400 hover:text-gray-600 font-extrabold rounded-2xl transition-all uppercase text-xs tracking-wider"
                     >
                       Hủy cấu hình
                     </button>
-                    <button 
+                    <button
                       type="submit"
                       className="flex-1 py-4 bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black rounded-2xl shadow-xl shadow-[#4EACAF]/15 transition-all text-sm uppercase tracking-wider"
                       id="lesson-submit-button"
@@ -1504,15 +1492,15 @@ function SkillBadge({ skill }: { skill: string }) {
   const isOralMotor = skill === 'Oral Motor';
   const isCommunication = skill === 'Communication';
 
-  const badgeClass = isPronunciation 
+  const badgeClass = isPronunciation
     ? 'bg-[#4EACAF]/10 text-[#4EACAF] border border-[#4EACAF]/15' :
     isVocabulary ? 'bg-sky-50 text-sky-600 border border-sky-100' :
-    isOralMotor ? 'bg-orange-50 text-orange-600 border border-orange-100' :
-    'bg-purple-50 text-purple-600 border border-purple-100';
+      isOralMotor ? 'bg-orange-50 text-orange-600 border border-orange-100' :
+        'bg-purple-50 text-purple-600 border border-purple-100';
 
   const label = isPronunciation ? 'Phát âm' :
     isVocabulary ? 'Từ vựng' :
-    isOralMotor ? 'Cơ môi miệng' :
+    isOralMotor ? 'Hàm miệng' :
     isCommunication ? 'Giao tiếp' :
     skill;
 

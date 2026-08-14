@@ -25,6 +25,8 @@ export interface ExerciseResponse {
   id: number;
   exerciseName: string;
   targetSkill: string;
+  difficultyLevel?: string;
+  language?: string;
 }
 
 const getExercises = async (...args: any[]) => ({ success: true, data: { items: [] } } as any);
