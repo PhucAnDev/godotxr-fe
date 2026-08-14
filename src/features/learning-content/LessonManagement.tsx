@@ -39,6 +39,7 @@ import { cn } from '../../lib/utils';
 import ActionButton from '../../components/common/ActionButton';
 import Pagination from '../../components/common/Pagination';
 import CustomSelect from '../../components/common/CustomSelect';
+import SearchableSelect from '../../components/common/SearchableSelect';
 import { useLessonManagementApi, type LessonResponse } from '../../hooks/useLessonManagementApi';
 import {
   getLessonImages, uploadLessonImage, deleteLessonImage,
@@ -530,10 +531,10 @@ export default function LessonManagement() {
   const filteredLessons = lessons.filter(item => {
     const program = programs.find(p => p.ProgramId === item.ProgramId);
     const skillLabel = item.TargetSkill === 'Pronunciation' ? 'phát âm' :
-                       item.TargetSkill === 'Vocabulary' ? 'từ vựng' :
-                       item.TargetSkill === 'Oral Motor' ? 'hàm miệng cơ môi miệng' :
-                       item.TargetSkill === 'Communication' ? 'giao tiếp' :
-                       item.TargetSkill;
+      item.TargetSkill === 'Vocabulary' ? 'từ vựng' :
+        item.TargetSkill === 'Oral Motor' ? 'hàm miệng cơ môi miệng' :
+          item.TargetSkill === 'Communication' ? 'giao tiếp' :
+            item.TargetSkill;
     const searchString = `${item.LessonName} ${item.TargetSkill} ${skillLabel} ${item.LessonId}`.toLowerCase();
 
     const matchesSearch = searchString.includes(searchQuery.toLowerCase());
@@ -1202,7 +1203,7 @@ export default function LessonManagement() {
                                 <div key={slot.id} className="bg-[#FDFCF5] p-4 rounded-2xl border border-slate-200/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                                   <div className="space-y-1.5 flex-1 min-w-0">
                                     <div className="flex items-center flex-wrap gap-2">
-                                      <strong className="text-sm text-slate-850">{slot.slotName}</strong>
+                                      <strong className="text-sm text-slate-850">Tên vị trí: {slot.slotName}</strong>
                                     </div>
 
                                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400 font-medium">
@@ -1214,26 +1215,25 @@ export default function LessonManagement() {
                                       ) : (
                                         <span className="text-amber-500 font-bold italic">Chưa liên kết góc chụp</span>
                                       )}
-                                      <span className="text-slate-300">|</span>
-                                      <span>ID: {slot.id}</span>
+
                                     </div>
                                   </div>
 
                                   {/* Select 3D Asset Dropdown */}
-                                  <div className="flex items-center gap-2 min-w-[260px]">
+                                  <div className="flex items-center gap-2 min-w-[280px]">
                                     <span className="text-xs font-bold text-slate-400 uppercase shrink-0">Vật phẩm:</span>
-                                    <select
+                                    <SearchableSelect
                                       value={slot.itemAssetId || ''}
-                                      onChange={(e) => handleAssignItem(slot.id, e.target.value ? Number(e.target.value) : null)}
-                                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-blue-500 text-slate-800"
-                                    >
-                                      <option value="">-- [Không gán vật phẩm] --</option>
-                                      {itemAssets.map((asset) => (
-                                        <option key={asset.id} value={asset.id}>
-                                          {asset.name} ("{asset.answerSentence}")
-                                        </option>
-                                      ))}
-                                    </select>
+                                      onChange={(val) => handleAssignItem(slot.id, val ? Number(val) : null)}
+                                      options={[
+                                        { value: '', label: '-- [Không gán vật phẩm] --' },
+                                        ...itemAssets.map(asset => ({
+                                          value: asset.id,
+                                          label: `${asset.name} ("${asset.answerSentence}")`
+                                        }))
+                                      ]}
+                                      placeholder="-- [Không gán vật phẩm] --"
+                                    />
                                   </div>
                                 </div>
                               );
@@ -1500,9 +1500,9 @@ function SkillBadge({ skill }: { skill: string }) {
 
   const label = isPronunciation ? 'Phát âm' :
     isVocabulary ? 'Từ vựng' :
-    isOralMotor ? 'Hàm miệng' :
-    isCommunication ? 'Giao tiếp' :
-    skill;
+      isOralMotor ? 'Hàm miệng' :
+        isCommunication ? 'Giao tiếp' :
+          skill;
 
   return (
     <span className={cn(
