@@ -53,6 +53,7 @@ interface Program {
   ProgramId: string;
   ProgramName: string;
   Language: 'Vietnamese' | 'English';
+  Status: 'Active' | 'Inactive';
 }
 
 interface Lesson {
@@ -87,10 +88,10 @@ const mapLesson = (lesson: LessonResponse): Lesson => ({
 
 // Predefined Mock Programs
 const MOCK_PROGRAMS: Program[] = [
-  { ProgramId: 'PRG-001', ProgramName: 'Thám hiểm Đảo Khủng Long VR - Luyện Âm Tròn Vành', Language: 'Vietnamese' },
-  { ProgramId: 'PRG-002', ProgramName: 'Space Language Explorer - Anh Ngữ Vũ Trụ', Language: 'English' },
-  { ProgramId: 'PRG-003', ProgramName: 'Vương Quốc Âm Thanh Tranh 3D - Kể Chuyện Cổ Tích', Language: 'Vietnamese' },
-  { ProgramId: 'PRG-005', ProgramName: 'Smart Phonetics Adventure - Đồ Vật & Con Vật 3D', Language: 'English' }
+  { ProgramId: 'PRG-001', ProgramName: 'Thám hiểm Đảo Khủng Long VR - Luyện Âm Tròn Vành', Language: 'Vietnamese', Status: 'Active' },
+  { ProgramId: 'PRG-002', ProgramName: 'Space Language Explorer - Anh Ngữ Vũ Trụ', Language: 'English', Status: 'Active' },
+  { ProgramId: 'PRG-003', ProgramName: 'Vương Quốc Âm Thanh Tranh 3D - Kể Chuyện Cổ Tích', Language: 'Vietnamese', Status: 'Active' },
+  { ProgramId: 'PRG-005', ProgramName: 'Smart Phonetics Adventure - Đồ Vật & Con Vật 3D', Language: 'English', Status: 'Active' }
 ];
 
 // Predefined Mock Lessons
@@ -291,6 +292,7 @@ export default function LessonManagement() {
           ProgramId: String(p.id),
           ProgramName: p.programName,
           Language: p.language,
+          Status: p.status,
         })));
       }
     });
@@ -461,7 +463,7 @@ export default function LessonManagement() {
       return;
     }
     setIsLoadingVrConfig(true);
-    
+
     let result;
     if (editingSlotId) {
       result = await updateLessonSlot(Number(selectedLesson.LessonId), editingSlotId, {
@@ -791,10 +793,10 @@ export default function LessonManagement() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse" id="lessons-table-body">
                 <thead>
-                  <tr className="bg-[#FDFCF5]/55 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
+                  <tr className="bg-[#FDFCF5]/55 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest whitespace-nowrap">
                     <th
                       onClick={() => handleSort('LessonId')}
-                      className="w-[5%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[6%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none whitespace-nowrap"
                       title="Sắp xếp theo Mã Số"
                     >
                       <div className="flex items-center gap-1">
@@ -808,11 +810,11 @@ export default function LessonManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('LessonOrder')}
-                      className="w-[5%] py-5 px-2 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[6%] py-5 px-2 cursor-pointer hover:bg-slate-100/50 transition-colors select-none whitespace-nowrap"
                       title="Sắp xếp theo Thứ tự"
                     >
                       <div className="flex items-center gap-1">
-                        Thứ tự
+                        STT
                         {sortColumn === 'LessonOrder' ? (
                           sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
                         ) : (
@@ -822,11 +824,11 @@ export default function LessonManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('LessonName')}
-                      className="w-[23%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
-                      title="Sắp xếp theo Tiêu đề bài học"
+                      className="w-[20%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none whitespace-nowrap"
+                      title="Sắp xếp theo tên bài học"
                     >
                       <div className="flex items-center gap-1">
-                        Tiêu đề bài học
+                        Tên bài học
                         {sortColumn === 'LessonName' ? (
                           sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
                         ) : (
@@ -836,11 +838,11 @@ export default function LessonManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('ProgramId')}
-                      className="w-[15%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[18%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none whitespace-nowrap"
                       title="Sắp xếp theo Chương trình"
                     >
                       <div className="flex items-center gap-1">
-                        Chương trình liên đới
+                        Chương trình học
                         {sortColumn === 'ProgramId' ? (
                           sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
                         ) : (
@@ -850,7 +852,7 @@ export default function LessonManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('TargetSkill')}
-                      className="w-[13%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[14%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none whitespace-nowrap"
                       title="Sắp xếp theo Mục tiêu kỹ năng"
                     >
                       <div className="flex items-center gap-1">
@@ -864,7 +866,7 @@ export default function LessonManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('EstimatedDuration')}
-                      className="w-[10%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[10%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none whitespace-nowrap"
                       title="Sắp xếp theo Thời lượng"
                     >
                       <div className="flex items-center gap-1">
@@ -878,7 +880,7 @@ export default function LessonManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('MaxScore')}
-                      className="w-[11%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[10%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none whitespace-nowrap"
                       title="Sắp xếp theo Điểm tối đa"
                     >
                       <div className="flex items-center gap-1">
@@ -890,10 +892,10 @@ export default function LessonManagement() {
                         )}
                       </div>
                     </th>
-                    <th className="w-[8%] py-5 px-4 select-none">
+                    <th className="w-[8%] py-5 px-4 select-none whitespace-nowrap">
                       Trạng Thái
                     </th>
-                    <th className="w-[10%] py-5 px-4 text-right select-none">Tùy chọn</th>
+                    <th className="w-[8%] py-5 px-4 text-right select-none whitespace-nowrap">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 font-normal text-sm text-slate-650">
@@ -905,23 +907,15 @@ export default function LessonManagement() {
                         <td className="py-5 px-4 font-mono text-gray-400 font-extrabold text-xs">
                           {lesson.LessonId}
                         </td>
-                        <td className="py-5 px-2 font-black italic text-[#4EACAF] text-lg">
-                          #{lesson.LessonOrder}
+                        <td className="py-5 px-2 font-mono text-gray-400 font-extrabold text-xs">
+                          {lesson.LessonOrder}
                         </td>
                         <td className="py-5 px-4">
-                          <div className="max-w-md font-bold space-y-1">
-                            <p className="font-medium text-slate-800 leading-snug line-clamp-1">{lesson.LessonName}</p>
-                            <p className="text-xs text-gray-400 font-medium line-clamp-2 leading-relaxed">{lesson.Description}</p>
-                          </div>
+                          <p className="font-medium text-slate-800 leading-snug line-clamp-1 max-w-md font-bold">{lesson.LessonName}</p>
                         </td>
                         <td className="py-5 px-4">
                           {program ? (
-                            <div className="font-bold space-y-0.5">
-                              <p className="text-gray-800 font-extrabold max-w-sm line-clamp-1">{program.ProgramName}</p>
-                              <span className="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold">
-                                {program.Language}
-                              </span>
-                            </div>
+                            <p className="text-gray-800 font-extrabold max-w-sm line-clamp-1">{program.ProgramName}</p>
                           ) : (
                             <span className="text-red-500 font-bold italic text-xs">Chương trình bị xóa</span>
                           )}
@@ -929,16 +923,16 @@ export default function LessonManagement() {
                         <td className="py-5 px-4">
                           <SkillBadge skill={lesson.TargetSkill} />
                         </td>
-                        <td className="py-5 px-4 font-normal text-slate-650">
+                        <td className="py-5 px-4 font-normal text-slate-650 whitespace-nowrap">
                           <div className="flex items-center gap-1.5 font-bold">
                             <Clock className="w-4 h-4 text-gray-400" />
                             <span>{lesson.EstimatedDuration} phút</span>
                           </div>
                         </td>
-                        <td className="py-5 px-4 font-bold text-slate-650">
+                        <td className="py-5 px-4 font-bold text-slate-650 whitespace-nowrap">
                           <span>{lesson.MaxScore ?? 100}đ</span>
                         </td>
-                        <td className="py-5 px-4">
+                        <td className="py-5 px-4 whitespace-nowrap">
                           <span className={cn(
                             "inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
                             lesson.Status === 'Active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-gray-100 text-gray-400 border border-transparent'
@@ -946,24 +940,12 @@ export default function LessonManagement() {
                             {lesson.Status === 'Active' ? '● Hoạt động' : '○ Tạm ngưng'}
                           </span>
                         </td>
-                        <td className="py-5 px-4 text-right">
+                        <td className="py-5 px-4 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1 px-1">
-                            <button
-                              onClick={() => handleToggleStatus(lesson.LessonId)}
-                              className="p-2.5 hover:bg-teal-50 text-teal-600 rounded-xl transition-colors shrink-0"
-                              title="Bật tắt trạng thái hoạt động nhanh"
-                            >
-                              {lesson.Status === 'Active' ? (
-                                <ToggleRight className="w-5 h-5 text-[#4EACAF]" />
-                              ) : (
-                                <ToggleLeft className="w-5 h-5 text-gray-300" />
-                              )}
-                            </button>
-
                             <ActionButton
                               type="play"
                               onClick={() => handleOpenExercises(lesson)}
-                              title="Xem chi tiết các bài thực hành"
+                              title="cấu hình vị trí vật phẩm"
                             />
 
                             <ActionButton
@@ -1291,7 +1273,7 @@ export default function LessonManagement() {
                                       placeholder="-- [Không gán vật phẩm] --"
                                       className="flex-1"
                                     />
-                                    
+
                                     {/* Action Buttons */}
                                     <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200 shrink-0">
                                       <button
@@ -1299,8 +1281,8 @@ export default function LessonManagement() {
                                         onClick={() => handleEditSlotClick(slot)}
                                         className={cn(
                                           "p-2 rounded-xl transition-all shadow-sm active:scale-90 cursor-pointer border",
-                                          editingSlotId === slot.id 
-                                            ? "bg-amber-100 text-amber-700 border-amber-200" 
+                                          editingSlotId === slot.id
+                                            ? "bg-amber-100 text-amber-700 border-amber-200"
                                             : "bg-white text-slate-650 border-slate-200 hover:bg-slate-50 hover:text-amber-600"
                                         )}
                                         title="Chỉnh sửa vị trí này"
@@ -1378,10 +1360,12 @@ export default function LessonManagement() {
                         value={formProgramId}
                         onChange={setFormProgramId}
                         variant="form"
-                        options={programs.map(p => ({
-                          value: p.ProgramId,
-                          label: `${p.ProgramName} (${p.ProgramId})`
-                        }))}
+                        options={programs
+                          .filter(p => p.Status === 'Active')
+                          .map(p => ({
+                            value: p.ProgramId,
+                            label: p.ProgramName
+                          }))}
                       />
                     </div>
 
@@ -1390,7 +1374,7 @@ export default function LessonManagement() {
                       {/* Lesson Name */}
                       <div className="md:col-span-2 space-y-2">
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                          Tiêu đề bài học <span className="text-[#FF8E8E]">*</span>
+                          Tên bài học <span className="text-[#FF8E8E]">*</span>
                         </label>
                         <input
                           type="text"

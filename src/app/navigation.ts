@@ -49,7 +49,6 @@ export type Screen =
   | 'SCHOOL_YEAR_MANAGEMENT'
   | 'SEMESTER_MANAGEMENT'
   | 'LEARNING_RESULT_MANAGEMENT'
-  | 'PRONUNCIATION_DETAIL_PAGE'
   | 'PROGRESS_ANALYSIS'
   | 'TEACHER_CLASSES'
   | 'TEACHER_CLASS_DETAIL'
@@ -152,12 +151,6 @@ export const teacherSidebarItems: SidebarItem[] = [
     label: 'Kết quả luyện tập',
     icon: GraduationCap,
     path: '/teacher/results',
-  },
-  {
-    id: 'PRONUNCIATION_DETAIL_PAGE',
-    label: 'Chi tiết phát âm',
-    icon: Volume2,
-    path: '/teacher/pronunciation',
   },
   {
     id: 'PROGRESS_ANALYSIS',
@@ -303,12 +296,6 @@ export const adminSidebarItems: SidebarItem[] = [
     label: 'Phân tích tiến độ',
     icon: TrendingUp,
     path: '/admin/progress',
-  },
-  {
-    id: 'PRONUNCIATION_DETAIL_PAGE',
-    label: 'Chi tiết phát âm',
-    icon: Volume2,
-    path: '/admin/pronunciation',
   },
   {
     id: 'ADMIN_ACCOUNT',

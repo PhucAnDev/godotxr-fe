@@ -32,7 +32,6 @@ import ProgramManagement from '../features/learning-content/ProgramManagement';
 import LessonManagement from '../features/learning-content/LessonManagement';
 import AssetManagement from '../features/learning-content/AssetManagement';
 import LearningResultManagement from '../features/learning-result/LearningResultManagement';
-import PronunciationDetailPage from '../features/learning-result/PronunciationDetailPage';
 import ProgressAnalysis from '../features/learning-result/ProgressAnalysis';
 import LessonReview from '../features/learning-result/LessonReview';
 import { ChangePasswordRoute, RegisterRedirect } from './routeGuards';
@@ -123,7 +122,7 @@ export function AppRoutes() {
             <Route path="lesson-review" element={<LessonReview />} />
             <Route path="results" element={<LearningResultManagement />} />
             <Route path="progress" element={<ProgressAnalysis />} />
-            <Route path="pronunciation" element={<PronunciationDetailPage />} />
+            <Route path="pronunciation" element={<Navigate to="../results" replace />} />
           </Route>
 
           <Route path="/teacher" element={
@@ -141,7 +140,7 @@ export function AppRoutes() {
             <Route path="class/:classId" element={<TeacherClassDetailRouteWrapper onNavigate={(screen) => handleTeacherNavigation(screen, navigate)} />} />
             <Route path="results" element={<LearningResultManagement />} />
             <Route path="progress" element={<ProgressAnalysis />} />
-            <Route path="pronunciation" element={<PronunciationDetailPage />} />
+            <Route path="pronunciation" element={<Navigate to="../results" replace />} />
             <Route path="lessons" element={<LessonManagement />} />
             <Route path="assets" element={<AssetManagement />} />
             <Route path="questions" element={<Navigate to="../assets" replace />} />
@@ -157,7 +156,7 @@ export function AppRoutes() {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="results" element={<LearningResultManagement />} />
             <Route path="progress" element={<ProgressAnalysis />} />
-            <Route path="pronunciation" element={<PronunciationDetailPage />} />
+            <Route path="pronunciation" element={<Navigate to="../results" replace />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="roles" element={<RoleManagement />} />
             <Route path="teachers" element={<TeacherManagement />} />
