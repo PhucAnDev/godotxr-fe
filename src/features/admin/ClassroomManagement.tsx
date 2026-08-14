@@ -976,30 +976,6 @@ export default function ClassroomManagement() {
           </>
         )}
       </div>
-
-      {/* Dynamic graphic info card */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto" id="design-philosophy">
-        <div className="flex items-center gap-4 bg-orange-50/40 p-6 rounded-xl border-2 border-orange-100">
-          <Smile className="w-10 h-10 text-orange-400 fill-current shrink-0 animate-bounce" />
-          <div>
-            <h4 className="font-black text-[#555] text-sm">Giao diện điều phối trẻ nhỏ</h4>
-            <p className="text-gray-500 text-xs font-bold leading-relaxed">
-              Trải nghiệm lớp học được phân chia theo độ tuổi tối ưu từ 3 đến 10 tuổi để đảm bảo sự phát triển thể trạng não bộ và ngữ âm chính xác nhất.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4 bg-teal-50/40 p-6 rounded-xl border-2 border-teal-100">
-          <Sparkles className="w-10 h-10 text-teal-400 shrink-0" />
-          <div>
-            <h4 className="font-black text-[#555] text-sm">Chương trình can thiệp XR</h4>
-            <p className="text-gray-500 text-xs font-bold leading-relaxed">
-              Sắp xếp giáo án thông minh giúp các chuyên gia can thiệp nhanh chóng thiết lập khối lượng bài tập tương tác 3D phù hợp cho từng học viên.
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* 5. Modals System Overlays */}
       <AnimatePresence>
         {modalType && (

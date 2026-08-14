@@ -35,7 +35,6 @@ import LearningResultManagement from '../features/learning-result/LearningResult
 import PronunciationDetailPage from '../features/learning-result/PronunciationDetailPage';
 import ProgressAnalysis from '../features/learning-result/ProgressAnalysis';
 import LessonReview from '../features/learning-result/LessonReview';
-import ReportGenerator from '../features/reports/ReportGenerator';
 import { ChangePasswordRoute, RegisterRedirect } from './routeGuards';
 import {
   adminSidebarItems,
@@ -125,7 +124,6 @@ export function AppRoutes() {
             <Route path="results" element={<LearningResultManagement />} />
             <Route path="progress" element={<ProgressAnalysis />} />
             <Route path="pronunciation" element={<PronunciationDetailPage />} />
-            <Route path="reports" element={<ReportGenerator />} />
           </Route>
 
           <Route path="/teacher" element={
@@ -148,7 +146,6 @@ export function AppRoutes() {
             <Route path="assets" element={<AssetManagement />} />
             <Route path="questions" element={<Navigate to="../assets" replace />} />
             <Route path="difficulty" element={<DifficultySettings />} />
-            <Route path="reports" element={<ReportGenerator />} />
             <Route path="lesson-review" element={<LessonReview />} />
             <Route path="account" element={<AccountSettings />} />
           </Route>
@@ -175,7 +172,6 @@ export function AppRoutes() {
             <Route path="questions" element={<Navigate to="../assets" replace />} />
             <Route path="school-years" element={<SchoolYearManagement />} />
             <Route path="semesters" element={<SemesterManagement />} />
-            <Route path="reports" element={<ReportGenerator />} />
             <Route path="account" element={<AccountSettings />} />
           </Route>
 

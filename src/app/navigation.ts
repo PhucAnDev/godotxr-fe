@@ -196,12 +196,6 @@ export const teacherSidebarItems: SidebarItem[] = [
     path: '/teacher/difficulty',
   },
   {
-    id: 'REPORTS',
-    label: 'Báo cáo kết quả',
-    icon: BarChart3,
-    path: '/teacher/reports',
-  },
-  {
     id: 'LESSON_REVIEW',
     label: 'Xem lại buổi học',
     icon: PlayCircle,
@@ -315,12 +309,6 @@ export const adminSidebarItems: SidebarItem[] = [
     label: 'Chi tiết phát âm',
     icon: Volume2,
     path: '/admin/pronunciation',
-  },
-  {
-    id: 'REPORTS',
-    label: 'Báo cáo hệ thống',
-    icon: BarChart3,
-    path: '/admin/reports',
   },
   {
     id: 'ADMIN_ACCOUNT',

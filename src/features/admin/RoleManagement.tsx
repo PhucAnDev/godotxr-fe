@@ -192,47 +192,129 @@ export default function RoleManagement() {
           <Loader2 className="w-10 h-10 text-[#4EACAF] animate-spin" />
           <span className="ml-3 text-gray-500 font-bold">Đang tải dữ liệu...</span>
         </div>
+      ) : filteredRoles.length === 0 ? (
+        <div className="bg-white rounded-[40px] py-24 text-center space-y-4 shadow-sm border border-gray-100">
+          <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto border-4 border-dashed border-gray-200">
+            <ShieldAlert className="w-8 h-8 text-gray-300" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-xl font-black text-gray-700">Không tìm thấy vai trò phù hợp!</p>
+            <p className="text-gray-400 font-medium text-sm">Vui lòng thử lại với từ khóa hoặc bộ lọc trạng thái khác.</p>
+          </div>
+          <button
+            onClick={() => { setSearchQuery(''); setFilterActive('ALL'); setSortBy('id_asc'); }}
+            className="px-5 py-2 hover:bg-gray-100 rounded-xl font-black text-xs text-[#4EACAF] border border-gray-200 uppercase transition-all"
+          >
+            Đặt lại bộ lọc
+          </button>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          {filteredRoles.length === 0 ? (
-            <div className="col-span-full bg-white rounded-[40px] py-24 text-center space-y-4 shadow-sm border border-gray-100">
-              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto border-4 border-dashed border-gray-200">
-                <ShieldAlert className="w-8 h-8 text-gray-300" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-xl font-black text-gray-700">Không tìm thấy vai trò phù hợp!</p>
-                <p className="text-gray-400 font-medium text-sm">Vui lòng thử lại với từ khóa hoặc bộ lọc trạng thái khác.</p>
-              </div>
-              <button
-                onClick={() => { setSearchQuery(''); setFilterActive('ALL'); setSortBy('id_asc'); }}
-                className="px-5 py-2 hover:bg-gray-100 rounded-xl font-black text-xs text-[#4EACAF] border border-gray-200 uppercase transition-all"
-              >
-                Đặt lại bộ lọc
-              </button>
-            </div>
-          ) : (
-            sortedRoles.map((role) => (
-              <div key={role.id}>
-                <RoleCard
-                  role={role}
-                  onDetail={() => handleOpenDetail(role)}
-                  onEdit={() => handleOpenEdit(role)}
-                  onToggleActive={() => handleToggleActive(role)}
-                  onDelete={() => handleDelete(role)}
-                />
-              </div>
-            ))
-          )}
+        <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-500 font-bold text-xs uppercase tracking-wider">
+                  <th className="py-4 px-6">Mã ID</th>
+                  <th className="py-4 px-4">Tên vai trò</th>
+                  <th className="py-4 px-4">Mô tả đặc quyền</th>
+                  <th className="py-4 px-4 text-center">Trạng thái</th>
+                  <th className="py-4 px-4">Ngày khởi tạo</th>
+                  <th className="py-4 px-6 text-right">Tùy chọn</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-normal text-sm text-slate-650">
+                {sortedRoles.map((role) => (
+                  <tr key={role.id} className={cn("hover:bg-slate-50/40 transition-colors", !role.isActive && "bg-rose-50/5")}>
+                    {/* ID */}
+                    <td className="py-4 px-6 font-mono text-slate-400 text-xs font-bold">
+                      ROL-{String(role.id).padStart(3, '0')}
+                    </td>
+                    
+                    {/* Role Name */}
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className={cn(
+                          "p-2 rounded-xl shrink-0 shadow-inner",
+                          role.id === 1 ? 'bg-orange-50 text-orange-500' :
+                          role.id === 2 ? 'bg-sky-50 text-sky-500' :
+                          role.id === 3 ? 'bg-purple-50 text-purple-500' : 'bg-gray-50 text-gray-500'
+                        )}>
+                          <Shield className="w-4.5 h-4.5" />
+                        </div>
+                        <span className="font-extrabold text-slate-900 text-sm">{role.roleName}</span>
+                      </div>
+                    </td>
+
+                    {/* Description */}
+                    <td className="py-4 px-4 max-w-xs md:max-w-md truncate font-medium text-slate-500 text-xs">
+                      {role.description}
+                    </td>
+
+                    {/* Active Status */}
+                    <td className="py-4 px-4 text-center">
+                      <span className={cn(
+                        "inline-flex items-center px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider",
+                        role.isActive
+                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                          : 'bg-rose-50 text-rose-500 border border-rose-100'
+                      )}>
+                        {role.isActive ? 'Kích hoạt' : 'Đã tắt'}
+                      </span>
+                    </td>
+
+                    {/* Created At */}
+                    <td className="py-4 px-4 text-slate-400 text-xs font-semibold">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-slate-350" />
+                        {formatDateDMY(role.createdAt)}
+                      </div>
+                    </td>
+
+                    {/* Actions */}
+                    <td className="py-4 px-6 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => handleOpenDetail(role)}
+                          className="p-2 bg-teal-50 hover:bg-teal-100 text-teal-650 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer border border-teal-100"
+                          title="Xem chi tiết"
+                        >
+                          <Eye className="w-4.5 h-4.5" />
+                        </button>
+                        <button
+                          onClick={() => handleOpenEdit(role)}
+                          className="p-2 bg-sky-50 hover:bg-sky-100 text-sky-500 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer border border-sky-100"
+                          title="Chỉnh sửa"
+                        >
+                          <Edit3 className="w-4.5 h-4.5" />
+                        </button>
+                        <button
+                          onClick={() => handleToggleActive(role)}
+                          className={cn(
+                            "p-2 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer border",
+                            role.isActive 
+                              ? 'bg-rose-50 hover:bg-rose-100 text-rose-500 border-rose-100' 
+                              : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-500 border-emerald-100'
+                          )}
+                          title={role.isActive ? "Tắt hoạt động" : "Bật hoạt động"}
+                        >
+                          <Power className="w-4.5 h-4.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(role)}
+                          className="p-2 bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer border border-slate-200"
+                          title="Xóa vai trò"
+                        >
+                          <Trash2 className="w-4.5 h-4.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
-
-      {/* Decorative quote */}
-      <div className="flex items-center justify-center gap-4 bg-orange-50/40 p-6 rounded-xl border-2 border-orange-100 max-w-lg mx-auto">
-        <Smile className="w-10 h-10 text-orange-400 fill-current shrink-0 animate-pulse" />
-        <p className="text-gray-500 font-bold text-xs md:text-sm italic leading-snug">
-          "Cấu hình vai trò và quyền hạn an toàn là nền tảng cốt lõi giúp phụ huynh tin tưởng, thầy cô yên tâm đồng hành cùng các bé phát âm mỗi ngày."
-        </p>
-      </div>
 
       {/* Modals */}
       <AnimatePresence>

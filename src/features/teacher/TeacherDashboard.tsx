@@ -385,16 +385,6 @@ export default function TeacherDashboard() {
               <ArrowRight className="w-3.5 h-3.5 text-[#4EACAF] group-hover:translate-x-1 transition-transform" />
             </button>
 
-            <button 
-              onClick={() => navigate('/teacher/reports')}
-              className="w-full group flex items-center justify-between p-3.5 bg-indigo-50/65 hover:bg-indigo-50 rounded-lg border border-indigo-100/50 transition-all cursor-pointer text-left"
-            >
-              <div className="flex items-center gap-2.5">
-                <FileText className="w-4 h-4 text-indigo-500" />
-                <span className="font-bold text-slate-700 text-xs uppercase tracking-wide">Xuất báo cáo tổng hợp</span>
-              </div>
-              <ArrowRight className="w-3.5 h-3.5 text-indigo-400 group-hover:translate-x-1 transition-transform" />
-            </button>
 
             <button 
               onClick={() => navigate('/teacher/difficulty')}
