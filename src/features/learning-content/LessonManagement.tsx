@@ -1003,17 +1003,6 @@ export default function LessonManagement() {
         )}
       </div>
 
-      {/* Decorative cute quote card */}
-      <div className="bg-orange-50/40 p-6 rounded-xl border-2 border-orange-100 max-w-xl mx-auto flex items-center gap-4">
-        <Smile className="w-12 h-12 text-orange-400 fill-current shrink-0 animate-bounce" />
-        <div className="space-y-1 font-bold">
-          <h4 className="font-normal text-slate-650 text-sm">Gợi ý thiết kế lộ trình</h4>
-          <p className="text-gray-500 text-xs leading-relaxed font-semibold">
-            Các bài tập uốn vòm và sửa ngọng hiệu quả nhất khi được đan xen trong thời lượng từ <strong className="text-emerald-600">15 - 20 phút</strong>. Việc rèn luyện lâu trong môi trường VR có thể gây mỏi cơ của các bé nhi đồng.
-          </p>
-        </div>
-      </div>
-
       {/* 5. Modal Systems */}
       <AnimatePresence>
         {modalType && (
