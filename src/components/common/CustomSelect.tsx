@@ -13,7 +13,7 @@ export interface CustomSelectProps {
   onChange: (value: string) => void;
   options: CustomSelectOption[];
   className?: string;
-  variant?: 'filter' | 'form';
+  variant?: 'filter' | 'form' | 'subform';
   disabled?: boolean;
   placement?: 'bottom' | 'top' | 'auto';
 }
@@ -64,6 +64,7 @@ export default function CustomSelect({
 
   const selectedOption = options.find(opt => opt.value === value) || options[0];
   const isForm = variant === 'form';
+  const isSubform = variant === 'subform';
 
   return (
     <div ref={containerRef} className={cn("relative w-full text-left", className)}>
@@ -78,7 +79,9 @@ export default function CustomSelect({
             : "cursor-pointer",
           isForm 
             ? cn("bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 text-sm", !disabled && "focus:border-[#4EACAF]")
-            : "bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/20 px-3 py-2 rounded-lg font-bold text-xs text-slate-600 focus:bg-white focus:border-[#4EACAF] uppercase"
+            : isSubform
+              ? cn("bg-white border border-slate-200 rounded-xl px-4 py-2.5 font-medium text-slate-800 text-sm focus:border-blue-500", !disabled && "focus:border-blue-500")
+              : "bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/20 px-3 py-2 rounded-lg font-bold text-xs text-slate-600 focus:bg-white focus:border-[#4EACAF] uppercase"
         )}
       >
         <span className="truncate pr-4">{selectedOption?.label}</span>
@@ -118,8 +121,14 @@ export default function CustomSelect({
                     "w-full text-left px-3.5 py-2.5 rounded-xl transition-all flex flex-col items-start gap-0.5 cursor-pointer",
                     isForm
                       ? "font-black italic text-sm tracking-wide text-gray-700 hover:bg-[#4EACAF]/10 hover:text-[#4EACAF]"
-                      : "font-bold text-xs uppercase text-slate-700 hover:bg-[#4EACAF]/10 hover:text-[#4EACAF]",
-                    isSelected && "bg-[#4EACAF] text-white hover:bg-[#4EACAF] hover:text-white"
+                      : isSubform
+                        ? "font-medium text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                        : "font-bold text-xs uppercase text-slate-700 hover:bg-[#4EACAF]/10 hover:text-[#4EACAF]",
+                    isSelected && (
+                      isSubform
+                        ? "bg-blue-600 text-white hover:bg-blue-600 hover:text-white"
+                        : "bg-[#4EACAF] text-white hover:bg-[#4EACAF] hover:text-white"
+                    )
                   )}
                 >
                   {opt.label}

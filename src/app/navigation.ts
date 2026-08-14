@@ -177,24 +177,6 @@ export const teacherSidebarItems: SidebarItem[] = [
     path: '/teacher/lessons',
   },
   {
-    id: 'ASSET_MANAGEMENT',
-    label: 'Thư viện vật phẩm 3D',
-    icon: FolderOpen,
-    path: '/teacher/assets',
-  },
-  {
-    id: 'DIFFICULTY',
-    label: 'Độ khó bài tập',
-    icon: Settings,
-    path: '/teacher/difficulty',
-  },
-  {
-    id: 'LESSON_REVIEW',
-    label: 'Xem lại buổi học',
-    icon: PlayCircle,
-    path: '/teacher/lesson-review',
-  },
-  {
     id: 'TEACHER_ACCOUNT',
     label: 'Tài khoản cá nhân',
     icon: Settings,

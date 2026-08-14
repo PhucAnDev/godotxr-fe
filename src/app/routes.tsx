@@ -22,7 +22,6 @@ import TeacherClasses from '../features/teacher/TeacherClasses';
 import TeacherClassDetail from '../features/teacher/TeacherClassDetail';
 import TeacherStudents from '../features/teacher/TeacherStudents';
 import TeacherStudentDetail from '../features/teacher/TeacherStudentDetail';
-import DifficultySettings from '../features/teacher/DifficultySettings';
 import ParentDashboard from '../features/parent/ParentDashboard';
 import ParentChildClass from '../features/parent/ParentChildClass';
 import ParentRecommendations from '../features/parent/ParentRecommendations';
@@ -142,10 +141,6 @@ export function AppRoutes() {
             <Route path="progress" element={<ProgressAnalysis />} />
             <Route path="pronunciation" element={<Navigate to="../results" replace />} />
             <Route path="lessons" element={<LessonManagement />} />
-            <Route path="assets" element={<AssetManagement />} />
-            <Route path="questions" element={<Navigate to="../assets" replace />} />
-            <Route path="difficulty" element={<DifficultySettings />} />
-            <Route path="lesson-review" element={<LessonReview />} />
             <Route path="account" element={<AccountSettings />} />
           </Route>
 

@@ -385,17 +385,6 @@ export default function TeacherDashboard() {
               <ArrowRight className="w-3.5 h-3.5 text-[#4EACAF] group-hover:translate-x-1 transition-transform" />
             </button>
 
-
-            <button 
-              onClick={() => navigate('/teacher/difficulty')}
-              className="w-full group flex items-center justify-between p-3.5 bg-amber-50/60 hover:bg-amber-50 rounded-lg border border-amber-100/55 transition-all cursor-pointer text-left"
-            >
-              <div className="flex items-center gap-2.5">
-                <Settings className="w-4 h-4 text-amber-500" />
-                <span className="font-bold text-slate-700 text-xs uppercase tracking-wide">Điều chỉnh độ khó VR</span>
-              </div>
-              <ArrowRight className="w-3.5 h-3.5 text-amber-400 group-hover:translate-x-1 transition-transform" />
-            </button>
           </div>
 
           {/* Warnings & Attention Needed */}

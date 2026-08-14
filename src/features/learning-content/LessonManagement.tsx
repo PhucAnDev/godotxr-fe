@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   BookOpen,
@@ -17,6 +17,7 @@ import {
   Smile,
   GraduationCap,
   Play,
+  Pause,
   Volume2,
   Bookmark,
   TrendingUp,
@@ -47,6 +48,45 @@ import {
   updateLessonSlot, deleteLessonSlot
 } from '../../services/lessonSlotService';
 import { getItemAssets, type ItemAssetResponse } from '../../services/itemAssetService';
+import { getSessionRole } from '../../lib/authSession';
+import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
+
+// Declare model-viewer type for TypeScript
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'model-viewer': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
+        src?: string;
+        alt?: string;
+        'auto-rotate'?: boolean | string;
+        'camera-controls'?: boolean | string;
+        'ar'?: boolean | string;
+        'shadow-intensity'?: string;
+        'environment-image'?: string;
+        'exposure'?: string;
+        'interaction-prompt'?: string;
+      }, HTMLElement>;
+    }
+  }
+}
+
+declare module 'react' {
+  namespace JSX {
+    interface IntrinsicElements {
+      'model-viewer': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
+        src?: string;
+        alt?: string;
+        'auto-rotate'?: boolean | string;
+        'camera-controls'?: boolean | string;
+        'ar'?: boolean | string;
+        'shadow-intensity'?: string;
+        'environment-image'?: string;
+        'exposure'?: string;
+        'interaction-prompt'?: string;
+      }, HTMLElement>;
+    }
+  }
+}
 
 // DB Interfaces
 interface Program {
@@ -197,6 +237,7 @@ const MOCK_EXERCISES_BY_LESSON: Record<string, Exercise[]> = {
 };
 export default function LessonManagement() {
   const { getLessons, getPrograms, createLesson, updateLesson, deleteLesson } = useLessonManagementApi();
+  const [userRole] = useState<'ADMIN' | 'TEACHER' | 'PARENT' | null>(() => getSessionRole());
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   // VR Configuration states
@@ -205,6 +246,37 @@ export default function LessonManagement() {
   const [itemAssets, setItemAssets] = useState<ItemAssetResponse[]>([]);
   const [isLoadingVrConfig, setIsLoadingVrConfig] = useState(false);
   const [vrModalTab, setVrModalTab] = useState<'angles' | 'slots'>('angles');
+
+  const [selectingAssetForSlotId, setSelectingAssetForSlotId] = useState<number | null>(null);
+  const [assetSearchQuery, setAssetSearchQuery] = useState('');
+  const [playingAudioId, setPlayingAudioId] = useState<number | null>(null);
+  const [hoveredAssetId, setHoveredAssetId] = useState<number | null>(null);
+  const [isViewerModalOpen, setIsViewerModalOpen] = useState(false);
+  const [viewingModelUrl, setViewingModelUrl] = useState('');
+  const [viewingModelName, setViewingModelName] = useState('');
+  const [deleteConfirmConfig, setDeleteConfirmConfig] = useState<{ type: 'angle' | 'slot'; id: number; message: string; title: string; subtitle: string } | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const filteredItemAssets = useMemo(() => {
+    if (!assetSearchQuery.trim()) return itemAssets;
+    const query = assetSearchQuery.toLowerCase();
+    return itemAssets.filter(asset => 
+      asset.name.toLowerCase().includes(query) || 
+      (asset.answerSentence && asset.answerSentence.toLowerCase().includes(query))
+    );
+  }, [itemAssets, assetSearchQuery]);
+
+  // Load model-viewer script from Google CDN
+  useEffect(() => {
+    const existingScript = document.getElementById('model-viewer-script');
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.id = 'model-viewer-script';
+      script.type = 'module';
+      script.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js';
+      document.head.appendChild(script);
+    }
+  }, []);
 
   // Angle image form state
   const [newAngleName, setNewAngleName] = useState('');
@@ -412,14 +484,24 @@ export default function LessonManagement() {
     }
   };
 
-  const handleDeleteAngle = async (imageId: number) => {
+  const handleDeleteAngle = (imageId: number) => {
+    setDeleteConfirmConfig({
+      type: 'angle',
+      id: imageId,
+      title: 'Xóa góc chụp',
+      subtitle: 'Xác nhận xóa góc chụp phòng học',
+      message: 'Bạn có chắc muốn xóa góc chụp này? Các Spawner liên kết với góc chụp này sẽ bị mất góc chụp tham chiếu.'
+    });
+  };
+
+  const executeDeleteAngle = async (imageId: number) => {
     if (!selectedLesson) return;
-    if (!window.confirm('Bạn có chắc muốn xóa góc chụp này? Các Spawner liên kết với góc chụp này sẽ bị mất góc chụp tham chiếu.')) return;
     setIsLoadingVrConfig(true);
     const result = await deleteLessonImage(Number(selectedLesson.LessonId), imageId);
     setIsLoadingVrConfig(false);
     if (result.success) {
       triggerToast('Xóa góc chụp thành công!');
+      setDeleteConfirmConfig(null);
       refreshVrConfig(Number(selectedLesson.LessonId));
     } else {
       triggerToast(result.errors.join(' ') || 'Xóa góc chụp thất bại', 'warning');
@@ -438,14 +520,24 @@ export default function LessonManagement() {
     setNewSlotImageId(null);
   };
 
-  const handleDeleteSlot = async (slotId: number) => {
+  const handleDeleteSlot = (slotId: number) => {
+    setDeleteConfirmConfig({
+      type: 'slot',
+      id: slotId,
+      title: 'Xóa vị trí vật phẩm',
+      subtitle: 'Xác nhận xóa vị trí đặt vật phẩm',
+      message: 'Bạn có chắc muốn xóa vị trí đặt vật phẩm này?'
+    });
+  };
+
+  const executeDeleteSlot = async (slotId: number) => {
     if (!selectedLesson) return;
-    if (!window.confirm('Bạn có chắc muốn xóa vị trí đặt vật phẩm này?')) return;
     setIsLoadingVrConfig(true);
     try {
       await deleteLessonSlot(Number(selectedLesson.LessonId), slotId);
       setIsLoadingVrConfig(false);
       triggerToast('Xóa vị trí thành công!');
+      setDeleteConfirmConfig(null);
       if (editingSlotId === slotId) {
         handleCancelEditSlot();
       }
@@ -508,6 +600,44 @@ export default function LessonManagement() {
     setEditingSlotId(null);
     setNewSlotName('');
     setNewSlotImageId(null);
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    setPlayingAudioId(null);
+    setSelectingAssetForSlotId(null);
+    setIsViewerModalOpen(false);
+    setDeleteConfirmConfig(null);
+  };
+
+  const toggleAudio = (id: number, url: string) => {
+    const fullAudioUrl = url.startsWith('http') ? url : `${import.meta.env.VITE_API_BASE_URL || ''}${url}`;
+    
+    if (playingAudioId === id) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      setPlayingAudioId(null);
+    } else {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      const audio = new Audio(fullAudioUrl);
+      audio.onended = () => {
+        setPlayingAudioId(null);
+      };
+      audioRef.current = audio;
+      audio.play().catch(err => console.log('Audio playback failed', err));
+      setPlayingAudioId(id);
+    }
+  };
+
+  const openViewer = (asset: ItemAssetResponse) => {
+    const fullUrl = asset.modelUrl
+      ? (asset.modelUrl.startsWith('http') ? asset.modelUrl : `${import.meta.env.VITE_API_BASE_URL || ''}${asset.modelUrl}`)
+      : '';
+    setViewingModelUrl(fullUrl);
+    setViewingModelName(asset.name);
+    setIsViewerModalOpen(true);
   };
 
   const handleOpenDelete = (les: Lesson) => {
@@ -1012,13 +1142,13 @@ export default function LessonManagement() {
 
                     {modalType === 'add' && 'Tạo bài học mới'}
                     {modalType === 'edit' && `Sửa thông tin bài học: ${selectedLesson?.LessonId}`}
-                    {modalType === 'exercises' && 'Cấu hình phân cảnh học tập VR'}
+                    {modalType === 'exercises' && (userRole === 'TEACHER' ? 'Gán vật phẩm cho phân cảnh VR' : 'Cấu hình phân cảnh học tập VR')}
                     {modalType === 'delete' && 'Xác nhận xóa bài học'}
                   </h2>
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
                     {modalType === 'add' && 'Thiết lập nội dung và gán lớp kỹ năng rèn nói cho bài học'}
                     {modalType === 'edit' && 'Cập nhật lại thông tin thứ tự và thời lượng can thiệp của bài giảng'}
-                    {modalType === 'exercises' && 'Quản lý góc chụp phòng học và cấu hình Spawner vật phẩm 3D cho Client VR'}
+                    {modalType === 'exercises' && (userRole === 'TEACHER' ? 'Gán mô hình 3D cho các vị trí spawner của bài học trong phòng học VR' : 'Quản lý góc chụp phòng học và cấu hình Spawner vật phẩm 3D cho Client VR')}
                     {modalType === 'delete' && 'Hành động này không thể khôi phục và có thể ảnh hưởng đến kết quả học tập'}
                   </p>
                 </div>
@@ -1034,278 +1164,465 @@ export default function LessonManagement() {
               {/* Modal Body conditional rendering */}
               {modalType === 'exercises' && selectedLesson ? (
                 <div className="app-modal-body p-6 md:p-8 space-y-6 max-h-[70vh] overflow-y-auto" id="modal-exercises-view">
-                  {/* Tab Selectors */}
-                  <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200/50">
-                    <button
-                      onClick={() => setVrModalTab('angles')}
-                      className={cn(
-                        "flex-1 py-3 px-4 rounded-xl text-sm font-bold tracking-tight transition-all flex items-center justify-center gap-2",
-                        vrModalTab === 'angles'
-                          ? "bg-white text-slate-800 shadow-sm"
-                          : "text-slate-500 hover:text-slate-700"
-                      )}
-                    >
-                      <Camera className="w-4 h-4 text-blue-500" />
-                      Ảnh góc chụp ({lessonImages.length})
-                    </button>
-                    <button
-                      onClick={() => setVrModalTab('slots')}
-                      className={cn(
-                        "flex-1 py-3 px-4 rounded-xl text-sm font-bold tracking-tight transition-all flex items-center justify-center gap-2",
-                        vrModalTab === 'slots'
-                          ? "bg-white text-slate-800 shadow-sm"
-                          : "text-slate-500 hover:text-slate-700"
-                      )}
-                    >
-                      <Boxes className="w-4 h-4 text-blue-500" />
-                      Vị trí vật phẩm ({lessonSlots.length})
-                    </button>
-                  </div>
-
-                  {isLoadingVrConfig ? (
-                    <div className="flex flex-col justify-center items-center py-16 space-y-3">
-                      <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
-                      <span className="font-bold text-slate-500 text-sm">Đang đồng bộ phân cảnh VR...</span>
-                    </div>
-                  ) : vrModalTab === 'angles' ? (
-                    /* --- ANGLES TAB --- */
-                    <div className="space-y-6">
-                      {/* Form Upload Angle Image */}
-                      <form onSubmit={handleUploadAngle} className="bg-slate-50 p-5 rounded-3xl border border-slate-200/50 space-y-4">
-                        <h4 className="font-extrabold text-sm text-slate-800 flex items-center gap-1.5">
-                          <Plus className="w-4.5 h-4.5 text-blue-500" />
-                          Đăng ký góc chụp tổng thể mới
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-1.5">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tên góc chụp</label>
-                            <input
-                              type="text"
-                              placeholder="Ví dụ: Góc kệ sách, Kệ trái cây..."
-                              value={newAngleName}
-                              onChange={(e) => setNewAngleName(e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:border-blue-500 text-slate-800"
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Chọn ảnh chụp thực tế</label>
-                            <div className="flex items-center gap-3">
-                              <input
-                                type="file"
-                                accept="image/*"
-                                id="angleFile"
-                                onChange={(e) => setNewAngleFile(e.target.files?.[0] || null)}
-                                className="hidden"
-                              />
-                              <label
-                                htmlFor="angleFile"
-                                className="flex items-center gap-2 border border-slate-200 hover:border-slate-300 bg-white px-4 py-2 rounded-xl cursor-pointer font-semibold text-slate-650 text-sm hover:bg-slate-50 transition-colors"
-                              >
-                                Choose File
-                              </label>
-                              <span className="text-xs text-slate-500 truncate max-w-[150px]">
-                                {newAngleFile ? newAngleFile.name : 'Chưa chọn tệp'}
-                              </span>
-                            </div>
-                          </div>
+                  {userRole === 'TEACHER' ? (
+                    /* --- TEACHER EXERCISES MODAL VIEW --- */
+                    isLoadingVrConfig ? (
+                      <div className="flex flex-col justify-center items-center py-16 space-y-3">
+                        <RefreshCw className="w-8 h-8 animate-spin text-teal-500" />
+                        <span className="font-bold text-slate-500 text-sm">Đang đồng bộ phân cảnh VR...</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-6 animate-in fade-in duration-300">
+                        <div className="bg-teal-50 text-teal-800 border border-teal-150 p-4 rounded-2xl text-xs font-semibold">
+                          * Hướng dẫn: Dưới đây là danh sách hình ảnh các góc chụp phòng học VR và các vị trí đặt vật phẩm tương ứng. Thầy/Cô vui lòng gán mô hình 3D thích hợp cho mỗi vị trí.
                         </div>
-                        <div className="flex justify-end pt-1">
-                          <button
-                            type="submit"
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
-                          >
-                            Tải lên góc chụp
-                          </button>
-                        </div>
-                      </form>
 
-                      {/* List of Angle Images */}
-                      <div className="space-y-3">
-                        <h4 className="font-extrabold text-slate-700 text-sm uppercase tracking-wider">Danh sách góc chụp đã có</h4>
                         {lessonImages.length === 0 ? (
-                          <div className="text-center py-10 text-slate-400 font-bold italic text-sm">
-                            Chưa có góc chụp nào được đăng ký cho bài học này.
+                          <div className="space-y-4">
+                            <h4 className="font-extrabold text-slate-700 text-sm uppercase tracking-wider">Danh sách vị trí vật phẩm</h4>
+                            {lessonSlots.length === 0 ? (
+                              <div className="text-center py-10 text-slate-400 font-bold italic text-sm">
+                                Chưa có vị trí đặt vật phẩm nào được thiết lập cho bài học này.
+                              </div>
+                            ) : (
+                              <div className="space-y-3">
+                                {lessonSlots.map((slot) => (
+                                  <div key={slot.id} className="bg-[#FDFCF5] p-4 rounded-2xl border border-slate-200/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <strong className="text-sm text-slate-800">Tên vị trí: {slot.slotName}</strong>
+                                    <div className="flex items-center gap-2 w-full sm:w-auto sm:min-w-[320px]">
+                                      <span className="text-xs font-bold text-slate-400 uppercase shrink-0">Vật phẩm:</span>
+                                      <SearchableSelect
+                                        value={slot.itemAssetId || ''}
+                                        onChange={(val) => handleAssignItem(slot.id, val ? Number(val) : null)}
+                                        options={[
+                                          { value: '', label: '-- [Không gán vật phẩm] --' },
+                                          ...itemAssets.map(asset => ({
+                                            value: asset.id,
+                                            label: `${asset.name} ("${asset.answerSentence}")`
+                                          }))
+                                        ]}
+                                        placeholder="-- [Không gán vật phẩm] --"
+                                        className="flex-1"
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         ) : (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-6">
                             {lessonImages.map((img) => {
                               const fullImgUrl = img.imageUrl.startsWith('http')
                                 ? img.imageUrl
                                 : `${import.meta.env.VITE_API_BASE_URL || ''}${img.imageUrl}`;
+                              const slotsForImg = lessonSlots.filter(s => s.lessonImageId === img.id);
+
                               return (
-                                <div key={img.id} className="group relative bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm flex flex-col">
-                                  <div className="aspect-video w-full bg-slate-100 overflow-hidden relative">
+                                <div key={img.id} className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm flex flex-col md:flex-row">
+                                  <div className="w-full md:w-2/5 aspect-video md:aspect-auto bg-slate-100 relative overflow-hidden flex items-center justify-center">
                                     <img
                                       src={fullImgUrl}
                                       alt={img.angleName}
-                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                      className="w-full h-full object-cover"
                                     />
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteAngle(img.id)}
-                                      className="absolute top-2.5 right-2.5 bg-rose-500 hover:bg-rose-600 text-white p-2 rounded-xl shadow-md transition-colors cursor-pointer"
-                                      title="Xóa góc chụp"
-                                    >
-                                      <Trash2 className="w-4.5 h-4.5" />
-                                    </button>
+                                    <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-white font-extrabold text-xs">
+                                      {img.angleName}
+                                    </div>
                                   </div>
-                                  <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                                    <span className="font-bold text-sm text-slate-800">{img.angleName}</span>
-                                    <span className="text-[10px] text-slate-400 font-mono">ID: {img.id}</span>
+                                  
+                                  <div className="w-full md:w-3/5 p-5 flex flex-col justify-center space-y-4">
+                                    <h5 className="font-extrabold text-xs text-slate-500 uppercase tracking-widest border-b border-slate-100 pb-2">
+                                      Các vị trí vật phẩm ({slotsForImg.length})
+                                    </h5>
+                                    {slotsForImg.length === 0 ? (
+                                      <p className="text-xs text-slate-400 font-bold italic py-2">
+                                        Không có vị trí vật phẩm nào thuộc góc chụp này.
+                                      </p>
+                                    ) : (
+                                      <div className="space-y-3.5">
+                                        {slotsForImg.map((slot) => (
+                                          <div key={slot.id} className="flex flex-col gap-1.5">
+                                            <div className="flex items-center justify-between">
+                                              <span className="text-xs font-extrabold text-slate-850 flex items-center gap-1.5">
+                                                <span className="w-2 h-2 rounded-full bg-teal-500"></span>
+                                                {slot.slotName}
+                                              </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              {slot.itemAssetId ? (
+                                                (() => {
+                                                  const assignedAsset = itemAssets.find(a => a.id === slot.itemAssetId);
+                                                  return (
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => {
+                                                        setSelectingAssetForSlotId(slot.id);
+                                                        setAssetSearchQuery('');
+                                                      }}
+                                                      className="w-full py-2 px-3.5 bg-blue-50/50 hover:bg-blue-100/70 text-blue-800 border border-blue-200 rounded-xl font-semibold text-xs flex items-center justify-between transition-all cursor-pointer"
+                                                    >
+                                                      <span className="truncate">
+                                                        {assignedAsset ? `${assignedAsset.name} ("${assignedAsset.answerSentence}")` : 'Vật phẩm đã gán'}
+                                                      </span>
+                                                      <span className="text-blue-600 shrink-0 ml-2 font-bold underline">Thay đổi</span>
+                                                    </button>
+                                                  );
+                                                })()
+                                              ) : (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    setSelectingAssetForSlotId(slot.id);
+                                                    setAssetSearchQuery('');
+                                                  }}
+                                                  className="w-full py-2 px-3.5 bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 border-dashed rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                                                >
+                                                  <Plus className="w-3.5 h-3.5" />
+                                                  Chọn vật phẩm 3D
+                                                </button>
+                                              )}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               );
                             })}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    /* --- SLOTS TAB --- */
-                    <div className="space-y-6">
-                      {/* Form Add/Edit Slot */}
-                      <form onSubmit={handleAddSlot} className={cn("p-5 rounded-3xl border space-y-4 transition-colors duration-300", editingSlotId ? "bg-amber-50/30 border-amber-200" : "bg-slate-50 border-slate-200/50")}>
-                        <h4 className="font-extrabold text-sm text-slate-800 flex items-center gap-1.5">
-                          {editingSlotId ? (
-                            <>
-                              <Edit3 className="w-4.5 h-4.5 text-amber-550" />
-                              Cập nhật vị trí đặt vật phẩm
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="w-4.5 h-4.5 text-blue-500" />
-                              Thêm vị trí đặt vật phẩm mới
-                            </>
-                          )}
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-1.5">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tên vị trí vật phẩm (Tên gợi nhớ) <span className="text-red-500">*</span></label>
-                            <input
-                              type="text"
-                              placeholder="Ví dụ: Kệ trái cây - Vị trí táo..."
-                              value={newSlotName}
-                              onChange={(e) => setNewSlotName(e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:border-blue-500 text-slate-800"
-                              required
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Thuộc góc chụp nào?</label>
-                            <select
-                              value={newSlotImageId || ''}
-                              onChange={(e) => setNewSlotImageId(e.target.value ? Number(e.target.value) : null)}
-                              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium outline-none focus:border-blue-500 text-slate-800"
-                            >
-                              <option value="">-- Chọn góc chụp để đánh dấu --</option>
-                              {lessonImages.map((img) => (
-                                <option key={img.id} value={img.id}>{img.angleName}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                        <div className="flex justify-end gap-2 pt-1">
-                          {editingSlotId && (
-                            <button
-                              type="button"
-                              onClick={handleCancelEditSlot}
-                              className="bg-slate-200 hover:bg-slate-300 text-slate-750 font-bold text-xs px-5 py-2.5 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer"
-                            >
-                              Hủy
-                            </button>
-                          )}
-                          <button
-                            type="submit"
-                            className={cn(
-                              "text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer",
-                              editingSlotId ? "bg-amber-600 hover:bg-amber-700" : "bg-blue-600 hover:bg-blue-700"
-                            )}
-                          >
-                            {editingSlotId ? 'Cập nhật vị trí' : 'Đăng ký vị trí'}
-                          </button>
-                        </div>
-                      </form>
 
-                      {/* List of Registered Slots */}
-                      <div className="space-y-3">
-                        <h4 className="font-extrabold text-slate-700 text-sm uppercase tracking-wider">Danh sách vị trí & Gán mô hình 3D</h4>
-                        {lessonSlots.length === 0 ? (
-                          <div className="text-center py-10 text-slate-400 font-bold italic text-sm">
-                            Chưa cấu hình vị trí đặt vật phẩm nào cho bài học này.
-                          </div>
-                        ) : (
-                          <div className="space-y-3 pr-1">
-                            {lessonSlots.map((slot) => {
-                              const assignedImg = lessonImages.find(img => img.id === slot.lessonImageId);
-                              return (
-                                <div key={slot.id} className="bg-[#FDFCF5] p-4 rounded-2xl border border-slate-200/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                  <div className="space-y-1.5 flex-1 min-w-0">
-                                    <div className="flex items-center flex-wrap gap-2">
-                                      <strong className="text-sm text-slate-850">Tên vị trí: {slot.slotName}</strong>
-                                    </div>
-
-                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400 font-medium">
-                                      {assignedImg ? (
-                                        <span className="flex items-center gap-1 text-slate-500">
-                                          <Camera className="w-3.5 h-3.5" />
-                                          Góc: <strong className="text-slate-700 font-extrabold">{assignedImg.angleName}</strong>
-                                        </span>
-                                      ) : (
-                                        <span className="text-amber-500 font-bold italic">Chưa liên kết góc chụp</span>
-                                      )}
-
-                                    </div>
-                                  </div>
-
-                                  {/* Select 3D Asset Dropdown & Action Buttons */}
-                                  <div className="flex items-center gap-2 w-full md:w-auto md:min-w-[480px]">
-                                    <span className="text-xs font-bold text-slate-400 uppercase shrink-0">Vật phẩm:</span>
-                                    <SearchableSelect
-                                      value={slot.itemAssetId || ''}
-                                      onChange={(val) => handleAssignItem(slot.id, val ? Number(val) : null)}
-                                      options={[
-                                        { value: '', label: '-- [Không gán vật phẩm] --' },
-                                        ...itemAssets.map(asset => ({
-                                          value: asset.id,
-                                          label: `${asset.name} ("${asset.answerSentence}")`
-                                        }))
-                                      ]}
-                                      placeholder="-- [Không gán vật phẩm] --"
-                                      className="flex-1"
-                                    />
-
-                                    {/* Action Buttons */}
-                                    <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200 shrink-0">
-                                      <button
-                                        type="button"
-                                        onClick={() => handleEditSlotClick(slot)}
-                                        className={cn(
-                                          "p-2 rounded-xl transition-all shadow-sm active:scale-90 cursor-pointer border",
-                                          editingSlotId === slot.id
-                                            ? "bg-amber-100 text-amber-700 border-amber-200"
-                                            : "bg-white text-slate-650 border-slate-200 hover:bg-slate-50 hover:text-amber-600"
+                            {lessonSlots.some(s => s.lessonImageId === null) && (
+                              <div className="bg-slate-50 border border-slate-200/60 p-5 rounded-3xl space-y-4">
+                                <h5 className="font-extrabold text-xs text-slate-500 uppercase tracking-widest border-b border-slate-200/50 pb-2">
+                                  Các vị trí khác (Chưa gán góc chụp)
+                                </h5>
+                                <div className="space-y-3">
+                                  {lessonSlots.filter(s => s.lessonImageId === null).map((slot) => (
+                                    <div key={slot.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200/45">
+                                      <span className="text-xs font-extrabold text-slate-800">{slot.slotName}</span>
+                                      <div className="w-full sm:w-[280px]">
+                                        {slot.itemAssetId ? (
+                                          (() => {
+                                            const assignedAsset = itemAssets.find(a => a.id === slot.itemAssetId);
+                                            return (
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  setSelectingAssetForSlotId(slot.id);
+                                                  setAssetSearchQuery('');
+                                                }}
+                                                className="w-full py-2 px-3.5 bg-blue-50/50 hover:bg-blue-100/70 text-blue-800 border border-blue-200 rounded-xl font-semibold text-xs flex items-center justify-between transition-all cursor-pointer"
+                                              >
+                                                <span className="truncate">
+                                                  {assignedAsset ? `${assignedAsset.name} ("${assignedAsset.answerSentence}")` : 'Vật phẩm đã gán'}
+                                                </span>
+                                                <span className="text-blue-600 shrink-0 ml-2 font-bold underline">Thay đổi</span>
+                                              </button>
+                                            );
+                                          })()
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setSelectingAssetForSlotId(slot.id);
+                                              setAssetSearchQuery('');
+                                            }}
+                                            className="w-full py-2 px-3.5 bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 border-dashed rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                                          >
+                                            <Plus className="w-3.5 h-3.5" />
+                                            Chọn vật phẩm 3D
+                                          </button>
                                         )}
-                                        title="Chỉnh sửa vị trí này"
-                                      >
-                                        <Edit3 className="w-3.5 h-3.5" />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleDeleteSlot(slot.id)}
-                                        className="p-2 rounded-xl bg-white text-slate-650 border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all shadow-sm active:scale-90 cursor-pointer"
-                                        title="Xóa vị trí này"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </button>
+                                      </div>
                                     </div>
-                                  </div>
+                                  ))}
                                 </div>
-                              );
-                            })}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
-                    </div>
+                    )
+                  ) : (
+                    /* --- ADMIN/ORIGINAL EXERCISES MODAL VIEW --- */
+                    <>
+                      {/* Tab Selectors */}
+                      <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200/50">
+                        <button
+                          onClick={() => setVrModalTab('angles')}
+                          className={cn(
+                            "flex-1 py-3 px-4 rounded-xl text-sm font-bold tracking-tight transition-all flex items-center justify-center gap-2",
+                            vrModalTab === 'angles'
+                              ? "bg-white text-slate-800 shadow-sm"
+                              : "text-slate-500 hover:text-slate-700"
+                          )}
+                        >
+                          <Camera className="w-4 h-4 text-blue-500" />
+                          Ảnh góc chụp ({lessonImages.length})
+                        </button>
+                        <button
+                          onClick={() => setVrModalTab('slots')}
+                          className={cn(
+                            "flex-1 py-3 px-4 rounded-xl text-sm font-bold tracking-tight transition-all flex items-center justify-center gap-2",
+                            vrModalTab === 'slots'
+                              ? "bg-white text-slate-800 shadow-sm"
+                              : "text-slate-500 hover:text-slate-700"
+                          )}
+                        >
+                          <Boxes className="w-4 h-4 text-blue-500" />
+                          Vị trí vật phẩm ({lessonSlots.length})
+                        </button>
+                      </div>
+
+                      {isLoadingVrConfig ? (
+                        <div className="flex flex-col justify-center items-center py-16 space-y-3">
+                          <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+                          <span className="font-bold text-slate-500 text-sm">Đang đồng bộ phân cảnh VR...</span>
+                        </div>
+                      ) : vrModalTab === 'angles' ? (
+                        /* --- ANGLES TAB --- */
+                        <div className="space-y-6">
+                          {/* Form Upload Angle Image */}
+                          <form onSubmit={handleUploadAngle} className="bg-slate-50 p-5 rounded-3xl border border-slate-200/50 space-y-4">
+                            <h4 className="font-extrabold text-sm text-slate-800 flex items-center gap-1.5">
+                              <Plus className="w-4.5 h-4.5 text-blue-500" />
+                              Đăng ký góc chụp tổng thể mới
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tên góc chụp</label>
+                                <input
+                                  type="text"
+                                  placeholder="Ví dụ: Góc kệ sách, Kệ trái cây..."
+                                  value={newAngleName}
+                                  onChange={(e) => setNewAngleName(e.target.value)}
+                                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:border-blue-500 text-slate-800"
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Chọn ảnh chụp thực tế</label>
+                                <div className="flex items-center gap-3">
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    id="angleFile"
+                                    onChange={(e) => setNewAngleFile(e.target.files?.[0] || null)}
+                                    className="hidden"
+                                  />
+                                  <label
+                                    htmlFor="angleFile"
+                                    className="flex items-center gap-2 border border-slate-200 hover:border-slate-300 bg-white px-4 py-2 rounded-xl cursor-pointer font-semibold text-slate-650 text-sm hover:bg-slate-50 transition-colors"
+                                  >
+                                    Choose File
+                                  </label>
+                                  <span className="text-xs text-slate-500 truncate max-w-[150px]">
+                                    {newAngleFile ? newAngleFile.name : 'Chưa chọn tệp'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex justify-end pt-1">
+                              <button
+                                type="submit"
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+                              >
+                                Tải lên góc chụp
+                              </button>
+                            </div>
+                          </form>
+
+                          {/* List of Angle Images */}
+                          <div className="space-y-3">
+                            <h4 className="font-extrabold text-slate-700 text-sm uppercase tracking-wider">Danh sách góc chụp đã có</h4>
+                            {lessonImages.length === 0 ? (
+                              <div className="text-center py-10 text-slate-400 font-bold italic text-sm">
+                                Chưa có góc chụp nào được đăng ký cho bài học này.
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {lessonImages.map((img) => {
+                                  const fullImgUrl = img.imageUrl.startsWith('http')
+                                    ? img.imageUrl
+                                    : `${import.meta.env.VITE_API_BASE_URL || ''}${img.imageUrl}`;
+                                  return (
+                                    <div key={img.id} className="group relative bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm flex flex-col">
+                                      <div className="aspect-video w-full bg-slate-100 overflow-hidden relative">
+                                        <img
+                                          src={fullImgUrl}
+                                          alt={img.angleName}
+                                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteAngle(img.id)}
+                                          className="absolute top-2.5 right-2.5 bg-rose-500 hover:bg-rose-600 text-white p-2 rounded-xl shadow-md transition-colors cursor-pointer"
+                                          title="Xóa góc chụp"
+                                        >
+                                          <Trash2 className="w-4.5 h-4.5" />
+                                        </button>
+                                      </div>
+                                      <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                                        <span className="font-bold text-sm text-slate-800">{img.angleName}</span>
+                                        <span className="text-[10px] text-slate-400 font-mono">ID: {img.id}</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        /* --- SLOTS TAB --- */
+                        <div className="space-y-6">
+                          {/* Form Add/Edit Slot */}
+                          <form onSubmit={handleAddSlot} className={cn("p-5 rounded-3xl border space-y-4 transition-colors duration-300", editingSlotId ? "bg-amber-50/30 border-amber-200" : "bg-slate-50 border-slate-200/50")}>
+                            <h4 className="font-extrabold text-sm text-slate-800 flex items-center gap-1.5">
+                              {editingSlotId ? (
+                                <>
+                                  <Edit3 className="w-4.5 h-4.5 text-amber-550" />
+                                  Cập nhật vị trí đặt vật phẩm
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="w-4.5 h-4.5 text-blue-500" />
+                                  Thêm vị trí đặt vật phẩm mới
+                                </>
+                              )}
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tên vị trí vật phẩm (Tên gợi nhớ) <span className="text-red-500">*</span></label>
+                                <input
+                                  type="text"
+                                  placeholder="Ví dụ: Kệ trái cây - Vị trí táo..."
+                                  value={newSlotName}
+                                  onChange={(e) => setNewSlotName(e.target.value)}
+                                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:border-blue-500 text-slate-800"
+                                  required
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Thuộc góc chụp nào?</label>
+                                <CustomSelect
+                                  value={newSlotImageId ? String(newSlotImageId) : ''}
+                                  onChange={(val) => setNewSlotImageId(val ? Number(val) : null)}
+                                  options={[
+                                    { value: '', label: '-- Chọn góc chụp để đánh dấu --' },
+                                    ...lessonImages.map((img) => ({
+                                      value: String(img.id),
+                                      label: img.angleName
+                                    }))
+                                  ]}
+                                  variant="subform"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex justify-end gap-2 pt-1">
+                              {editingSlotId && (
+                                <button
+                                  type="button"
+                                  onClick={handleCancelEditSlot}
+                                  className="bg-slate-200 hover:bg-slate-300 text-slate-750 font-bold text-xs px-5 py-2.5 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer"
+                                >
+                                  Hủy
+                                </button>
+                              )}
+                              <button
+                                type="submit"
+                                className={cn(
+                                  "text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer",
+                                  editingSlotId ? "bg-amber-600 hover:bg-amber-700" : "bg-blue-600 hover:bg-blue-700"
+                                )}
+                              >
+                                {editingSlotId ? 'Cập nhật vị trí' : 'Đăng ký vị trí'}
+                              </button>
+                            </div>
+                          </form>
+
+                          {/* List of Registered Slots */}
+                          <div className="space-y-3">
+                            <h4 className="font-extrabold text-slate-700 text-sm uppercase tracking-wider">Danh sách vị trí & Gán mô hình 3D</h4>
+                            {lessonSlots.length === 0 ? (
+                              <div className="text-center py-10 text-slate-400 font-bold italic text-sm">
+                                Chưa cấu hình vị trí đặt vật phẩm nào cho bài học này.
+                              </div>
+                            ) : (
+                              <div className="space-y-3 pr-1">
+                                {lessonSlots.map((slot) => {
+                                  const assignedImg = lessonImages.find(img => img.id === slot.lessonImageId);
+                                  return (
+                                    <div key={slot.id} className="bg-[#FDFCF5] p-4 rounded-2xl border border-slate-200/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                      <div className="space-y-1.5 flex-1 min-w-0">
+                                        <div className="flex items-center flex-wrap gap-2">
+                                          <strong className="text-sm text-slate-850">Tên vị trí: {slot.slotName}</strong>
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400 font-medium">
+                                          {assignedImg ? (
+                                            <span className="flex items-center gap-1 text-slate-500">
+                                              <Camera className="w-3.5 h-3.5" />
+                                              Góc: <strong className="text-slate-700 font-extrabold">{assignedImg.angleName}</strong>
+                                            </span>
+                                          ) : (
+                                            <span className="text-amber-500 font-bold italic">Chưa liên kết góc chụp</span>
+                                          )}
+
+                                        </div>
+                                      </div>
+
+                                      {/* Select 3D Asset Dropdown & Action Buttons */}
+                                      <div className="flex items-center gap-2 w-full md:w-auto md:min-w-[480px]">
+                                        <span className="text-xs font-bold text-slate-400 uppercase shrink-0">Vật phẩm:</span>
+                                        <SearchableSelect
+                                          value={slot.itemAssetId || ''}
+                                          onChange={(val) => handleAssignItem(slot.id, val ? Number(val) : null)}
+                                          options={[
+                                            { value: '', label: '-- [Không gán vật phẩm] --' },
+                                            ...itemAssets.map(asset => ({
+                                              value: asset.id,
+                                              label: `${asset.name} ("${asset.answerSentence}")`
+                                            }))
+                                          ]}
+                                          placeholder="-- [Không gán vật phẩm] --"
+                                          className="flex-1"
+                                        />
+
+                                        {/* Action Buttons */}
+                                        <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200 shrink-0">
+                                          <button
+                                            type="button"
+                                            onClick={() => handleEditSlotClick(slot)}
+                                            className={cn(
+                                              "p-2 rounded-xl transition-all shadow-sm active:scale-90 cursor-pointer border",
+                                              editingSlotId === slot.id
+                                                ? "bg-amber-100 text-amber-700 border-amber-200"
+                                                : "bg-white text-slate-650 border-slate-200 hover:bg-slate-50 hover:text-amber-600"
+                                            )}
+                                            title="Chỉnh sửa vị trí này"
+                                          >
+                                            <Edit3 className="w-3.5 h-3.5" />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteSlot(slot.id)}
+                                            className="p-2 rounded-xl bg-white text-slate-650 border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all shadow-sm active:scale-90 cursor-pointer"
+                                            title="Xóa vị trí này"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   <div className="flex justify-end pt-4 border-t border-gray-100">
@@ -1515,6 +1832,229 @@ export default function LessonManagement() {
               )}
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* 6. Secondary Asset Selection Modal for Teachers */}
+      <AnimatePresence>
+        {selectingAssetForSlotId !== null && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 md:p-6 backdrop-blur-2xl bg-gray-950/20 animate-in fade-in duration-300 overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              className="bg-white rounded-[32px] shadow-2xl w-full max-w-4xl overflow-hidden border border-gray-150 relative z-30 my-8 flex flex-col max-h-[85vh]"
+            >
+              {/* Header */}
+              <div className="px-8 py-5 flex items-center justify-between border-b border-slate-100 bg-slate-50/50">
+                <div>
+                  <h3 className="text-xl font-black italic text-slate-800 flex items-center gap-2">
+                    <Boxes className="w-5.5 h-5.5 text-blue-600" />
+                    Thư viện vật phẩm 3D
+                  </h3>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                    Chọn mô hình 3D để gán vào vị trí spawner của bài học
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectingAssetForSlotId(null)}
+                  className="p-2 hover:bg-slate-150 rounded-full transition-colors cursor-pointer"
+                >
+                  <X className="w-5.5 h-5.5 text-slate-500" />
+                </button>
+              </div>
+
+              {/* Search & Actions Bar */}
+              <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row gap-4 items-center bg-white">
+                <div className="relative flex-1 w-full">
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm vật phẩm theo tên hoặc từ khóa phát âm..."
+                    value={assetSearchQuery}
+                    onChange={(e) => setAssetSearchQuery(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none focus:border-blue-500 focus:bg-white text-slate-800 transition-all"
+                  />
+                </div>
+                <div className="flex gap-2 shrink-0 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleAssignItem(selectingAssetForSlotId, null);
+                      setSelectingAssetForSlotId(null);
+                    }}
+                    className="flex-1 sm:flex-none px-5 py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-2xl font-bold text-xs cursor-pointer transition-all active:scale-95 whitespace-nowrap text-center animate-in fade-in duration-300"
+                  >
+                    Bỏ gán vật phẩm (Để trống)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectingAssetForSlotId(null)}
+                    className="flex-1 sm:flex-none px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-750 rounded-2xl font-bold text-xs cursor-pointer transition-all active:scale-95 text-center"
+                  >
+                    Đóng
+                  </button>
+                </div>
+              </div>
+
+              {/* Grid Body */}
+              <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50/50">
+                {filteredItemAssets.length === 0 ? (
+                  <div className="text-center py-16 text-slate-400 font-bold italic text-sm">
+                    Không tìm thấy vật phẩm nào phù hợp với từ khóa của bạn.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {filteredItemAssets.map((asset) => {
+                      const fullImageUrl = asset.imageUrl
+                        ? (asset.imageUrl.startsWith('http') ? asset.imageUrl : `${import.meta.env.VITE_API_BASE_URL || ''}${asset.imageUrl}`)
+                        : '';
+                      return (
+                        <div
+                          key={asset.id}
+                          className="group bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 h-[320px]"
+                        >
+                          {/* Image preview */}
+                          <div className="relative w-full h-[50%] bg-slate-100 border-b border-slate-150 overflow-hidden flex items-center justify-center">
+                            {fullImageUrl ? (
+                              <img
+                                src={fullImageUrl}
+                                alt={asset.name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              />
+                            ) : (
+                              asset.modelUrl && (
+                                <div className="absolute inset-0 w-full h-full p-1">
+                                  <model-viewer
+                                    src={asset.modelUrl.startsWith('http') ? asset.modelUrl : `${import.meta.env.VITE_API_BASE_URL || ''}${asset.modelUrl}`}
+                                    alt={asset.name}
+                                    shadow-intensity="1"
+                                    interaction-prompt="none"
+                                    camera-controls={false}
+                                    auto-rotate={true}
+                                    style={{ width: '100%', height: '100%', outline: 'none' }}
+                                  />
+                                </div>
+                              )
+                            )}
+                            {asset.modelUrl && (
+                              <button
+                                type="button"
+                                onClick={() => openViewer(asset)}
+                                className="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur-sm text-white font-medium text-[10px] px-2.5 py-1.5 rounded-lg opacity-0 scale-90 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-300 z-10 cursor-pointer"
+                              >
+                                Xem 3D
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Info Body */}
+                          <div className="p-4 flex-1 flex flex-col justify-between">
+                            <div>
+                              <h4 className="font-extrabold text-slate-800 text-sm line-clamp-1" title={asset.name}>
+                                {asset.name}
+                              </h4>
+                              
+                              <div className="mt-1.5 bg-blue-50/70 border border-blue-100 px-2 py-1 rounded-xl">
+                                <span className="text-[9px] uppercase font-bold text-blue-500 block">Từ khóa đọc chuẩn</span>
+                                <span className="text-xs font-semibold text-blue-900 block truncate">"{asset.answerSentence}"</span>
+                              </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex gap-2 pt-2 border-t border-slate-100 mt-2">
+                              {asset.audioUrl && (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleAudio(asset.id, asset.audioUrl!)}
+                                  className={`p-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                                    playingAudioId === asset.id
+                                      ? 'bg-emerald-500 text-white border-emerald-500'
+                                      : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                  }`}
+                                  title="Nghe phát âm mẫu"
+                                >
+                                  {playingAudioId === asset.id ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-current" />}
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleAssignItem(selectingAssetForSlotId, asset.id);
+                                  setSelectingAssetForSlotId(null);
+                                }}
+                                className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer text-center"
+                              >
+                                Gán vật phẩm
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Model Viewer Modal (Full Interactive Preview) */}
+      {isViewerModalOpen && viewingModelUrl && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <div className="bg-slate-900 w-full max-w-4xl h-[70vh] rounded-3xl overflow-hidden flex flex-col shadow-2xl relative border border-slate-800">
+            {/* Header */}
+            <div className="flex justify-between items-center bg-slate-950 border-b border-slate-800 px-6 py-4">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <Boxes className="text-blue-500 h-6 w-6" />
+                Mô hình 3D: {viewingModelName}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsViewerModalOpen(false)}
+                className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* 3D Canvas Body */}
+            <div className="flex-1 w-full bg-slate-950 relative">
+              <model-viewer
+                src={viewingModelUrl}
+                alt={viewingModelName}
+                shadow-intensity="1.5"
+                camera-controls="true"
+                auto-rotate="true"
+                ar="true"
+                style={{ width: '100%', height: '100%', outline: 'none' }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. Confirm Delete Modal for VR Configuration (Angles & Slots) */}
+      <AnimatePresence>
+        {deleteConfirmConfig !== null && (
+          <ConfirmDeleteModal
+            title={deleteConfirmConfig.title}
+            subtitle={deleteConfirmConfig.subtitle}
+            onClose={() => setDeleteConfirmConfig(null)}
+            onConfirm={async () => {
+              const { type, id } = deleteConfirmConfig;
+              if (type === 'angle') {
+                await executeDeleteAngle(id);
+              } else {
+                await executeDeleteSlot(id);
+              }
+            }}
+            isDeleting={isLoadingVrConfig}
+            accent="rose"
+          >
+            <p className="font-semibold text-sm text-rose-800">{deleteConfirmConfig.message}</p>
+          </ConfirmDeleteModal>
         )}
       </AnimatePresence>
     </div>
