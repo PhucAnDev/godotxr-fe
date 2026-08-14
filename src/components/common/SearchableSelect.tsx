@@ -29,6 +29,7 @@ export default function SearchableSelect({
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [calculatedPlacement, setCalculatedPlacement] = useState<'bottom' | 'top'>('bottom');
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -43,6 +44,22 @@ export default function SearchableSelect({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Calculate placement based on screen position
+  useEffect(() => {
+    if (isOpen) {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        // If space below is less than 280px and there is more space above, open top
+        if (spaceBelow < 280 && rect.top > spaceBelow) {
+          setCalculatedPlacement('top');
+        } else {
+          setCalculatedPlacement('bottom');
+        }
+      }
+    }
+  }, [isOpen]);
 
   // Focus input when open
   useEffect(() => {
@@ -93,11 +110,14 @@ export default function SearchableSelect({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 5 }}
+            initial={{ opacity: 0, y: calculatedPlacement === 'top' ? -5 : 5 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 5 }}
+            exit={{ opacity: 0, y: calculatedPlacement === 'top' ? -5 : 5 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-50 w-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl flex flex-col overflow-hidden max-h-64"
+            className={cn(
+              "absolute z-50 w-full bg-white border border-slate-200 rounded-2xl shadow-xl flex flex-col overflow-hidden max-h-64",
+              calculatedPlacement === 'top' ? "bottom-full mb-1.5" : "mt-1.5"
+            )}
           >
             {/* Search Input Box */}
             <div className="p-2.5 border-b border-slate-100 flex items-center gap-1.5 bg-slate-50">

@@ -1196,7 +1196,7 @@ export default function LessonManagement() {
                             Chưa cấu hình vị trí đặt vật phẩm nào cho bài học này.
                           </div>
                         ) : (
-                          <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                          <div className="space-y-3 pr-1">
                             {lessonSlots.map((slot) => {
                               const assignedImg = lessonImages.find(img => img.id === slot.lessonImageId);
                               return (
