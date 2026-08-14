@@ -43,7 +43,8 @@ import SearchableSelect from '../../components/common/SearchableSelect';
 import { useLessonManagementApi, type LessonResponse } from '../../hooks/useLessonManagementApi';
 import {
   getLessonImages, uploadLessonImage, deleteLessonImage,
-  getLessonSlots, configureLessonSlot, assignItemToSlot
+  getLessonSlots, configureLessonSlot, assignItemToSlot,
+  updateLessonSlot, deleteLessonSlot
 } from '../../services/lessonSlotService';
 import { getItemAssets, type ItemAssetResponse } from '../../services/itemAssetService';
 
@@ -211,6 +212,7 @@ export default function LessonManagement() {
   // Slot configuration form state
   const [newSlotName, setNewSlotName] = useState('');
   const [newSlotImageId, setNewSlotImageId] = useState<number | null>(null);
+  const [editingSlotId, setEditingSlotId] = useState<number | null>(null);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
 
   // Filters State
@@ -422,25 +424,66 @@ export default function LessonManagement() {
     }
   };
 
+  const handleEditSlotClick = (slot: any) => {
+    setEditingSlotId(slot.id);
+    setNewSlotName(slot.slotName);
+    setNewSlotImageId(slot.lessonImageId);
+  };
+
+  const handleCancelEditSlot = () => {
+    setEditingSlotId(null);
+    setNewSlotName('');
+    setNewSlotImageId(null);
+  };
+
+  const handleDeleteSlot = async (slotId: number) => {
+    if (!selectedLesson) return;
+    if (!window.confirm('Bạn có chắc muốn xóa vị trí đặt vật phẩm này?')) return;
+    setIsLoadingVrConfig(true);
+    try {
+      await deleteLessonSlot(Number(selectedLesson.LessonId), slotId);
+      setIsLoadingVrConfig(false);
+      triggerToast('Xóa vị trí thành công!');
+      if (editingSlotId === slotId) {
+        handleCancelEditSlot();
+      }
+      refreshVrConfig(Number(selectedLesson.LessonId));
+    } catch (err: any) {
+      setIsLoadingVrConfig(false);
+      triggerToast(err.message || 'Xóa vị trí thất bại', 'warning');
+    }
+  };
+
   const handleAddSlot = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLesson || !newSlotName.trim()) {
-      triggerToast('Vui lòng điền tên Spawner!', 'warning');
+      triggerToast('Vui lòng điền tên vị trí!', 'warning');
       return;
     }
     setIsLoadingVrConfig(true);
-    const result = await configureLessonSlot(Number(selectedLesson.LessonId), {
-      slotName: newSlotName.trim(),
-      lessonImageId: newSlotImageId
-    });
+    
+    let result;
+    if (editingSlotId) {
+      result = await updateLessonSlot(Number(selectedLesson.LessonId), editingSlotId, {
+        slotName: newSlotName.trim(),
+        lessonImageId: newSlotImageId
+      });
+    } else {
+      result = await configureLessonSlot(Number(selectedLesson.LessonId), {
+        slotName: newSlotName.trim(),
+        lessonImageId: newSlotImageId
+      });
+    }
+
     setIsLoadingVrConfig(false);
     if (result.success) {
-      triggerToast('Thêm vị trí đặt vật phẩm thành công!');
+      triggerToast(editingSlotId ? 'Cập nhật vị trí thành công!' : 'Thêm vị trí đặt vật phẩm thành công!');
       setNewSlotName('');
       setNewSlotImageId(null);
+      setEditingSlotId(null);
       refreshVrConfig(Number(selectedLesson.LessonId));
     } else {
-      triggerToast(result.errors.join(' ') || 'Thêm vị trí thất bại', 'warning');
+      triggerToast(result.errors.join(' ') || (editingSlotId ? 'Cập nhật vị trí thất bại' : 'Thêm vị trí thất bại'), 'warning');
     }
   };
 
@@ -460,6 +503,9 @@ export default function LessonManagement() {
   const handleCloseModal = () => {
     setModalType(null);
     setSelectedLesson(null);
+    setEditingSlotId(null);
+    setNewSlotName('');
+    setNewSlotImageId(null);
   };
 
   const handleOpenDelete = (les: Lesson) => {
@@ -1146,11 +1192,20 @@ export default function LessonManagement() {
                   ) : (
                     /* --- SLOTS TAB --- */
                     <div className="space-y-6">
-                      {/* Form Add Slot */}
-                      <form onSubmit={handleAddSlot} className="bg-slate-50 p-5 rounded-3xl border border-slate-200/50 space-y-4">
+                      {/* Form Add/Edit Slot */}
+                      <form onSubmit={handleAddSlot} className={cn("p-5 rounded-3xl border space-y-4 transition-colors duration-300", editingSlotId ? "bg-amber-50/30 border-amber-200" : "bg-slate-50 border-slate-200/50")}>
                         <h4 className="font-extrabold text-sm text-slate-800 flex items-center gap-1.5">
-                          <Plus className="w-4.5 h-4.5 text-blue-500" />
-                          Thêm vị trí đặt vật phẩm mới
+                          {editingSlotId ? (
+                            <>
+                              <Edit3 className="w-4.5 h-4.5 text-amber-550" />
+                              Cập nhật vị trí đặt vật phẩm
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="w-4.5 h-4.5 text-blue-500" />
+                              Thêm vị trí đặt vật phẩm mới
+                            </>
+                          )}
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-1.5">
@@ -1178,12 +1233,24 @@ export default function LessonManagement() {
                             </select>
                           </div>
                         </div>
-                        <div className="flex justify-end pt-1">
+                        <div className="flex justify-end gap-2 pt-1">
+                          {editingSlotId && (
+                            <button
+                              type="button"
+                              onClick={handleCancelEditSlot}
+                              className="bg-slate-200 hover:bg-slate-300 text-slate-750 font-bold text-xs px-5 py-2.5 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer"
+                            >
+                              Hủy
+                            </button>
+                          )}
                           <button
                             type="submit"
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+                            className={cn(
+                              "text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer",
+                              editingSlotId ? "bg-amber-600 hover:bg-amber-700" : "bg-blue-600 hover:bg-blue-700"
+                            )}
                           >
-                            Đăng ký vị trí
+                            {editingSlotId ? 'Cập nhật vị trí' : 'Đăng ký vị trí'}
                           </button>
                         </div>
                       </form>
@@ -1219,8 +1286,8 @@ export default function LessonManagement() {
                                     </div>
                                   </div>
 
-                                  {/* Select 3D Asset Dropdown */}
-                                  <div className="flex items-center gap-2 min-w-[360px] md:min-w-[400px]">
+                                  {/* Select 3D Asset Dropdown & Action Buttons */}
+                                  <div className="flex items-center gap-2 w-full md:w-auto md:min-w-[480px]">
                                     <span className="text-xs font-bold text-slate-400 uppercase shrink-0">Vật phẩm:</span>
                                     <SearchableSelect
                                       value={slot.itemAssetId || ''}
@@ -1233,7 +1300,33 @@ export default function LessonManagement() {
                                         }))
                                       ]}
                                       placeholder="-- [Không gán vật phẩm] --"
+                                      className="flex-1"
                                     />
+                                    
+                                    {/* Action Buttons */}
+                                    <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleEditSlotClick(slot)}
+                                        className={cn(
+                                          "p-2 rounded-xl transition-all shadow-sm active:scale-90 cursor-pointer border",
+                                          editingSlotId === slot.id 
+                                            ? "bg-amber-100 text-amber-700 border-amber-200" 
+                                            : "bg-white text-slate-650 border-slate-200 hover:bg-slate-50 hover:text-amber-600"
+                                        )}
+                                        title="Chỉnh sửa vị trí này"
+                                      >
+                                        <Edit3 className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteSlot(slot.id)}
+                                        className="p-2 rounded-xl bg-white text-slate-650 border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all shadow-sm active:scale-90 cursor-pointer"
+                                        title="Xóa vị trí này"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
                               );

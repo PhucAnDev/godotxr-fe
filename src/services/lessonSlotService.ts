@@ -69,5 +69,23 @@ export const assignItemToSlot = (
     body: JSON.stringify({ itemAssetId }),
   });
 
+export const updateLessonSlot = (
+  lessonId: number,
+  slotId: number,
+  payload: { slotName: string; lessonImageId?: number | null }
+) =>
+  request<LessonSlotResponse>(`/api/lesson-slots/${lessonId}/${slotId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+
+export const deleteLessonSlot = (
+  lessonId: number,
+  slotId: number
+) =>
+  request<void>(`/api/lesson-slots/${lessonId}/${slotId}`, {
+    method: 'DELETE',
+  });
+
 export const getLessonClientConfig = (lessonId: number) =>
   request<LessonSlotResponse[]>(`/api/lessons/${lessonId}/client-config`);
