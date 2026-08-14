@@ -95,12 +95,7 @@ export const parentSidebarItems: SidebarItem[] = [
     icon: UserCircle,
     path: '/parent/profiles',
   },
-  {
-    id: 'HISTORY',
-    label: 'Lịch sử học tập',
-    icon: History,
-    path: '/parent/history',
-  },
+
   {
     id: 'LEARNING_RESULT_MANAGEMENT',
     label: 'Kết quả luyện tập',

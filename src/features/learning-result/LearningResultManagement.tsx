@@ -90,7 +90,7 @@ function formatDateDMY(value: string | null | undefined): string {
   return value;
 }
 
-const mapChildRecord = (c: ChildProfileResponse): Child => ({
+const mapChildRecord = (c: any): Child => ({
   ChildId: String(c.id),
   FullName: c.fullName,
   Age: c.age,
@@ -179,6 +179,8 @@ export default function LearningResultManagement() {
     getChunksBySession,
     assessChunk,
     downloadAudioChunk,
+    getClassrooms,
+    getEnrollments
   } = useLearningResultApi();
 
   const [results, setResults] = useState<LearningResult[]>([]);
@@ -240,21 +242,59 @@ export default function LearningResultManagement() {
       try {
         const roleView = getStoredRoleView();
         const sessionUser = getSessionUser();
-        const [childRecords, lessonRecords] = await Promise.all([
-          roleView === 'PARENT'
-            ? (async () => {
-              const parentResult = await getCurrentUserWithChildrenProfiles();
-              if (!parentResult.success || !parentResult.data) {
-                throw new Error(parentResult.errors.join(' ') || parentResult.message);
-              }
-              return parentResult.data.childProfiles;
-            })()
-            : loadAllPages<ChildProfileResponse>(getChildProfiles),
-          loadAllPages<LessonResponse>(getLessons).catch((err) => {
-            console.warn('Could not fetch lessons list:', err);
-            return [] as LessonResponse[];
-          }),
-        ]);
+        
+        let childRecords: any[] = [];
+        let lessonRecords: LessonResponse[] = [];
+
+        if (roleView === 'PARENT') {
+          const [parentResult, lessonsData] = await Promise.all([
+            getCurrentUserWithChildrenProfiles(),
+            loadAllPages<LessonResponse>(getLessons).catch(() => [] as LessonResponse[])
+          ]);
+          if (parentResult.success && parentResult.data) {
+            childRecords = parentResult.data.childProfiles;
+          }
+          lessonRecords = lessonsData;
+        } else if (roleView === 'TEACHER') {
+          const [allClassrooms, allEnrollments, allChildren, lessonsData] = await Promise.all([
+            loadAllPages<any>(getClassrooms).catch(() => []),
+            loadAllPages<any>(getEnrollments).catch(() => []),
+            loadAllPages<ChildProfileResponse>(getChildProfiles).catch(() => []),
+            loadAllPages<LessonResponse>(getLessons).catch(() => [] as LessonResponse[])
+          ]);
+
+          const teacherId = Number(sessionUser?.UserId.replace(/\D/g, '')) || undefined;
+          const teacherName = sessionUser?.FullName.trim().toLowerCase() ?? '';
+
+          const teacherClassIds = new Set(
+            allClassrooms
+              .filter((classroom: any) => {
+                const matchedById = teacherId ? classroom.userId === teacherId : false;
+                const matchedByName = teacherName ? classroom.teacherName.trim().toLowerCase() === teacherName : false;
+                return matchedById || matchedByName;
+              })
+              .map((classroom) => classroom.id)
+          );
+
+          const teacherEnrollments = allEnrollments.filter((enrollment: any) =>
+            teacherClassIds.has(enrollment.classId)
+          );
+
+          const childIds = Array.from(
+            new Set(teacherEnrollments.map((enrollment: any) => enrollment.childId))
+          );
+
+          childRecords = allChildren.filter((child) => childIds.includes(child.id));
+          lessonRecords = lessonsData;
+        } else {
+          // ADMIN view: load all children and lessons
+          const [allChildren, lessonsData] = await Promise.all([
+            loadAllPages<ChildProfileResponse>(getChildProfiles).catch(() => []),
+            loadAllPages<LessonResponse>(getLessons).catch(() => [] as LessonResponse[])
+          ]);
+          childRecords = allChildren;
+          lessonRecords = lessonsData;
+        }
 
         const resultSettled = await Promise.allSettled(
           childRecords.map((child) => getResultsByChild(child.id))
@@ -294,7 +334,7 @@ export default function LearningResultManagement() {
     return () => {
       cancelled = true;
     };
-  }, [getChildProfiles, getCurrentUserWithChildrenProfiles, getResultsByChild]);
+  }, [getChildProfiles, getCurrentUserWithChildrenProfiles, getResultsByChild, getClassrooms, getEnrollments]);
 
   // Statistics computations
   const filteredResultsForStats = useMemo(() => {
@@ -361,6 +401,29 @@ export default function LearningResultManagement() {
           })
         );
         setChunks(formattedChunks);
+
+        // Automatically trigger AI assessment for each chunk in parent view
+        if (getStoredRoleView() === 'PARENT') {
+          formattedChunks.forEach(async (chunk) => {
+            const cIndex = chunk.chunkIndex;
+            const text = initialRefTexts[cIndex]?.trim();
+            if (text) {
+              try {
+                const assessRes = await assessChunk({
+                  childProfileId: childIdVal,
+                  sessionId: res.SessionId,
+                  chunkIndex: cIndex,
+                  referenceText: text
+                });
+                if (assessRes.success && assessRes.data) {
+                  setChunkAssessments(prev => ({ ...prev, [cIndex]: assessRes.data }));
+                }
+              } catch (err) {
+                console.error(`Auto assessment failed for chunk ${cIndex}:`, err);
+              }
+            }
+          });
+        }
       } else {
         setChunks([]);
       }
@@ -833,28 +896,34 @@ export default function LearningResultManagement() {
               )}
 
               {/* Display feedback text to parent */}
-              {currentRoleView === 'PARENT' && selectedResult.FeedbackText && (
-                <div className="space-y-2 bg-[#FFFDF5] p-4.5 rounded-2xl border border-yellow-100 italic">
-                  <h4 className="text-sm font-bold text-slate-800 not-italic flex items-center gap-1.5">
-                    <MessageCircle className="w-4 h-4 text-[#4EACAF]" />
-                    Nhận xét từ giáo viên đồng hành:
+              {currentRoleView === 'PARENT' && (
+                <div className="space-y-3 bg-[#FFFDF5] p-4.5 rounded-2xl border border-yellow-100">
+                  <h4 className="text-sm font-bold text-slate-855 flex items-center gap-1.5">
+                    <MessageCircle className="w-4 h-4 text-amber-500" />
+                    Nhận xét & Hướng dẫn từ giáo viên
                   </h4>
-                  <p className="text-sm text-slate-700 leading-relaxed font-semibold">
-                    &ldquo;{selectedResult.FeedbackText}&rdquo;
-                  </p>
+                  <div className="p-3 bg-white rounded-xl border border-slate-200/60 text-sm font-medium text-slate-700 leading-relaxed min-h-[60px] whitespace-pre-wrap">
+                    {selectedResult.FeedbackText ? (
+                      selectedResult.FeedbackText
+                    ) : (
+                      <span className="text-slate-400 italic">Chưa có nhận xét hay hướng dẫn nào từ giáo viên cho lượt luyện tập này.</span>
+                    )}
+                  </div>
                 </div>
               )}
 
               {/* Interaction Log Section */}
-              <div className="space-y-2.5">
-                <h4 className="text-sm font-bold text-slate-850 flex items-center gap-1.5">
-                  <FileText className="w-4 h-4 text-[#4EACAF]" />
-                  Nhật ký tương tác (Interaction Log)
-                </h4>
-                <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl font-mono text-xs whitespace-pre-line leading-relaxed shadow-inner border border-slate-850 max-h-48 overflow-y-auto">
-                  {selectedResult.InteractionLog || "Hệ thống chưa ghi nhận vết log tương tác ở phiên tập này..."}
+              {currentRoleView !== 'PARENT' && (
+                <div className="space-y-2.5">
+                  <h4 className="text-sm font-bold text-slate-850 flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-[#4EACAF]" />
+                    Nhật ký tương tác (Interaction Log)
+                  </h4>
+                  <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl font-mono text-xs whitespace-pre-line leading-relaxed shadow-inner border border-slate-850 max-h-48 overflow-y-auto">
+                    {selectedResult.InteractionLog || "Hệ thống chưa ghi nhận vết log tương tác ở phiên tập này..."}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Chunk audio listing section */}
               <div className="space-y-4 pt-4 border-t border-slate-100">
@@ -926,28 +995,40 @@ export default function LearningResultManagement() {
 
                           {/* Expectation text input & AI assessment trigger */}
                           <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-slate-500">Từ/Câu kỳ vọng:</span>
-                              <input
-                                type="text"
-                                placeholder="Nhập từ chuẩn bé phải phát âm..."
-                                value={referenceTexts[cIndex] || ''}
-                                onChange={(e) => setReferenceTexts(prev => ({ ...prev, [cIndex]: e.target.value }))}
-                                className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 outline-none text-xs font-semibold placeholder-slate-400 focus:border-[#4EACAF]"
-                              />
-                              <button
-                                disabled={isAssessing}
-                                onClick={() => handleAssessChunk(cIndex)}
-                                className="px-4 py-1.5 bg-[#4EACAF] hover:bg-[#3D8C8F] disabled:bg-slate-350 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 shrink-0 cursor-pointer"
-                              >
-                                {isAssessing ? (
-                                  <Activity className="w-3.5 h-3.5 animate-spin" />
-                                ) : (
-                                  <Sparkles className="w-3.5 h-3.5" />
-                                )}
-                                AI Đánh giá
-                              </button>
-                            </div>
+                            {currentRoleView !== 'PARENT' ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-slate-500">Từ/Câu kỳ vọng:</span>
+                                <input
+                                  type="text"
+                                  placeholder="Nhập từ chuẩn bé phải phát âm..."
+                                  value={referenceTexts[cIndex] || ''}
+                                  onChange={(e) => setReferenceTexts(prev => ({ ...prev, [cIndex]: e.target.value }))}
+                                  className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 outline-none text-xs font-semibold placeholder-slate-400 focus:border-[#4EACAF]"
+                                />
+                                <button
+                                  type="button"
+                                  disabled={isAssessing}
+                                  onClick={() => handleAssessChunk(cIndex)}
+                                  className="px-4 py-1.5 bg-[#4EACAF] hover:bg-[#3D8C8F] disabled:bg-slate-350 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 shrink-0 cursor-pointer"
+                                >
+                                  {isAssessing ? (
+                                    <Activity className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                  )}
+                                  AI Đánh giá
+                                </button>
+                              </div>
+                            ) : (
+                              referenceTexts[cIndex] && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-slate-500">Từ/Câu kỳ vọng:</span>
+                                  <span className="text-xs font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-xl">
+                                    "{referenceTexts[cIndex]}"
+                                  </span>
+                                </div>
+                              )
+                            )}
 
                             {/* Assessment scores presentation layout */}
                             {assessment && (

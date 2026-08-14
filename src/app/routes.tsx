@@ -26,13 +26,11 @@ import ParentDashboard from '../features/parent/ParentDashboard';
 import ParentChildClass from '../features/parent/ParentChildClass';
 import ParentRecommendations from '../features/parent/ParentRecommendations';
 import ProfileManagement from '../features/parent/ProfileManagement';
-import LearningHistory from '../features/parent/LearningHistory';
 import ProgramManagement from '../features/learning-content/ProgramManagement';
 import LessonManagement from '../features/learning-content/LessonManagement';
 import AssetManagement from '../features/learning-content/AssetManagement';
 import LearningResultManagement from '../features/learning-result/LearningResultManagement';
 import ProgressAnalysis from '../features/learning-result/ProgressAnalysis';
-import LessonReview from '../features/learning-result/LessonReview';
 import { ChangePasswordRoute, RegisterRedirect } from './routeGuards';
 import {
   adminSidebarItems,
@@ -117,8 +115,6 @@ export function AppRoutes() {
             <Route path="recommendations" element={<ParentRecommendations />} />
             <Route path="settings" element={<AccountSettings />} />
             <Route path="profiles" element={<ProfileManagement />} />
-            <Route path="history" element={<LearningHistory />} />
-            <Route path="lesson-review" element={<LessonReview />} />
             <Route path="results" element={<LearningResultManagement />} />
             <Route path="progress" element={<ProgressAnalysis />} />
             <Route path="pronunciation" element={<Navigate to="../results" replace />} />
