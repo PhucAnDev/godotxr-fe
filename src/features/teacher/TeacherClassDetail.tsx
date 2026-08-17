@@ -531,6 +531,11 @@ export default function TeacherClassDetail({
       let valA: any = a[sortColumn as keyof Child];
       let valB: any = b[sortColumn as keyof Child];
 
+      if (sortColumn === 'ChildType') {
+        valA = valA || '';
+        valB = valB || '';
+      }
+
       if (sortColumn === 'AverageScore') {
         valA = analysisByChildId[a.ChildId]?.AverageScore ?? 0;
         valB = analysisByChildId[b.ChildId]?.AverageScore ?? 0;
@@ -1017,6 +1022,20 @@ export default function TeacherClassDetail({
                       </div>
                     </th>
                     <th 
+                      onClick={() => handleSort('ChildType')}
+                      className="px-4 py-3 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Phân loại"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Phân loại
+                        {sortColumn === 'ChildType' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
                       onClick={() => handleSort('AverageScore')}
                       className="px-4 py-3 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
                       title="Sắp xếp theo Điểm TB"
@@ -1089,6 +1108,24 @@ export default function TeacherClassDetail({
                           </td>
                           <td className="px-6 py-5 text-xs font-black italic text-[#264E50]">
                             {child.LearningLevel}
+                          </td>
+                          <td className="px-6 py-5 text-xs font-bold text-gray-700">
+                            {child.ChildType ? (
+                              <span
+                                className={cn(
+                                  'inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-widest',
+                                  child.ChildType === 'SSD'
+                                    ? 'border-rose-100 bg-rose-50 text-rose-600'
+                                    : 'border-teal-100 bg-teal-50 text-teal-600'
+                                )}
+                              >
+                                {child.ChildType === 'SSD' ? 'SSD' : 'DLD'}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 text-xs font-bold italic">
+                                Chưa phân loại
+                              </span>
+                            )}
                           </td>
                           <td className="px-6 py-5 text-center">
                             <span

@@ -832,7 +832,7 @@ export default function ChildManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('FullName')}
-                      className="w-[25%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[22%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Họ tên"
                     >
                       <div className="flex items-center gap-1.5">
@@ -846,7 +846,7 @@ export default function ChildManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('Age')}
-                      className="w-[10%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[8%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Độ tuổi"
                     >
                       <div className="flex items-center gap-1.5">
@@ -874,7 +874,7 @@ export default function ChildManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('ParentUserId')}
-                      className="w-[24%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[20%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Phụ huynh"
                     >
                       <div className="flex items-center gap-1.5">
@@ -900,10 +900,24 @@ export default function ChildManagement() {
                         )}
                       </div>
                     </th>
+                    <th
+                      onClick={() => handleSort('ChildType')}
+                      className="w-[11%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      title="Sắp xếp theo Phân loại trẻ"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Phân loại
+                        {sortColumn === 'ChildType' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </th>
                     <th className="w-[8%] px-[5px] py-5 select-none">
                       Trạng thái
                     </th>
-                    <th className="w-[10%] px-[5px] py-5 text-right select-none">Tùy chọn</th>
+                    <th className="w-[8%] px-[5px] py-5 text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 font-normal text-sm text-slate-650">
@@ -961,6 +975,24 @@ export default function ChildManagement() {
                               ? 'Trung cấp'
                               : 'Nâng cao'}
                         </span>
+                      </td>
+                      <td className="px-[5px] py-5">
+                        {child.ChildType ? (
+                          <span
+                            className={cn(
+                              'inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-widest',
+                              child.ChildType === 'SSD'
+                                ? 'border-rose-100 bg-rose-50 text-rose-600'
+                                : 'border-teal-100 bg-teal-50 text-teal-600'
+                            )}
+                          >
+                            {child.ChildType === 'SSD' ? 'SSD' : 'DLD'}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-xs font-bold italic">
+                            Chưa phân loại
+                          </span>
+                        )}
                       </td>
                       <td className="px-[5px] py-5">
                         <span

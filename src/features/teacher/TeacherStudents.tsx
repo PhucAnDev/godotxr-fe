@@ -77,6 +77,18 @@ function formatDateTime(value: string | null | undefined): string {
   return value.replace('T', ' ').slice(0, 19);
 }
 
+function getChildTypeLabel(childType: string | null | undefined) {
+  if (!childType) return 'Chưa phân loại';
+  switch (childType) {
+    case 'SSD':
+      return 'Rối loạn âm lời nói (SSD)';
+    case 'DLD':
+      return 'Phát triển ngôn ngữ (DLD)';
+    default:
+      return childType;
+  }
+}
+
 function mapChildRecord(child: ChildProfileResponse): Omit<Child, 'ProgressLevel'> {
   return {
     ChildId: String(child.id),
@@ -621,9 +633,13 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                         <h3 className="text-2xl font-black tracking-tight text-gray-900 transition-colors hover:text-[#4EACAF]">
                           {child.FullName}
                         </h3>
-                        <div className="flex items-center gap-3 text-xs font-bold text-slate-500">
+                        <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-slate-500">
                           <span>
                             Tuổi: <strong className="text-slate-800">{child.Age}</strong>
+                          </span>
+                          <div className="h-1.5 w-1.5 rounded-full bg-slate-300" />
+                          <span>
+                            Phân loại: <strong className="text-slate-800">{getChildTypeLabel(child.ChildType)}</strong>
                           </span>
                           <div className="h-1.5 w-1.5 rounded-full bg-slate-300" />
                           <span className="flex items-center gap-1">
