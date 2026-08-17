@@ -64,6 +64,7 @@ export interface UserWithChildrenProfileResponse extends UserResponse {
     age: number;
     gender: string;
     learningLevel: string;
+    childType?: string | null;
     note: string | null;
     status: string;
     avatar: string | null;

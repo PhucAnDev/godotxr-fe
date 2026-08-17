@@ -59,6 +59,7 @@ type Child = {
   LearningLevel: string;
   Note: string;
   Status: 'Active' | 'Inactive';
+  ChildType?: string | null;
 };
 
 type Result = {
@@ -136,6 +137,7 @@ function mapChildRecord(child: ChildProfileResponse): Child {
     LearningLevel: child.learningLevel,
     Note: child.note ?? '',
     Status: child.status === 'Inactive' ? 'Inactive' : 'Active',
+    ChildType: child.childType || null,
   };
 }
 

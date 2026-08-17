@@ -47,6 +47,7 @@ type Child = {
   Status: 'Active' | 'Inactive';
   CreatedAt: string;
   UpdatedAt: string;
+  ChildType?: string | null;
 };
 
 type ParentUser = {
@@ -142,6 +143,7 @@ function mapChildRecord(child: ChildProfileResponse): Child {
     Status: child.status === 'Inactive' ? 'Inactive' : 'Active',
     CreatedAt: formatDateTime(child.createdAt),
     UpdatedAt: formatDateTime(child.updatedAt),
+    ChildType: child.childType || null,
   };
 }
 
@@ -777,6 +779,9 @@ export default function TeacherStudentDetail({
                   </div>
                   <p className="text-sm font-bold text-gray-700">
                     {child.Age} tuổi, {child.Gender === 'Female' ? 'Nữ' : child.Gender === 'Other' ? 'Khác' : 'Nam'}
+                  </p>
+                  <p className="text-sm font-bold text-gray-700">
+                    Phân loại: {child.ChildType || 'Chưa phân loại'}
                   </p>
                   <p className="text-sm font-bold text-gray-700">
                     Trình độ: {child.LearningLevel}

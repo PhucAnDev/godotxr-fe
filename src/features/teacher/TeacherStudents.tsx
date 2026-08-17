@@ -50,6 +50,7 @@ export interface Child {
   CreatedAt: string;
   UpdatedAt: string;
   ProgressLevel: 'Improving' | 'Stable' | 'Need Support';
+  ChildType?: string | null;
 }
 
 export interface ParentUser {
@@ -92,6 +93,7 @@ function mapChildRecord(child: ChildProfileResponse): Omit<Child, 'ProgressLevel
     Avatar: child.avatar || null,
     CreatedAt: formatDateTime(child.createdAt),
     UpdatedAt: formatDateTime(child.updatedAt),
+    ChildType: child.childType || null,
   };
 }
 

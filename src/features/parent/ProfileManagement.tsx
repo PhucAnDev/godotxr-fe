@@ -36,6 +36,7 @@ interface FormState {
   age: string;
   gender: 'Male' | 'Female' | 'Other';
   learningLevel: 'Beginner' | 'Intermediate' | 'Advanced';
+  childType: string;
   note: string;
   avatar: string | null;
 }
@@ -45,6 +46,7 @@ const EMPTY_FORM: FormState = {
   age: '',
   gender: 'Male',
   learningLevel: 'Beginner',
+  childType: '',
   note: '',
   avatar: null,
 };
@@ -123,6 +125,7 @@ export default function ProfileManagement() {
       age: String(child.age),
       gender: child.gender,
       learningLevel: child.learningLevel,
+      childType: child.childType || '',
       note: child.note || '',
       avatar: child.avatar || 'default',
     });
@@ -176,6 +179,7 @@ export default function ProfileManagement() {
       age: Number(formState.age),
       gender: formState.gender,
       learningLevel: formState.learningLevel,
+      childType: formState.childType.trim() || null,
       note: formState.note.trim() || null,
       status: 'Active' as const,
       avatar: formState.avatar || 'default',
@@ -321,6 +325,7 @@ export default function ProfileManagement() {
                     <div className="text-xs font-bold opacity-80 space-y-0.5">
                       <p>Tuổi: {child.age}</p>
                       <p>Giới tính: {getGenderText(child.gender)}</p>
+                      {child.childType && <p>Phân loại: {child.childType}</p>}
                       <p>{getLevelText(child.learningLevel)}</p>
                       <p className="line-clamp-1 italic text-[11px] opacity-70">
                         {child.note ? `Lưu ý: ${child.note}` : 'Không có ghi chú đặc biệt'}
@@ -414,6 +419,18 @@ export default function ProfileManagement() {
                     onChange={(val) => handleFormChange('learningLevel', val as any)}
                     options={levelOptions}
                     variant="form"
+                  />
+                </div>
+
+                {/* Child type input */}
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Phân loại trẻ</label>
+                  <input 
+                    type="text" 
+                    value={formState.childType}
+                    onChange={(e) => handleFormChange('childType', e.target.value)}
+                    placeholder="Ví dụ: Tự kỷ, Chậm nói, Phát triển bình thường..."
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-bold text-lg outline-none focus:ring-4 focus:ring-sky-100 focus:bg-white transition-all text-gray-800" 
                   />
                 </div>
 

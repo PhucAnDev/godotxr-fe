@@ -42,6 +42,7 @@ interface Child {
   Age: number;
   Gender: 'Male' | 'Female' | 'Other';
   LearningLevel: 'Beginner' | 'Intermediate' | 'Advanced';
+  ChildType: string | null;
   Note: string;
   Status: 'Active' | 'Inactive';
   Avatar: string | null;
@@ -55,6 +56,7 @@ interface ChildFormState {
   age: string;
   gender: Child['Gender'];
   learningLevel: Child['LearningLevel'];
+  childType: string;
   note: string;
   status: Child['Status'];
   avatar: string | null;
@@ -68,6 +70,7 @@ const EMPTY_FORM: ChildFormState = {
   age: '',
   gender: 'Male',
   learningLevel: 'Beginner',
+  childType: '',
   note: '',
   status: 'Active',
   avatar: null,
@@ -81,6 +84,7 @@ function mapChildProfile(profile: ChildProfileResponse): Child {
     Age: profile.age,
     Gender: profile.gender,
     LearningLevel: profile.learningLevel,
+    ChildType: profile.childType || null,
     Note: profile.note?.trim() || 'Chưa có ghi chú bổ sung từ hệ thống.',
     Status: profile.status,
     Avatar: profile.avatar || null,
@@ -96,6 +100,7 @@ function mapChildToForm(child: Child): ChildFormState {
     age: String(child.Age),
     gender: child.Gender,
     learningLevel: child.LearningLevel,
+    childType: child.ChildType || '',
     note:
       child.Note === 'Chưa có ghi chú bổ sung từ hệ thống.' ? '' : child.Note,
     status: child.Status,
@@ -110,6 +115,7 @@ function mapFormToPayload(form: ChildFormState): ChildProfilePayload {
     age: Number(form.age),
     gender: form.gender,
     learningLevel: form.learningLevel,
+    childType: form.childType.trim() || null,
     note: form.note.trim() || null,
     status: form.status,
     avatar: form.avatar || 'default',
@@ -1107,6 +1113,10 @@ export default function ChildManagement() {
                   value={getGenderLabel(selectedChild.Gender)}
                 />
                 <DetailRow
+                  label="Phân loại trẻ"
+                  value={selectedChild.ChildType || 'Chưa phân loại'}
+                />
+                <DetailRow
                   label="Thời gian đăng ký hồ sơ"
                   value={formatDateTime(selectedChild.CreatedAt)}
                 />
@@ -1226,6 +1236,12 @@ export default function ChildManagement() {
                     { value: 'Active', label: 'Đang học (Active)' },
                     { value: 'Inactive', label: 'Tạm ngưng (Inactive)' },
                   ]}
+                />
+                <InputField
+                  label="Phân loại trẻ"
+                  value={formState.childType}
+                  onChange={(value) => handleFormChange('childType', value)}
+                  placeholder="Ví dụ: Tự kỷ, Chậm nói, Phát triển bình thường..."
                 />
               </div>
 

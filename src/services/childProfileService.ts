@@ -13,6 +13,7 @@ export interface ChildProfileResponse {
   age: number;
   gender: 'Male' | 'Female' | 'Other';
   learningLevel: 'Beginner' | 'Intermediate' | 'Advanced';
+  childType?: string | null;
   note: string | null;
   status: 'Active' | 'Inactive';
   avatar: string | null;
@@ -26,6 +27,7 @@ export interface ChildProfilePayload {
   age: number;
   gender: 'Male' | 'Female' | 'Other';
   learningLevel: 'Beginner' | 'Intermediate' | 'Advanced';
+  childType?: string | null;
   note?: string | null;
   status: 'Active' | 'Inactive';
   avatar?: string | null;
