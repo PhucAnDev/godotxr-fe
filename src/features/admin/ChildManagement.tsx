@@ -818,7 +818,7 @@ export default function ChildManagement() {
                   <tr className="border-b border-gray-100 bg-[#FDFCF5]/50 text-xs font-semibold uppercase tracking-wider text-slate-550">
                     <th
                       onClick={() => handleSort('ChildId')}
-                      className="w-[5%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[4%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Mã số"
                     >
                       <div className="flex items-center gap-1.5">
@@ -832,7 +832,7 @@ export default function ChildManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('FullName')}
-                      className="w-[22%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[15%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Họ tên"
                     >
                       <div className="flex items-center gap-1.5">
@@ -846,7 +846,7 @@ export default function ChildManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('Age')}
-                      className="w-[8%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[7%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Độ tuổi"
                     >
                       <div className="flex items-center gap-1.5">
@@ -860,7 +860,7 @@ export default function ChildManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('Gender')}
-                      className="w-[8%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[7%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Giới tính"
                     >
                       <div className="flex items-center gap-1.5">
@@ -874,7 +874,7 @@ export default function ChildManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('ParentUserId')}
-                      className="w-[20%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[15%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Phụ huynh"
                     >
                       <div className="flex items-center gap-1.5">
@@ -888,7 +888,7 @@ export default function ChildManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('LearningLevel')}
-                      className="w-[10%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[9%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Cấp độ học"
                     >
                       <div className="flex items-center gap-1.5">
@@ -902,7 +902,7 @@ export default function ChildManagement() {
                     </th>
                     <th
                       onClick={() => handleSort('ChildType')}
-                      className="w-[11%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
+                      className="w-[28%] px-[5px] py-5 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Phân loại trẻ"
                     >
                       <div className="flex items-center gap-1.5">
@@ -917,7 +917,7 @@ export default function ChildManagement() {
                     <th className="w-[8%] px-[5px] py-5 select-none">
                       Trạng thái
                     </th>
-                    <th className="w-[8%] px-[5px] py-5 text-right select-none">Tùy chọn</th>
+                    <th className="w-[7%] px-[5px] py-5 text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 font-normal text-sm text-slate-650">
@@ -980,13 +980,13 @@ export default function ChildManagement() {
                         {child.ChildType ? (
                           <span
                             className={cn(
-                              'inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-widest',
-                              child.ChildType === 'SSD'
+                              'inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-widest whitespace-nowrap',
+                              child.ChildType.includes('SSD')
                                 ? 'border-rose-100 bg-rose-50 text-rose-600'
                                 : 'border-teal-100 bg-teal-50 text-teal-600'
                             )}
                           >
-                            {child.ChildType === 'SSD' ? 'SSD' : 'DLD'}
+                            {getChildTypeLabel(child.ChildType)}
                           </span>
                         ) : (
                           <span className="text-gray-400 text-xs font-bold italic">

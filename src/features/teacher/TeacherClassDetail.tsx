@@ -124,6 +124,18 @@ function normalizeCompletionStatus(
   return 'Incomplete';
 }
 
+function getChildTypeLabel(childType: string | null | undefined) {
+  if (!childType) return 'Chưa phân loại';
+  switch (childType) {
+    case 'SSD':
+      return 'Rối loạn âm lời nói (SSD)';
+    case 'DLD':
+      return 'Phát triển ngôn ngữ (DLD)';
+    default:
+      return childType;
+  }
+}
+
 function mapChildRecord(child: ChildProfileResponse): Child {
   return {
     ChildId: String(child.id),
@@ -1113,13 +1125,13 @@ export default function TeacherClassDetail({
                             {child.ChildType ? (
                               <span
                                 className={cn(
-                                  'inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-widest',
-                                  child.ChildType === 'SSD'
+                                  'inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-widest whitespace-nowrap',
+                                  child.ChildType.includes('SSD')
                                     ? 'border-rose-100 bg-rose-50 text-rose-600'
                                     : 'border-teal-100 bg-teal-50 text-teal-600'
                                 )}
                               >
-                                {child.ChildType === 'SSD' ? 'SSD' : 'DLD'}
+                                {getChildTypeLabel(child.ChildType)}
                               </span>
                             ) : (
                               <span className="text-gray-400 text-xs font-bold italic">
