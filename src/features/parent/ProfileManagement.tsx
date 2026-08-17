@@ -19,6 +19,12 @@ const levelOptions = [
   { value: 'Advanced', label: '🏆 Nâng cao (Advanced)' },
 ];
 
+const childTypeOptions = [
+  { value: '', label: '⚪ Chưa phân loại' },
+  { value: 'SSD', label: '🗣️ Rối loạn âm lời nói (SSD)' },
+  { value: 'DLD', label: '📖 Phát triển ngôn ngữ (DLD)' },
+];
+
 
 const CARD_COLORS = [
   'bg-blue-300 border-blue-400',
@@ -235,6 +241,13 @@ export default function ProfileManagement() {
     return 'Cấp độ: Nâng cao';
   };
 
+  const getChildTypeLabel = (childType: string | null | undefined) => {
+    if (!childType) return 'Chưa phân loại';
+    if (childType === 'SSD') return 'Rối loạn âm lời nói (SSD)';
+    if (childType === 'DLD') return 'Phát triển ngôn ngữ (DLD)';
+    return childType;
+  };
+
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative text-left">
       
@@ -325,7 +338,7 @@ export default function ProfileManagement() {
                     <div className="text-xs font-bold opacity-80 space-y-0.5">
                       <p>Tuổi: {child.age}</p>
                       <p>Giới tính: {getGenderText(child.gender)}</p>
-                      {child.childType && <p>Phân loại: {child.childType}</p>}
+                      {child.childType && <p>Phân loại: {getChildTypeLabel(child.childType)}</p>}
                       <p>{getLevelText(child.learningLevel)}</p>
                       <p className="line-clamp-1 italic text-[11px] opacity-70">
                         {child.note ? `Lưu ý: ${child.note}` : 'Không có ghi chú đặc biệt'}
@@ -422,15 +435,14 @@ export default function ProfileManagement() {
                   />
                 </div>
 
-                {/* Child type input */}
+                {/* Child type select */}
                 <div className="space-y-2">
                   <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Phân loại trẻ</label>
-                  <input 
-                    type="text" 
+                  <CustomSelect 
                     value={formState.childType}
-                    onChange={(e) => handleFormChange('childType', e.target.value)}
-                    placeholder="Ví dụ: Tự kỷ, Chậm nói, Phát triển bình thường..."
-                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-bold text-lg outline-none focus:ring-4 focus:ring-sky-100 focus:bg-white transition-all text-gray-800" 
+                    onChange={(val) => handleFormChange('childType', val as any)}
+                    options={childTypeOptions}
+                    variant="form"
                   />
                 </div>
 

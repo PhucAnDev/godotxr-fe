@@ -127,6 +127,18 @@ function mapDifficultyLevel(level: string): string {
   return 'Dễ';
 }
 
+function getChildTypeLabel(childType: string | null | undefined) {
+  if (!childType) return 'Chưa phân loại';
+  switch (childType) {
+    case 'SSD':
+      return 'Rối loạn âm lời nói (SSD)';
+    case 'DLD':
+      return 'Phát triển ngôn ngữ (DLD)';
+    default:
+      return childType;
+  }
+}
+
 function mapChildRecord(child: ChildProfileResponse): Child {
   const normalizedGender = child.gender === 'Female' || child.gender === 'Other'
     ? child.gender
@@ -781,7 +793,7 @@ export default function TeacherStudentDetail({
                     {child.Age} tuổi, {child.Gender === 'Female' ? 'Nữ' : child.Gender === 'Other' ? 'Khác' : 'Nam'}
                   </p>
                   <p className="text-sm font-bold text-gray-700">
-                    Phân loại: {child.ChildType || 'Chưa phân loại'}
+                    Phân loại: {getChildTypeLabel(child.ChildType)}
                   </p>
                   <p className="text-sm font-bold text-gray-700">
                     Trình độ: {child.LearningLevel}

@@ -153,6 +153,18 @@ function getStatusLabel(status: Child['Status']) {
   return status === 'Active' ? 'Đang học' : 'Tạm ngưng';
 }
 
+export function getChildTypeLabel(childType: string | null | undefined) {
+  if (!childType) return 'Chưa phân loại';
+  switch (childType) {
+    case 'SSD':
+      return 'Rối loạn âm lời nói (SSD)';
+    case 'DLD':
+      return 'Phát triển ngôn ngữ (DLD)';
+    default:
+      return childType;
+  }
+}
+
 function hasSupportFlag(child: Child) {
   const note = child.Note.toLocaleLowerCase('vi-VN');
   return (
@@ -1114,7 +1126,7 @@ export default function ChildManagement() {
                 />
                 <DetailRow
                   label="Phân loại trẻ"
-                  value={selectedChild.ChildType || 'Chưa phân loại'}
+                  value={getChildTypeLabel(selectedChild.ChildType)}
                 />
                 <DetailRow
                   label="Thời gian đăng ký hồ sơ"
@@ -1237,11 +1249,15 @@ export default function ChildManagement() {
                     { value: 'Inactive', label: 'Tạm ngưng (Inactive)' },
                   ]}
                 />
-                <InputField
+                <SelectInputField
                   label="Phân loại trẻ"
                   value={formState.childType}
                   onChange={(value) => handleFormChange('childType', value)}
-                  placeholder="Ví dụ: Tự kỷ, Chậm nói, Phát triển bình thường..."
+                  options={[
+                    { value: '', label: 'Chưa phân loại' },
+                    { value: 'SSD', label: 'Rối loạn âm lời nói (SSD)' },
+                    { value: 'DLD', label: 'Phát triển ngôn ngữ (DLD)' },
+                  ]}
                 />
               </div>
 
