@@ -318,26 +318,16 @@ export default function ParentRecommendations() {
   }
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 text-left" id="parent-recommendations-view">
+    <div className="space-y-4 pb-20 text-left" id="parent-recommendations-view">
       
       {/* 1. Header Card */}
       <div className="bg-white/45 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/70 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
         <div className="space-y-3">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs bg-[#FF8E8E]/10 text-[#FF8E8E] px-3.5 py-1 rounded-full font-black uppercase tracking-wider flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 fill-[#FF8E8E]" />
-              Nhà thông thái đồng hành
-            </span>
-            <span className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full font-bold">
-              Lời khuyên tại nhà
-            </span>
-          </div>
-
-          <h1 className="text-4xl font-black text-gray-900 tracking-tight italic">
-            Khuyến Nghị Luyện Tập
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
+            Khuyến Nghị <span className="text-[#FF8E8E]">Luyện Tập</span>
           </h1>
-          <p className="text-gray-500 font-bold text-sm">
-            Gợi ý các hoạt động hỗ trợ thiết thực giúp con nâng cao giọng nói tự nhiên hàng ngày
+          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
+            Gợi ý các hoạt động hỗ trợ thiết thực giúp con nâng cao giọng nói tự nhiên hàng ngày.
           </p>
         </div>
 
@@ -348,7 +338,7 @@ export default function ParentRecommendations() {
               <Baby className="w-5.5 h-5.5" />
             </div>
             <div className="space-y-1.5 flex-1 select-none">
-              <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest block leading-none">Học sinh được chấm điểm:</span>
+              <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest block leading-none">Hồ sơ của bé:</span>
               <CustomSelect
                 value={String(selectedChildId || '')}
                 onChange={(val) => setSelectedChildId(Number(val))}

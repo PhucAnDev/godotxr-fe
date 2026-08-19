@@ -559,7 +559,7 @@ export default function ProgressAnalysis() {
   };
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative text-left" id="progress-analysis-view">
+    <div className="space-y-4 pb-24 relative text-left" id="progress-analysis-view">
 
       {/* Dynamic Toast Feedback Overlay */}
       <AnimatePresence>
@@ -600,14 +600,10 @@ export default function ProgressAnalysis() {
       <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
 
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
-            <TrendingUp className="w-3.5 h-3.5 animate-pulse" />
-            Hồ Sơ Toàn Diện Tiến Trình Học Tập
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Phân Tích <span className="text-[#4EACAF]">Tiến Độ</span>
           </h1>
-          <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed mt-1">
+          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
             Kiểm duyệt tốc độ hoàn thành, dải điểm trung bình, ghi nhận độ cứng phát âm khẩu hình và đưa ra các khuyến nghị ôn luyện can thiệp tối ưu cho trẻ.
           </p>
         </div>

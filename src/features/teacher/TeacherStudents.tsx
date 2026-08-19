@@ -384,15 +384,11 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
         <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-teal-100/30 blur-3xl" />
         <div className="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#4EACAF]/20 bg-[#4EACAF]/10 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-[#4EACAF]">
-              <Baby className="h-4 w-4" /> Danh sách học sinh của tôi
-            </div>
-            <h1 className="text-4xl font-black tracking-tighter text-gray-900">
+            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
               Quản Lý <span className="text-[#4EACAF]">Học Viên</span>
             </h1>
-            <p className="max-w-xl text-sm font-bold text-gray-500">
-              Màn hình này đã được đồng bộ dữ liệu theo các lớp học mà giáo viên đang
-              phụ trách, giúp quy trình chuyển tiếp từ danh sách sang chi tiết học sinh được đồng bộ hoàn toàn.
+            <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
+              Màn hình này đã được đồng bộ dữ liệu theo các lớp học mà giáo viên đang phụ trách, giúp quy trình chuyển tiếp từ danh sách sang chi tiết học sinh được đồng bộ hoàn toàn.
             </p>
           </div>
 

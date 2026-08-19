@@ -249,7 +249,7 @@ export default function ProfileManagement() {
   };
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative text-left">
+    <div className="space-y-4 pb-24 relative text-left">
       
       {/* Notifications */}
       {alertConfig && (
@@ -279,9 +279,11 @@ export default function ProfileManagement() {
       {/* Header card with refresh button */}
       <div className="bg-white/45 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/70 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
         <div className="space-y-2">
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Quản Lý Hồ Sơ Của Bé</h1>
-          <p className="text-gray-500 font-bold text-sm">
-            Quản lý hồ sơ, tình trạng học và đồng hành phát triển cùng bé
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
+            Quản Lý <span className="text-[#FF8E8E]">Hồ Sơ Của Bé</span>
+          </h1>
+          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
+            Quản lý hồ sơ, tình trạng học và đồng hành phát triển cùng bé.
           </p>
         </div>
         <button

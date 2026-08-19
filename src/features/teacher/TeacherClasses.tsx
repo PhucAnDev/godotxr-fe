@@ -470,16 +470,11 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
 
       <div className="flex flex-col justify-between gap-8 rounded-xl border border-white/60 bg-white/70 p-8 shadow-sm backdrop-blur-md lg:flex-row lg:items-center">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full bg-[#4EACAF]/10 px-4 py-1.5 text-xs font-black uppercase tracking-widest leading-none text-[#4EACAF]">
-            <GraduationCap className="h-3.5 w-3.5" />
-            Giám sát sư phạm lớp học VR
-          </div>
-          <h1 className="pt-1 text-4xl font-black leading-none tracking-tight text-gray-900 md:text-5xl">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Lớp Học <span className="text-[#4EACAF]">Của Tôi</span>
           </h1>
-          <p className="max-w-2xl text-sm font-bold leading-relaxed text-gray-500 md:text-base">
-            Danh sách này đã được đồng bộ trực tiếp từ hệ thống. Giáo viên có thể xem lớp, sĩ số,
-            kết quả luyện tập và điều hướng sang chi tiết lớp học.
+          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
+            Danh sách này đã được đồng bộ trực tiếp từ hệ thống. Giáo viên có thể xem lớp, sĩ số, kết quả luyện tập và điều hướng sang chi tiết lớp học.
           </p>
         </div>
 

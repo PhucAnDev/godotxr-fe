@@ -92,33 +92,41 @@ export function Sidebar({
         className
       )}
     >
-      <div className="p-6 md:p-8 flex justify-between items-center shrink-0">
-        <Logo className={isAdmin ? 'brightness-110' : ''} />
-        {onClose && (
-          <button
-            onClick={onClose}
-            className={cn(
-              'p-2 rounded-xl border transition-colors cursor-pointer',
-              isAdmin
-                ? 'border-slate-800 hover:bg-slate-800 text-slate-350'
-                : isTeacher
-                  ? 'border-[#D2E0DC] hover:bg-[#D7E5E0] text-gray-700'
-                  : 'border-[#E5DFCA] hover:bg-[#E5DFCA] text-[#555]'
-            )}
-          >
-            <X className="w-5 h-5 shrink-0" />
-          </button>
-        )}
+      <div className="px-6 md:px-8 py-4 flex flex-col shrink-0">
+        <div className="flex justify-between items-center w-full">
+          <Logo className={isAdmin ? 'brightness-110' : ''} />
+          {onClose && (
+            <button
+              onClick={onClose}
+              className={cn(
+                'p-2 rounded-xl border transition-colors cursor-pointer',
+                isAdmin
+                  ? 'border-slate-800 hover:bg-slate-800 text-slate-350'
+                  : isTeacher
+                    ? 'border-[#D2E0DC] hover:bg-[#D7E5E0] text-gray-700'
+                    : 'border-[#E5DFCA] hover:bg-[#E5DFCA] text-[#555]'
+              )}
+            >
+              <X className="w-5 h-5 shrink-0" />
+            </button>
+          )}
+        </div>
+        <p className={cn(
+          "text-[11px] mt-2.5 font-normal leading-tight",
+          isAdmin ? "text-slate-400" : isTeacher ? "text-gray-600" : "text-[#756D59]"
+        )}>
+          Đồng hành rèn luyện thực tế ảo cùng con
+        </p>
       </div>
 
-      <nav className="flex-1 px-4 py-2 space-y-1.5 overflow-y-auto">
+      <nav className="flex-1 px-4 py-0 space-y-1 overflow-y-auto">
         {sidebarItems.map((item) => {
           const isActive = isSidebarItemActive(item, location.pathname);
           const isExpanded =
             item.children && (expandedGroups[item.id] || isActive);
 
           return (
-            <div key={item.id} className="space-y-1.5">
+            <div key={item.id} className="space-y-1">
               <button
                 onClick={() => {
                   navigate(item.path);
@@ -131,7 +139,7 @@ export function Sidebar({
                   if (onClose) onClose();
                 }}
                 className={cn(
-                  'w-full flex items-center space-x-3 px-5 py-3 transition-all shrink-0 cursor-pointer',
+                  'w-full flex items-center space-x-3 px-4.5 py-2.5 transition-all shrink-0 cursor-pointer',
                   baseItemClass,
                   isActive ? activeItemClass : inactiveItemClass
                 )}

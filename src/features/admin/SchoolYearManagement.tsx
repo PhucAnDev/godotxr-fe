@@ -351,7 +351,7 @@ export default function SchoolYearManagement() {
   }, [schoolYears, searchQuery, filterStatus, sortColumn, sortDirection]);
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative" id="school-year-root">
+    <div className="space-y-4 pb-24 relative" id="school-year-root">
       
       {/* Dynamic Toast Feedback Overlay */}
       <AnimatePresence>
@@ -393,14 +393,10 @@ export default function SchoolYearManagement() {
       {/* 1. Header Hero Panel */}
       <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
-            <Calendar className="w-3.5 h-3.5" />
-            Điều hành cấu trúc thời gian trường học
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Quản Lý <span className="text-[#4EACAF]">Năm Học</span>
           </h1>
-          <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed">
+          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
             Thiết lập năm học, quản lý các mốc thời kỳ làm cơ sở xây dựng kế hoạch, tổ chức lớp học và phân phối học bạ điện tử trong hệ thống bổ trợ rèn luyện ngữ âm GodotXR.
           </p>
         </div>

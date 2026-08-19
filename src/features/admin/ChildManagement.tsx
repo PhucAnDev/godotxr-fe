@@ -589,7 +589,7 @@ export default function ChildManagement() {
     filterStatus !== 'ALL';
 
   return (
-    <div className="relative space-y-4 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="relative space-y-4 pb-24">
       <AnimatePresence>
         {alertConfig && (
           <motion.div
@@ -631,14 +631,10 @@ export default function ChildManagement() {
 
       <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
-            <Baby className="h-3.5 w-3.5" />
-            Hồ sơ học tập nhi đồng
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Quản Lý <span className="text-[#4EACAF]">Hồ Sơ Trẻ Em</span>
           </h1>
-          <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed mt-1">
+          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
             Quản lý thông tin chi tiết, hồ sơ cá nhân và theo dõi tiến trình học tập, can thiệp phát triển ngôn ngữ của trẻ em trên hệ thống GodotXR.
           </p>
         </div>

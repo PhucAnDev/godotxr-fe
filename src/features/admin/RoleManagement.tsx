@@ -80,7 +80,7 @@ export default function RoleManagement() {
   }, [filteredRoles, sortBy]);
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative">
+    <div className="space-y-4 pb-24 relative">
       
       {/* Toast Alert */}
       <AnimatePresence>
@@ -113,14 +113,10 @@ export default function RoleManagement() {
       {/* 1. Header */}
       <div className="bg-white/45 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
-            <KeyRound className="w-3.5 h-3.5" />
-            Bảng điều khiển Bảo mật
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Phân Quyền <span className="text-[#4EACAF]">Thành Viên</span>
           </h1>
-          <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed mt-1">
+          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
             Phân định quyền hạn, cấu hình giới hạn tính năng và quản lý danh sách vai trò cho học tập, can thiệp hoặc quản lý vận hành GodotXR.
           </p>
         </div>

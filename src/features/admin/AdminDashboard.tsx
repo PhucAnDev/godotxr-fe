@@ -122,18 +122,14 @@ export default function AdminDashboard() {
   }, []);
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative">
+    <div className="space-y-4 pb-24 relative">
       {/* 1. Header (Matched styled card container) */}
       <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-bold uppercase tracking-widest leading-none">
-            <Shield className="w-3.5 h-3.5" />
-            Hệ thống Quản trị
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Bảng điều khiển <span className="text-[#4EACAF]">Hệ thống</span>
           </h1>
-          <p className="text-gray-505 font-medium max-w-2xl text-sm md:text-base leading-relaxed mt-1">
+          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
             Giám sát trạng thái hoạt động, chỉ số người dùng và tài nguyên can thiệp GodotXR.
           </p>
         </div>

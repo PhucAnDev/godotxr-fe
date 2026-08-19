@@ -689,7 +689,7 @@ export default function TeacherClassDetail({
 
   return (
     <div
-      className="relative space-y-4 pb-24 text-left animate-in fade-in slide-in-from-bottom-4 duration-700"
+      className="relative space-y-4 pb-24 text-left"
       id="class-detail-page"
     >
       <AnimatePresence>
@@ -1393,10 +1393,6 @@ export default function TeacherClassDetail({
       {activeTab === 'PROGRAM' && (
         <div className="space-y-4 rounded-xl border border-gray-100 bg-white p-8 shadow-sm md:p-10">
           <div className="max-w-2xl space-y-4">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#4EACAF]/10 px-3.5 py-1 text-xs font-black uppercase tracking-widest leading-none text-[#4EACAF]">
-              <Sparkles className="h-3.5 w-3.5" />
-              Chương trình #{activeClass.programId}
-            </span>
             <h3 className="text-3xl font-black leading-none tracking-tight text-gray-900">
               {activeClass.programName}
             </h3>

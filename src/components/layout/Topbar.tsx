@@ -13,29 +13,22 @@ export function Topbar({
   const isAdmin = userRole === 'ADMIN';
   const isTeacher = userRole === 'TEACHER';
 
-  let greetingTitle = '';
-  let greetingSub = '';
   let avatarSeed = 'parent';
   let roleLabel = '';
   let badgeLabel = '';
 
   const currentUser = getCurrentUser();
+  const userName = currentUser?.FullName || (isAdmin ? 'Quản trị viên' : isTeacher ? 'Giáo viên' : 'Phụ huynh');
 
   if (userRole === 'PARENT') {
-    greetingTitle = currentUser ? `Xin chào, ${currentUser.FullName}!` : 'Chào Phụ huynh!';
-    greetingSub = 'Đồng hành rèn luyện thực tế ảo cùng con';
     avatarSeed = currentUser ? currentUser.FullName : 'Sophia';
     roleLabel = 'Phụ huynh';
     badgeLabel = 'Đồng hành rèn luyện VR';
   } else if (userRole === 'TEACHER') {
-    greetingTitle = currentUser ? `Kính chào, ${currentUser.FullName}!` : 'Xin chào, Giáo viên';
-    greetingSub = 'Giám sát lớp học và điều chỉnh dải bài tập tương tác';
     avatarSeed = currentUser ? currentUser.FullName : 'MsJohnson';
     roleLabel = 'Giáo viên';
     badgeLabel = 'Đồng quản nhiệm VR';
   } else if (userRole === 'ADMIN') {
-    greetingTitle = currentUser ? `Quản trị: ${currentUser.FullName}` : 'Hệ thống Quản trị viên';
-    greetingSub = 'Trạng thái vận hành và giám sát tài nguyên đồng bộ';
     avatarSeed = currentUser ? currentUser.FullName : 'AdminSys';
     roleLabel = 'Quản trị viên';
     badgeLabel = 'Quản trị hệ thống';
@@ -57,7 +50,7 @@ export function Topbar({
             className={cn(
               'md:hidden p-2 rounded-xl border transition-colors cursor-pointer',
               isAdmin
-                ? 'border-slate-800 hover:bg-slate-850 text-slate-300'
+                ? 'border-slate-800 hover:bg-slate-850 text-slate-350'
                 : isTeacher
                   ? 'border-[#D2E0DC] hover:bg-[#D7E5E0] text-gray-700'
                   : 'border-[#E5DFCA] hover:bg-[#E5DFCA] text-[#555]'
@@ -66,14 +59,6 @@ export function Topbar({
             <Menu className="w-5 h-5" />
           </button>
         )}
-        <div className="flex flex-col justify-center">
-          <h2 className="text-xs md:text-sm font-medium tracking-tight leading-none uppercase text-slate-350">
-            {greetingTitle}
-          </h2>
-          <p className="text-[10px] md:text-xs opacity-65 sm:block hidden mt-1 font-normal leading-none">
-            {greetingSub}
-          </p>
-        </div>
       </div>
 
       <div className="flex items-center space-x-4">
@@ -96,13 +81,23 @@ export function Topbar({
             alt="My avatar"
             referrerPolicy="no-referrer"
             className={cn(
-              'w-7.5 h-7.5 rounded-full bg-white border shrink-0 object-cover',
+              'w-8 h-8 rounded-full bg-white border shrink-0 object-cover',
               isAdmin ? 'border-slate-700' : isTeacher ? 'border-[#D2E0DC]' : 'border-[#E5DFCA]'
             )}
           />
           <div className="hidden sm:flex flex-col items-start leading-none">
-            <span className="text-xs font-medium tracking-tight text-slate-200">{roleLabel}</span>
-            <span className="text-[9px] opacity-60 font-normal uppercase mt-0.5 tracking-wider">{badgeLabel}</span>
+            <span className={cn(
+              "text-xs font-semibold tracking-tight",
+              isAdmin ? "text-slate-200" : isTeacher ? "text-gray-800" : "text-[#423D33]"
+            )}>
+              {userName}
+            </span>
+            <span className={cn(
+              "text-[9px] opacity-70 font-normal uppercase mt-0.5 tracking-wider",
+              isAdmin ? "text-slate-400" : isTeacher ? "text-gray-600" : "text-[#756D59]"
+            )}>
+              {badgeLabel}
+            </span>
           </div>
         </div>
       </div>

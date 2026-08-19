@@ -9,8 +9,6 @@ import {
   Briefcase,
   Check,
   KeyRound,
-  Mail,
-  Phone,
   Shield,
   Smile,
 } from 'lucide-react';
@@ -216,32 +214,15 @@ export default function AccountSettings() {
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 pb-24 text-left duration-500">
-      <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+    <div className="space-y-10 pb-24 text-left">
+      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
-            <Shield className="h-3.5 w-3.5" />
-            Cá nhân hóa
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Thiết Lập <span className="text-[#4EACAF]">Tài Khoản</span>
           </h1>
-          <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed mt-1">
+          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
             Đồng bộ thông tin tài khoản theo dữ liệu hệ thống và cập nhật các thiết lập bảo mật của bạn.
           </p>
-        </div>
-
-        <div className="bg-[#E2F2F3] border border-[#C5E1E3] p-4 rounded-[24px] flex items-center gap-4 shadow-sm self-start lg:self-center shrink-0">
-          <img
-            src={resolveAvatarUrl(currentUser.Avatar, currentUser.FullName, 'open-peeps')}
-            alt="My Avatar"
-            className="h-12 w-12 rounded-full border bg-white shadow-xs shrink-0"
-            referrerPolicy="no-referrer"
-          />
-          <div>
-            <h5 className="font-black text-sm text-[#264E50] leading-none italic">{currentUser.FullName}</h5>
-            <p className="mt-1 text-[10px] text-[#264E50]/60 font-black uppercase tracking-wider">{roleLabel}</p>
-          </div>
         </div>
       </div>
 
@@ -258,12 +239,6 @@ export default function AccountSettings() {
           </div>
 
           <form onSubmit={handleUpdateProfile} className="space-y-5">
-            {!canEditProfile && (
-              <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-xs font-bold leading-normal text-amber-800">
-                Hồ sơ đang được đọc từ BE, nhưng API hiện tại chỉ cho phép <code>Admin</code> cập nhật thông tin cá nhân.
-                Giáo viên và phụ huynh vẫn có thể đổi mật khẩu ở khung bên phải.
-              </div>
-            )}
 
             {uError && (
               <div className="rounded-2xl border border-rose-100 bg-rose-50 p-4 text-xs font-bold leading-normal text-rose-700">
@@ -282,52 +257,46 @@ export default function AccountSettings() {
               <label className="ml-1 text-[10px] font-extrabold uppercase tracking-widest text-gray-400">
                 Email đăng nhập
               </label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-gray-300" />
-                <input
-                  type="email"
-                  disabled
-                  value={currentUser.Email}
-                  className="w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm font-bold text-gray-400"
-                />
-              </div>
+              <input
+                type="email"
+                disabled
+                value={currentUser.Email}
+                className="w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-gray-400"
+              />
               <span className="block px-1 text-[10px] font-semibold text-slate-400">
                 Email được giữ cố định theo tài khoản đã xác thực.
               </span>
             </div>
 
+          <div className="space-y-1.5">
+            <label className="ml-1 text-[10px] font-extrabold uppercase tracking-widest text-gray-400">
+              Họ và tên đầy đủ
+            </label>
+            <input
+              type="text"
+              required
+              disabled={!canEditProfile}
+              value={formFullName}
+              onChange={(e) => setFormFullName(e.target.value)}
+              placeholder="Ví dụ: Nguyễn Văn Minh"
+              className="w-full rounded-xl border-2 border-transparent bg-[#FDFCF5] px-4 py-3 text-sm font-bold uppercase text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <label className="ml-1 text-[10px] font-extrabold uppercase tracking-widest text-gray-400">
-                Họ và tên đầy đủ
+                Số điện thoại
               </label>
               <input
                 type="text"
-                required
                 disabled={!canEditProfile}
-                value={formFullName}
-                onChange={(e) => setFormFullName(e.target.value)}
-                placeholder="Ví dụ: Nguyễn Văn Minh"
-                className="w-full rounded-xl border-2 border-transparent bg-[#FDFCF5] px-4 py-3 text-sm font-bold uppercase text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                value={formPhoneNumber}
+                onChange={(e) => setFormPhoneNumber(e.target.value)}
+                placeholder="Liên hệ di động"
+                className="w-full rounded-xl border-2 border-transparent bg-[#FDFCF5] px-4 py-3 text-sm font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
               />
             </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="ml-1 text-[10px] font-extrabold uppercase tracking-widest text-gray-400">
-                  Số điện thoại
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-gray-300" />
-                  <input
-                    type="text"
-                    disabled={!canEditProfile}
-                    value={formPhoneNumber}
-                    onChange={(e) => setFormPhoneNumber(e.target.value)}
-                    placeholder="Liên hệ di động"
-                    className="w-full rounded-xl border-2 border-transparent bg-[#FDFCF5] py-3 pl-11 pr-4 text-sm font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-                  />
-                </div>
-              </div>
 
               <div className="space-y-1.5">
                 <label className="ml-1 text-[10px] font-extrabold uppercase tracking-widest text-gray-400">

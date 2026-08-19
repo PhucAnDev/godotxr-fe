@@ -482,7 +482,7 @@ export default function SemesterManagement() {
   }, [filteredSemesters, currentPage, pageSize]);
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24 relative" id="semester-root-view">
+    <div className="space-y-4 pb-24 relative" id="semester-root-view">
       
       {/* Dynamic Toast Feedback Overlay */}
       <AnimatePresence>
@@ -524,14 +524,10 @@ export default function SemesterManagement() {
       {/* 1. Header Hero Panel */}
       <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
-            <BookOpen className="w-3.5 h-3.5" />
-            Điều phối sơ đồ học kỳ rèn luyện
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Quản Lý <span className="text-[#4EACAF]">Học Kỳ</span>
           </h1>
-          <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed">
+          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
             Gán lớp học và giáo viên vào từng học kỳ. Điều tiết kế hoạch rèn luyện, phân hóa chương trình dạy học GodotXR.
           </p>
         </div>

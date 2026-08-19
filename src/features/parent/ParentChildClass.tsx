@@ -209,25 +209,16 @@ export default function ParentChildClass() {
   const displayEnrollmentStatus = enrollment?.status ?? '—';
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 text-left" id="parent-child-classroom-container">
+    <div className="space-y-4 pb-20 text-left" id="parent-child-classroom-container">
 
       {/* Header */}
       <div className="bg-white/45 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/70 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
         <div className="space-y-3">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs bg-[#4EACAF]/10 text-[#4EACAF] px-3.5 py-1 rounded-full font-black uppercase tracking-wider">
-              Khóa rèn luyện VR
-            </span>
-            <span className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full font-bold">
-              Phụ huynh giám sát
-            </span>
-          </div>
-
-          <h1 className="text-4xl font-black text-gray-900 tracking-tight italic">
-            Lớp Học Của Con
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
+            Lớp Học <span className="text-[#4EACAF]">Của Con</span>
           </h1>
-          <p className="text-gray-500 font-bold text-sm">
-            Theo dõi lớp học hoạt động, giáo viên đảm trách và hành trình bài bản bài học
+          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
+            Theo dõi lớp học hoạt động, giáo viên đảm trách và hành trình bài bản bài học.
           </p>
         </div>
 
@@ -238,7 +229,7 @@ export default function ParentChildClass() {
               <Baby className="w-5 h-5" />
             </div>
             <div className="space-y-1.5 flex-1 select-none">
-              <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest block leading-none">Học sinh thụ hưởng:</span>
+              <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest block leading-none">Hồ sơ của bé:</span>
               <CustomSelect
                 value={String(selectedChildId || '')}
                 onChange={(val) => handleChildChange(Number(val))}
@@ -343,16 +334,16 @@ export default function ParentChildClass() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-semibold text-gray-500">
                   <div className="p-4 bg-slate-50 rounded-2xl">
-                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-wider block mb-1">Thời hạn học</span>
-                    <strong className="text-gray-800 font-black">{displayStartDate} &rarr; {displayEndDate}</strong>
+                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider block mb-1">Thời hạn học</span>
+                    <span className="text-gray-700 font-medium">{displayStartDate} &rarr; {displayEndDate}</span>
                   </div>
                   <div className="p-4 bg-slate-50 rounded-2xl">
-                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-wider block mb-1">Mã định danh lớp</span>
-                    <strong className="text-gray-800 font-black">{displayClassId}</strong>
+                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider block mb-1">Mã định danh lớp</span>
+                    <span className="text-gray-700 font-medium">{displayClassId}</span>
                   </div>
                   <div className="p-4 bg-slate-50 rounded-2xl">
-                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-wider block mb-1">Ngày ghi danh vào học</span>
-                    <strong className="text-gray-800 font-black">{displayEnrollmentDate}</strong>
+                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider block mb-1">Ngày ghi danh vào học</span>
+                    <span className="text-gray-700 font-medium">{displayEnrollmentDate}</span>
                   </div>
                 </div>
               </div>
@@ -528,15 +519,15 @@ export default function ParentChildClass() {
               <div className="space-y-3 font-semibold text-xs text-gray-600 border-t border-gray-50 pt-4">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400">Chuyên môn:</span>
-                  <strong className="text-gray-800 text-right font-black max-w-[160px] text-right">{displayTeacherSpecialty}</strong>
+                  <span className="text-gray-700 text-right font-medium max-w-[160px]">{displayTeacherSpecialty}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400">Mã lớp:</span>
-                  <strong className="text-gray-800 font-black">{displayClassId}</strong>
+                  <span className="text-gray-700 font-medium">{displayClassId}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400">Trạng thái lớp:</span>
-                  <span className="bg-emerald-50 text-emerald-600 px-2.5 py-0.5 rounded font-black text-[10px] uppercase">
+                  <span className="bg-emerald-100/80 text-emerald-800 px-3 py-1 rounded-md font-black text-[11px] uppercase tracking-wider border border-emerald-200 shadow-2xs">
                     {displayStatus === 'Active' ? 'Hoạt động tốt' : displayStatus}
                   </span>
                 </div>
@@ -550,14 +541,14 @@ export default function ParentChildClass() {
                   <>
                     <div className="flex items-center justify-between border-t border-gray-50 pt-3">
                       <span className="text-gray-400">Email:</span>
-                      <strong className="text-gray-800 font-bold truncate max-w-[170px]" title={teacherDetail.email}>{teacherDetail.email}</strong>
+                      <span className="text-gray-700 font-medium truncate max-w-[170px]" title={teacherDetail.email}>{teacherDetail.email}</span>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <span className="text-gray-400">Giới tính:</span>
-                      <strong className="text-gray-700 font-semibold">
+                      <span className="text-gray-700 font-medium">
                         {teacherDetail.gender === 'Male' ? 'Nam' : teacherDetail.gender === 'Female' ? 'Nữ' : 'Khác'}
-                      </strong>
+                      </span>
                     </div>
                   </>
                 ) : null}

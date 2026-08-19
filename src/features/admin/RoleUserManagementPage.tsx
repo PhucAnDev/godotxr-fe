@@ -566,7 +566,7 @@ export default function RoleUserManagementPage({
   };
 
   return (
-    <div className="relative space-y-4 animate-in fade-in slide-in-from-bottom-4 pb-24 duration-700">
+    <div className="relative space-y-4 pb-24">
       <ToastBanner
         alertConfig={alertConfig}
         onClose={() => setAlertConfig(null)}
@@ -574,11 +574,7 @@ export default function RoleUserManagementPage({
 
       <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-black uppercase tracking-widest leading-none">
-            {config.badgeIcon}
-            {config.badgeLabel}
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-none italic pb-1 mt-2">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             {config.title.includes('giáo viên') || config.title.includes('Giáo viên') ? (
               <>
                 Quản lý <span className="text-[#4EACAF]">Giáo viên</span>
@@ -589,7 +585,7 @@ export default function RoleUserManagementPage({
               </>
             )}
           </h1>
-          <p className="text-gray-500 font-bold max-w-2xl text-sm md:text-base leading-relaxed mt-1">
+          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
             {config.description}
           </p>
           <div className="inline-flex items-start gap-2 rounded-xl border border-amber-100/60 bg-amber-50/70 p-3 text-xs font-bold text-amber-850 max-w-2xl mt-2">

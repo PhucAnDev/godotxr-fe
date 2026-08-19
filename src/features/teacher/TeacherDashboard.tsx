@@ -198,12 +198,16 @@ export default function TeacherDashboard() {
   return (
     <div className="space-y-4 animate-in fade-in duration-300">
       {/* Page Header Component */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-100">
-        <div>
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight font-sans">Bảng Điều Khiển Giáo Viên</h1>
-          <p className="text-xs text-slate-500 mt-1">Giám sát quá trình rèn luyện, kiểm duyệt âm thanh VR và hỗ trợ can thiệp cho học sinh</p>
+      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+        <div className="space-y-2">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
+            Bảng Điều Khiển <span className="text-[#4EACAF]">Giáo Viên</span>
+          </h1>
+          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
+            Giám sát quá trình rèn luyện, kiểm duyệt âm thanh VR và hỗ trợ can thiệp cho học sinh.
+          </p>
         </div>
-        <div className="mt-2 md:mt-0 text-[11px] bg-sky-50 text-sky-600 border border-sky-200 px-3 py-1 rounded-md font-semibold">
+        <div className="text-xs bg-[#4EACAF]/10 text-[#4EACAF] border border-[#4EACAF]/20 px-4 py-2 rounded-2xl font-bold self-start lg:self-center shrink-0">
           Học kỳ II • Năm học 2025–2026
         </div>
       </div>

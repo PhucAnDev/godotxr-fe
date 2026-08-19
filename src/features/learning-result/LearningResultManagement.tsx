@@ -624,10 +624,6 @@ export default function LearningResultManagement() {
       {/* Styled Dashboard Header */}
       <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-6 shadow-sm">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#4EACAF]/10 text-[#4EACAF] rounded-full text-xs font-bold uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5" />
-            Bảng kết quả rèn luyện phát âm VR
-          </div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Kết Quả <span className="text-[#FF8E8E]">Luyện Tập</span>
           </h1>
