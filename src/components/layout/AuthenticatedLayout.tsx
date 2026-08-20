@@ -84,7 +84,7 @@ export function AuthenticatedLayout({
           onMenuToggle={() => setIsMobileMenuOpen(true)}
         />
         <main className="flex-1 p-2 overflow-y-auto">
-          <div className="max-w-7xl mx-auto h-full">
+          <div className="max-w-7xl mx-auto h-full" style={{ zoom: 0.9 }}>
             <Outlet />
           </div>
         </main>

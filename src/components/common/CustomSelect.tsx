@@ -37,8 +37,9 @@ export default function CustomSelect({
         if (containerRef.current) {
           const rect = containerRef.current.getBoundingClientRect();
           const spaceBelow = window.innerHeight - rect.bottom;
-          // If space below is less than 240px and there is more space above, open top
-          if (spaceBelow < 240 && rect.top > spaceBelow) {
+          const requiredHeight = Math.min(options.length * 36 + 16, 200);
+          // If space below is less than required height and there is more space above, open top
+          if (spaceBelow < requiredHeight && rect.top > spaceBelow) {
             setCalculatedPlacement('top');
           } else {
             setCalculatedPlacement('bottom');

@@ -573,27 +573,27 @@ export default function AnalyzeManagement() {
       </AnimatePresence>
 
       {/* Header section */}
-      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
-        <div className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
+      <div className="bg-white/40 backdrop-blur-md rounded-xl p-4 md:p-5 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm">
+        <div className="space-y-1">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Quản Lý <span className="text-[#4EACAF]">Đánh Giá Trẻ</span>
           </h1>
-          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
+          <p className="text-slate-500 font-medium max-w-xl text-xs md:text-sm leading-relaxed">
             Xem nhanh, cập nhật chẩn đoán học tập và đánh giá tiến trình phát triển ngôn ngữ định kỳ của học sinh.
           </p>
         </div>
 
         <button
           onClick={openCreateModal}
-          className="bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black italic tracking-tight py-4 px-8 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[#4EACAF]/20 transition-all hover:scale-105 active:scale-95 shrink-0 cursor-pointer"
+          className="bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black italic tracking-tight py-2.5 px-6 rounded-xl flex items-center justify-center gap-2.5 shadow-md shadow-[#4EACAF]/20 transition-all hover:scale-105 active:scale-95 shrink-0 cursor-pointer text-xs md:text-sm"
         >
-          <Plus className="w-5 h-5" strokeWidth={2.5} />
+          <Plus className="w-4.5 h-4.5" strokeWidth={2.5} />
           Tạo bản đánh giá mới
         </button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatItem
           title="Tổng số bản đánh giá"
           value={totalEvaluations}

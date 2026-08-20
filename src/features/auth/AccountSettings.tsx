@@ -19,6 +19,7 @@ import {
 } from '../../lib/authSession';
 import { useAccountSettingsApi } from '../../hooks/useAccountSettingsApi';
 import { resolveAvatarUrl } from '../../lib/utils';
+import CustomSelect from '../../components/common/CustomSelect';
 
 type UserGender = 'Male' | 'Female' | 'Other';
 
@@ -214,20 +215,20 @@ export default function AccountSettings() {
   };
 
   return (
-    <div className="space-y-10 pb-24 text-left">
-      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
-        <div className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
+    <div className="space-y-4 pb-2 text-left">
+      <div className="bg-white/40 backdrop-blur-md rounded-xl p-4 md:p-5 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm">
+        <div className="space-y-1">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Thiết Lập <span className="text-[#4EACAF]">Tài Khoản</span>
           </h1>
-          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
+          <p className="text-slate-500 font-medium max-w-xl text-xs md:text-sm leading-relaxed">
             Đồng bộ thông tin tài khoản theo dữ liệu hệ thống và cập nhật các thiết lập bảo mật của bạn.
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <div className="space-y-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm md:p-8">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="space-y-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm md:p-5">
           <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
             <div className="rounded-xl bg-[#4EACAF]/10 p-2.5 text-[#4EACAF]">
               <Smile className="h-5 w-5" />
@@ -238,7 +239,7 @@ export default function AccountSettings() {
             </div>
           </div>
 
-          <form onSubmit={handleUpdateProfile} className="space-y-5">
+          <form onSubmit={handleUpdateProfile} className="space-y-3">
 
             {uError && (
               <div className="rounded-2xl border border-rose-100 bg-rose-50 p-4 text-xs font-bold leading-normal text-rose-700">
@@ -261,7 +262,7 @@ export default function AccountSettings() {
                 type="email"
                 disabled
                 value={currentUser.Email}
-                className="w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-gray-400"
+                className="w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-gray-400"
               />
               <span className="block px-1 text-[10px] font-semibold text-slate-400">
                 Email được giữ cố định theo tài khoản đã xác thực.
@@ -279,7 +280,7 @@ export default function AccountSettings() {
               value={formFullName}
               onChange={(e) => setFormFullName(e.target.value)}
               placeholder="Ví dụ: Nguyễn Văn Minh"
-              className="w-full rounded-xl border-2 border-transparent bg-[#FDFCF5] px-4 py-3 text-sm font-bold uppercase text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+              className="w-full rounded-xl border-2 border-transparent bg-[#FDFCF5] px-3.5 py-2 text-xs font-bold uppercase text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
             />
           </div>
 
@@ -294,7 +295,7 @@ export default function AccountSettings() {
                 value={formPhoneNumber}
                 onChange={(e) => setFormPhoneNumber(e.target.value)}
                 placeholder="Liên hệ di động"
-                className="w-full rounded-xl border-2 border-transparent bg-[#FDFCF5] px-4 py-3 text-sm font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                className="w-full rounded-xl border-2 border-transparent bg-[#FDFCF5] px-3.5 py-2 text-xs font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
               />
             </div>
 
@@ -302,16 +303,18 @@ export default function AccountSettings() {
                 <label className="ml-1 text-[10px] font-extrabold uppercase tracking-widest text-gray-400">
                   Giới tính
                 </label>
-                <select
+                <CustomSelect
                   disabled={!canEditProfile}
                   value={formGender}
-                  onChange={(e) => setFormGender(e.target.value as UserGender)}
-                  className="w-full cursor-pointer rounded-xl border-2 border-transparent bg-[#FDFCF5] px-3.5 py-3 text-sm font-bold text-gray-700 outline-none focus:border-[#4EACAF] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-                >
-                  <option value="Male">Nam</option>
-                  <option value="Female">Nữ</option>
-                  <option value="Other">Khác</option>
-                </select>
+                  onChange={(val) => setFormGender(val as UserGender)}
+                  options={[
+                    { value: 'Male', label: 'Nam' },
+                    { value: 'Female', label: 'Nữ' },
+                    { value: 'Other', label: 'Khác' },
+                  ]}
+                  variant="subform"
+                  placement="bottom"
+                />
               </div>
             </div>
 
@@ -334,11 +337,11 @@ export default function AccountSettings() {
               </div>
             )}
 
-            <div className="pt-3">
+            <div className="pt-1.5">
               <button
                 type="submit"
                 disabled={!canEditProfile || isSavingProfile || isLoadingProfile}
-                className="w-full cursor-pointer rounded-xl bg-[#4EACAF] px-6 py-3.5 text-center text-sm font-bold text-white shadow-md transition-all active:scale-95 hover:bg-[#3d8c8e] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                className="w-full cursor-pointer rounded-xl bg-[#4EACAF] px-5 py-2.5 text-center text-xs font-bold text-white shadow-md transition-all active:scale-95 hover:bg-[#3d8c8e] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
               >
                 {isLoadingProfile ? 'Đang đồng bộ hồ sơ...' : isSavingProfile ? 'Đang cập nhật...' : 'Cập nhật thông tin cá nhân'}
               </button>
@@ -346,7 +349,7 @@ export default function AccountSettings() {
           </form>
         </div>
 
-        <div className="space-y-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm md:p-8">
+        <div className="space-y-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm md:p-5">
           <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
             <div className="rounded-xl bg-[#FF8E8E]/10 p-2.5 text-[#FF8E8E]">
               <KeyRound className="h-5 w-5" />
@@ -357,7 +360,7 @@ export default function AccountSettings() {
             </div>
           </div>
 
-          <form onSubmit={handleUpdatePassword} className="space-y-5">
+          <form onSubmit={handleUpdatePassword} className="space-y-3">
             {pError && (
               <div className="rounded-2xl border border-rose-100 bg-rose-50 p-4 text-xs font-bold leading-normal text-rose-700">
                 {pError}
@@ -381,7 +384,7 @@ export default function AccountSettings() {
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full rounded-xl border-2 border-transparent bg-[#FDFCF5] px-4 py-3 text-sm font-bold text-gray-700 outline-none transition-all focus:border-[#FF8E8E] focus:bg-white"
+                className="w-full rounded-xl border-2 border-transparent bg-[#FDFCF5] px-3.5 py-2 text-xs font-bold text-gray-700 outline-none transition-all focus:border-[#FF8E8E] focus:bg-white"
               />
             </div>
 
@@ -395,12 +398,12 @@ export default function AccountSettings() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full rounded-xl border-2 border-transparent bg-[#FDFCF5] px-4 py-3 text-sm font-bold text-gray-700 outline-none transition-all focus:border-[#FF8E8E] focus:bg-white"
+                className="w-full rounded-lg border-2 border-transparent bg-[#FDFCF5] px-3 py-1.5 text-[11px] font-bold text-gray-700 outline-none transition-all focus:border-[#FF8E8E] focus:bg-white"
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="ml-1 text-[10px] font-extrabold uppercase tracking-widest text-gray-400">
+            <div className="space-y-1">
+              <label className="ml-1 text-[9px] font-extrabold uppercase tracking-widest text-gray-400">
                 Xác nhận mật khẩu mới
               </label>
               <input
@@ -409,15 +412,15 @@ export default function AccountSettings() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full rounded-xl border-2 border-transparent bg-[#FDFCF5] px-4 py-3 text-sm font-bold text-gray-700 outline-none transition-all focus:border-[#FF8E8E] focus:bg-white"
+                className="w-full rounded-xl border-2 border-transparent bg-[#FDFCF5] px-3.5 py-2 text-xs font-bold text-gray-700 outline-none transition-all focus:border-[#FF8E8E] focus:bg-white"
               />
             </div>
 
-            <div className="pt-3">
+            <div className="pt-1.5">
               <button
                 type="submit"
                 disabled={isChangingPassword}
-                className="w-full cursor-pointer rounded-xl bg-[#FF8E8E] px-6 py-3.5 text-center text-sm font-bold text-white shadow-md transition-all active:scale-95 hover:bg-[#e87f7f] disabled:cursor-not-allowed disabled:bg-rose-300 disabled:shadow-none"
+                className="w-full cursor-pointer rounded-xl bg-[#FF8E8E] px-5 py-2.5 text-center text-xs font-bold text-white shadow-md transition-all active:scale-95 hover:bg-[#e87f7f] disabled:cursor-not-allowed disabled:bg-rose-300 disabled:shadow-none"
               >
                 {isChangingPassword ? 'Đang cập nhật mật khẩu...' : 'Cập nhật mật khẩu mới'}
               </button>

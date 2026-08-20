@@ -590,7 +590,7 @@ export default function LearningResultManagement() {
   };
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-700 pb-24 relative" id="results-split-page-wrapper">
+    <div className="space-y-4 animate-in fade-in duration-700 pb-2 relative" id="results-split-page-wrapper">
       {/* Toast notifications */}
       <AnimatePresence>
         {toastMessage && (
@@ -623,12 +623,12 @@ export default function LearningResultManagement() {
       </AnimatePresence>
 
       {/* Styled Dashboard Header */}
-      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-6 shadow-sm">
-        <div className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
+      <div className="bg-white/40 backdrop-blur-md rounded-xl p-4 md:p-5 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm">
+        <div className="space-y-1">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Kết Quả <span className="text-[#FF8E8E]">Luyện Tập</span>
           </h1>
-          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
+          <p className="text-slate-500 font-medium max-w-xl text-xs md:text-sm leading-relaxed">
             Xem lịch sử rèn luyện của học sinh từ thiết bị VR, lắng nghe file âm thanh ghi âm chi tiết và đánh giá nhận xét tiến bộ.
           </p>
         </div>
