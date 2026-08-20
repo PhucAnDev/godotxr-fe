@@ -242,7 +242,7 @@ export default function LearningResultManagement() {
       try {
         const roleView = getStoredRoleView();
         const sessionUser = getSessionUser();
-        
+
         let childRecords: any[] = [];
         let lessonRecords: LessonResponse[] = [];
 
@@ -549,7 +549,8 @@ export default function LearningResultManagement() {
         const query = searchQuery.toLowerCase();
         const matchChild = child?.FullName.toLowerCase().includes(query);
         const matchLesson = lesson?.lessonName.toLowerCase().includes(query);
-        if (!matchChild && !matchLesson) return false;
+        const matchSession = (res.SessionId || res.ResultId).toLowerCase().includes(query);
+        if (!matchChild && !matchLesson && !matchSession) return false;
       }
 
       // Status Filter
@@ -706,7 +707,7 @@ export default function LearningResultManagement() {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Tìm theo học sinh, bài tập..."
+                  placeholder="Tìm theo học sinh, bài tập, Session ID..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-4 pr-4 py-2.5 rounded-xl border border-slate-200 outline-none text-xs font-semibold focus:border-[#4EACAF] transition-colors"
@@ -770,7 +771,12 @@ export default function LearningResultManagement() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-1">
-                          <p className="font-bold text-slate-800 text-sm">{child?.FullName || `Bé (ID: ${res.ChildId})`}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-slate-800 text-sm">{child?.FullName || `Bé (ID: ${res.ChildId})`}</p>
+                            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
+                              Session #{res.SessionId || res.ResultId}
+                            </span>
+                          </div>
                           <p className="text-xs text-slate-400 font-semibold leading-relaxed">
                             {lesson?.lessonName || 'Bài tập tự do'}
                           </p>
@@ -824,10 +830,10 @@ export default function LearningResultManagement() {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-mono font-bold px-2.5 py-0.5 bg-slate-100 text-slate-650 rounded">
-                      Session #{selectedResult.ResultId}
+                      Session #{selectedResult.SessionId || selectedResult.ResultId}
                     </span>
-                    <span className="text-xs font-bold text-slate-400">
-                      Học sinh: <strong className="text-slate-800">{getChildDetailInfo(selectedResult.ChildId)?.FullName}</strong>
+                    <span className="text-xs text-slate-400 font-medium">
+                      Học sinh: <span className="text-slate-600 font-normal">{getChildDetailInfo(selectedResult.ChildId)?.FullName}</span>
                     </span>
                   </div>
                   <h3 className="text-lg font-black text-slate-800 mt-2">
@@ -856,7 +862,7 @@ export default function LearningResultManagement() {
                 </div>
                 <div className="text-center">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tương tác</span>
-                  <span className="text-xs font-bold text-emerald-600 mt-1.5 block">Đúng: {selectedResult.CorrectCount} | Sai: {selectedResult.ErrorCount}</span>
+                  <span className="text-xs font-bold text-emerald-600 mt-1.5 block">Đúng: {selectedResult.CorrectCount} lần| Sai: {selectedResult.ErrorCount} lần</span>
                 </div>
               </div>
 
