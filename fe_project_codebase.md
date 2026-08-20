@@ -1,4 +1,4 @@
-﻿# Frontend Project Source Code
+# Frontend Project Source Code
 
 
 ## File: index.html
@@ -12507,8 +12507,6 @@ const PAGE_CONFIG: Record<PageVariant, PageConfig> = {
     title: 'Quản lý giáo viên',
     description:
       'Theo dõi đầy đủ danh sách giáo viên đã được tạo tài khoản, kiểm tra thông tin liên hệ và tình trạng hoạt động ngay trên một màn hình.',
-    note:
-      'Tài khoản giáo viên được tạo trong mục Quản lý người dùng. Trang này chỉ hiển thị riêng nhóm giáo viên để tiện theo dõi và cập nhật.',
     searchPlaceholder: 'Tìm theo tên giáo viên, email, số điện thoại...',
     specialtyLabel: 'Chuyên môn',
     specialtyPlaceholder: 'Ví dụ: Trị liệu ngôn ngữ',
@@ -12528,8 +12526,6 @@ const PAGE_CONFIG: Record<PageVariant, PageConfig> = {
     title: 'Quản lý phụ huynh',
     description:
       'Xem nhanh các tài khoản phụ huynh đang có trên hệ thống, kiểm tra thông tin liên hệ và cập nhật ghi chú hỗ trợ khi cần.',
-    note:
-      'Tài khoản phụ huynh cũng được tạo trong mục Quản lý người dùng. Trang này tách riêng để quản trị viên thao tác nhanh hơn.',
     searchPlaceholder: 'Tìm theo tên phụ huynh, email, số điện thoại...',
     specialtyLabel: 'Thông tin bổ sung',
     specialtyPlaceholder: 'Ví dụ: Phụ huynh chính',

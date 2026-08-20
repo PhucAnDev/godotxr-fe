@@ -237,8 +237,8 @@ export default function ChildManagement() {
         setIsLoading(false);
         triggerNotification(
           result.errors.join(' ') ||
-            result.message ||
-            'Không thể tải danh sách hồ sơ trẻ.',
+          result.message ||
+          'Không thể tải danh sách hồ sơ trẻ.',
           'warning'
         );
         return;
@@ -332,8 +332,8 @@ export default function ChildManagement() {
       } else {
         triggerNotification(
           result.errors.join(' ') ||
-            result.message ||
-            'Không thể tải chi tiết hồ sơ trẻ.',
+          result.message ||
+          'Không thể tải chi tiết hồ sơ trẻ.',
           'warning'
         );
       }
@@ -458,8 +458,8 @@ export default function ChildManagement() {
       setIsDeleting(false);
       triggerNotification(
         result.errors.join(' ') ||
-          result.message ||
-          'Không thể xóa hồ sơ trẻ.',
+        result.message ||
+        'Không thể xóa hồ sơ trẻ.',
         'warning'
       );
       return;
@@ -480,11 +480,11 @@ export default function ChildManagement() {
   const averageAge =
     totalChildren > 0
       ? parseFloat(
-          (
-            childrenList.reduce((sum, child) => sum + child.Age, 0) /
-            totalChildren
-          ).toFixed(1)
-        )
+        (
+          childrenList.reduce((sum, child) => sum + child.Age, 0) /
+          totalChildren
+        ).toFixed(1)
+      )
       : 0;
 
   const filteredChildren = useMemo(() => {
@@ -695,15 +695,6 @@ export default function ChildManagement() {
       </div>
 
       <div className="space-y-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-        <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4 text-sm text-amber-800">
-          <div className="flex items-start gap-3">
-            <Info className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-600" />
-            <p>
-              Danh sách hiển thị thông tin cơ bản của học viên nhi đồng. Bạn có thể xem chi tiết tiến độ, quản lý thông tin hồ sơ học tập và cập nhật tình trạng học của bé tại đây.
-            </p>
-          </div>
-        </div>
-
         <div className="relative">
 
           <input
@@ -767,7 +758,7 @@ export default function ChildManagement() {
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-        
+
 
         {isLoading ? (
           <div className="space-y-4 px-6 py-16 text-center">
@@ -818,7 +809,7 @@ export default function ChildManagement() {
                       title="Sắp xếp theo Mã số"
                     >
                       <div className="flex items-center gap-1.5">
-                        Mã số
+                        Mã
                         {sortColumn === 'ChildId' ? (
                           sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
                         ) : (
@@ -832,7 +823,7 @@ export default function ChildManagement() {
                       title="Sắp xếp theo Họ tên"
                     >
                       <div className="flex items-center gap-1.5">
-                        Hồ sơ trẻ
+                        Tên trẻ
                         {sortColumn === 'FullName' ? (
                           sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
                         ) : (
@@ -846,7 +837,7 @@ export default function ChildManagement() {
                       title="Sắp xếp theo Độ tuổi"
                     >
                       <div className="flex items-center gap-1.5">
-                        Độ tuổi
+                        Tuổi
                         {sortColumn === 'Age' ? (
                           sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
                         ) : (
@@ -1143,7 +1134,7 @@ export default function ChildManagement() {
                   label="Họ và tên đầy đủ của trẻ"
                   value={selectedChild.FullName}
                 />
-                 <DetailRow
+                <DetailRow
                   label="Phụ huynh liên kết"
                   value={parentsMap[selectedChild.ParentUserId] || `Tài khoản #${selectedChild.ParentUserId}`}
                 />
@@ -1171,15 +1162,6 @@ export default function ChildManagement() {
                   <span className="block text-sm font-bold italic leading-relaxed text-gray-800">
                     "{selectedChild.Note}"
                   </span>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4 text-sm text-amber-800">
-                <div className="flex items-start gap-3">
-                  <Info className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-600" />
-                  <p>
-                    Để bảo mật và tối ưu dữ liệu, thông tin liên lạc chi tiết của phụ huynh sẽ được truy cập thông qua mục Quản lý phụ huynh.
-                  </p>
                 </div>
               </div>
 
@@ -1293,11 +1275,11 @@ export default function ChildManagement() {
               <div className="flex flex-col md:flex-row gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100 items-center">
                 <div className="text-center space-y-2 shrink-0">
                   <div className="w-24 h-24 bg-orange-100 rounded-full border-4 border-white shadow-inner overflow-hidden mx-auto relative group">
-                    <img 
-                      src={resolveAvatarUrl(formState.avatar, formState.fullName || 'default', 'bottts')} 
-                      alt="profile preview" 
-                      className="w-full h-full object-cover" 
-                      referrerPolicy="no-referrer" 
+                    <img
+                      src={resolveAvatarUrl(formState.avatar, formState.fullName || 'default', 'bottts')}
+                      alt="profile preview"
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
                     />
                   </div>
                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Ảnh đại diện</span>

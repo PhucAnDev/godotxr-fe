@@ -51,7 +51,7 @@ interface PageConfig {
   badgeLabel: string;
   title: string;
   description: string;
-  note: string;
+  note?: string;
   searchPlaceholder: string;
   specialtyLabel: string;
   specialtyPlaceholder: string;
@@ -72,8 +72,6 @@ const PAGE_CONFIG: Record<PageVariant, PageConfig> = {
     title: 'Quản lý giáo viên',
     description:
       'Theo dõi đầy đủ danh sách giáo viên đã được tạo tài khoản, kiểm tra thông tin liên hệ và tình trạng hoạt động ngay trên một màn hình.',
-    note:
-      'Tài khoản giáo viên được tạo trong mục Quản lý người dùng. Trang này chỉ hiển thị riêng nhóm giáo viên để tiện theo dõi và cập nhật.',
     searchPlaceholder: 'Tìm theo tên giáo viên, email, số điện thoại...',
     specialtyLabel: 'Chuyên môn',
     specialtyPlaceholder: 'Ví dụ: Trị liệu ngôn ngữ',
@@ -93,8 +91,6 @@ const PAGE_CONFIG: Record<PageVariant, PageConfig> = {
     title: 'Quản lý phụ huynh',
     description:
       'Xem nhanh các tài khoản phụ huynh đang có trên hệ thống, kiểm tra thông tin liên hệ và cập nhật ghi chú hỗ trợ khi cần.',
-    note:
-      'Tài khoản phụ huynh cũng được tạo trong mục Quản lý người dùng. Trang này tách riêng để quản trị viên thao tác nhanh hơn.',
     searchPlaceholder: 'Tìm theo tên phụ huynh, email, số điện thoại...',
     specialtyLabel: 'Thông tin bổ sung',
     specialtyPlaceholder: 'Ví dụ: Phụ huynh chính',
@@ -588,10 +584,12 @@ export default function RoleUserManagementPage({
           <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
             {config.description}
           </p>
-          <div className="inline-flex items-start gap-2 rounded-xl border border-amber-100/60 bg-amber-50/70 p-3 text-xs font-bold text-amber-850 max-w-2xl mt-2">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-            <span>{config.note}</span>
-          </div>
+          {config.note && (
+            <div className="inline-flex items-start gap-2 rounded-xl border border-amber-100/60 bg-amber-50/70 p-3 text-xs font-bold text-amber-850 max-w-2xl mt-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+              <span>{config.note}</span>
+            </div>
+          )}
         </div>
 
         <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
