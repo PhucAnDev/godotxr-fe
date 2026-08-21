@@ -68,7 +68,7 @@ export default function CustomSelect({
   const isSubform = variant === 'subform';
 
   return (
-    <div ref={containerRef} className={cn("relative w-full text-left", className)}>
+    <div ref={containerRef} className={cn("relative w-full text-left", isOpen && "z-[100]", className)}>
       <button
         type="button"
         disabled={disabled}
@@ -104,7 +104,7 @@ export default function CustomSelect({
             exit={{ opacity: 0, y: calculatedPlacement === 'top' ? -5 : 5 }}
             transition={{ duration: 0.15 }}
             className={cn(
-              "absolute z-50 w-full bg-white border border-slate-200/80 rounded-2xl shadow-xl max-h-60 overflow-y-auto p-1.5 space-y-0.5",
+              "absolute z-[100] w-full bg-white border border-slate-200/80 rounded-2xl shadow-xl max-h-60 overflow-y-auto p-1.5 space-y-0.5",
               calculatedPlacement === 'top' ? "bottom-full mb-1.5" : "mt-1.5"
             )}
           >

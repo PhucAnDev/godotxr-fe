@@ -71,3 +71,8 @@ export const deleteChildProfile = (id: number) =>
 
 export const getMyChildProfiles = () =>
   request<ChildProfileResponse[]>('/api/child-profiles/my-children');
+
+export const getMyStudents = (pageNumber = 1, pageSize = 100) =>
+  request<PagedResponse<ChildProfileResponse>>(
+    `/api/child-profiles/my-students?pageNumber=${pageNumber}&pageSize=${pageSize}`
+  );
