@@ -3,29 +3,28 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Search,
   X,
+  Eye,
   Clock,
   ThumbsUp,
   TrendingUp,
   Volume2,
   Play,
   Pause,
+  Info,
+  CheckCircle2,
+  Calendar,
+  ChevronDown,
   Activity,
   UserSquare2,
   Sparkles,
   ShieldAlert,
+  ArrowRight,
+  User,
   MessageCircle,
   VolumeX,
   FileAudio,
-  CheckCircle2,
   CheckCircle,
-  Copy,
-  Check,
-  Send,
-  Tag,
-  Brain,
-  Award,
-  Layers,
-  Baby
+  FileText
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
@@ -91,12 +90,6 @@ function formatDateDMY(value: string | null | undefined): string {
   return value;
 }
 
-function truncateSessionId(id: string): string {
-  if (!id) return '#---';
-  if (id.length <= 10) return `#${id}`;
-  return `#...${id.slice(-6)}`;
-}
-
 const mapChildRecord = (c: any): Child => ({
   ChildId: String(c.id),
   FullName: c.fullName,
@@ -147,97 +140,39 @@ async function loadAllPages<T>(
 
 interface ParsedEvent {
   timeSeconds: number;
-  timeFormatted: string;
-  expectedText: string;
-  spokenText?: string;
-  isCorrect: boolean;
-  statusText: string;
+  text: string;
 }
 
-function parseInteractionLogEvents(log: string): ParsedEvent[] {
+function parseInteractionLog(log: string): ParsedEvent[] {
   if (!log) return [];
-  const segments = log.split(/[|\n]+/).map((s) => s.trim()).filter(Boolean);
+  const segments = log.split(/[|\n]+/);
   const events: ParsedEvent[] = [];
 
   for (const segment of segments) {
-    const wrongMatch =
-      segment.match(/\[(\d+)s?\]\s*Wrong\s+Answer:\s*từ\s+đúng\s*'([^']+)',?\s*trẻ\s+nói:\s*'([^']+)'/i) ||
-      segment.match(/\[(\d+)s?\]\s*Wrong\s+Answer:\s*từ\s+đúng\s*'([^']+)'/i);
-
-    if (wrongMatch) {
-      const sec = parseInt(wrongMatch[1], 10);
-      const min = Math.floor(sec / 60);
-      const remSec = sec % 60;
-      const fmt = `${String(min).padStart(2, '0')}:${String(remSec).padStart(2, '0')}`;
-      events.push({
-        timeSeconds: sec,
-        timeFormatted: fmt,
-        expectedText: wrongMatch[2].trim(),
-        spokenText: wrongMatch[3] ? wrongMatch[3].trim() : 'chưa đủ từ',
-        isCorrect: false,
-        statusText: 'Chưa đạt / Thiếu từ',
-      });
-      continue;
-    }
-
     const correctMatch = segment.match(/\[(\d+)s?\]\s*Correct\s+Answer:\s*(.+)/i);
     if (correctMatch) {
-      const sec = parseInt(correctMatch[1], 10);
-      const min = Math.floor(sec / 60);
-      const remSec = sec % 60;
-      const fmt = `${String(min).padStart(2, '0')}:${String(remSec).padStart(2, '0')}`;
       events.push({
-        timeSeconds: sec,
-        timeFormatted: fmt,
-        expectedText: correctMatch[2].trim(),
-        spokenText: correctMatch[2].trim(),
-        isCorrect: true,
-        statusText: 'Đạt / Chính xác',
+        timeSeconds: parseInt(correctMatch[1], 10),
+        text: correctMatch[2].trim()
+      });
+      continue;
+    }
+
+    const wrongMatch = segment.match(/\[(\d+)s?\]\s*Wrong\s+Answer:\s*từ\s+đúng\s*'([^']+)'/i);
+    if (wrongMatch) {
+      events.push({
+        timeSeconds: parseInt(wrongMatch[1], 10),
+        text: wrongMatch[2].trim()
       });
       continue;
     }
   }
-
   return events;
 }
-
-function generateAiFeedbackSuggestion(
-  result: LearningResult,
-  lessonName: string,
-  events: ParsedEvent[],
-  childName?: string
-): string {
-  const name = childName || 'Bé';
-  const score = result.Score;
-  const wrongEvents = events.filter((e) => !e.isCorrect);
-
-  if (score >= 80) {
-    return `${name} hoàn thành rất tốt bài tập "${lessonName}" (Đạt ${score}/100 điểm). Bé phản xạ nhanh, nhận biết rõ các vật thể trong môi trường VR và phát âm tròn vành rõ chữ.`;
-  } else if (score >= 50) {
-    const errorNote =
-      wrongEvents.length > 0
-        ? ` ở mốc [${wrongEvents[0].timeFormatted}] (kỳ vọng: "${wrongEvents[0].expectedText}", trẻ nói: "${wrongEvents[0].spokenText || 'chưa đủ từ'}")`
-        : '';
-    return `${name} có sự tập trung tốt trong bài học "${lessonName}" (Đạt ${score}/100 điểm). Bé ghi nhớ được từ vựng chính, tuy nhiên còn gặp chút vấp váp${errorNote}. Đề xuất giáo viên và phụ huynh hỗ trợ luyện thêm khẩu hình cho bé ở nhà.`;
-  } else {
-    const wrongList = wrongEvents.map((e) => `"${e.expectedText}"`).slice(0, 2).join(', ');
-    const errorNote = wrongList ? ` đặc biệt ở các từ ${wrongList}` : '';
-    return `${name} cần thêm thời gian rèn luyện bài học "${lessonName}"${errorNote}. Bé còn nói thiếu từ và chưa phát âm rõ âm đệm. Đề xuất gia đình phối hợp mở lại các đoạn âm thanh và rèn khẩu hình cùng bé.`;
-  }
-}
-
-const QUICK_FEEDBACK_TAGS = [
-  'Cần chú ý âm đệm',
-  'Tập trung tốt',
-  'Phản xạ nhanh',
-  'Cần phát âm rõ từ đầu',
-  'Tiến bộ rõ rệt',
-];
 
 export default function LearningResultManagement() {
   const {
     getChildProfiles,
-    getMyStudents,
     getCurrentUserWithChildrenProfiles,
     getResultsByChild,
     updateResultFeedback,
@@ -277,16 +212,14 @@ export default function LearningResultManagement() {
   const [referenceTexts, setReferenceTexts] = useState<Record<number, string>>({});
   const [feedbackInput, setFeedbackInput] = useState('');
   const [savingFeedback, setSavingFeedback] = useState(false);
-  const [aiSuggesting, setAiSuggesting] = useState(false);
-  const [copiedSessionId, setCopiedSessionId] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const parsedEvents = useMemo(() => {
-    return selectedResult ? parseInteractionLogEvents(selectedResult.InteractionLog) : [];
+    return selectedResult ? parseInteractionLog(selectedResult.InteractionLog) : [];
   }, [selectedResult]);
 
-  // Toast notifications
+  // Toast feedback triggers
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'warn' } | null>(null);
   const showToast = (text: string, type: 'success' | 'info' | 'warn' = 'success') => {
     setToastMessage({ text, type });
@@ -323,44 +256,35 @@ export default function LearningResultManagement() {
           }
           lessonRecords = lessonsData;
         } else if (roleView === 'TEACHER') {
-          const [teacherStudentsRes, lessonsData] = await Promise.all([
-            getMyStudents(1, 100).catch(() => ({ success: false, data: null })),
+          const [allClassrooms, allEnrollments, allChildren, lessonsData] = await Promise.all([
+            loadAllPages<any>(getClassrooms).catch(() => []),
+            loadAllPages<any>(getEnrollments).catch(() => []),
+            loadAllPages<ChildProfileResponse>(getChildProfiles).catch(() => []),
             loadAllPages<LessonResponse>(getLessons).catch(() => [] as LessonResponse[])
           ]);
 
-          if (teacherStudentsRes.success && teacherStudentsRes.data?.items) {
-            childRecords = teacherStudentsRes.data.items;
-          } else {
-            // Fallback if API fails or returns empty
-            const [allClassrooms, allEnrollments, allChildren] = await Promise.all([
-              loadAllPages<any>(getClassrooms).catch(() => []),
-              loadAllPages<any>(getEnrollments).catch(() => []),
-              loadAllPages<ChildProfileResponse>(getChildProfiles).catch(() => []),
-            ]);
+          const teacherId = Number(sessionUser?.UserId.replace(/\D/g, '')) || undefined;
+          const teacherName = sessionUser?.FullName.trim().toLowerCase() ?? '';
 
-            const teacherId = Number(sessionUser?.UserId.replace(/\D/g, '')) || undefined;
-            const teacherName = sessionUser?.FullName.trim().toLowerCase() ?? '';
+          const teacherClassIds = new Set(
+            allClassrooms
+              .filter((classroom: any) => {
+                const matchedById = teacherId ? classroom.userId === teacherId : false;
+                const matchedByName = teacherName ? classroom.teacherName.trim().toLowerCase() === teacherName : false;
+                return matchedById || matchedByName;
+              })
+              .map((classroom) => classroom.id)
+          );
 
-            const teacherClassIds = new Set(
-              allClassrooms
-                .filter((classroom: any) => {
-                  const matchedById = teacherId ? classroom.userId === teacherId : false;
-                  const matchedByName = teacherName ? classroom.teacherName.trim().toLowerCase() === teacherName : false;
-                  return matchedById || matchedByName;
-                })
-                .map((classroom) => classroom.id)
-            );
+          const teacherEnrollments = allEnrollments.filter((enrollment: any) =>
+            teacherClassIds.has(enrollment.classId)
+          );
 
-            const teacherEnrollments = allEnrollments.filter((enrollment: any) =>
-              teacherClassIds.has(enrollment.classId)
-            );
+          const childIds = Array.from(
+            new Set(teacherEnrollments.map((enrollment: any) => enrollment.childId))
+          );
 
-            const childIds = Array.from(
-              new Set(teacherEnrollments.map((enrollment: any) => enrollment.childId))
-            );
-
-            childRecords = allChildren.filter((child) => childIds.includes(child.id));
-          }
+          childRecords = allChildren.filter((child) => childIds.includes(child.id));
           lessonRecords = lessonsData;
         } else {
           // ADMIN view: load all children and lessons
@@ -448,10 +372,10 @@ export default function LearningResultManagement() {
     setFeedbackInput(res.FeedbackText || '');
 
     // Parse InteractionLog to pre-populate expected reference text for each chunk
-    const logEvents = parseInteractionLogEvents(res.InteractionLog);
+    const logEvents = parseInteractionLog(res.InteractionLog);
     const initialRefTexts: Record<number, string> = {};
     logEvents.forEach((ev, idx) => {
-      initialRefTexts[idx] = ev.expectedText;
+      initialRefTexts[idx] = ev.text;
     });
     setReferenceTexts(initialRefTexts);
 
@@ -578,45 +502,6 @@ export default function LearningResultManagement() {
     }
   };
 
-  // AI Smart Feedback Auto Generator (Section 3.3.C)
-  const handleGenerateAiFeedback = () => {
-    if (!selectedResult) return;
-    setAiSuggesting(true);
-    const lesson = lessons.find(l => String(l.id) === selectedResult.LessonId);
-    const child = children.find(c => c.ChildId === selectedResult.ChildId);
-    const suggestion = generateAiFeedbackSuggestion(
-      selectedResult,
-      lesson?.lessonName || 'Bài tập tự do',
-      parsedEvents,
-      child?.FullName
-    );
-
-    setTimeout(() => {
-      setFeedbackInput(suggestion);
-      setAiSuggesting(false);
-      showToast('Đã tạo gợi ý nhận xét từ AI thành công!', 'success');
-    }, 400);
-  };
-
-  // Quick feedback tag handler
-  const handleAddQuickTag = (tag: string) => {
-    setFeedbackInput(prev => {
-      if (!prev.trim()) return `[${tag}] `;
-      if (prev.includes(`[${tag}]`)) return prev;
-      return `${prev.trim()} [${tag}]`;
-    });
-  };
-
-  // Copy full Session ID to clipboard
-  const handleCopySessionId = (id: string) => {
-    if (!id) return;
-    navigator.clipboard.writeText(id).then(() => {
-      setCopiedSessionId(true);
-      showToast(`Đã sao chép Session ID: #${id}`, 'success');
-      setTimeout(() => setCopiedSessionId(false), 2000);
-    });
-  };
-
   // Run AI Speech Pronunciation Assessment
   const handleAssessChunk = async (chunkIndex: number) => {
     if (!selectedResult) return;
@@ -704,40 +589,6 @@ export default function LearningResultManagement() {
     return children.find((c) => c.ChildId === childId);
   };
 
-  // Interactive Timeline Items (combining chunks & parsed events)
-  const timelineItems = useMemo(() => {
-    if (chunks.length > 0) {
-      return chunks.map((chunk, idx) => {
-        const event = parsedEvents[idx];
-        return {
-          chunkIndex: chunk.chunkIndex,
-          chunkUrl: chunk.chunkUrl,
-          timeSeconds: event?.timeSeconds ?? (idx * 30),
-          timeFormatted: event?.timeFormatted ?? `${String(Math.floor((idx * 30) / 60)).padStart(2, '0')}:${String((idx * 30) % 60).padStart(2, '0')}`,
-          expectedText: referenceTexts[chunk.chunkIndex] || event?.expectedText || 'Bài tập tự do',
-          spokenText: event?.spokenText || event?.expectedText || 'Ghi âm trực tiếp',
-          isCorrect: event ? event.isCorrect : true,
-          statusText: event ? event.statusText : 'Ghi âm',
-        };
-      });
-    }
-
-    if (parsedEvents.length > 0) {
-      return parsedEvents.map((ev, idx) => ({
-        chunkIndex: idx,
-        chunkUrl: '',
-        timeSeconds: ev.timeSeconds,
-        timeFormatted: ev.timeFormatted,
-        expectedText: ev.expectedText,
-        spokenText: ev.spokenText,
-        isCorrect: ev.isCorrect,
-        statusText: ev.statusText,
-      }));
-    }
-
-    return [];
-  }, [chunks, parsedEvents, referenceTexts]);
-
   return (
     <div className="space-y-4 animate-in fade-in duration-700 pb-2 relative" id="results-split-page-wrapper">
       {/* Toast notifications */}
@@ -771,8 +622,8 @@ export default function LearningResultManagement() {
         )}
       </AnimatePresence>
 
-      {/* Section 3.1: Styled Dashboard Header */}
-      <div className="bg-white/40 backdrop-blur-md rounded-xl p-4 md:p-5 border border-white/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm relative z-30">
+      {/* Styled Dashboard Header */}
+      <div className="bg-white/40 backdrop-blur-md rounded-xl p-4 md:p-5 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm">
         <div className="space-y-1">
           <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Kết Quả <span className="text-[#FF8E8E]">Luyện Tập</span>
@@ -782,13 +633,12 @@ export default function LearningResultManagement() {
           </p>
         </div>
 
-        {/* Header Student Selector Card */}
-        <div className="bg-white/60 p-3.5 rounded-2xl border border-white/80 shadow-sm flex items-center gap-3 self-start sm:self-center shrink-0 relative z-30">
-          <div className="w-9 h-9 bg-indigo-50 text-indigo-500 rounded-xl flex items-center justify-center shrink-0">
-            <Baby className="w-4.5 h-4.5" />
+        <div className="bg-white/60 p-4 rounded-3xl border border-white/85 shadow-sm flex items-center gap-3 self-start lg:self-center shrink-0">
+          <div className="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center shrink-0">
+            <UserSquare2 className="w-5 h-5" />
           </div>
-          <div className="space-y-0.5">
-            <h4 className="font-bold text-[10px] text-slate-400 uppercase tracking-wider leading-none">HỌC VIÊN RÈN LUYỆN:</h4>
+          <div className="space-y-1">
+            <h4 className="font-bold text-[10px] text-slate-400 uppercase tracking-wider leading-none">Học viên rèn luyện:</h4>
             <CustomSelect
               value={filterChildId}
               onChange={(val) => setFilterChildId(val)}
@@ -799,24 +649,20 @@ export default function LearningResultManagement() {
                   label: `👶 ${kd.FullName} (${kd.Age}t) - ${kd.LearningLevel}`
                 }))
               ]}
-              variant="subform"
-              className="w-full sm:w-64"
+              className="min-w-[240px] font-black"
             />
           </div>
         </div>
       </div>
 
-      {/* Section 3.1: KPI Cards */}
+      {/* Statistics indicators */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
           <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center shrink-0 border border-teal-100">
             <Activity className="w-5 h-5 text-[#4EACAF]" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <p className="text-2xl font-black text-slate-800 leading-none">{totalAttempts}</p>
-              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">+12% tuần này</span>
-            </div>
+            <p className="text-2xl font-black text-slate-800 leading-none">{totalAttempts}</p>
             <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Tổng lượt luyện</p>
           </div>
         </div>
@@ -848,10 +694,10 @@ export default function LearningResultManagement() {
         </div>
       )}
 
-      {/* Section 3.2 & 3.3: Split-Panel Content View */}
+      {/* Split-Panel Content View */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-        {/* Section 3.2: Left Side Master List Panel */}
+        {/* Left Side: Results List */}
         <div className="lg:col-span-5 space-y-4">
           <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
             <h2 className="text-lg font-bold text-slate-800">Lịch sử luyện tập</h2>
@@ -861,35 +707,12 @@ export default function LearningResultManagement() {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Tìm theo tên học sinh, bài học, Session ID..."
+                  placeholder="Tìm theo học sinh, bài tập, Session ID..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-4 pr-9 py-2.5 rounded-xl border border-slate-200 outline-none text-xs font-semibold focus:border-[#4EACAF] transition-colors"
+                  className="w-full pl-4 pr-4 py-2.5 rounded-xl border border-slate-200 outline-none text-xs font-semibold focus:border-[#4EACAF] transition-colors"
                 />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
               </div>
-
-              {/* Child Filter Select */}
-              <CustomSelect
-                value={filterChildId}
-                onChange={(val) => setFilterChildId(val)}
-                options={[
-                  { value: 'ALL', label: '🌟 TẤT CẢ HỌC SINH MẦM NON' },
-                  ...children.map((kd) => ({
-                    value: kd.ChildId,
-                    label: `👶 ${kd.FullName} (${kd.Age}t) - ${kd.LearningLevel}`
-                  }))
-                ]}
-                variant="subform"
-                className="w-full"
-              />
 
               <div className="grid grid-cols-2 gap-2">
                 <CustomSelect
@@ -917,7 +740,7 @@ export default function LearningResultManagement() {
               </div>
             </div>
 
-            {/* Master Session Cards List */}
+            {/* Results Items List */}
             {isApiLoading ? (
               <div className="py-12 text-center">
                 <Activity className="w-8 h-8 text-[#4EACAF] animate-spin mx-auto mb-2" />
@@ -929,29 +752,35 @@ export default function LearningResultManagement() {
                 <p className="font-semibold text-sm">Không tìm thấy lượt luyện tập phù hợp.</p>
               </div>
             ) : (
-              <div className="space-y-3 max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
+              <div className="space-y-3">
                 {paginatedResults.map((res) => {
                   const isSelected = selectedResult?.ResultId === res.ResultId;
                   const child = getChildDetailInfo(res.ChildId);
                   const lesson = lessons.find(l => String(l.id) === res.LessonId);
-                  const sessionTag = truncateSessionId(res.SessionId || res.ResultId);
 
                   return (
                     <div
                       key={res.ResultId}
                       onClick={() => handleSelectResult(res)}
                       className={cn(
-                        "rounded-2xl border p-4 transition-all cursor-pointer space-y-2.5 relative overflow-hidden",
+                        "rounded-2xl border p-4.5 transition-all cursor-pointer space-y-3",
                         isSelected
-                          ? "border-[#4EACAF] bg-[#4EACAF]/5 shadow-sm border-l-4 border-l-[#4EACAF]"
+                          ? "border-[#4EACAF] bg-[#4EACAF]/5 shadow-sm"
                           : "border-slate-100 hover:border-slate-200 bg-white"
                       )}
                     >
-                      {/* Line 1: Student Name + Status Badge */}
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="font-bold text-slate-800 text-[15px] truncate">
-                          {child?.FullName || `Bé (ID: ${res.ChildId})`}
-                        </p>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-slate-800 text-sm">{child?.FullName || `Bé (ID: ${res.ChildId})`}</p>
+                            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
+                              Session #{res.SessionId || res.ResultId}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+                            {lesson?.lessonName || 'Bài tập tự do'}
+                          </p>
+                        </div>
                         <span className={cn(
                           "text-[9px] px-2 py-0.5 rounded font-extrabold uppercase shrink-0 tracking-wider",
                           res.CompletionStatus === 'Completed'
@@ -962,34 +791,14 @@ export default function LearningResultManagement() {
                         </span>
                       </div>
 
-                      {/* Line 2: Lesson Name + Session ID Tag */}
-                      <div className="flex items-center justify-between gap-2 text-xs">
-                        <p className="text-slate-500 font-medium truncate">
-                          {lesson?.lessonName || 'Bài tập tự do'}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCopySessionId(res.SessionId || res.ResultId);
-                          }}
-                          title={`Sao chép đầy đủ ID: ${res.SessionId || res.ResultId}`}
-                          className="text-[10px] font-mono font-semibold px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded transition-colors shrink-0 flex items-center gap-1"
-                        >
-                          <span>Session {sessionTag}</span>
-                          <Copy className="w-2.5 h-2.5 text-slate-400" />
-                        </button>
-                      </div>
-
-                      {/* Line 3: Duration, Score, Date */}
-                      <div className="flex items-center justify-between border-t border-slate-100/60 pt-2 text-[11px] font-bold text-slate-500">
-                        <div className="flex items-center gap-1.5">
+                      <div className="flex items-center justify-between border-t border-slate-100/60 pt-3 text-[11px] font-bold text-slate-500">
+                        <div className="flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5 text-slate-400" />
                           <span>{res.DurationSeconds}s</span>
-                          <span className="text-slate-300">•</span>
-                          <span className="text-[#4EACAF]">🎯 {res.Score}/{lessons.find(l => String(l.id) === res.LessonId)?.maxScore ?? 95}</span>
+                          <span className="text-slate-300">|</span>
+                          <span className="text-[#4EACAF]">Điểm: {res.Score}/{lessons.find(l => String(l.id) === res.LessonId)?.maxScore ?? 95}</span>
                         </div>
-                        <span className="text-slate-400 font-normal">📅 {formatDateDMY(res.CompletedAt)}</span>
+                        <span className="text-slate-400">{formatDateDMY(res.CompletedAt)}</span>
                       </div>
                     </div>
                   );
@@ -1011,41 +820,35 @@ export default function LearningResultManagement() {
           </div>
         </div>
 
-        {/* Section 3.3: Right Side Detail Panel */}
+        {/* Right Side: Detailed session assessment & Chunks */}
         <div className="lg:col-span-7">
           {selectedResult ? (
-            <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-6 animate-in fade-in duration-300 max-h-[calc(100vh-140px)] overflow-y-auto">
+            <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-6 animate-in fade-in duration-300">
 
-              {/* Section 3.3.A: Header Info & Quick Metrics */}
+              {/* Header Info */}
               <div className="flex items-start justify-between border-b border-slate-100 pb-4">
-                <div className="space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleCopySessionId(selectedResult.SessionId || selectedResult.ResultId)}
-                      className="text-xs font-mono font-bold px-2.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition-colors flex items-center gap-1.5"
-                    >
-                      <span>Session #{selectedResult.SessionId || selectedResult.ResultId}</span>
-                      {copiedSessionId ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-slate-400" />}
-                    </button>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono font-bold px-2.5 py-0.5 bg-slate-100 text-slate-650 rounded">
+                      Session #{selectedResult.SessionId || selectedResult.ResultId}
+                    </span>
                     <span className="text-xs text-slate-400 font-medium">
                       Học sinh: <span className="text-slate-600 font-normal">{getChildDetailInfo(selectedResult.ChildId)?.FullName}</span>
                     </span>
                   </div>
-                  <h3 className="text-xl font-black text-slate-800 mt-1">
+                  <h3 className="text-lg font-black text-slate-800 mt-2">
                     {lessons.find(l => String(l.id) === selectedResult.LessonId)?.lessonName || 'Bài tập tự do'}
                   </h3>
                 </div>
                 <button
                   onClick={() => setSelectedResult(null)}
                   className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 transition-colors cursor-pointer"
-                  title="Đóng chi tiết"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Section 3.3.A: Quick Metric Strip */}
+              {/* Statistics Quick Info */}
               <div className="grid grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                 <div className="text-center">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Thời lượng</span>
@@ -1059,263 +862,29 @@ export default function LearningResultManagement() {
                 </div>
                 <div className="text-center">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tương tác</span>
-                  <div className="flex items-center justify-center gap-1.5 mt-1.5">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      Đúng: {selectedResult.CorrectCount || 0}
-                    </span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
-                      Sai: {selectedResult.ErrorCount || 0}
-                    </span>
-                  </div>
+                  <span className="text-xs font-bold text-emerald-600 mt-1.5 block">Đúng: {selectedResult.CorrectCount} lần| Sai: {selectedResult.ErrorCount} lần</span>
                 </div>
               </div>
 
-              {/* Section 3.3.B: Interactive Timeline Stream (Replaces Console Box & Audio List) */}
-              <div className="space-y-4 pt-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-[#4EACAF]/10 text-[#4EACAF] rounded-lg">
-                      <Activity className="w-4 h-4" />
-                    </div>
-                    <h4 className="text-sm font-bold text-slate-800">
-                      Dòng thời gian tương tác & Ghi âm (Interactive Timeline Stream)
-                    </h4>
-                  </div>
-                  <span className="text-xs bg-[#4EACAF]/10 text-[#4EACAF] px-2.5 py-1 rounded-full font-bold">
-                    {timelineItems.length} mốc tương tác
-                  </span>
-                </div>
-
-                {loadingChunks ? (
-                  <div className="py-12 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-                    <Activity className="w-8 h-8 text-[#4EACAF] animate-spin mx-auto mb-2" />
-                    <p className="text-xs font-semibold text-slate-500">Đang quét tìm các file âm thanh từ máy chủ MinIO...</p>
-                  </div>
-                ) : timelineItems.length === 0 ? (
-                  <div className="py-8 text-center text-slate-400 border-2 border-dashed border-slate-100 rounded-2xl">
-                    <VolumeX className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-xs font-semibold">Chưa ghi nhận dữ liệu âm thanh tương tác ở phiên tập này.</p>
-                  </div>
-                ) : (
-                  <div className="relative pl-4 space-y-4 border-l-2 border-slate-100">
-                    {timelineItems.map((item, idx) => {
-                      const isPlaying = playingChunkIndex === item.chunkIndex;
-                      const assessment = chunkAssessments[item.chunkIndex];
-                      const isAssessing = assessingChunkIndex === item.chunkIndex;
-
-                      return (
-                        <div key={idx} className="relative group">
-                          {/* Timeline node dot */}
-                          <div className={cn(
-                            "absolute -left-[23px] top-4 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm transition-colors",
-                            item.isCorrect ? "bg-emerald-500" : "bg-rose-500"
-                          )} />
-
-                          <div className="bg-slate-50/80 hover:bg-white border border-slate-200/80 rounded-2xl p-4 space-y-3.5 transition-all shadow-sm">
-                            {/* Card Top: Timestamp & Status */}
-                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/60 pb-2.5">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-mono font-bold px-2.5 py-0.5 bg-slate-200/70 text-slate-700 rounded-md">
-                                  [{item.timeFormatted}] ({item.timeSeconds}s)
-                                </span>
-                                <span className={cn(
-                                  "text-[10px] px-2 py-0.5 rounded font-extrabold uppercase tracking-wider border",
-                                  item.isCorrect
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                    : "bg-rose-50 text-rose-700 border-rose-200"
-                                )}>
-                                  {item.statusText}
-                                </span>
-                              </div>
-
-                              {item.chunkUrl && (
-                                <button
-                                  type="button"
-                                  onClick={() => handlePlayChunk(item.chunkUrl, item.chunkIndex)}
-                                  className={cn(
-                                    "flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer border",
-                                    isPlaying
-                                      ? "bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100"
-                                      : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                                  )}
-                                >
-                                  {isPlaying ? (
-                                    <>
-                                      <Pause className="w-3.5 h-3.5 animate-pulse" />
-                                      <span>Đang phát...</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Play className="w-3.5 h-3.5" />
-                                      <span>Nghe ghi âm</span>
-                                    </>
-                                  )}
-                                </button>
-                              )}
-                            </div>
-
-                            {/* Visual Diff: Expected vs Spoken */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-white p-3 rounded-xl border border-slate-100">
-                              <div>
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Từ chuẩn (Kỳ vọng)</span>
-                                <span className="text-sm font-extrabold text-indigo-900 bg-indigo-50/70 px-2.5 py-1 rounded-lg inline-block border border-indigo-100">
-                                  "{item.expectedText || 'Bài tập tự do'}"
-                                </span>
-                              </div>
-                              <div>
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Bé phát âm (Ghi âm)</span>
-                                <span className={cn(
-                                  "text-sm font-extrabold px-2.5 py-1 rounded-lg inline-block border",
-                                  item.isCorrect
-                                    ? "text-emerald-800 bg-emerald-50/70 border-emerald-100"
-                                    : "text-rose-800 bg-rose-50/70 border-rose-100"
-                                )}>
-                                  "{item.spokenText || item.expectedText || '...'}"
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Player Audio Progress Bar */}
-                            {isPlaying && (
-                              <div className="bg-slate-100 p-2.5 rounded-xl flex items-center gap-3 animate-in fade-in">
-                                <Volume2 className="w-4 h-4 text-[#4EACAF] animate-pulse shrink-0" />
-                                <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
-                                  <div className="h-full bg-[#4EACAF] animate-pulse w-2/3 rounded-full" />
-                                </div>
-                                <span className="text-[10px] font-bold text-slate-500 font-mono">Đang phát</span>
-                              </div>
-                            )}
-
-                            {/* AI Assessment Button & Input */}
-                            {currentRoleView !== 'PARENT' && item.chunkUrl && (
-                              <div className="flex flex-wrap items-center gap-2 pt-1">
-                                <input
-                                  type="text"
-                                  placeholder="Nhập từ chuẩn bé phải phát âm..."
-                                  value={referenceTexts[item.chunkIndex] || ''}
-                                  onChange={(e) => setReferenceTexts(prev => ({ ...prev, [item.chunkIndex]: e.target.value }))}
-                                  className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 outline-none text-xs font-semibold placeholder-slate-400 focus:border-[#4EACAF] bg-white"
-                                />
-                                <button
-                                  type="button"
-                                  disabled={isAssessing}
-                                  onClick={() => handleAssessChunk(item.chunkIndex)}
-                                  className="px-3.5 py-1.5 bg-[#4EACAF] hover:bg-[#3D8C8F] disabled:bg-slate-300 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer shadow-sm"
-                                >
-                                  {isAssessing ? (
-                                    <Activity className="w-3.5 h-3.5 animate-spin" />
-                                  ) : (
-                                    <Sparkles className="w-3.5 h-3.5" />
-                                  )}
-                                  AI Phân tích khẩu hình
-                                </button>
-                              </div>
-                            )}
-
-                            {/* AI Assessment Score Breakdown */}
-                            {assessment && (
-                              <div className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-3 animate-in fade-in duration-300">
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                                  <div className="p-2 bg-emerald-50/60 rounded-lg border border-emerald-100">
-                                    <div className="text-[10px] font-bold text-slate-500">Độ chính xác</div>
-                                    <div className="text-sm font-black text-emerald-600 mt-0.5">
-                                      {assessment.pronunciationAssessment?.accuracyScore ?? assessment.AccuracyScore ?? 0}%
-                                    </div>
-                                  </div>
-                                  <div className="p-2 bg-indigo-50/60 rounded-lg border border-indigo-100">
-                                    <div className="text-[10px] font-bold text-slate-500">Phát âm</div>
-                                    <div className="text-sm font-black text-indigo-600 mt-0.5">
-                                      {assessment.pronunciationAssessment?.pronunciationScore ?? assessment.PronunciationScore ?? 0}%
-                                    </div>
-                                  </div>
-                                  <div className="p-2 bg-purple-50/60 rounded-lg border border-purple-100">
-                                    <div className="text-[10px] font-bold text-slate-500">Trôi chảy</div>
-                                    <div className="text-sm font-black text-purple-600 mt-0.5">
-                                      {assessment.pronunciationAssessment?.fluencyScore ?? assessment.FluencyScore ?? 0}%
-                                    </div>
-                                  </div>
-                                  <div className="p-2 bg-teal-50/60 rounded-lg border border-teal-100">
-                                    <div className="text-[10px] font-bold text-slate-500">Hoàn thành</div>
-                                    <div className="text-sm font-black text-teal-600 mt-0.5">
-                                      {assessment.pronunciationAssessment?.completenessScore ?? assessment.CompletenessScore ?? 0}%
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {(assessment.words || assessment.Words || []).length > 0 && (
-                                  <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                      Chi tiết phát âm từng từ từ AI:
-                                    </div>
-                                    <div className="flex flex-wrap gap-1.5">
-                                      {(assessment.words || assessment.Words || []).map((wObj: any, wIdx: number) => {
-                                        const wordText = wObj.word || wObj.Word;
-                                        const score = wObj.pronunciationAssessment?.accuracyScore ?? wObj.AccuracyScore ?? 0;
-                                        const isGood = score >= 80;
-                                        const isMed = score >= 50 && score < 80;
-
-                                        return (
-                                          <span
-                                            key={wIdx}
-                                            className={cn(
-                                              "px-2 py-0.5 rounded-md border font-bold text-xs flex items-center gap-1 shadow-2xs",
-                                              isGood
-                                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                                : isMed
-                                                  ? "bg-amber-50 text-amber-700 border-amber-200"
-                                                  : "bg-rose-50 text-rose-700 border-rose-200"
-                                            )}
-                                          >
-                                            <span>{wordText}</span>
-                                            <span className="text-[9px] opacity-70">({score})</span>
-                                          </span>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Section 3.3.C: Teacher Feedback Section (Placed at bottom after Timeline) */}
+              {/* Comments feedback text section */}
               {canEditFeedback && (
-                <div className="space-y-3 bg-[#FFFDF5] p-5 rounded-2xl border border-yellow-200/70 shadow-sm mt-6">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                      <MessageCircle className="w-4.5 h-4.5 text-amber-500" />
-                      Nhận xét & Hướng dẫn từ giáo viên
-                    </h4>
-                  </div>
-
+                <div className="space-y-3 bg-[#FFFDF5] p-4.5 rounded-2xl border border-yellow-100">
+                  <h4 className="text-sm font-bold text-slate-850 flex items-center gap-1.5">
+                    <MessageCircle className="w-4 h-4 text-amber-500" />
+                    Nhận xét & Hướng dẫn từ giáo viên
+                  </h4>
                   <textarea
                     rows={3}
                     placeholder="Viết hướng dẫn khẩu hình, các từ bé cần luyện thêm ở nhà hoặc nhận xét chung..."
                     value={feedbackInput}
                     onChange={(e) => setFeedbackInput(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-slate-200 outline-none text-sm font-medium placeholder-slate-400 bg-white focus:border-[#4EACAF] transition-colors resize-none shadow-inner"
+                    className="w-full p-3 rounded-xl border border-slate-200 outline-none text-sm font-medium placeholder-slate-400 bg-white focus:border-[#4EACAF] transition-colors resize-none"
                   />
-
-                  <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => showToast('Đã gửi thông báo hướng dẫn tới ứng dụng phụ huynh!', 'success')}
-                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Send className="w-3.5 h-3.5 text-slate-500" />
-                      Gửi thông báo tới phụ huynh
-                    </button>
-
+                  <div className="flex justify-end">
                     <button
                       disabled={savingFeedback}
                       onClick={handleSaveFeedback}
-                      className="px-5 py-2 bg-[#4EACAF] hover:bg-[#3D8C8F] text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                      className="px-5 py-2.5 bg-[#4EACAF] hover:bg-[#3D8C8F] text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
                     >
                       {savingFeedback ? (
                         <Activity className="w-3.5 h-3.5 animate-spin" />
@@ -1330,12 +899,12 @@ export default function LearningResultManagement() {
 
               {/* Display feedback text to parent */}
               {currentRoleView === 'PARENT' && (
-                <div className="space-y-3 bg-[#FFFDF5] p-5 rounded-2xl border border-yellow-200/70 shadow-sm mt-6">
-                  <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                    <MessageCircle className="w-4.5 h-4.5 text-amber-500" />
+                <div className="space-y-3 bg-[#FFFDF5] p-4.5 rounded-2xl border border-yellow-100">
+                  <h4 className="text-sm font-bold text-slate-855 flex items-center gap-1.5">
+                    <MessageCircle className="w-4 h-4 text-amber-500" />
                     Nhận xét & Hướng dẫn từ giáo viên
                   </h4>
-                  <div className="p-3.5 bg-white rounded-xl border border-slate-200/60 text-sm font-medium text-slate-700 leading-relaxed min-h-[60px] whitespace-pre-wrap">
+                  <div className="p-3 bg-white rounded-xl border border-slate-200/60 text-sm font-medium text-slate-700 leading-relaxed min-h-[60px] whitespace-pre-wrap">
                     {selectedResult.FeedbackText ? (
                       selectedResult.FeedbackText
                     ) : (
@@ -1345,6 +914,202 @@ export default function LearningResultManagement() {
                 </div>
               )}
 
+              {/* Interaction Log Section */}
+              {currentRoleView !== 'PARENT' && (
+                <div className="space-y-2.5">
+                  <h4 className="text-sm font-bold text-slate-850 flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-[#4EACAF]" />
+                    Nhật ký tương tác (Interaction Log)
+                  </h4>
+                  <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl font-mono text-xs whitespace-pre-line leading-relaxed shadow-inner border border-slate-850 max-h-48 overflow-y-auto">
+                    {selectedResult.InteractionLog || "Hệ thống chưa ghi nhận vết log tương tác ở phiên tập này..."}
+                  </div>
+                </div>
+              )}
+
+              {/* Chunk audio listing section */}
+              <div className="space-y-4 pt-4 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Danh sách các file âm thanh ghi âm:</h4>
+                  <span className="text-xs bg-[#4EACAF]/10 text-[#4EACAF] px-2 py-0.5 rounded font-bold">
+                    {chunks.length} đoạn âm thanh
+                  </span>
+                </div>
+
+                {loadingChunks ? (
+                  <div className="py-12 text-center">
+                    <Activity className="w-8 h-8 text-[#4EACAF] animate-spin mx-auto mb-2" />
+                    <p className="text-xs font-semibold text-slate-500">Đang quét tìm các file âm thanh từ máy chủ MinIO...</p>
+                  </div>
+                ) : chunks.length === 0 ? (
+                  <div className="py-8 text-center text-slate-400 border-2 border-dashed border-slate-100 rounded-2xl">
+                    <VolumeX className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-xs font-semibold">Không quét thấy file audio chunk tương ứng trong session này.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {chunks.map((chunk) => {
+                      const cIndex = chunk.chunkIndex;
+                      const assessment = chunkAssessments[cIndex];
+                      const isAssessing = assessingChunkIndex === cIndex;
+
+                      return (
+                        <div
+                          key={cIndex}
+                          className="bg-slate-50 border border-slate-100 rounded-2xl p-4.5 space-y-4 transition-all hover:bg-slate-50/80"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/50 pb-3">
+                            <div className="flex items-center gap-2">
+                              <div className="p-2 bg-[#4EACAF]/10 text-[#4EACAF] rounded-lg">
+                                <FileAudio className="w-4 h-4" />
+                              </div>
+                              <div className="text-sm font-bold text-slate-800">
+                                {parsedEvents[cIndex]
+                                  ? `Đoạn âm thanh giây: [${parsedEvents[cIndex].timeSeconds}s]`
+                                  : `Đoạn âm thanh #${cIndex + 1}`
+                                }
+                              </div>
+                            </div>
+
+                            {/* Player control button */}
+                            <button
+                              onClick={() => handlePlayChunk(chunk.chunkUrl, cIndex)}
+                              className={cn(
+                                "flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer border self-start sm:self-auto",
+                                playingChunkIndex === cIndex
+                                  ? "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/80"
+                                  : "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/80"
+                              )}
+                            >
+                              {playingChunkIndex === cIndex ? (
+                                <>
+                                  <Pause className="w-3.5 h-3.5 animate-pulse" />
+                                  <span>Đang phát...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Play className="w-3.5 h-3.5" />
+                                  <span>Nghe ghi âm</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+
+                          {/* Expectation text input & AI assessment trigger */}
+                          <div className="space-y-3">
+                            {currentRoleView !== 'PARENT' ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-slate-500">Từ/Câu kỳ vọng:</span>
+                                <input
+                                  type="text"
+                                  placeholder="Nhập từ chuẩn bé phải phát âm..."
+                                  value={referenceTexts[cIndex] || ''}
+                                  onChange={(e) => setReferenceTexts(prev => ({ ...prev, [cIndex]: e.target.value }))}
+                                  className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 outline-none text-xs font-semibold placeholder-slate-400 focus:border-[#4EACAF]"
+                                />
+                                <button
+                                  type="button"
+                                  disabled={isAssessing}
+                                  onClick={() => handleAssessChunk(cIndex)}
+                                  className="px-4 py-1.5 bg-[#4EACAF] hover:bg-[#3D8C8F] disabled:bg-slate-350 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 shrink-0 cursor-pointer"
+                                >
+                                  {isAssessing ? (
+                                    <Activity className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                  )}
+                                  AI Đánh giá
+                                </button>
+                              </div>
+                            ) : (
+                              referenceTexts[cIndex] && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-slate-500">Từ/Câu kỳ vọng:</span>
+                                  <span className="text-xs font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-xl">
+                                    "{referenceTexts[cIndex]}"
+                                  </span>
+                                </div>
+                              )
+                            )}
+
+                            {/* Assessment scores presentation layout */}
+                            {assessment && (
+                              <div className="p-4 bg-white border border-slate-200/85 rounded-xl space-y-3 animate-in fade-in duration-300">
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                                  <div className="p-2 bg-emerald-50/50 rounded-lg border border-emerald-100/50">
+                                    <div className="text-xs font-bold text-slate-450">Độ chính xác</div>
+                                    <div className="text-sm font-black text-emerald-600 mt-0.5">
+                                      {assessment.pronunciationAssessment?.accuracyScore ??
+                                        assessment.PronunciationAssessment?.AccuracyScore ??
+                                        assessment.AccuracyScore ?? 0}%
+                                    </div>
+                                  </div>
+                                  <div className="p-2 bg-indigo-50/50 rounded-lg border border-indigo-100/50">
+                                    <div className="text-xs font-bold text-slate-450">Phát âm</div>
+                                    <div className="text-sm font-black text-indigo-600 mt-0.5">
+                                      {assessment.pronunciationAssessment?.pronunciationScore ??
+                                        assessment.PronunciationAssessment?.PronunciationScore ??
+                                        assessment.PronScore ??
+                                        assessment.PronunciationScore ?? 0}%
+                                    </div>
+                                  </div>
+                                  <div className="p-2 bg-purple-50/50 rounded-lg border border-purple-100/50">
+                                    <div className="text-xs font-bold text-slate-450">Trôi chảy</div>
+                                    <div className="text-sm font-black text-purple-600 mt-0.5">
+                                      {assessment.pronunciationAssessment?.fluencyScore ??
+                                        assessment.PronunciationAssessment?.FluencyScore ??
+                                        assessment.FluencyScore ?? 0}%
+                                    </div>
+                                  </div>
+                                  <div className="p-2 bg-teal-50/50 rounded-lg border border-teal-100/50">
+                                    <div className="text-xs font-bold text-slate-450">Hoàn thành</div>
+                                    <div className="text-sm font-black text-teal-600 mt-0.5">
+                                      {assessment.pronunciationAssessment?.completenessScore ??
+                                        assessment.PronunciationAssessment?.CompletenessScore ??
+                                        assessment.CompletenessScore ?? 0}%
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                                  <div className="text-xs font-bold text-slate-400">Chi tiết phát âm từ của AI:</div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {(assessment.words || assessment.Words || []).map((wObj: any, wIdx: number) => {
+                                      const wordText = wObj.word || wObj.Word;
+                                      const score = wObj.pronunciationAssessment?.accuracyScore ??
+                                        wObj.PronunciationAssessment?.AccuracyScore ??
+                                        wObj.AccuracyScore ?? 0;
+                                      const isCorrect = score >= 80;
+                                      const isMedium = score >= 50 && score < 80;
+
+                                      return (
+                                        <div
+                                          key={wIdx}
+                                          className={cn(
+                                            "px-2.5 py-1 rounded-lg border font-bold text-xs flex items-center gap-1.5 shadow-sm",
+                                            isCorrect
+                                              ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                              : isMedium
+                                                ? "bg-amber-50 text-amber-700 border-amber-100"
+                                                : "bg-rose-50 text-rose-700 border-rose-100"
+                                          )}
+                                        >
+                                          <span>{wordText}</span>
+                                          <span className="text-[10px] opacity-70">({score})</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div className="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm text-center py-24 space-y-4">
@@ -1354,7 +1119,7 @@ export default function LearningResultManagement() {
               <div>
                 <h3 className="text-lg font-bold text-slate-700">Chưa có lượt luyện tập nào được chọn</h3>
                 <p className="text-sm text-slate-400 max-w-sm mx-auto mt-1">
-                  Vui lòng click chọn một lượt luyện tập ở danh sách bên trái để xem Dòng thời gian tương tác, nghe ghi âm cụ thể và thực hiện đánh giá phát âm AI.
+                  Vui lòng click chọn một lượt luyện tập ở danh sách bên trái để xem các file âm thanh ghi âm cụ thể của bé và thực hiện đánh giá phát âm AI.
                 </p>
               </div>
             </div>

@@ -36,12 +36,10 @@ import { cn } from '../../lib/utils';
 import CustomSelect from '../../components/common/CustomSelect';
 import ActionButton from '../../components/common/ActionButton';
 import { getSessionUser } from '../../lib/authSession';
-import { getMyChildProfiles, getChildProfiles, getMyStudents } from '../../services/childProfileService';
+import { getMyChildProfiles, getChildProfiles } from '../../services/childProfileService';
 import { getAnalyzesByChildId } from '../../services/analyzeService';
-import { getResultsByChild, type ResultResponse } from '../../services/resultService';
+import { getResultsByChild } from '../../services/resultService';
 import { getLessons } from '../../services/lessonService';
-import { getClassrooms } from '../../services/classroomService';
-import { getEnrollments } from '../../services/enrollmentService';
 import type { ChildProfileResponse } from '../../services/childProfileService';
 import type { AnalyzeResponse } from '../../services/analyzeService';
 import type { LessonResponse } from '../../services/lessonService';
@@ -339,24 +337,19 @@ export default function ProgressAnalysis() {
     setIsLoading(true);
     try {
       let fetchedChildren: ChildProfileResponse[] = [];
-      const sessionUser = getSessionUser();
-      const roleView = currentRoleView || sessionUser?.Role || 'ADMIN';
 
-      // 1. Fetch children based on strict role view
-      if (roleView === 'PARENT') {
+      // 1. Fetch children based on role view
+      if (currentRoleView === 'PARENT') {
         const res = await getMyChildProfiles();
         if (res.success && res.data) {
           fetchedChildren = res.data;
         }
-      } else if (roleView === 'TEACHER') {
-        const res = await getMyStudents(1, 100);
+      } else {
+        // Teacher/Admin can view all children profiles
+        const res = await getChildProfiles(1, 100);
         if (res.success && res.data?.items) {
           fetchedChildren = res.data.items;
         }
-      } else {
-        // ADMIN can view all children profiles
-        const allChildren = await loadAllPages<ChildProfileResponse>(getChildProfiles).catch(() => []);
-        fetchedChildren = allChildren;
       }
 
       // Map to Child state format
@@ -370,50 +363,28 @@ export default function ProgressAnalysis() {
       }));
       setChildren(mappedChildren);
 
-      // 2. Fetch analyses and results in parallel for each child
+      // 2. Fetch analyses
       let allAnalyses: AnalyzeResponse[] = [];
-      const childResultsMap = new Map<number, ResultResponse[]>();
-
       if (mappedChildren.length > 0) {
-        const analyzePromises = fetchedChildren.map(c => getAnalyzesByChildId(c.id));
-        const resultPromises = fetchedChildren.map(c => getResultsByChild(c.id));
-
-        const [analyzeResList, resultResList] = await Promise.all([
-          Promise.all(analyzePromises),
-          Promise.all(resultPromises)
-        ]);
-
-        analyzeResList.forEach(res => {
+        const promises = fetchedChildren.map(c => getAnalyzesByChildId(c.id));
+        const resList = await Promise.all(promises);
+        resList.forEach(res => {
           if (res.success && res.data) {
             allAnalyses = [...allAnalyses, ...res.data];
           }
         });
-
-        fetchedChildren.forEach((c, index) => {
-          const res = resultResList[index];
-          if (res.success && res.data) {
-            childResultsMap.set(c.id, res.data);
-          }
-        });
       }
 
-      // Map to Analysis state format with dynamic result-based statistics
+      // Map to Analysis state format
       const mappedAnalyses: Analysis[] = allAnalyses.map(a => {
-        const results = childResultsMap.get(a.childId) || [];
-        const hasResults = results.length > 0;
-
-        const totalEx = hasResults ? results.length : 0;
-        const completedEx = hasResults
-          ? results.filter(r => r.completionStatus === 'Completed' || r.completionStatus === 'Passed' || (r.score ?? 0) >= 50).length
-          : 0;
-        const practiceTimeMinutes = hasResults
-          ? Math.round(results.reduce((sum, r) => sum + (r.durationSeconds || 0), 0) / 60)
-          : 0;
-
-        const averageScore = hasResults
-          ? Math.round(results.reduce((sum, r) => sum + (r.score || 0), 0) / results.length)
-          : 0;
-
+        const scoreMap: Record<string, number> = {
+          'VeryPoor': 20,
+          'Poor': 40,
+          'Average': 60,
+          'Good': 80,
+          'Excellent': 95
+        };
+        const score = scoreMap[a.pronunciationAbility] || 70;
         const progressLevel: Analysis['ProgressLevel'] =
           (a.pronunciationAbility === 'Good' || a.pronunciationAbility === 'Excellent') ? 'Improving' :
             (a.pronunciationAbility === 'Average') ? 'Stable' : 'Need Support';
@@ -421,10 +392,10 @@ export default function ProgressAnalysis() {
         return {
           AnalysisId: String(a.id),
           ChildId: String(a.childId),
-          TotalExercises: totalEx,
-          CompletedExercises: completedEx,
-          TotalPracticeTime: practiceTimeMinutes,
-          AverageScore: averageScore,
+          TotalExercises: 15,
+          CompletedExercises: 12,
+          TotalPracticeTime: 240,
+          AverageScore: score,
           ProgressLevel: progressLevel,
           Strengths: a.strengths || 'Chưa ghi nhận điểm mạnh cụ thể.',
           Weaknesses: a.weaknesses || 'Chưa ghi nhận điểm yếu cụ thể.',
@@ -626,7 +597,7 @@ export default function ProgressAnalysis() {
       </AnimatePresence>
 
       {/* Header Block showcasing beautiful modern rounded theme */}
-      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm relative z-30">
+      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
 
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
@@ -638,7 +609,7 @@ export default function ProgressAnalysis() {
         </div>
 
         {/* Child Selector Dropdown on the right side of the Header */}
-        <div className="bg-white/60 p-4 rounded-3xl border border-white/80 shadow-sm flex items-center gap-3 self-start lg:self-center shrink-0 relative z-30">
+        <div className="bg-white/60 p-4 rounded-3xl border border-white/80 shadow-sm flex items-center gap-3 self-start lg:self-center shrink-0">
           <div className="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center shrink-0">
             <Baby className="w-5 h-5" />
           </div>
