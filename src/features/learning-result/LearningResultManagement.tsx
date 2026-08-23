@@ -141,6 +141,8 @@ async function loadAllPages<T>(
 interface ParsedEvent {
   timeSeconds: number;
   text: string;
+  spokenText?: string;
+  isCorrect?: boolean;
 }
 
 function parseInteractionLog(log: string): ParsedEvent[] {
@@ -149,20 +151,27 @@ function parseInteractionLog(log: string): ParsedEvent[] {
   const events: ParsedEvent[] = [];
 
   for (const segment of segments) {
-    const correctMatch = segment.match(/\[(\d+)s?\]\s*Correct\s+Answer:\s*(.+)/i);
-    if (correctMatch) {
+    const wrongMatch =
+      segment.match(/\[(\d+)s?\]\s*Wrong\s+Answer:\s*từ\s+đúng\s*'([^']+)',?\s*trẻ\s+nói:\s*'([^']+)'/i) ||
+      segment.match(/\[(\d+)s?\]\s*Wrong\s+Answer:\s*từ\s+đúng\s*'([^']+)'/i);
+
+    if (wrongMatch) {
       events.push({
-        timeSeconds: parseInt(correctMatch[1], 10),
-        text: correctMatch[2].trim()
+        timeSeconds: parseInt(wrongMatch[1], 10),
+        text: wrongMatch[2].trim(),
+        spokenText: wrongMatch[3] ? wrongMatch[3].trim() : 'chưa đủ từ',
+        isCorrect: false,
       });
       continue;
     }
 
-    const wrongMatch = segment.match(/\[(\d+)s?\]\s*Wrong\s+Answer:\s*từ\s+đúng\s*'([^']+)'/i);
-    if (wrongMatch) {
+    const correctMatch = segment.match(/\[(\d+)s?\]\s*Correct\s+Answer:\s*(.+)/i);
+    if (correctMatch) {
       events.push({
-        timeSeconds: parseInt(wrongMatch[1], 10),
-        text: wrongMatch[2].trim()
+        timeSeconds: parseInt(correctMatch[1], 10),
+        text: correctMatch[2].trim(),
+        spokenText: correctMatch[2].trim(),
+        isCorrect: true,
       });
       continue;
     }
@@ -915,17 +924,15 @@ export default function LearningResultManagement() {
               )}
 
               {/* Interaction Log Section */}
-              {currentRoleView !== 'PARENT' && (
-                <div className="space-y-2.5">
-                  <h4 className="text-sm font-bold text-slate-850 flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-[#4EACAF]" />
-                    Nhật ký tương tác (Interaction Log)
-                  </h4>
-                  <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl font-mono text-xs whitespace-pre-line leading-relaxed shadow-inner border border-slate-850 max-h-48 overflow-y-auto">
-                    {selectedResult.InteractionLog || "Hệ thống chưa ghi nhận vết log tương tác ở phiên tập này..."}
-                  </div>
+              <div className="space-y-2.5">
+                <h4 className="text-sm font-bold text-slate-850 flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-[#4EACAF]" />
+                  Nhật ký tương tác (Interaction Log)
+                </h4>
+                <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl font-mono text-xs whitespace-pre-line leading-relaxed shadow-inner border border-slate-850 max-h-48 overflow-y-auto">
+                  {selectedResult.InteractionLog || "Hệ thống chưa ghi nhận vết log tương tác ở phiên tập này..."}
                 </div>
-              )}
+              </div>
 
               {/* Chunk audio listing section */}
               <div className="space-y-4 pt-4 border-t border-slate-100">
@@ -952,6 +959,7 @@ export default function LearningResultManagement() {
                       const cIndex = chunk.chunkIndex;
                       const assessment = chunkAssessments[cIndex];
                       const isAssessing = assessingChunkIndex === cIndex;
+                      const event = parsedEvents[cIndex];
 
                       return (
                         <div
@@ -959,16 +967,26 @@ export default function LearningResultManagement() {
                           className="bg-slate-50 border border-slate-100 rounded-2xl p-4.5 space-y-4 transition-all hover:bg-slate-50/80"
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/50 pb-3">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <div className="p-2 bg-[#4EACAF]/10 text-[#4EACAF] rounded-lg">
                                 <FileAudio className="w-4 h-4" />
                               </div>
                               <div className="text-sm font-bold text-slate-800">
-                                {parsedEvents[cIndex]
-                                  ? `Đoạn âm thanh giây: [${parsedEvents[cIndex].timeSeconds}s]`
+                                {event
+                                  ? `Đoạn âm thanh giây: [${event.timeSeconds}s]`
                                   : `Đoạn âm thanh #${cIndex + 1}`
                                 }
                               </div>
+                              {event && event.isCorrect !== undefined && (
+                                <span className={cn(
+                                  "text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border flex items-center gap-1 ml-1",
+                                  event.isCorrect
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : "bg-rose-50 text-rose-700 border-rose-200"
+                                )}>
+                                  {event.isCorrect ? '✓ Đúng' : '✕ Sai'}
+                                </span>
+                              )}
                             </div>
 
                             {/* Player control button */}
@@ -998,38 +1016,64 @@ export default function LearningResultManagement() {
                           {/* Expectation text input & AI assessment trigger */}
                           <div className="space-y-3">
                             {currentRoleView !== 'PARENT' ? (
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-slate-500">Từ/Câu kỳ vọng:</span>
-                                <input
-                                  type="text"
-                                  placeholder="Nhập từ chuẩn bé phải phát âm..."
-                                  value={referenceTexts[cIndex] || ''}
-                                  onChange={(e) => setReferenceTexts(prev => ({ ...prev, [cIndex]: e.target.value }))}
-                                  className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 outline-none text-xs font-semibold placeholder-slate-400 focus:border-[#4EACAF]"
-                                />
-                                <button
-                                  type="button"
-                                  disabled={isAssessing}
-                                  onClick={() => handleAssessChunk(cIndex)}
-                                  className="px-4 py-1.5 bg-[#4EACAF] hover:bg-[#3D8C8F] disabled:bg-slate-350 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 shrink-0 cursor-pointer"
-                                >
-                                  {isAssessing ? (
-                                    <Activity className="w-3.5 h-3.5 animate-spin" />
-                                  ) : (
-                                    <Sparkles className="w-3.5 h-3.5" />
-                                  )}
-                                  AI Đánh giá
-                                </button>
-                              </div>
-                            ) : (
-                              referenceTexts[cIndex] && (
+                              <div className="space-y-2">
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs font-bold text-slate-500">Từ/Câu kỳ vọng:</span>
-                                  <span className="text-xs font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-xl">
-                                    "{referenceTexts[cIndex]}"
-                                  </span>
+                                  <input
+                                    type="text"
+                                    placeholder="Nhập từ chuẩn bé phải phát âm..."
+                                    value={referenceTexts[cIndex] || ''}
+                                    onChange={(e) => setReferenceTexts(prev => ({ ...prev, [cIndex]: e.target.value }))}
+                                    className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 outline-none text-xs font-semibold placeholder-slate-400 focus:border-[#4EACAF]"
+                                  />
+                                  <button
+                                    type="button"
+                                    disabled={isAssessing}
+                                    onClick={() => handleAssessChunk(cIndex)}
+                                    className="px-4 py-1.5 bg-[#4EACAF] hover:bg-[#3D8C8F] disabled:bg-slate-350 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 shrink-0 cursor-pointer"
+                                  >
+                                    {isAssessing ? (
+                                      <Activity className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                      <Sparkles className="w-3.5 h-3.5" />
+                                    )}
+                                    AI Đánh giá
+                                  </button>
                                 </div>
-                              )
+                                {event && event.spokenText && (
+                                  <div className="flex items-center gap-2 text-xs">
+                                    <span className="font-bold text-slate-500">Trẻ thực tế nói:</span>
+                                    <span className={cn(
+                                      "font-bold italic px-2.5 py-0.5 rounded-lg border",
+                                      event.isCorrect ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
+                                    )}>
+                                      "{event.spokenText}"
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                {referenceTexts[cIndex] && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-slate-500">Từ/Câu kỳ vọng:</span>
+                                    <span className="text-xs font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-xl">
+                                      "{referenceTexts[cIndex]}"
+                                    </span>
+                                  </div>
+                                )}
+                                {event && event.spokenText && (
+                                  <div className="flex items-center gap-2 text-xs">
+                                    <span className="font-bold text-slate-500">Trẻ thực tế nói:</span>
+                                    <span className={cn(
+                                      "font-bold italic px-3 py-1 rounded-xl border",
+                                      event.isCorrect ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
+                                    )}>
+                                      "{event.spokenText}"
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             )}
 
                             {/* Assessment scores presentation layout */}
