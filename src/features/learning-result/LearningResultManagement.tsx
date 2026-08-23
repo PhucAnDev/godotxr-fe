@@ -787,7 +787,7 @@ export default function LearningResultManagement() {
                             ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
                             : "bg-amber-50 text-amber-700 border border-amber-100"
                         )}>
-                          {res.CompletionStatus === 'Completed' ? 'Đạt' : 'Chưa đạt'}
+                          {res.CompletionStatus === 'Completed' ? 'Đạt' : 'Chưa hoàn thành'}
                         </span>
                       </div>
 
