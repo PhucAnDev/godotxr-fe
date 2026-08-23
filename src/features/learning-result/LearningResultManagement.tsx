@@ -721,7 +721,7 @@ export default function LearningResultManagement() {
                   options={[
                     { value: 'ALL', label: 'Tất cả trạng thái' },
                     { value: 'Completed', label: 'Đã hoàn thành' },
-                    { value: 'InProgress', label: 'Đang làm dở' }
+                    { value: 'InComplete', label: 'Chưa hoàn thành' }
                   ]}
                   className="w-full"
                 />
