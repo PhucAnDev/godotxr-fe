@@ -179,6 +179,17 @@ function parseInteractionLog(log: string): ParsedEvent[] {
   return events;
 }
 
+export function isSilentOrUnclearSpeech(spokenText?: string): boolean {
+  if (!spokenText) return false;
+  const text = spokenText.toLowerCase().trim();
+  return (
+    text.includes('không nghe rõ') ||
+    text.includes('im lặng') ||
+    text.includes('khong nghe ro') ||
+    text.includes('im lang')
+  );
+}
+
 export default function LearningResultManagement() {
   const {
     getChildProfiles,
@@ -415,8 +426,9 @@ export default function LearningResultManagement() {
         if (getStoredRoleView() === 'PARENT') {
           formattedChunks.forEach(async (chunk) => {
             const cIndex = chunk.chunkIndex;
+            const event = logEvents[cIndex];
             const text = initialRefTexts[cIndex]?.trim();
-            if (text) {
+            if (text && !isSilentOrUnclearSpeech(event?.spokenText)) {
               try {
                 const assessRes = await assessChunk({
                   childProfileId: childIdVal,
@@ -456,6 +468,12 @@ export default function LearningResultManagement() {
 
   // Audio Play handler
   const handlePlayChunk = (url: string, index: number) => {
+    const event = parsedEvents[index];
+    if (isSilentOrUnclearSpeech(event?.spokenText)) {
+      showToast("Không có file âm thanh khả dụng do trẻ im lặng hoặc không nghe rõ.", "warn");
+      return;
+    }
+
     if (playingChunkIndex === index) {
       if (audioRef.current) audioRef.current.pause();
       setPlayingChunkIndex(null);
@@ -514,6 +532,11 @@ export default function LearningResultManagement() {
   // Run AI Speech Pronunciation Assessment
   const handleAssessChunk = async (chunkIndex: number) => {
     if (!selectedResult) return;
+    const event = parsedEvents[chunkIndex];
+    if (isSilentOrUnclearSpeech(event?.spokenText)) {
+      showToast("Không thể đánh giá AI đối với đoạn âm thanh trẻ im lặng hoặc không nghe rõ.", "warn");
+      return;
+    }
     const text = referenceTexts[chunkIndex]?.trim();
     if (!text) {
       showToast('Vui lòng điền từ chuẩn để AI đánh giá!', 'warn');
@@ -929,8 +952,18 @@ export default function LearningResultManagement() {
                   <FileText className="w-4 h-4 text-[#4EACAF]" />
                   Nhật ký tương tác (Interaction Log)
                 </h4>
-                <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl font-mono text-xs whitespace-pre-line leading-relaxed shadow-inner border border-slate-850 max-h-48 overflow-y-auto">
-                  {selectedResult.InteractionLog || "Hệ thống chưa ghi nhận vết log tương tác ở phiên tập này..."}
+                <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl font-mono text-xs whitespace-pre-line leading-relaxed shadow-inner border border-slate-850 max-h-48 overflow-y-auto space-y-1">
+                  {selectedResult.InteractionLog ? (
+                    selectedResult.InteractionLog
+                      .split(/\s*\|\s*/)
+                      .map((line) => line.trim())
+                      .filter(Boolean)
+                      .map((line, idx) => (
+                        <div key={idx}>{line}</div>
+                      ))
+                  ) : (
+                    "Hệ thống chưa ghi nhận vết log tương tác ở phiên tập này..."
+                  )}
                 </div>
               </div>
 
@@ -960,6 +993,7 @@ export default function LearningResultManagement() {
                       const assessment = chunkAssessments[cIndex];
                       const isAssessing = assessingChunkIndex === cIndex;
                       const event = parsedEvents[cIndex];
+                      const isSilentOrUnclear = isSilentOrUnclearSpeech(event?.spokenText);
 
                       return (
                         <div
@@ -991,15 +1025,24 @@ export default function LearningResultManagement() {
 
                             {/* Player control button */}
                             <button
+                              disabled={isSilentOrUnclear}
                               onClick={() => handlePlayChunk(chunk.chunkUrl, cIndex)}
+                              title={isSilentOrUnclear ? "Audio không khả dụng do trẻ im lặng hoặc không nghe rõ" : undefined}
                               className={cn(
-                                "flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer border self-start sm:self-auto",
-                                playingChunkIndex === cIndex
-                                  ? "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/80"
-                                  : "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/80"
+                                "flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm border self-start sm:self-auto",
+                                isSilentOrUnclear
+                                  ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60"
+                                  : playingChunkIndex === cIndex
+                                    ? "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/80 cursor-pointer"
+                                    : "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/80 cursor-pointer"
                               )}
                             >
-                              {playingChunkIndex === cIndex ? (
+                              {isSilentOrUnclear ? (
+                                <>
+                                  <VolumeX className="w-3.5 h-3.5 text-slate-400" />
+                                  <span>Không có ghi âm</span>
+                                </>
+                              ) : playingChunkIndex === cIndex ? (
                                 <>
                                   <Pause className="w-3.5 h-3.5 animate-pulse" />
                                   <span>Đang phát...</span>
@@ -1028,9 +1071,15 @@ export default function LearningResultManagement() {
                                   />
                                   <button
                                     type="button"
-                                    disabled={isAssessing}
+                                    disabled={isAssessing || isSilentOrUnclear}
                                     onClick={() => handleAssessChunk(cIndex)}
-                                    className="px-4 py-1.5 bg-[#4EACAF] hover:bg-[#3D8C8F] disabled:bg-slate-350 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 shrink-0 cursor-pointer"
+                                    title={isSilentOrUnclear ? "Không hỗ trợ AI đánh giá khi trẻ im lặng hoặc không nghe rõ" : undefined}
+                                    className={cn(
+                                      "px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shrink-0",
+                                      isSilentOrUnclear
+                                        ? "bg-slate-200 text-slate-400 border border-slate-300 cursor-not-allowed opacity-70"
+                                        : "bg-[#4EACAF] hover:bg-[#3D8C8F] disabled:bg-slate-350 text-white cursor-pointer"
+                                    )}
                                   >
                                     {isAssessing ? (
                                       <Activity className="w-3.5 h-3.5 animate-spin" />
@@ -1041,14 +1090,24 @@ export default function LearningResultManagement() {
                                   </button>
                                 </div>
                                 {event && event.spokenText && (
-                                  <div className="flex items-center gap-2 text-xs">
-                                    <span className="font-bold text-slate-500">Trẻ thực tế nói:</span>
-                                    <span className={cn(
-                                      "font-bold italic px-2.5 py-0.5 rounded-lg border",
-                                      event.isCorrect ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
-                                    )}>
-                                      "{event.spokenText}"
-                                    </span>
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-2 text-xs">
+                                      <span className="font-bold text-slate-500">Trẻ thực tế nói:</span>
+                                      <span className={cn(
+                                        "font-bold italic px-2.5 py-0.5 rounded-lg border",
+                                        isSilentOrUnclear
+                                          ? "bg-amber-50 text-amber-800 border-amber-200"
+                                          : event.isCorrect ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
+                                      )}>
+                                        "{event.spokenText}"
+                                      </span>
+                                    </div>
+                                    {isSilentOrUnclear && (
+                                      <p className="text-[11px] font-semibold text-amber-700 bg-amber-50/80 px-2.5 py-1 rounded-lg border border-amber-200/60 flex items-center gap-1.5 mt-1">
+                                        <ShieldAlert className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+                                        <span>Trẻ im lặng hoặc phát âm không nghe rõ: Hệ thống không ghi nhận được file âm thanh để phát lại và AI không có dữ liệu đầu vào để thẩm âm.</span>
+                                      </p>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -1063,14 +1122,24 @@ export default function LearningResultManagement() {
                                   </div>
                                 )}
                                 {event && event.spokenText && (
-                                  <div className="flex items-center gap-2 text-xs">
-                                    <span className="font-bold text-slate-500">Trẻ thực tế nói:</span>
-                                    <span className={cn(
-                                      "font-bold italic px-3 py-1 rounded-xl border",
-                                      event.isCorrect ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
-                                    )}>
-                                      "{event.spokenText}"
-                                    </span>
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-2 text-xs">
+                                      <span className="font-bold text-slate-500">Trẻ thực tế nói:</span>
+                                      <span className={cn(
+                                        "font-bold italic px-3 py-1 rounded-xl border",
+                                        isSilentOrUnclear
+                                          ? "bg-amber-50 text-amber-800 border-amber-200"
+                                          : event.isCorrect ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
+                                      )}>
+                                        "{event.spokenText}"
+                                      </span>
+                                    </div>
+                                    {isSilentOrUnclear && (
+                                      <p className="text-[11px] font-semibold text-amber-700 bg-amber-50/80 px-2.5 py-1 rounded-lg border border-amber-200/60 flex items-center gap-1.5 mt-1">
+                                        <ShieldAlert className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+                                        <span>Trẻ im lặng hoặc không nghe rõ: Không có audio ghi âm & Đánh giá AI.</span>
+                                      </p>
+                                    )}
                                   </div>
                                 )}
                               </div>

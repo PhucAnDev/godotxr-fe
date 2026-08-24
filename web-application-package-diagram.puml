@@ -1,0 +1,67 @@
+@startuml Web Application Package Diagram (GodotXR.FE)
+
+skinparam backgroundColor #F4F7FA
+skinparam defaultFontName "Segoe UI", "Arial", sans-serif
+
+skinparam package {
+    BackgroundColor #FFF2CC
+    BorderColor #D6B656
+    FontColor #000000
+    FontSize 13
+    FontStyle bold
+}
+
+package "Web Application Package Diagram" as Root #DAE8FC {
+
+    package "actions" as actions
+    package "hooks" as hooks
+
+    package "lib" as lib #FFF2CC {
+        package "types" as types
+        package "validations" as validations
+        package "realtime" as realtime
+    }
+
+    package "constants" as constants
+    package "contexts" as contexts
+
+    package "app" as app #FFF2CC {
+        package "auth" as auth
+        package "browse" as browse
+        package "management" as management
+        package "api" as api
+    }
+
+    package "public" as public
+
+    package "components" as components
+    package "services" as services
+    package "stores" as stores
+
+    ' Internal App Dependencies
+    auth ..> actions
+    browse ..> actions
+    management ..> actions
+
+    browse ..> hooks
+    management ..> hooks
+    hooks ..> management
+
+    app ..> lib
+    app ..> constants
+    app ..> contexts
+
+    api ..> public
+
+    auth ..> components
+    browse ..> components
+    management ..> components
+
+    browse ..> services
+    management ..> services
+
+    management ..> stores
+    api ..> stores
+}
+
+@enduml

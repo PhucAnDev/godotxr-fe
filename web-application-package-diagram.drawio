@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="Electron" modified="2026-08-24T19:56:00.000Z" agent="Mozilla/5.0" etag="godotxr-fe-web-app-package-diagram" version="21.0.0" type="device">
+  <diagram id="web-app-package-diagram" name="Web Application Package Diagram">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Outer Package Container -->
+        <mxCell id="root_pkg" value="Web Application Package Diagram" style="shape=folder;fontStyle=1;tabWidth=250;tabHeight=26;tabPosition=left;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#DAE8FC;strokeColor=#6C8EBF;align=center;verticalAlign=top;spacingTop=6;fontSize=16;fontColor=#1A2530;" vertex="1" parent="1">
+          <mxGeometry x="20" y="20" width="1120" height="760" as="geometry" />
+        </mxCell>
+
+        <!-- Top Row Packages -->
+        <mxCell id="pkg_actions" value="actions" style="shape=folder;fontStyle=1;tabWidth=80;tabHeight=18;tabPosition=left;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF2CC;strokeColor=#D6B656;align=center;verticalAlign=middle;fontSize=14;fontColor=#000000;" vertex="1" parent="root_pkg">
+          <mxGeometry x="300" y="50" width="170" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pkg_hooks" value="hooks" style="shape=folder;fontStyle=1;tabWidth=80;tabHeight=18;tabPosition=left;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF2CC;strokeColor=#D6B656;align=center;verticalAlign=middle;fontSize=14;fontColor=#000000;" vertex="1" parent="root_pkg">
+          <mxGeometry x="500" y="50" width="170" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- lib Container Package -->
+        <mxCell id="pkg_lib" value="lib" style="shape=folder;fontStyle=1;tabWidth=80;tabHeight=20;tabPosition=left;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF2CC;strokeColor=#D6B656;align=center;verticalAlign=top;spacingTop=4;fontSize=14;fontColor=#000000;" vertex="1" parent="root_pkg">
+          <mxGeometry x="700" y="40" width="390" height="150" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pkg_types" value="types" style="shape=folder;fontStyle=1;tabWidth=70;tabHeight=16;tabPosition=left;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFFFFF;strokeColor=#B8860B;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" vertex="1" parent="pkg_lib">
+          <mxGeometry x="20" y="45" width="100" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pkg_validations" value="validations" style="shape=folder;fontStyle=1;tabWidth=70;tabHeight=16;tabPosition=left;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFFFFF;strokeColor=#B8860B;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" vertex="1" parent="pkg_lib">
+          <mxGeometry x="145" y="45" width="100" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pkg_realtime" value="realtime" style="shape=folder;fontStyle=1;tabWidth=70;tabHeight=16;tabPosition=left;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFFFFF;strokeColor=#B8860B;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" vertex="1" parent="pkg_lib">
+          <mxGeometry x="270" y="45" width="100" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Left Packages -->
+        <mxCell id="pkg_constants" value="constants" style="shape=folder;fontStyle=1;tabWidth=80;tabHeight=18;tabPosition=left;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF2CC;strokeColor=#D6B656;align=center;verticalAlign=middle;fontSize=14;fontColor=#000000;" vertex="1" parent="root_pkg">
+          <mxGeometry x="40" y="270" width="180" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pkg_contexts" value="contexts" style="shape=folder;fontStyle=1;tabWidth=80;tabHeight=18;tabPosition=left;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF2CC;strokeColor=#D6B656;align=center;verticalAlign=middle;fontSize=14;fontColor=#000000;" vertex="1" parent="root_pkg">
+          <mxGeometry x="40" y="420" width="180" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- Central app Container Package -->
+        <mxCell id="pkg_app" value="app" style="shape=folder;fontStyle=1;tabWidth=80;tabHeight=22;tabPosition=left;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF2CC;strokeColor=#D6B656;align=center;verticalAlign=top;spacingTop=4;fontSize=15;fontColor=#000000;" vertex="1" parent="root_pkg">
+          <mxGeometry x="280" y="240" width="570" height="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sub_auth" value="auth" style="shape=folder;fontStyle=1;tabWidth=60;tabHeight=16;tabPosition=left;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFFFFF;strokeColor=#B8860B;align=center;verticalAlign=middle;fontSize=13;fontColor=#000000;" vertex="1" parent="pkg_app">
+          <mxGeometry x="20" y="50" width="115" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sub_browse" value="browse" style="shape=folder;fontStyle=1;tabWidth=60;tabHeight=16;tabPosition=left;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFFFFF;strokeColor=#B8860B;align=center;verticalAlign=middle;fontSize=13;fontColor=#000000;" vertex="1" parent="pkg_app">
+          <mxGeometry x="155" y="50" width="115" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sub_management" value="management" style="shape=folder;fontStyle=1;tabWidth=80;tabHeight=16;tabPosition=left;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFFFFF;strokeColor=#B8860B;align=center;verticalAlign=middle;fontSize=13;fontColor=#000000;" vertex="1" parent="pkg_app">
+          <mxGeometry x="290" y="50" width="135" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sub_api" value="api" style="shape=folder;fontStyle=1;tabWidth=50;tabHeight=16;tabPosition=left;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFFFFF;strokeColor=#B8860B;align=center;verticalAlign=middle;fontSize=13;fontColor=#000000;" vertex="1" parent="pkg_app">
+          <mxGeometry x="445" y="50" width="105" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Right Package: public -->
+        <mxCell id="pkg_public" value="public" style="shape=folder;fontStyle=1;tabWidth=70;tabHeight=18;tabPosition=left;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF2CC;strokeColor=#D6B656;align=center;verticalAlign=middle;fontSize=14;fontColor=#000000;" vertex="1" parent="root_pkg">
+          <mxGeometry x="900" y="320" width="190" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- Bottom Row Packages -->
+        <mxCell id="pkg_components" value="components" style="shape=folder;fontStyle=1;tabWidth=90;tabHeight=18;tabPosition=left;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF2CC;strokeColor=#D6B656;align=center;verticalAlign=middle;fontSize=14;fontColor=#000000;" vertex="1" parent="root_pkg">
+          <mxGeometry x="280" y="560" width="190" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pkg_services" value="services" style="shape=folder;fontStyle=1;tabWidth=80;tabHeight=18;tabPosition=left;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF2CC;strokeColor=#D6B656;align=center;verticalAlign=middle;fontSize=14;fontColor=#000000;" vertex="1" parent="root_pkg">
+          <mxGeometry x="540" y="560" width="190" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pkg_stores" value="stores" style="shape=folder;fontStyle=1;tabWidth=70;tabHeight=18;tabPosition=left;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF2CC;strokeColor=#D6B656;align=center;verticalAlign=middle;fontSize=14;fontColor=#000000;" vertex="1" parent="root_pkg">
+          <mxGeometry x="800" y="560" width="190" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- Dependency Edges -->
+        <mxCell id="edge_auth_actions" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;strokeWidth=1.5;html=1;" edge="1" parent="root_pkg" source="sub_auth" target="pkg_actions">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_browse_actions" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;strokeWidth=1.5;html=1;" edge="1" parent="root_pkg" source="sub_browse" target="pkg_actions">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_mgmt_actions" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;strokeWidth=1.5;html=1;" edge="1" parent="root_pkg" source="sub_management" target="pkg_actions">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_browse_hooks" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;strokeWidth=1.5;html=1;" edge="1" parent="root_pkg" source="sub_browse" target="pkg_hooks">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_mgmt_hooks" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;strokeWidth=1.5;html=1;" edge="1" parent="root_pkg" source="sub_management" target="pkg_hooks">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_hooks_mgmt" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;strokeWidth=1.5;html=1;" edge="1" parent="root_pkg" source="pkg_hooks" target="sub_management">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_app_lib" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;strokeWidth=1.5;html=1;" edge="1" parent="root_pkg" source="pkg_app" target="pkg_lib">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_app_constants" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;strokeWidth=1.5;html=1;" edge="1" parent="root_pkg" source="pkg_app" target="pkg_constants">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_app_contexts" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;strokeWidth=1.5;html=1;" edge="1" parent="root_pkg" source="pkg_app" target="pkg_contexts">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_api_public" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;strokeWidth=1.5;html=1;" edge="1" parent="root_pkg" source="sub_api" target="pkg_public">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_auth_comp" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;strokeWidth=1.5;html=1;" edge="1" parent="root_pkg" source="sub_auth" target="pkg_components">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_browse_comp" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;strokeWidth=1.5;html=1;" edge="1" parent="root_pkg" source="sub_browse" target="pkg_components">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_mgmt_comp" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;strokeWidth=1.5;html=1;" edge="1" parent="root_pkg" source="sub_management" target="pkg_components">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_browse_services" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;strokeWidth=1.5;html=1;" edge="1" parent="root_pkg" source="sub_browse" target="pkg_services">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_mgmt_services" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;strokeWidth=1.5;html=1;" edge="1" parent="root_pkg" source="sub_management" target="pkg_services">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_mgmt_stores" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;strokeWidth=1.5;html=1;" edge="1" parent="root_pkg" source="sub_management" target="pkg_stores">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_api_stores" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;strokeWidth=1.5;html=1;" edge="1" parent="root_pkg" source="sub_api" target="pkg_stores">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
