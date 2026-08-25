@@ -18,6 +18,8 @@ export interface LessonSlotResponse {
   lessonId: number;
   lessonImageId: number | null;
   slotName: string;
+  correctPoints: number;
+  wrongPoints: number;
   itemAssetId: number | null;
   itemAsset: ItemAssetResponse | null;
 }
@@ -52,7 +54,7 @@ export const getLessonSlots = (lessonId: number) =>
 
 export const configureLessonSlot = (
   lessonId: number,
-  payload: { slotName: string; lessonImageId?: number | null }
+  payload: { slotName: string; lessonImageId?: number | null; correctPoints?: number; wrongPoints?: number }
 ) =>
   request<LessonSlotResponse>(`/api/lesson-slots/${lessonId}`, {
     method: 'POST',
@@ -72,7 +74,7 @@ export const assignItemToSlot = (
 export const updateLessonSlot = (
   lessonId: number,
   slotId: number,
-  payload: { slotName: string; lessonImageId?: number | null }
+  payload: { slotName: string; lessonImageId?: number | null; correctPoints?: number; wrongPoints?: number }
 ) =>
   request<LessonSlotResponse>(`/api/lesson-slots/${lessonId}/${slotId}`, {
     method: 'PUT',

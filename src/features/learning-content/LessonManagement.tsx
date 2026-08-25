@@ -108,6 +108,8 @@ interface Lesson {
   CreatedAt: string;
   UpdatedAt: string;
   MaxScore?: number;
+  CompletionBonusPoints?: number;
+  Note?: string;
 }
 
 interface Exercise {
@@ -124,6 +126,8 @@ const mapLesson = (lesson: LessonResponse): Lesson => ({
   EstimatedDuration: lesson.estimatedDuration, Status: lesson.status,
   CreatedAt: lesson.createdAt, UpdatedAt: lesson.updatedAt ?? lesson.createdAt,
   MaxScore: lesson.maxScore,
+  CompletionBonusPoints: lesson.completionBonusPoints ?? 20,
+  Note: lesson.note ?? '',
 });
 
 // Predefined Mock Programs
@@ -260,8 +264,8 @@ export default function LessonManagement() {
   const filteredItemAssets = useMemo(() => {
     if (!assetSearchQuery.trim()) return itemAssets;
     const query = assetSearchQuery.toLowerCase();
-    return itemAssets.filter(asset => 
-      asset.name.toLowerCase().includes(query) || 
+    return itemAssets.filter(asset =>
+      asset.name.toLowerCase().includes(query) ||
       (asset.answerSentence && asset.answerSentence.toLowerCase().includes(query))
     );
   }, [itemAssets, assetSearchQuery]);
@@ -282,9 +286,20 @@ export default function LessonManagement() {
   const [newAngleName, setNewAngleName] = useState('');
   const [newAngleFile, setNewAngleFile] = useState<File | null>(null);
 
+  // VR Lesson Scores State
+  const [vrMaxScore, setVrMaxScore] = useState<number | ''>(100);
+  const [vrBonusPoints, setVrBonusPoints] = useState<number | ''>(20);
+
+  // Inline Slot Points Edit State
+  const [editingSlotPointsId, setEditingSlotPointsId] = useState<number | null>(null);
+  const [tempCorrectPoints, setTempCorrectPoints] = useState<number | ''>(10);
+  const [tempWrongPoints, setTempWrongPoints] = useState<number | ''>(10);
+
   // Slot configuration form state
   const [newSlotName, setNewSlotName] = useState('');
   const [newSlotImageId, setNewSlotImageId] = useState<number | null>(null);
+  const [newSlotCorrectPoints, setNewSlotCorrectPoints] = useState<number | ''>(10);
+  const [newSlotWrongPoints, setNewSlotWrongPoints] = useState<number | ''>(10);
   const [editingSlotId, setEditingSlotId] = useState<number | null>(null);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
 
@@ -334,6 +349,8 @@ export default function LessonManagement() {
   const [formDuration, setFormDuration] = useState<number | ''>(15);
   const [formStatus, setFormStatus] = useState<'Active' | 'Inactive'>('Active');
   const [formMaxScore, setFormMaxScore] = useState<number | ''>(100);
+  const [formCompletionBonusPoints, setFormCompletionBonusPoints] = useState<number | ''>(20);
+  const [formNote, setFormNote] = useState('');
 
   // Target skill options memo for the CustomSelect input
   const targetSkillOptions = useMemo(() => {
@@ -400,6 +417,8 @@ export default function LessonManagement() {
     setFormDuration(15);
     setFormStatus('Active');
     setFormMaxScore(100);
+    setFormCompletionBonusPoints(20);
+    setFormNote('');
     setSelectedLesson(null);
     setModalType('add');
   };
@@ -414,11 +433,16 @@ export default function LessonManagement() {
     setFormDuration(les.EstimatedDuration);
     setFormStatus(les.Status);
     setFormMaxScore(les.MaxScore ?? 100);
+    setFormCompletionBonusPoints(les.CompletionBonusPoints ?? 20);
+    setFormNote(les.Note ?? '');
     setModalType('edit');
   };
 
   const handleOpenExercises = async (les: Lesson) => {
     setSelectedLesson(les);
+    setVrMaxScore(les.MaxScore ?? 100);
+    setVrBonusPoints(les.CompletionBonusPoints ?? 20);
+    setEditingSlotPointsId(null);
     setModalType('exercises');
     setVrModalTab('angles');
     setIsLoadingVrConfig(true);
@@ -459,6 +483,48 @@ export default function LessonManagement() {
     const [imagesRes, slotsRes] = await Promise.all([imagesPromise, slotsPromise]);
     if (imagesRes.success && imagesRes.data) setLessonImages(imagesRes.data);
     if (slotsRes.success && slotsRes.data) setLessonSlots(slotsRes.data);
+  };
+
+  const handleUpdateLessonScores = async (newMaxScore: number, newBonusPoints: number) => {
+    if (!selectedLesson) return;
+    const result = await updateLesson(Number(selectedLesson.LessonId), {
+      lessonName: selectedLesson.LessonName,
+      lessonOrder: selectedLesson.LessonOrder,
+      description: selectedLesson.Description,
+      targetSkill: selectedLesson.TargetSkill,
+      estimatedDuration: selectedLesson.EstimatedDuration,
+      status: selectedLesson.Status,
+      maxScore: newMaxScore,
+      completionBonusPoints: newBonusPoints,
+      note: selectedLesson.Note || null,
+    });
+    if (result.success && result.data) {
+      const mapped = mapLesson(result.data);
+      setSelectedLesson(mapped);
+      setLessons(current => current.map(l => l.LessonId === mapped.LessonId ? mapped : l));
+      triggerToast('Cập nhật chỉ số điểm bài học thành công!');
+    } else {
+      triggerToast(result.errors?.join(' ') || result.message || 'Cập nhật điểm thất bại', 'warning');
+    }
+  };
+
+  const handleSaveSlotPoints = async (slot: any) => {
+    if (!selectedLesson) return;
+    const cPoints = tempCorrectPoints === '' ? 10 : Number(tempCorrectPoints);
+    const wPoints = tempWrongPoints === '' ? 10 : Number(tempWrongPoints);
+    const result = await updateLessonSlot(Number(selectedLesson.LessonId), slot.id, {
+      slotName: slot.slotName,
+      lessonImageId: slot.lessonImageId,
+      correctPoints: cPoints,
+      wrongPoints: wPoints,
+    });
+    if (result.success) {
+      triggerToast('Cập nhật điểm vị trí thành công!');
+      setEditingSlotPointsId(null);
+      refreshVrConfig(Number(selectedLesson.LessonId));
+    } else {
+      triggerToast(result.errors?.join(' ') || 'Cập nhật điểm vị trí thất bại', 'warning');
+    }
   };
 
   const handleUploadAngle = async (e: React.FormEvent) => {
@@ -512,12 +578,16 @@ export default function LessonManagement() {
     setEditingSlotId(slot.id);
     setNewSlotName(slot.slotName);
     setNewSlotImageId(slot.lessonImageId);
+    setNewSlotCorrectPoints(slot.correctPoints ?? 10);
+    setNewSlotWrongPoints(slot.wrongPoints ?? 10);
   };
 
   const handleCancelEditSlot = () => {
     setEditingSlotId(null);
     setNewSlotName('');
     setNewSlotImageId(null);
+    setNewSlotCorrectPoints(10);
+    setNewSlotWrongPoints(10);
   };
 
   const handleDeleteSlot = (slotId: number) => {
@@ -560,12 +630,16 @@ export default function LessonManagement() {
     if (editingSlotId) {
       result = await updateLessonSlot(Number(selectedLesson.LessonId), editingSlotId, {
         slotName: newSlotName.trim(),
-        lessonImageId: newSlotImageId
+        lessonImageId: newSlotImageId,
+        correctPoints: Number(newSlotCorrectPoints) || 10,
+        wrongPoints: Number(newSlotWrongPoints) || 10,
       });
     } else {
       result = await configureLessonSlot(Number(selectedLesson.LessonId), {
         slotName: newSlotName.trim(),
-        lessonImageId: newSlotImageId
+        lessonImageId: newSlotImageId,
+        correctPoints: Number(newSlotCorrectPoints) || 10,
+        wrongPoints: Number(newSlotWrongPoints) || 10,
       });
     }
 
@@ -574,6 +648,8 @@ export default function LessonManagement() {
       triggerToast(editingSlotId ? 'Cập nhật vị trí thành công!' : 'Thêm vị trí đặt vật phẩm thành công!');
       setNewSlotName('');
       setNewSlotImageId(null);
+      setNewSlotCorrectPoints(10);
+      setNewSlotWrongPoints(10);
       setEditingSlotId(null);
       refreshVrConfig(Number(selectedLesson.LessonId));
     } else {
@@ -611,7 +687,7 @@ export default function LessonManagement() {
 
   const toggleAudio = (id: number, url: string) => {
     const fullAudioUrl = url.startsWith('http') ? url : `${import.meta.env.VITE_API_BASE_URL || ''}${url}`;
-    
+
     if (playingAudioId === id) {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -692,7 +768,9 @@ export default function LessonManagement() {
       targetSkill: formTargetSkill,
       estimatedDuration: Number(formDuration),
       status: formStatus,
-      maxScore: Number(formMaxScore)
+      maxScore: Number(formMaxScore),
+      completionBonusPoints: Number(formCompletionBonusPoints) || 20,
+      note: formNote.trim() || null,
     };
     const result = modalType === 'add'
       ? await createLesson({ ...common, programId: Number(formProgramId) })
@@ -1038,6 +1116,11 @@ export default function LessonManagement() {
                         </td>
                         <td className="py-5 px-4">
                           <p className="font-medium text-slate-800 leading-snug line-clamp-1 max-w-md font-bold">{lesson.LessonName}</p>
+                          {lesson.Note && (
+                            <p className="text-[11px] text-amber-700 font-medium italic line-clamp-1 mt-0.5" title={lesson.Note}>
+                              📝 {lesson.Note}
+                            </p>
+                          )}
                         </td>
                         <td className="py-5 px-4">
                           {program ? (
@@ -1056,7 +1139,8 @@ export default function LessonManagement() {
                           </div>
                         </td>
                         <td className="py-5 px-4 font-bold text-slate-650 whitespace-nowrap">
-                          <span>{lesson.MaxScore ?? 100}đ</span>
+                          <div>{lesson.MaxScore ?? 100}đ</div>
+                          <div className="text-[10px] text-emerald-600 font-bold tracking-tight">Thưởng: +{lesson.CompletionBonusPoints ?? 20}đ</div>
                         </td>
                         <td className="py-5 px-4 whitespace-nowrap">
                           <span className={cn(
@@ -1119,29 +1203,32 @@ export default function LessonManagement() {
               initial={{ opacity: 0, scale: 0.95, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 12 }}
-              className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 relative z-30 my-8"
+              className={cn(
+                "app-modal-panel bg-white rounded-[32px] shadow-2xl w-full overflow-hidden border border-gray-100 relative z-30 my-0 transition-all",
+                modalType === 'exercises' ? "max-w-5xl" : "max-w-2xl"
+              )}
               id="lesson-modal-box"
             >
               {/* Modal Header banner */}
               <div className={cn(
-                "px-8 py-6 flex items-center justify-between border-b",
+                "px-4 py-3 flex items-center justify-between border-b",
                 modalType === 'add' ? 'bg-[#4EACAF]/10 border-[#4EACAF]/10 text-gray-900' :
                   modalType === 'edit' ? 'bg-sky-50 border-sky-100 text-gray-900' :
                     modalType === 'delete' ? 'bg-rose-50 border-rose-100 text-gray-900' : 'bg-indigo-50 border-indigo-100 text-gray-900'
               )}>
                 <div>
-                  <h2 className="text-2xl font-black italic tracking-tight flex items-center gap-2">
-                    {modalType === 'add' && <Plus className="w-6 h-6 text-[#4EACAF]" />}
-                    {modalType === 'edit' && <Edit3 className="w-6 h-6 text-sky-500" />}
-                    {modalType === 'exercises' && <Boxes className="w-6 h-6 text-indigo-500" />}
-                    {modalType === 'delete' && <Trash2 className="w-6 h-6 text-rose-500" />}
+                  <h2 className="text-xl font-black italic tracking-tight flex items-center gap-2">
+                    {modalType === 'add' && <Plus className="w-5 h-5 text-[#4EACAF]" />}
+                    {modalType === 'edit' && <Edit3 className="w-5 h-5 text-sky-500" />}
+                    {modalType === 'exercises' && <Boxes className="w-5 h-5 text-indigo-500" />}
+                    {modalType === 'delete' && <Trash2 className="w-5 h-5 text-rose-500" />}
 
                     {modalType === 'add' && 'Tạo bài học mới'}
                     {modalType === 'edit' && `Sửa thông tin bài học: ${selectedLesson?.LessonId}`}
                     {modalType === 'exercises' && (userRole === 'TEACHER' ? 'Gán vật phẩm cho phân cảnh VR' : 'Cấu hình phân cảnh học tập VR')}
                     {modalType === 'delete' && 'Xác nhận xóa bài học'}
                   </h2>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
                     {modalType === 'add' && 'Thiết lập nội dung và gán lớp kỹ năng rèn nói cho bài học'}
                     {modalType === 'edit' && 'Cập nhật lại thông tin thứ tự và thời lượng can thiệp của bài giảng'}
                     {modalType === 'exercises' && (userRole === 'TEACHER' ? 'Gán mô hình 3D cho các vị trí spawner của bài học trong phòng học VR' : 'Quản lý góc chụp phòng học và cấu hình Spawner vật phẩm 3D cho Client VR')}
@@ -1150,26 +1237,76 @@ export default function LessonManagement() {
                 </div>
                 <button
                   onClick={handleCloseModal}
-                  className="p-2.5 hover:bg-white/70 rounded-full transition-colors"
+                  className="p-1.5 hover:bg-white/70 rounded-full transition-colors"
                   id="lesson-modal-close"
                 >
-                  <X className="w-6 h-6 text-gray-500" />
+                  <X className="w-5 h-5 text-gray-500" />
                 </button>
               </div>
 
               {/* Modal Body conditional rendering */}
               {modalType === 'exercises' && selectedLesson ? (
-                <div className="app-modal-body p-6 md:p-8 space-y-6 max-h-[70vh] overflow-y-auto" id="modal-exercises-view">
+                <div className="app-modal-body p-2 space-y-4 max-h-[85vh] overflow-y-auto" id="modal-exercises-view">
                   {userRole === 'TEACHER' ? (
                     /* --- TEACHER EXERCISES MODAL VIEW --- */
                     isLoadingVrConfig ? (
-                      <div className="flex flex-col justify-center items-center py-16 space-y-3">
-                        <RefreshCw className="w-8 h-8 animate-spin text-teal-500" />
+                      <div className="flex flex-col justify-center items-center py-12 space-y-3">
+                        <RefreshCw className="w-7 h-7 animate-spin text-teal-500" />
                         <span className="font-bold text-slate-500 text-sm">Đang đồng bộ phân cảnh VR...</span>
                       </div>
                     ) : (
-                      <div className="space-y-6 animate-in fade-in duration-300">
-                        <div className="bg-teal-50 text-teal-800 border border-teal-150 p-4 rounded-2xl text-xs font-semibold">
+                      <div className="space-y-4 animate-in fade-in duration-300">
+                        {/* Header Score summary banner for selected lesson with live editing */}
+                        <div className="bg-gradient-to-r from-teal-50 via-emerald-50 to-teal-50 border border-teal-200/70 p-2.5 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-sm">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-700 flex items-center justify-center font-extrabold shrink-0">
+                              <Award className="w-4.5 h-4.5 text-teal-600" />
+                            </div>
+                            <div>
+                              <h4 className="font-extrabold text-slate-850 text-sm">{selectedLesson.LessonName}</h4>
+                              <p className="text-[11px] text-slate-500 font-medium">Chỉ số điểm bài học & Phân cảnh tương tác 3D VR</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-wrap text-xs font-bold">
+                            <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-xs" title="Điểm tối đa bài học (MaxScore)">
+                              <span className="text-teal-800 font-extrabold">🎯 Điểm tối đa:</span>
+                              <input
+                                type="number"
+                                min={0}
+                                max={1000}
+                                value={vrMaxScore}
+                                onChange={(e) => setVrMaxScore(e.target.value === '' ? '' : Number(e.target.value))}
+                                className="w-14 bg-teal-50/60 border border-teal-200 rounded px-1.5 py-0.5 text-center font-black text-teal-900 outline-none focus:border-teal-500 text-xs"
+                              />
+                              <span className="text-teal-800">đ</span>
+                            </div>
+
+                            <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 shadow-xs" title="Điểm thưởng khi hoàn thành bài (CompletionBonusPoints)">
+                              <span className="text-emerald-800 font-extrabold">🎁 Thưởng hoàn thành:</span>
+                              <input
+                                type="number"
+                                min={0}
+                                max={500}
+                                value={vrBonusPoints}
+                                onChange={(e) => setVrBonusPoints(e.target.value === '' ? '' : Number(e.target.value))}
+                                className="w-14 bg-emerald-50/60 border border-emerald-200 rounded px-1.5 py-0.5 text-center font-black text-emerald-900 outline-none focus:border-emerald-500 text-xs"
+                              />
+                              <span className="text-emerald-800">đ</span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateLessonScores(Number(vrMaxScore) || 100, Number(vrBonusPoints) || 0)}
+                              className="bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black px-3 py-1 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer text-xs flex items-center gap-1 shrink-0"
+                              title="Lưu thay đổi điểm tối đa và điểm thưởng"
+                            >
+                              💾 Lưu điểm bài
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="bg-teal-50/60 text-teal-850 border border-teal-150 p-2.5 rounded-xl text-xs font-semibold">
                           * Hướng dẫn: Dưới đây là danh sách hình ảnh các góc chụp phòng học VR và các vị trí đặt vật phẩm tương ứng. Thầy/Cô vui lòng gán mô hình 3D thích hợp cho mỗi vị trí.
                         </div>
 
@@ -1184,7 +1321,72 @@ export default function LessonManagement() {
                               <div className="space-y-3">
                                 {lessonSlots.map((slot) => (
                                   <div key={slot.id} className="bg-[#FDFCF5] p-4 rounded-2xl border border-slate-200/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                    <strong className="text-sm text-slate-800">Tên vị trí: {slot.slotName}</strong>
+                                    <div className="space-y-1">
+                                      <strong className="text-sm text-slate-800">Tên vị trí: {slot.slotName}</strong>
+                                      {editingSlotPointsId === slot.id ? (
+                                        <div className="flex items-center gap-2 bg-amber-50 p-1.5 rounded-xl border border-amber-200/80 animate-in fade-in duration-200">
+                                          <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-800">
+                                            <span>🎯 Đúng:</span>
+                                            <input
+                                              type="number"
+                                              min={0}
+                                              max={100}
+                                              value={tempCorrectPoints}
+                                              onChange={(e) => setTempCorrectPoints(e.target.value === '' ? '' : Number(e.target.value))}
+                                              className="w-14 bg-white border border-emerald-300 rounded px-1.5 py-0.5 text-center font-bold outline-none text-xs text-emerald-900"
+                                            />
+                                            <span>đ</span>
+                                          </div>
+                                          <div className="flex items-center gap-1 text-[11px] font-bold text-rose-800">
+                                            <span>⚠️ Sai:</span>
+                                            <input
+                                              type="number"
+                                              min={0}
+                                              max={100}
+                                              value={tempWrongPoints}
+                                              onChange={(e) => setTempWrongPoints(e.target.value === '' ? '' : Number(e.target.value))}
+                                              className="w-14 bg-white border border-rose-300 rounded px-1.5 py-0.5 text-center font-bold outline-none text-xs text-rose-900"
+                                            />
+                                            <span>đ</span>
+                                          </div>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleSaveSlotPoints(slot)}
+                                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-2.5 py-0.5 rounded-lg shadow-xs cursor-pointer"
+                                          >
+                                            Lưu
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => setEditingSlotPointsId(null)}
+                                            className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-[11px] px-2 py-0.5 rounded-lg cursor-pointer"
+                                          >
+                                            Hủy
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                                          <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60" title="Điểm cộng khi chọn đúng">
+                                            🎯 Đúng: +{slot.correctPoints ?? 10}đ
+                                          </span>
+                                          <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200/60" title="Điểm trừ khi chọn sai">
+                                            ⚠️ Sai: -{slot.wrongPoints ?? 10}đ
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setEditingSlotPointsId(slot.id);
+                                              setTempCorrectPoints(slot.correctPoints ?? 10);
+                                              setTempWrongPoints(slot.wrongPoints ?? 10);
+                                            }}
+                                            className="text-teal-600 hover:text-teal-800 hover:bg-teal-50 px-1.5 py-0.5 rounded text-[10px] font-bold underline transition-colors cursor-pointer"
+                                            title="Sửa điểm slot này"
+                                          >
+                                            ✏️ Sửa điểm
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
                                     <div className="flex items-center gap-2 w-full sm:w-auto sm:min-w-[320px]">
                                       <span className="text-xs font-bold text-slate-400 uppercase shrink-0">Vật phẩm:</span>
                                       <SearchableSelect
@@ -1226,9 +1428,9 @@ export default function LessonManagement() {
                                       {img.angleName}
                                     </div>
                                   </div>
-                                  
-                                  <div className="w-full md:w-3/5 p-5 flex flex-col justify-center space-y-4">
-                                    <h5 className="font-extrabold text-xs text-slate-500 uppercase tracking-widest border-b border-slate-100 pb-2">
+
+                                  <div className="w-full md:w-3/5 p-3 flex flex-col justify-center space-y-3">
+                                    <h5 className="font-extrabold text-xs text-slate-500 uppercase tracking-widest border-b border-slate-100 pb-1.5">
                                       Các vị trí vật phẩm ({slotsForImg.length})
                                     </h5>
                                     {slotsForImg.length === 0 ? (
@@ -1239,11 +1441,74 @@ export default function LessonManagement() {
                                       <div className="space-y-3.5">
                                         {slotsForImg.map((slot) => (
                                           <div key={slot.id} className="flex flex-col gap-1.5">
-                                            <div className="flex items-center justify-between">
+                                            <div className="flex items-center justify-between gap-2 flex-wrap">
                                               <span className="text-xs font-extrabold text-slate-850 flex items-center gap-1.5">
                                                 <span className="w-2 h-2 rounded-full bg-teal-500"></span>
                                                 {slot.slotName}
                                               </span>
+                                              {editingSlotPointsId === slot.id ? (
+                                                <div className="flex items-center gap-2 bg-amber-50 p-1.5 rounded-xl border border-amber-200/80 animate-in fade-in duration-200">
+                                                  <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-800">
+                                                    <span>🎯 Đúng:</span>
+                                                    <input
+                                                      type="number"
+                                                      min={0}
+                                                      max={100}
+                                                      value={tempCorrectPoints}
+                                                      onChange={(e) => setTempCorrectPoints(e.target.value === '' ? '' : Number(e.target.value))}
+                                                      className="w-14 bg-white border border-emerald-300 rounded px-1.5 py-0.5 text-center font-bold outline-none text-xs text-emerald-900"
+                                                    />
+                                                    <span>đ</span>
+                                                  </div>
+                                                  <div className="flex items-center gap-1 text-[11px] font-bold text-rose-800">
+                                                    <span>⚠️ Sai:</span>
+                                                    <input
+                                                      type="number"
+                                                      min={0}
+                                                      max={100}
+                                                      value={tempWrongPoints}
+                                                      onChange={(e) => setTempWrongPoints(e.target.value === '' ? '' : Number(e.target.value))}
+                                                      className="w-14 bg-white border border-rose-300 rounded px-1.5 py-0.5 text-center font-bold outline-none text-xs text-rose-900"
+                                                    />
+                                                    <span>đ</span>
+                                                  </div>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => handleSaveSlotPoints(slot)}
+                                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-2.5 py-0.5 rounded-lg shadow-xs cursor-pointer"
+                                                  >
+                                                    Lưu
+                                                  </button>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => setEditingSlotPointsId(null)}
+                                                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-[11px] px-2 py-0.5 rounded-lg cursor-pointer"
+                                                  >
+                                                    Hủy
+                                                  </button>
+                                                </div>
+                                              ) : (
+                                                <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                                                  <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60" title="Điểm cộng khi chọn đúng">
+                                                    🎯 Đúng: +{slot.correctPoints ?? 10}đ
+                                                  </span>
+                                                  <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200/60" title="Điểm trừ khi chọn sai">
+                                                    ⚠️ Sai: -{slot.wrongPoints ?? 10}đ
+                                                  </span>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                      setEditingSlotPointsId(slot.id);
+                                                      setTempCorrectPoints(slot.correctPoints ?? 10);
+                                                      setTempWrongPoints(slot.wrongPoints ?? 10);
+                                                    }}
+                                                    className="text-teal-600 hover:text-teal-800 hover:bg-teal-50 px-1.5 py-0.5 rounded text-[10px] font-bold underline transition-colors cursor-pointer"
+                                                    title="Sửa điểm slot này"
+                                                  >
+                                                    ✏️ Sửa điểm
+                                                  </button>
+                                                </div>
+                                              )}
                                             </div>
                                             <div className="flex items-center gap-2">
                                               {slot.itemAssetId ? (
@@ -1296,7 +1561,17 @@ export default function LessonManagement() {
                                 <div className="space-y-3">
                                   {lessonSlots.filter(s => s.lessonImageId === null).map((slot) => (
                                     <div key={slot.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200/45">
-                                      <span className="text-xs font-extrabold text-slate-800">{slot.slotName}</span>
+                                      <div className="space-y-1">
+                                        <span className="text-xs font-extrabold text-slate-800">{slot.slotName}</span>
+                                        <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                                          <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
+                                            🎯 Đúng: +{slot.correctPoints ?? 10}đ
+                                          </span>
+                                          <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200/60">
+                                            ⚠️ Sai: -{slot.wrongPoints ?? 10}đ
+                                          </span>
+                                        </div>
+                                      </div>
                                       <div className="w-full sm:w-[280px]">
                                         {slot.itemAssetId ? (
                                           (() => {
@@ -1515,6 +1790,32 @@ export default function LessonManagement() {
                                 />
                               </div>
                             </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                <label className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Điểm trả lời ĐÚNG (CorrectPoints)</label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={100}
+                                  placeholder="10"
+                                  value={newSlotCorrectPoints}
+                                  onChange={(e) => setNewSlotCorrectPoints(e.target.value === '' ? '' : Number(e.target.value))}
+                                  className="w-full bg-white border border-emerald-200 rounded-xl px-4 py-2 text-sm font-semibold outline-none focus:border-emerald-500 text-emerald-800"
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <label className="text-[11px] font-bold text-rose-600 uppercase tracking-wider">Điểm trừ trả lời SAI (WrongPoints)</label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={100}
+                                  placeholder="10"
+                                  value={newSlotWrongPoints}
+                                  onChange={(e) => setNewSlotWrongPoints(e.target.value === '' ? '' : Number(e.target.value))}
+                                  className="w-full bg-white border border-rose-200 rounded-xl px-4 py-2 text-sm font-semibold outline-none focus:border-rose-500 text-rose-800"
+                                />
+                              </div>
+                            </div>
                             <div className="flex justify-end gap-2 pt-1">
                               {editingSlotId && (
                                 <button
@@ -1553,6 +1854,12 @@ export default function LessonManagement() {
                                       <div className="space-y-1.5 flex-1 min-w-0">
                                         <div className="flex items-center flex-wrap gap-2">
                                           <strong className="text-sm text-slate-850">Tên vị trí: {slot.slotName}</strong>
+                                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200/60" title="Điểm cộng khi chọn đúng">
+                                            🎯 Đúng: +{slot.correctPoints ?? 10}đ
+                                          </span>
+                                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-lg border border-rose-200/60" title="Điểm trừ khi chọn sai">
+                                            ⚠️ Sai: -{slot.wrongPoints ?? 10}đ
+                                          </span>
                                         </div>
 
                                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400 font-medium">
@@ -1788,6 +2095,39 @@ export default function LessonManagement() {
                         />
                       </div>
 
+                      {/* Completion Bonus Points */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
+                          Điểm thưởng hoàn thành bài
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={500}
+                          placeholder="20"
+                          value={formCompletionBonusPoints}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormCompletionBonusPoints(val === '' ? '' : (parseFloat(val) || 0));
+                          }}
+                          className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
+                        />
+                      </div>
+
+                      {/* Note */}
+                      <div className="space-y-2 md:col-span-2">
+                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
+                          Ghi chú bài học (Note)
+                        </label>
+                        <textarea
+                          rows={2}
+                          placeholder="Nhập ghi chú bổ sung cho giáo viên hoặc hệ thống..."
+                          value={formNote}
+                          onChange={(e) => setFormNote(e.target.value)}
+                          className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm resize-none"
+                        />
+                      </div>
+
                       {/* Status select */}
                       <div className="space-y-2">
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
@@ -1950,7 +2290,7 @@ export default function LessonManagement() {
                               <h4 className="font-extrabold text-slate-800 text-sm line-clamp-1" title={asset.name}>
                                 {asset.name}
                               </h4>
-                              
+
                               <div className="mt-1.5 bg-blue-50/70 border border-blue-100 px-2 py-1 rounded-xl">
                                 <span className="text-[9px] uppercase font-bold text-blue-500 block">Từ khóa đọc chuẩn</span>
                                 <span className="text-xs font-semibold text-blue-900 block truncate">"{asset.answerSentence}"</span>
@@ -1963,11 +2303,10 @@ export default function LessonManagement() {
                                 <button
                                   type="button"
                                   onClick={() => toggleAudio(asset.id, asset.audioUrl!)}
-                                  className={`p-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                                    playingAudioId === asset.id
-                                      ? 'bg-emerald-500 text-white border-emerald-500'
-                                      : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                                  }`}
+                                  className={`p-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${playingAudioId === asset.id
+                                    ? 'bg-emerald-500 text-white border-emerald-500'
+                                    : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                    }`}
                                   title="Nghe phát âm mẫu"
                                 >
                                   {playingAudioId === asset.id ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-current" />}

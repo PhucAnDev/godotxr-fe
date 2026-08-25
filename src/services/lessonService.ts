@@ -11,6 +11,8 @@ export interface LessonResponse {
   estimatedDuration: number;
   status: 'Active' | 'Inactive';
   maxScore?: number;
+  completionBonusPoints?: number;
+  note?: string | null;
   createdAt: string;
   updatedAt: string | null;
 }

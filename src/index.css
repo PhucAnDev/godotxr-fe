@@ -557,3 +557,15 @@ select option {
   background: linear-gradient(to right, #1d4ed8, #4338ca) !important; /* from-blue-700 to-indigo-700 */
   box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.15), 0 4px 6px -4px rgba(59, 130, 246, 0.15) !important; /* shadow-lg */
 }
+
+/* Hide number input spin buttons (up/down arrows) */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
