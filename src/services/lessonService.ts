@@ -12,6 +12,8 @@ export interface LessonResponse {
   status: 'Active' | 'Inactive';
   maxScore?: number;
   completionBonusPoints?: number;
+  correctAnswerScore?: number;
+  incorrectAnswerScore?: number;
   note?: string | null;
   createdAt: string;
   updatedAt: string | null;

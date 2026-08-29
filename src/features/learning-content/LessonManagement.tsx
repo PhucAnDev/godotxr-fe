@@ -109,6 +109,8 @@ interface Lesson {
   UpdatedAt: string;
   MaxScore?: number;
   CompletionBonusPoints?: number;
+  CorrectAnswerScore?: number;
+  IncorrectAnswerScore?: number;
   Note?: string;
 }
 
@@ -127,6 +129,8 @@ const mapLesson = (lesson: LessonResponse): Lesson => ({
   CreatedAt: lesson.createdAt, UpdatedAt: lesson.updatedAt ?? lesson.createdAt,
   MaxScore: lesson.maxScore,
   CompletionBonusPoints: lesson.completionBonusPoints ?? 20,
+  CorrectAnswerScore: lesson.correctAnswerScore ?? 10,
+  IncorrectAnswerScore: lesson.incorrectAnswerScore ?? 0,
   Note: lesson.note ?? '',
 });
 
@@ -350,6 +354,8 @@ export default function LessonManagement() {
   const [formStatus, setFormStatus] = useState<'Active' | 'Inactive'>('Active');
   const [formMaxScore, setFormMaxScore] = useState<number | ''>(100);
   const [formCompletionBonusPoints, setFormCompletionBonusPoints] = useState<number | ''>(20);
+  const [formCorrectAnswerScore, setFormCorrectAnswerScore] = useState<number | ''>(10);
+  const [formIncorrectAnswerScore, setFormIncorrectAnswerScore] = useState<number | ''>(0);
   const [formNote, setFormNote] = useState('');
 
   // Target skill options memo for the CustomSelect input
@@ -770,6 +776,8 @@ export default function LessonManagement() {
       status: formStatus,
       maxScore: Number(formMaxScore),
       completionBonusPoints: Number(formCompletionBonusPoints) || 20,
+      correctAnswerScore: Number(formCorrectAnswerScore) || 10,
+      incorrectAnswerScore: Number(formIncorrectAnswerScore) || 0,
       note: formNote.trim() || null,
     };
     const result = modalType === 'add'
@@ -2111,6 +2119,44 @@ export default function LessonManagement() {
                             setFormCompletionBonusPoints(val === '' ? '' : (parseFloat(val) || 0));
                           }}
                           className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
+                        />
+                      </div>
+
+                      {/* Correct Answer Score */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-emerald-700 uppercase tracking-widest ml-1 font-bold">
+                          Điểm câu đúng (Correct Score)
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={500}
+                          placeholder="10"
+                          value={formCorrectAnswerScore}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormCorrectAnswerScore(val === '' ? '' : (parseFloat(val) || 0));
+                          }}
+                          className="w-full bg-emerald-50/40 border-2 border-emerald-100 rounded-2xl px-5 py-4 font-bold text-emerald-900 outline-none transition-all focus:border-emerald-500 focus:bg-white text-sm"
+                        />
+                      </div>
+
+                      {/* Incorrect Answer Score */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-rose-700 uppercase tracking-widest ml-1 font-bold">
+                          Điểm câu sai (Incorrect Score)
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={500}
+                          placeholder="0"
+                          value={formIncorrectAnswerScore}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormIncorrectAnswerScore(val === '' ? '' : (parseFloat(val) || 0));
+                          }}
+                          className="w-full bg-rose-50/40 border-2 border-rose-100 rounded-2xl px-5 py-4 font-bold text-rose-900 outline-none transition-all focus:border-rose-500 focus:bg-white text-sm"
                         />
                       </div>
 
