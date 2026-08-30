@@ -11,6 +11,7 @@ export interface AssessChunkPayload {
   sessionId: string;
   chunkIndex: number;
   referenceText: string;
+  spokenText?: string;
 }
 
 async function request<T>(

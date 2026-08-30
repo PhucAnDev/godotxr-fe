@@ -480,7 +480,8 @@ export default function LearningResultManagement() {
                   childProfileId: childIdVal,
                   sessionId: res.SessionId,
                   chunkIndex: cIndex,
-                  referenceText: text
+                  referenceText: text,
+                  spokenText: event?.spokenText
                 });
                 if (assessRes.success && assessRes.data) {
                   setChunkAssessments(prev => ({ ...prev, [cIndex]: assessRes.data }));
@@ -595,12 +596,15 @@ export default function LearningResultManagement() {
     try {
       const child = children.find(c => c.ChildId === selectedResult.ChildId);
       const childIdVal = child ? Number(child.ChildId) : Number(selectedResult.ChildId);
+      const logEvents = parseInteractionLog(selectedResult.InteractionLog);
+      const event = logEvents[chunkIndex];
 
       const res = await assessChunk({
         childProfileId: childIdVal,
         sessionId: selectedResult.SessionId,
         chunkIndex,
-        referenceText: text
+        referenceText: text,
+        spokenText: event?.spokenText
       });
 
       if (res.success && res.data) {
