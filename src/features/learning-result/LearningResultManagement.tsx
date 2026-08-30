@@ -1216,7 +1216,7 @@ export default function LearningResultManagement() {
                                 </div>
 
                                 <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                                  <div className="text-xs font-bold text-slate-400">Chi tiết phát âm từ của AI:</div>
+                                  <div className="text-xs font-bold text-slate-400">Chi tiết phát âm cụm từ của AI:</div>
                                   <div className="flex flex-wrap gap-2">
                                     {(assessment.words || assessment.Words || []).map((wObj: any, wIdx: number) => {
                                       const wordText = wObj.word || wObj.Word;
