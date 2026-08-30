@@ -1,6 +1,7 @@
 import { Bell, Menu } from 'lucide-react';
 import { cn, resolveAvatarUrl } from '../../lib/utils';
-import { getCurrentUser } from '../../lib/authMock';
+import { getSessionUser } from '../../lib/authSession';
+import { getCurrentUser as getMockUser } from '../../lib/authMock';
 import type { UserRole } from '../../app/navigation';
 
 export function Topbar({
@@ -17,7 +18,7 @@ export function Topbar({
   let roleLabel = '';
   let badgeLabel = '';
 
-  const currentUser = getCurrentUser();
+  const currentUser = getSessionUser() || getMockUser();
   const userName = currentUser?.FullName || (isAdmin ? 'Quản trị viên' : isTeacher ? 'Giáo viên' : 'Phụ huynh');
 
   if (userRole === 'PARENT') {

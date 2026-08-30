@@ -32,14 +32,26 @@ import {
   ArrowDown,
   ArrowUpDown
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from 'recharts';
+import { cn, resolveAvatarUrl } from '../../lib/utils';
 import CustomSelect from '../../components/common/CustomSelect';
 import ActionButton from '../../components/common/ActionButton';
 import { getSessionUser } from '../../lib/authSession';
 import { getMyChildProfiles, getChildProfiles } from '../../services/childProfileService';
-import { getAnalyzesByChildId } from '../../services/analyzeService';
-import { getResultsByChild } from '../../services/resultService';
+import { getAnalyzesByChildId, getAnalyzes } from '../../services/analyzeService';
+import { getResultsByChild, type ResultResponse } from '../../services/resultService';
 import { getLessons } from '../../services/lessonService';
+import { getSpeechAccuracyByChild, type ChildSpeechAccuracyResponse } from '../../services/childSpeechAccuracyService';
 import type { ChildProfileResponse } from '../../services/childProfileService';
 import type { AnalyzeResponse } from '../../services/analyzeService';
 import type { LessonResponse } from '../../services/lessonService';
@@ -52,6 +64,7 @@ interface Child {
   Gender: 'Male' | 'Female' | 'Other';
   LearningLevel: string;
   Status: 'Active' | 'Inactive';
+  Avatar?: string;
 }
 
 interface Analysis {
@@ -108,6 +121,10 @@ export default function ProgressAnalysis() {
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [children, setChildren] = useState<Child[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Maps for chart aggregation
+  const [allResultsMap, setAllResultsMap] = useState<Map<number, ResultResponse[]>>(new Map());
+  const [speechAccuraciesMap, setSpeechAccuraciesMap] = useState<Map<number, ChildSpeechAccuracyResponse[]>>(new Map());
 
   // Selector state
   const [selectedChildId, setSelectedChildId] = useState<string>('ALL');
@@ -345,10 +362,18 @@ export default function ProgressAnalysis() {
           fetchedChildren = res.data;
         }
       } else {
-        // Teacher/Admin can view all children profiles
-        const res = await getChildProfiles(1, 100);
-        if (res.success && res.data?.items) {
-          fetchedChildren = res.data.items;
+        // Teacher/Admin can view all children profiles (load all pages)
+        let page = 1;
+        let hasMore = true;
+        while (hasMore) {
+          const res = await getChildProfiles(page, 100);
+          if (res.success && res.data?.items) {
+            fetchedChildren = [...fetchedChildren, ...res.data.items];
+            hasMore = res.data.items.length === 100 && page < 10;
+            page++;
+          } else {
+            hasMore = false;
+          }
         }
       }
 
@@ -359,50 +384,100 @@ export default function ProgressAnalysis() {
         Age: c.age,
         Gender: c.gender,
         LearningLevel: c.learningLevel === 'Beginner' ? 'Bậc 1 - Sơ cấp VR' : c.learningLevel === 'Intermediate' ? 'Bậc 2 - Trung cấp VR' : 'Bậc 3 - Nâng cao VR',
-        Status: c.status
+        Status: c.status,
+        Avatar: (c as any).avatar || (c as any).Avatar
       }));
       setChildren(mappedChildren);
 
-      // 2. Fetch analyses
+      // 2. Fetch analyses safely based on role
       let allAnalyses: AnalyzeResponse[] = [];
-      if (mappedChildren.length > 0) {
-        const promises = fetchedChildren.map(c => getAnalyzesByChildId(c.id));
-        const resList = await Promise.all(promises);
-        resList.forEach(res => {
-          if (res.success && res.data) {
-            allAnalyses = [...allAnalyses, ...res.data];
+      if (currentRoleView === 'PARENT') {
+        if (fetchedChildren.length > 0) {
+          const promises = fetchedChildren.map(c => getAnalyzesByChildId(c.id));
+          const resList = await Promise.all(promises);
+          resList.forEach(res => {
+            if (res.success && res.data) {
+              allAnalyses = [...allAnalyses, ...res.data];
+            }
+          });
+        }
+      } else {
+        // Admin / Teacher: use getAnalyzes() paged endpoint to get all analyses in system
+        let page = 1;
+        let hasMore = true;
+        while (hasMore) {
+          const res = await getAnalyzes(page, 100);
+          if (res.success && res.data?.items) {
+            allAnalyses = [...allAnalyses, ...res.data.items];
+            hasMore = res.data.items.length === 100 && page < 10;
+            page++;
+          } else {
+            hasMore = false;
           }
-        });
+        }
       }
 
-      // Map to Analysis state format
-      const mappedAnalyses: Analysis[] = allAnalyses.map(a => {
-        const scoreMap: Record<string, number> = {
-          'VeryPoor': 20,
-          'Poor': 40,
-          'Average': 60,
-          'Good': 80,
-          'Excellent': 95
-        };
-        const score = scoreMap[a.pronunciationAbility] || 70;
+      // 3. Fetch VR results per child using getResultsByChild (/api/results/by-child/{childId})
+      const resultsMap = new Map<number, ResultResponse[]>();
+      if (fetchedChildren.length > 0) {
+        const resultPromises = fetchedChildren.map(async (c) => {
+          const res = await getResultsByChild(c.id);
+          if (res.success && res.data) {
+            resultsMap.set(c.id, res.data);
+          }
+        });
+        await Promise.all(resultPromises);
+      }
+      setAllResultsMap(resultsMap);
+
+      // 4. Fetch ChildSpeechAccuracies per child using getSpeechAccuracyByChild
+      const speechMap = new Map<number, ChildSpeechAccuracyResponse[]>();
+      if (fetchedChildren.length > 0) {
+        const speechPromises = fetchedChildren.map(async (c) => {
+          const res = await getSpeechAccuracyByChild(c.id);
+          if (res.success && res.data) {
+            speechMap.set(c.id, res.data);
+          }
+        });
+        await Promise.all(speechPromises);
+      }
+      setSpeechAccuraciesMap(speechMap);
+
+      // Map to Analysis state format 100% strictly computed from VR Results API (/api/results/by-child/{childId})
+      const mappedAnalyses: Analysis[] = fetchedChildren.map(c => {
+        const analyzeObj = allAnalyses.find(a => a.childId === c.id);
+        const childResults = resultsMap.get(c.id) || [];
+        const totalEx = childResults.length;
+        const completedEx = childResults.filter(
+          r => r.completionStatus === 'Completed' || (r.score !== undefined && r.score >= 50)
+        ).length;
+        const totalDurationSec = childResults.reduce((sum, r) => sum + (r.durationSeconds || 0), 0);
+        const totalPracticeMin = Math.round(totalDurationSec / 60);
+
+        // STRICT COMPUTATION ONLY FROM VR RESULTS API:
+        const avgScore = totalEx > 0
+          ? Math.round(childResults.reduce((sum, r) => sum + (r.score || 0), 0) / totalEx)
+          : 0;
+
         const progressLevel: Analysis['ProgressLevel'] =
-          (a.pronunciationAbility === 'Good' || a.pronunciationAbility === 'Excellent') ? 'Improving' :
-            (a.pronunciationAbility === 'Average') ? 'Stable' : 'Need Support';
+          totalEx === 0 ? 'Need Support' :
+            avgScore >= 75 ? 'Improving' :
+              avgScore >= 50 ? 'Stable' : 'Need Support';
 
         return {
-          AnalysisId: String(a.id),
-          ChildId: String(a.childId),
-          TotalExercises: 15,
-          CompletedExercises: 12,
-          TotalPracticeTime: 240,
-          AverageScore: score,
+          AnalysisId: analyzeObj ? String(analyzeObj.id) : String(c.id),
+          ChildId: String(c.id),
+          TotalExercises: totalEx,
+          CompletedExercises: completedEx,
+          TotalPracticeTime: totalPracticeMin,
+          AverageScore: avgScore,
           ProgressLevel: progressLevel,
-          Strengths: a.strengths || 'Chưa ghi nhận điểm mạnh cụ thể.',
-          Weaknesses: a.weaknesses || 'Chưa ghi nhận điểm yếu cụ thể.',
-          Recommendation: a.recommendation || 'Tiếp tục luyện tập các bài học VR hàng ngày.',
-          LastAnalyzedAt: formatDateStr(a.assessmentDate),
-          CreatedAt: a.createdAt,
-          UpdatedAt: a.updatedAt || a.createdAt
+          Strengths: analyzeObj?.strengths || 'Chưa ghi nhận điểm mạnh cụ thể.',
+          Weaknesses: analyzeObj?.weaknesses || 'Chưa ghi nhận điểm yếu cụ thể.',
+          Recommendation: analyzeObj?.recommendation || 'Tiếp tục luyện tập các bài học VR hàng ngày.',
+          LastAnalyzedAt: analyzeObj ? formatDateStr(analyzeObj.assessmentDate) : (childResults.length > 0 && childResults[0].completedAt ? formatDateStr(childResults[0].completedAt) : 'Chưa kiểm định'),
+          CreatedAt: analyzeObj?.createdAt || '',
+          UpdatedAt: analyzeObj?.updatedAt || analyzeObj?.createdAt || ''
         };
       });
       setAnalyses(mappedAnalyses);
@@ -435,6 +510,9 @@ export default function ProgressAnalysis() {
   // Filtered list of analysis rows to feed the table
   const filteredAnalysesList = useMemo(() => {
     return analyses.filter(item => {
+      // Ẩn hoàn toàn các trẻ chưa có dữ liệu bài tập VR nào (TotalExercises === 0)
+      if (item.TotalExercises === 0) return false;
+
       const kid = getChildDetails(item.ChildId);
 
       // Filter by role scope first
@@ -478,7 +556,7 @@ export default function ProgressAnalysis() {
     });
   }, [filteredAnalysesList, sortColumn, sortDirection]);
 
-  // Aggregate stats derived from filtered elements
+  // Aggregate stats derived from filtered elements (100% from VR API)
   const metrics = useMemo(() => {
     const subset = analyses.filter(item => {
       const inRole = getRoleFilteredChildren.some(c => c.ChildId === item.ChildId);
@@ -500,7 +578,8 @@ export default function ProgressAnalysis() {
     const totalEx = subset.reduce((acc, curr) => acc + curr.TotalExercises, 0);
     const completedEx = subset.reduce((acc, curr) => acc + curr.CompletedExercises, 0);
     const practiceTime = subset.reduce((acc, curr) => acc + curr.TotalPracticeTime, 0);
-    const avgScore = subset.length > 0 ? Math.round(subset.reduce((acc, curr) => acc + curr.AverageScore, 0) / subset.length) : 0;
+    const itemsWithEx = subset.filter(curr => curr.TotalExercises > 0);
+    const avgScore = itemsWithEx.length > 0 ? Math.round(itemsWithEx.reduce((acc, curr) => acc + curr.AverageScore, 0) / itemsWithEx.length) : 0;
 
     let level = 'Stable';
     const activeLevelCounts = subset.reduce((acc, curr) => {
@@ -525,6 +604,84 @@ export default function ProgressAnalysis() {
       level
     };
   }, [analyses, selectedChildId, getRoleFilteredChildren]);
+
+  // Weekly aggregation for Left & Right Charts (strictly filtered within current week bounds)
+  const weeklyChartData = useMemo(() => {
+    const daysOrder = [
+      { key: 'T2', dayIndex: 1, name: 'Thứ 2' },
+      { key: 'T3', dayIndex: 2, name: 'Thứ 3' },
+      { key: 'T4', dayIndex: 3, name: 'Thứ 4' },
+      { key: 'T5', dayIndex: 4, name: 'Thứ 5' },
+      { key: 'T6', dayIndex: 5, name: 'Thứ 6' },
+      { key: 'T7', dayIndex: 6, name: 'Thứ 7' },
+      { key: 'CN', dayIndex: 0, name: 'Chủ Nhật' },
+    ];
+
+    // Compute current week bounds (Monday 00:00:00 to Sunday 23:59:59)
+    const now = new Date();
+    const currentDay = now.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+    const distanceToMon = currentDay === 0 ? -6 : 1 - currentDay;
+
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() + distanceToMon);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    const targetChildIds: number[] = [];
+    if (selectedChildId !== 'ALL') {
+      targetChildIds.push(Number(selectedChildId));
+    } else {
+      getRoleFilteredChildren.forEach(c => targetChildIds.push(Number(c.ChildId)));
+    }
+
+    let relevantResults: ResultResponse[] = [];
+    let relevantSpeech: ChildSpeechAccuracyResponse[] = [];
+
+    targetChildIds.forEach(id => {
+      const resList = allResultsMap.get(id);
+      if (resList) relevantResults.push(...resList);
+      const accList = speechAccuraciesMap.get(id);
+      if (accList) relevantSpeech.push(...accList);
+    });
+
+    return daysOrder.map(dayObj => {
+      const dayResults = relevantResults.filter(r => {
+        const dateStr = r.startedAt || r.completedAt;
+        if (!dateStr) return false;
+        const dt = new Date(dateStr);
+        // Only include results that fall strictly within the current week
+        if (dt < startOfWeek || dt > endOfWeek) return false;
+        return dt.getDay() === dayObj.dayIndex;
+      });
+
+      const dayMins = Math.round(dayResults.reduce((sum, r) => sum + (r.durationSeconds || 0), 0) / 60);
+      const dayScoreAvg = dayResults.length > 0
+        ? Math.round(dayResults.reduce((sum, r) => sum + (r.score || 0), 0) / dayResults.length)
+        : 0;
+
+      const daySpeech = relevantSpeech.filter(s => {
+        if (!s.createdAt) return false;
+        const dt = new Date(s.createdAt);
+        if (dt < startOfWeek || dt > endOfWeek) return false;
+        return dt.getDay() === dayObj.dayIndex;
+      });
+
+      const accuracyAvg = daySpeech.length > 0
+        ? Math.round(daySpeech.reduce((sum, s) => sum + (s.accuracyScore || 0), 0) / daySpeech.length)
+        : 0;
+
+      return {
+        day: dayObj.key,
+        name: dayObj.name,
+        mins: dayMins,
+        score: dayScoreAvg,
+        accuracy: accuracyAvg
+      };
+    });
+  }, [allResultsMap, speechAccuraciesMap, selectedChildId, getRoleFilteredChildren]);
 
   // Render state indicator badges
   const renderProgressLevelBadge = (level: Analysis['ProgressLevel'] | string) => {
@@ -597,7 +754,7 @@ export default function ProgressAnalysis() {
       </AnimatePresence>
 
       {/* Header Block showcasing beautiful modern rounded theme */}
-      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm relative z-20">
 
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
@@ -614,18 +771,19 @@ export default function ProgressAnalysis() {
             <Baby className="w-5 h-5" />
           </div>
           <div className="space-y-1">
-            <h4 className="font-bold text-[10px] text-slate-400 uppercase tracking-wider leading-none">Học viên rèn luyện:</h4>
+            <h4 className="font-bold text-[10px] text-slate-400 uppercase tracking-wider leading-none">Học sinh rèn luyện:</h4>
             <CustomSelect
               value={selectedChildId}
               onChange={(val) => {
                 setSelectedChildId(val);
-                showToast(`Đã tải dải dữ liệu của học viên: ${val === 'ALL' ? 'Tất cả học viên' : getChildDetails(val).FullName}`, 'success');
+                showToast(`Đã tải dải dữ liệu của Học sinh: ${val === 'ALL' ? 'Tất cả Học sinh' : getChildDetails(val).FullName}`, 'success');
               }}
               options={[
-                { value: 'ALL', label: '🌟 TẤT CẢ HỌC SINH MẦM NON' },
+                { value: 'ALL', label: '🌟 TẤT CẢ HỌC SINH' },
                 ...getRoleFilteredChildren.map((kd) => ({
                   value: kd.ChildId,
-                  label: `👶 ${kd.FullName} (${kd.Age}t) - ${kd.LearningLevel}`
+                  label: `${kd.FullName} (${kd.Age}t)`,
+                  avatarUrl: resolveAvatarUrl(kd.Avatar, kd.FullName, 'bottts')
                 }))
               ]}
               className="min-w-[240px] font-black"
@@ -677,7 +835,102 @@ export default function ProgressAnalysis() {
 
       </div>
 
+      {/* 4. Dual Analytical Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
+        {/* Left Chart: Bar Chart for Score & Practice Duration */}
+        <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-[#4EACAF]/10 rounded-xl flex items-center justify-center text-[#4EACAF]">
+                <Activity className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-slate-800 text-base leading-tight">Điểm số & Thời lượng rèn luyện</h3>
+                <p className="text-xs text-slate-400 font-medium">Thống kê theo các ngày trong tuần</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 text-xs font-bold">
+              <div className="flex items-center gap-1.5 text-[#4EACAF]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#4EACAF] inline-block" />
+                <span>Thời lượng (phút)</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[#FF8E8E]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#FF8E8E] inline-block" />
+                <span>Điểm số (đ)</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="h-64 w-full pt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weeklyChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12, fontWeight: 700 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12 }} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1E293B', borderRadius: '12px', color: '#fff', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2)' }}
+                  labelStyle={{ fontWeight: 800, color: '#94A3B8' }}
+                  formatter={(val: any, name: any) => [name === 'mins' ? `${val} phút` : `${val} điểm`, name === 'mins' ? 'Thời lượng VR' : 'Điểm số trung bình']}
+                />
+                <Bar dataKey="mins" name="mins" fill="#4EACAF" radius={[6, 6, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="score" name="score" fill="#FF8E8E" radius={[6, 6, 0, 0]} maxBarSize={28} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Right Chart: Area Chart for Speech Accuracy matching Image 2 */}
+        <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-cyan-50 rounded-xl flex items-center justify-center text-[#20D0D4]">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-slate-800 text-base leading-tight">Hoạt động luyện tập hàng tuần</h3>
+                <p className="text-xs text-slate-400 font-medium">Độ chính xác phát âm khi nói (ChildSpeechAccuracies API)</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[#20D0D4]">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#20D0D4] inline-block animate-pulse" />
+              <span>Độ chính xác (%)</span>
+            </div>
+          </div>
+
+          <div className="h-64 w-full pt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={weeklyChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorAccuracy" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#20D0D4" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#20D0D4" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12, fontWeight: 700 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12 }} domain={[0, 100]} tickFormatter={(val) => `${val}%`} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1E293B', borderRadius: '12px', color: '#fff', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2)' }}
+                  formatter={(val: any) => [`${val}%`, 'Độ chính xác phát âm']}
+                  labelStyle={{ fontWeight: 800, color: '#94A3B8' }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="accuracy"
+                  stroke="#20D0D4"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorAccuracy)"
+                  dot={{ r: 4, fill: '#20D0D4', strokeWidth: 2, stroke: '#FFFFFF' }}
+                  activeDot={{ r: 6, fill: '#20D0D4', strokeWidth: 2, stroke: '#FFFFFF' }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+      </div>
 
       {/* 6. Multi functional search & search filter options for the table analysis rows */}
       <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex flex-col md:flex-row gap-3" id="table-search-box-wrap">
@@ -693,47 +946,46 @@ export default function ProgressAnalysis() {
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-gray-250 hover:bg-gray-200 rounded-full transition-colors font-sans hover:text-rose-500"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
             >
-              <X className="w-3.5 h-3.5 text-gray-500" />
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
 
-        {/* Progress level dropdown selector */}
-        <CustomSelect
-          value={filterProgressLevel}
-          onChange={setFilterProgressLevel}
-          options={[
-            { value: 'ALL', label: 'MỨC TIẾN TRÌNH (TẤT CẢ)' },
-            { value: 'Improving', label: 'ĐANG TIẾN BỘ' },
-            { value: 'Stable', label: 'ỔN ĐỊNH' },
-            { value: 'Need Support', label: 'CẦN HỖ TRỢ' }
-          ]}
-          className="w-full md:w-56"
-        />
+        <div className="flex items-center gap-2">
+          {/* Progress level dropdown selector */}
+          <CustomSelect
+            value={filterProgressLevel}
+            onChange={setFilterProgressLevel}
+            options={[
+              { value: 'ALL', label: 'MỨC TIẾN TRÌNH (TẤT CẢ)' },
+              { value: 'Improving', label: 'ĐANG TIẾN BỘ' },
+              { value: 'Stable', label: 'ỔN ĐỊNH' },
+              { value: 'Need Support', label: 'CẦN HỖ TRỢ' }
+            ]}
+            className="w-full md:w-56"
+          />
 
-        {/* Refresh parameters */}
-        {(searchQuery || filterProgressLevel !== 'ALL') && (
-          <button
-            onClick={() => {
-              setSearchQuery('');
-              setFilterProgressLevel('ALL');
-              showToast('Đã dọn dẹp các màng lọc bảng!', 'info');
-            }}
-            className="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <ListRestart className="w-4 h-4" />
-            Xóa lọc
-          </button>
-        )}
+          {/* Refresh parameters */}
+          {(searchQuery || filterProgressLevel !== 'ALL') && (
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setFilterProgressLevel('ALL');
+                showToast('Đã dọn dẹp các màng lọc bảng!', 'info');
+              }}
+              className="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <ListRestart className="w-4 h-4" />
+            </button>
+          )}
+        </div>
 
       </div>
 
       {/* 6. Robust Table list of historical and current Analysis instances */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden" id="analysis-table-block">
-
-        
 
         {filteredAnalysesList.length === 0 ? (
           <div className="py-24 text-center space-y-4">
@@ -754,7 +1006,7 @@ export default function ProgressAnalysis() {
                     title="Sắp xếp theo Mã phân tích"
                   >
                     <div className="flex items-center gap-1.5">
-                      Mã phân tích
+                      ID
                       {sortColumn === 'AnalysisId' ? (
                         sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
                       ) : (
@@ -833,20 +1085,6 @@ export default function ProgressAnalysis() {
                       )}
                     </div>
                   </th>
-                  <th
-                    onClick={() => handleSort('LastAnalyzedAt')}
-                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
-                    title="Sắp xếp theo Thời điểm kiểm định"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      Thời điểm kiểm định
-                      {sortColumn === 'LastAnalyzedAt' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
-                      ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
-                      )}
-                    </div>
-                  </th>
                   <th className="py-5 px-10 text-right select-none">Tùy chọn</th>
                 </tr>
               </thead>
@@ -865,52 +1103,64 @@ export default function ProgressAnalysis() {
 
                       {/* Child spec */}
                       <td className="py-5 px-6">
-                        <div className="text-gray-900 font-extrabold text-sm md:text-base leading-none">
-                          {subChild.FullName}
-                        </div>
-                        <span className="text-[10px] text-gray-400 tracking-tight font-medium">
-                          Tuổi: {subChild.Age} | Trình độ: {subChild.LearningLevel}
-                        </span>
-                      </td>
-
-                      {/* Total Exercises */}
-                      <td className="py-5 px-6 text-center font-mono text-gray-500">
-                        {anItem.TotalExercises} ải
-                      </td>
-
-                      {/* Completed Exercises */}
-                      <td className="py-5 px-6 text-center font-mono text-emerald-600">
-                        {anItem.CompletedExercises} ải
-                      </td>
-
-                      {/* Percentage gauge info */}
-                      <td className="py-5 px-6 text-center">
-                        <div className="space-y-1 inline-block">
-                          <span className="text-xs font-black text-gray-700">{completionPercentage}%</span>
-                          <div className="w-16 h-1 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${completionPercentage}%` }} />
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={resolveAvatarUrl(subChild.Avatar, subChild.FullName, 'bottts')}
+                            alt={subChild.FullName}
+                            className="w-9 h-9 rounded-full object-cover border border-slate-200 shrink-0 shadow-xs"
+                          />
+                          <div>
+                            <div className="text-gray-900 font-extrabold text-sm md:text-base leading-none">
+                              {subChild.FullName}
+                            </div>
+                            <span className="text-[10px] text-gray-400 tracking-tight font-medium">
+                              Tuổi: {subChild.Age} | Trình độ: {subChild.LearningLevel}
+                            </span>
                           </div>
                         </div>
                       </td>
 
+                      {/* Total Exercises */}
+                      <td className="py-5 px-6 text-center font-mono text-gray-500">
+                        {anItem.TotalExercises > 0 ? `${anItem.TotalExercises} ải` : '--'}
+                      </td>
+
+                      {/* Completed Exercises */}
+                      <td className="py-5 px-6 text-center font-mono text-emerald-600">
+                        {anItem.TotalExercises > 0 ? `${anItem.CompletedExercises} ải` : '--'}
+                      </td>
+
+                      {/* Percentage gauge info */}
+                      <td className="py-5 px-6 text-center">
+                        {anItem.TotalExercises > 0 ? (
+                          <div className="space-y-1 inline-block">
+                            <span className="text-xs font-black text-gray-700">{completionPercentage}%</span>
+                            <div className="w-16 h-1 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${completionPercentage}%` }} />
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs font-bold text-gray-400">--</span>
+                        )}
+                      </td>
+
                       {/* Avg Score rating */}
                       <td className="py-5 px-6 text-center">
-                        <span className={cn(
-                          "font-black text-base italic",
-                          anItem.AverageScore >= 85 ? 'text-[#34A853]' : anItem.AverageScore >= 60 ? 'text-[#20D0D4]' : 'text-[#FF8E8E]'
-                        )}>
-                          {anItem.AverageScore} đ
-                        </span>
+                        {anItem.TotalExercises > 0 ? (
+                          <span className={cn(
+                            "font-black text-base italic",
+                            anItem.AverageScore >= 85 ? 'text-[#34A853]' : anItem.AverageScore >= 60 ? 'text-[#20D0D4]' : 'text-[#FF8E8E]'
+                          )}>
+                            {anItem.AverageScore} đ
+                          </span>
+                        ) : (
+                          <span className="text-xs font-bold text-gray-400">--</span>
+                        )}
                       </td>
 
                       {/* State status badge */}
                       <td className="py-5 px-6">
                         {renderProgressLevelBadge(anItem.ProgressLevel)}
-                      </td>
-
-                      {/* Stamp check date */}
-                      <td className="py-5 px-6 text-xs text-gray-400 font-medium">
-                        {anItem.LastAnalyzedAt}
                       </td>
 
                       {/* Action buttons */}
@@ -1020,12 +1270,12 @@ export default function ProgressAnalysis() {
 
                   <div className="bg-slate-50 p-4 rounded-2xl">
                     <span className="text-[10px] text-gray-450 block uppercase font-black tracking-wider mb-1">Mục bài thi cử</span>
-                    <strong className="text-slate-800 font-black text-lg">{selectedAnalysis.TotalExercises} cụm bài</strong>
+                    <strong className="text-slate-800 font-black text-lg">{selectedAnalysis.TotalExercises} bài</strong>
                   </div>
 
                   <div className="bg-slate-50 p-4 rounded-2xl">
                     <span className="text-[10px] text-gray-450 block uppercase font-black tracking-wider mb-1">Đã hoàn thành đạt</span>
-                    <strong className="text-emerald-650 font-black text-lg">{selectedAnalysis.CompletedExercises} cụm bài</strong>
+                    <strong className="text-emerald-650 font-black text-lg">{selectedAnalysis.CompletedExercises} bài</strong>
                   </div>
 
                   <div className="bg-slate-50 p-4 rounded-2xl">

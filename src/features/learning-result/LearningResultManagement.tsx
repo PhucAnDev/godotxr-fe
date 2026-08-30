@@ -32,6 +32,7 @@ import CustomSelect from '../../components/common/CustomSelect';
 import { useLearningResultApi } from '../../hooks/useLearningResultApi';
 import { getSessionUser } from '../../lib/authSession';
 import { getLessons } from '../../services/lessonService';
+import { getSpeechAccuracyBySession } from '../../services/childSpeechAccuracyService';
 import type { ChildProfileResponse } from '../../services/childProfileService';
 import type { ResultResponse } from '../../services/resultService';
 import type { LessonResponse } from '../../services/lessonService';
@@ -421,6 +422,36 @@ export default function LearningResultManagement() {
           })
         );
         setChunks(formattedChunks);
+
+        // Fetch pre-stored speech accuracy entries from DB for this session
+        try {
+          const accuracyRes = await getSpeechAccuracyBySession(res.SessionId);
+          if (accuracyRes.success && accuracyRes.data && accuracyRes.data.length > 0) {
+            const groupedByChunk: Record<number, any> = {};
+            accuracyRes.data.forEach(item => {
+              const cIndex = item.audioChunkIndex ?? 0;
+              if (!groupedByChunk[cIndex]) {
+                groupedByChunk[cIndex] = {
+                  PronunciationAssessment: {
+                    AccuracyScore: item.accuracyScore,
+                    FluencyScore: item.fluencyScore ?? 0,
+                    PronunciationScore: item.pronunciationScore ?? 0,
+                    CompletenessScore: item.completenessScore ?? 0,
+                  },
+                  Words: []
+                };
+              }
+              groupedByChunk[cIndex].Words.push({
+                Word: item.word,
+                AccuracyScore: item.accuracyScore,
+                ErrorType: item.errorType
+              });
+            });
+            setChunkAssessments(prev => ({ ...groupedByChunk, ...prev }));
+          }
+        } catch (err) {
+          console.error('Error fetching stored speech accuracy:', err);
+        }
 
         // Automatically trigger AI assessment for each chunk in parent view
         if (getStoredRoleView() === 'PARENT') {

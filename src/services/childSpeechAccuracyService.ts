@@ -50,6 +50,11 @@ export const getSpeechAccuracyBySession = (sessionId: string) =>
 export const getSpeechAccuracyByLesson = (lessonId: number) =>
   request<ChildSpeechAccuracyResponse[]>(`/api/ChildSpeechAccuracies/lesson/${lessonId}`);
 
+export const getSpeechAccuracyByChunk = (childProfileId: number, sessionId: string, audioChunkIndex: number) =>
+  request<ChildSpeechAccuracyResponse[]>(
+    `/api/ChildSpeechAccuracies/search?childProfileId=${childProfileId}&sessionId=${encodeURIComponent(sessionId)}&audioChunkIndex=${audioChunkIndex}`
+  );
+
 export const createSpeechAccuracy = (payload: CreateChildSpeechAccuracyPayload) =>
   request<ChildSpeechAccuracyResponse>('/api/ChildSpeechAccuracies', {
     method: 'POST',
