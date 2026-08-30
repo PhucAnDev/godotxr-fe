@@ -432,19 +432,34 @@ export default function LearningResultManagement() {
               const cIndex = item.audioChunkIndex ?? 0;
               if (!groupedByChunk[cIndex]) {
                 groupedByChunk[cIndex] = {
+                  accuracyScore: item.accuracyScore,
+                  AccuracyScore: item.accuracyScore,
+                  pronunciationScore: item.pronunciationScore ?? 0,
+                  PronunciationScore: item.pronunciationScore ?? 0,
+                  fluencyScore: item.fluencyScore ?? 0,
+                  FluencyScore: item.fluencyScore ?? 0,
+                  completenessScore: item.completenessScore ?? 0,
+                  CompletenessScore: item.completenessScore ?? 0,
                   PronunciationAssessment: {
                     AccuracyScore: item.accuracyScore,
+                    accuracyScore: item.accuracyScore,
                     FluencyScore: item.fluencyScore ?? 0,
+                    fluencyScore: item.fluencyScore ?? 0,
                     PronunciationScore: item.pronunciationScore ?? 0,
+                    pronunciationScore: item.pronunciationScore ?? 0,
                     CompletenessScore: item.completenessScore ?? 0,
+                    completenessScore: item.completenessScore ?? 0,
                   },
                   Words: []
                 };
               }
               groupedByChunk[cIndex].Words.push({
                 Word: item.word,
+                word: item.word,
                 AccuracyScore: item.accuracyScore,
-                ErrorType: item.errorType
+                accuracyScore: item.accuracyScore,
+                ErrorType: item.errorType,
+                errorType: item.errorType
               });
             });
             setChunkAssessments(prev => ({ ...groupedByChunk, ...prev }));
@@ -1177,76 +1192,94 @@ export default function LearningResultManagement() {
                             )}
 
                             {/* Assessment scores presentation layout */}
-                            {assessment && (
-                              <div className="p-4 bg-white border border-slate-200/85 rounded-xl space-y-3 animate-in fade-in duration-300">
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                                  <div className="p-2 bg-emerald-50/50 rounded-lg border border-emerald-100/50">
-                                    <div className="text-xs font-bold text-slate-450">Độ chính xác</div>
-                                    <div className="text-sm font-black text-emerald-600 mt-0.5">
-                                      {assessment.pronunciationAssessment?.accuracyScore ??
-                                        assessment.PronunciationAssessment?.AccuracyScore ??
-                                        assessment.AccuracyScore ?? 0}%
+                            {assessment && (() => {
+                              const accuracyVal = assessment.accuracyScore ??
+                                assessment.AccuracyScore ??
+                                assessment.pronunciationAssessment?.accuracyScore ??
+                                assessment.PronunciationAssessment?.AccuracyScore ?? 0;
+
+                              const pronVal = assessment.pronunciationScore ??
+                                assessment.PronunciationScore ??
+                                assessment.pronScore ??
+                                assessment.PronScore ??
+                                assessment.pronunciationAssessment?.pronunciationScore ??
+                                assessment.PronunciationAssessment?.PronScore ??
+                                assessment.PronunciationAssessment?.PronunciationScore ?? 0;
+
+                              const fluencyVal = assessment.fluencyScore ??
+                                assessment.FluencyScore ??
+                                assessment.pronunciationAssessment?.fluencyScore ??
+                                assessment.PronunciationAssessment?.FluencyScore ?? 0;
+
+                              const completenessVal = assessment.completenessScore ??
+                                assessment.CompletenessScore ??
+                                assessment.pronunciationAssessment?.completenessScore ??
+                                assessment.PronunciationAssessment?.CompletenessScore ?? 0;
+
+                              return (
+                                <div className="p-4 bg-white border border-slate-200/85 rounded-xl space-y-3 animate-in fade-in duration-300">
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                                    <div className="p-2 bg-emerald-50/50 rounded-lg border border-emerald-100/50">
+                                      <div className="text-xs font-bold text-slate-450">Độ chính xác</div>
+                                      <div className="text-sm font-black text-emerald-600 mt-0.5">
+                                        {accuracyVal}%
+                                      </div>
+                                    </div>
+                                    <div className="p-2 bg-indigo-50/50 rounded-lg border border-indigo-100/50">
+                                      <div className="text-xs font-bold text-slate-450">Phát âm</div>
+                                      <div className="text-sm font-black text-indigo-600 mt-0.5">
+                                        {pronVal}%
+                                      </div>
+                                    </div>
+                                    <div className="p-2 bg-purple-50/50 rounded-lg border border-purple-100/50">
+                                      <div className="text-xs font-bold text-slate-450">Trôi chảy</div>
+                                      <div className="text-sm font-black text-purple-600 mt-0.5">
+                                        {fluencyVal}%
+                                      </div>
+                                    </div>
+                                    <div className="p-2 bg-teal-50/50 rounded-lg border border-teal-100/50">
+                                      <div className="text-xs font-bold text-slate-450">Hoàn thành</div>
+                                      <div className="text-sm font-black text-teal-600 mt-0.5">
+                                        {completenessVal}%
+                                      </div>
                                     </div>
                                   </div>
-                                  <div className="p-2 bg-indigo-50/50 rounded-lg border border-indigo-100/50">
-                                    <div className="text-xs font-bold text-slate-450">Phát âm</div>
-                                    <div className="text-sm font-black text-indigo-600 mt-0.5">
-                                      {assessment.pronunciationAssessment?.pronunciationScore ??
-                                        assessment.PronunciationAssessment?.PronunciationScore ??
-                                        assessment.PronScore ??
-                                        assessment.PronunciationScore ?? 0}%
-                                    </div>
-                                  </div>
-                                  <div className="p-2 bg-purple-50/50 rounded-lg border border-purple-100/50">
-                                    <div className="text-xs font-bold text-slate-450">Trôi chảy</div>
-                                    <div className="text-sm font-black text-purple-600 mt-0.5">
-                                      {assessment.pronunciationAssessment?.fluencyScore ??
-                                        assessment.PronunciationAssessment?.FluencyScore ??
-                                        assessment.FluencyScore ?? 0}%
-                                    </div>
-                                  </div>
-                                  <div className="p-2 bg-teal-50/50 rounded-lg border border-teal-100/50">
-                                    <div className="text-xs font-bold text-slate-450">Hoàn thành</div>
-                                    <div className="text-sm font-black text-teal-600 mt-0.5">
-                                      {assessment.pronunciationAssessment?.completenessScore ??
-                                        assessment.PronunciationAssessment?.CompletenessScore ??
-                                        assessment.CompletenessScore ?? 0}%
+
+                                  <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                                    <div className="text-xs font-bold text-slate-400">Chi tiết phát âm cụm từ của AI:</div>
+                                    <div className="flex flex-wrap gap-2">
+                                      {(assessment.words || assessment.Words || []).map((wObj: any, wIdx: number) => {
+                                        const wordText = wObj.word || wObj.Word;
+                                        const score = wObj.accuracyScore ??
+                                          wObj.AccuracyScore ??
+                                          wObj.pronunciationAssessment?.accuracyScore ??
+                                          wObj.PronunciationAssessment?.AccuracyScore ??
+                                          accuracyVal;
+                                        const isCorrect = score >= 80;
+                                        const isMedium = score >= 50 && score < 80;
+
+                                        return (
+                                          <div
+                                            key={wIdx}
+                                            className={cn(
+                                              "px-2.5 py-1 rounded-lg border font-bold text-xs flex items-center gap-1.5 shadow-sm",
+                                              isCorrect
+                                                ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                                : isMedium
+                                                  ? "bg-amber-50 text-amber-700 border-amber-100"
+                                                  : "bg-rose-50 text-rose-700 border-rose-100"
+                                            )}
+                                          >
+                                            <span>{wordText}</span>
+                                            <span className="text-[10px] opacity-70">({score})</span>
+                                          </div>
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                 </div>
-
-                                <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                                  <div className="text-xs font-bold text-slate-400">Chi tiết phát âm cụm từ của AI:</div>
-                                  <div className="flex flex-wrap gap-2">
-                                    {(assessment.words || assessment.Words || []).map((wObj: any, wIdx: number) => {
-                                      const wordText = wObj.word || wObj.Word;
-                                      const score = wObj.pronunciationAssessment?.accuracyScore ??
-                                        wObj.PronunciationAssessment?.AccuracyScore ??
-                                        wObj.AccuracyScore ?? 0;
-                                      const isCorrect = score >= 80;
-                                      const isMedium = score >= 50 && score < 80;
-
-                                      return (
-                                        <div
-                                          key={wIdx}
-                                          className={cn(
-                                            "px-2.5 py-1 rounded-lg border font-bold text-xs flex items-center gap-1.5 shadow-sm",
-                                            isCorrect
-                                              ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                                              : isMedium
-                                                ? "bg-amber-50 text-amber-700 border-amber-100"
-                                                : "bg-rose-50 text-rose-700 border-rose-100"
-                                          )}
-                                        >
-                                          <span>{wordText}</span>
-                                          <span className="text-[10px] opacity-70">({score})</span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
+                              );
+                            })()}
                           </div>
                         </div>
                       );
