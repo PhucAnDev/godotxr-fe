@@ -462,7 +462,7 @@ export default function LearningResultManagement() {
                 errorType: item.errorType
               });
             });
-            setChunkAssessments(prev => ({ ...groupedByChunk, ...prev }));
+            setChunkAssessments(prev => ({ ...prev, ...groupedByChunk }));
           }
         } catch (err) {
           console.error('Error fetching stored speech accuracy:', err);
