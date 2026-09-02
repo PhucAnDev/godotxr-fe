@@ -30,7 +30,11 @@ import {
   FileSpreadsheet,
   ArrowUp,
   ArrowDown,
-  ArrowUpDown
+  ArrowUpDown,
+  Mic,
+  Volume2,
+  BookOpen,
+  Filter
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -51,6 +55,7 @@ import { getMyChildProfiles, getChildProfiles } from '../../services/childProfil
 import { getAnalyzesByChildId, getAnalyzes } from '../../services/analyzeService';
 import { getResultsByChild, type ResultResponse } from '../../services/resultService';
 import { getLessons } from '../../services/lessonService';
+import { getSemesters, type SemesterResponse } from '../../services/semesterService';
 import { getSpeechAccuracyByChild, type ChildSpeechAccuracyResponse } from '../../services/childSpeechAccuracyService';
 import type { ChildProfileResponse } from '../../services/childProfileService';
 import type { AnalyzeResponse } from '../../services/analyzeService';
@@ -125,9 +130,18 @@ export default function ProgressAnalysis() {
   // Maps for chart aggregation
   const [allResultsMap, setAllResultsMap] = useState<Map<number, ResultResponse[]>>(new Map());
   const [speechAccuraciesMap, setSpeechAccuraciesMap] = useState<Map<number, ChildSpeechAccuracyResponse[]>>(new Map());
+  const [allLessons, setAllLessons] = useState<LessonResponse[]>([]);
+  const [dbSemesters, setDbSemesters] = useState<SemesterResponse[]>([]);
 
   // Selector state
   const [selectedChildId, setSelectedChildId] = useState<string>('ALL');
+
+  // Speech Accuracy Specific Filter States
+  const [speechSelectedLessonId, setSpeechSelectedLessonId] = useState<string>('ALL');
+  const [speechTimeframe, setSpeechTimeframe] = useState<'week' | 'month' | 'semester'>('week');
+  const [speechSemester, setSpeechSemester] = useState<string>('HK1');
+  const [speechMonth, setSpeechMonth] = useState<number>(new Date().getMonth());
+  const [speechYear, setSpeechYear] = useState<number>(new Date().getFullYear());
 
   // Search & Filter table parameters
   const [searchQuery, setSearchQuery] = useState('');
@@ -354,6 +368,14 @@ export default function ProgressAnalysis() {
     setIsLoading(true);
     try {
       let fetchedChildren: ChildProfileResponse[] = [];
+
+      // 0. Fetch lessons & semesters list from API for speech & timeframe dropdown filters
+      const [lessonsData, semestersData] = await Promise.all([
+        loadAllPages<LessonResponse>(getLessons).catch(() => [] as LessonResponse[]),
+        loadAllPages<SemesterResponse>(getSemesters).catch(() => [] as SemesterResponse[]),
+      ]);
+      setAllLessons(lessonsData);
+      setDbSemesters(semestersData);
 
       // 1. Fetch children based on role view
       if (currentRoleView === 'PARENT') {
@@ -683,6 +705,343 @@ export default function ProgressAnalysis() {
     });
   }, [allResultsMap, speechAccuraciesMap, selectedChildId, getRoleFilteredChildren]);
 
+  // Flexible Analytics for Both Charts (Filtering by Lesson & Timeframe: Week, Month, Semester)
+  const { speechChartData, vrResultsChartData, wordBreakdown, speechStatsSummary } = useMemo(() => {
+    const targetChildIds: number[] = [];
+    if (selectedChildId !== 'ALL') {
+      targetChildIds.push(Number(selectedChildId));
+    } else {
+      getRoleFilteredChildren.forEach(c => targetChildIds.push(Number(c.ChildId)));
+    }
+
+    let relevantSpeech: ChildSpeechAccuracyResponse[] = [];
+    let relevantResults: ResultResponse[] = [];
+
+    targetChildIds.forEach(id => {
+      const accList = speechAccuraciesMap.get(id);
+      if (accList) relevantSpeech.push(...accList);
+
+      const resList = allResultsMap.get(id);
+      if (resList) relevantResults.push(...resList);
+    });
+
+    // Filter by selected Lesson
+    if (speechSelectedLessonId !== 'ALL') {
+      const lessonIdNum = Number(speechSelectedLessonId);
+      relevantSpeech = relevantSpeech.filter(s => s.lessonId === lessonIdNum);
+      relevantResults = relevantResults.filter(r => r.lessonId === lessonIdNum);
+    }
+
+    let chartData: { label: string; name: string; accuracy: number; totalRecords: number }[] = [];
+    let vrChartData: { label: string; name: string; mins: number; score: number }[] = [];
+    let filteredByTimeframeSpeech: ChildSpeechAccuracyResponse[] = [];
+    let filteredByTimeframeResults: ResultResponse[] = [];
+
+    const now = new Date();
+
+    if (speechTimeframe === 'week') {
+      const currentDay = now.getDay();
+      const distanceToMon = currentDay === 0 ? -6 : 1 - currentDay;
+
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() + distanceToMon);
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+
+      filteredByTimeframeSpeech = relevantSpeech.filter(s => {
+        if (!s.createdAt) return false;
+        const dt = new Date(s.createdAt);
+        return dt >= startOfWeek && dt <= endOfWeek;
+      });
+
+      filteredByTimeframeResults = relevantResults.filter(r => {
+        const dateStr = r.startedAt || r.completedAt;
+        if (!dateStr) return false;
+        const dt = new Date(dateStr);
+        return dt >= startOfWeek && dt <= endOfWeek;
+      });
+
+      const daysOrder = [
+        { key: 'T2', dayIndex: 1, name: 'Thứ 2' },
+        { key: 'T3', dayIndex: 2, name: 'Thứ 3' },
+        { key: 'T4', dayIndex: 3, name: 'Thứ 4' },
+        { key: 'T5', dayIndex: 4, name: 'Thứ 5' },
+        { key: 'T6', dayIndex: 5, name: 'Thứ 6' },
+        { key: 'T7', dayIndex: 6, name: 'Thứ 7' },
+        { key: 'CN', dayIndex: 0, name: 'Chủ Nhật' },
+      ];
+
+      chartData = daysOrder.map(dayObj => {
+        const daySpeech = filteredByTimeframeSpeech.filter(s => {
+          const dt = new Date(s.createdAt);
+          return dt.getDay() === dayObj.dayIndex;
+        });
+
+        const accuracyAvg = daySpeech.length > 0
+          ? Math.round(daySpeech.reduce((sum, s) => sum + (s.accuracyScore || 0), 0) / daySpeech.length)
+          : 0;
+
+        return {
+          label: dayObj.key,
+          name: dayObj.name,
+          accuracy: accuracyAvg,
+          totalRecords: daySpeech.length
+        };
+      });
+
+      vrChartData = daysOrder.map(dayObj => {
+        const dayResults = filteredByTimeframeResults.filter(r => {
+          const dt = new Date(r.startedAt || r.completedAt || '');
+          return dt.getDay() === dayObj.dayIndex;
+        });
+
+        const dayMins = Math.round(dayResults.reduce((sum, r) => sum + (r.durationSeconds || 0), 0) / 60);
+        const dayScoreAvg = dayResults.length > 0
+          ? Math.round(dayResults.reduce((sum, r) => sum + (r.score || 0), 0) / dayResults.length)
+          : 0;
+
+        return {
+          label: dayObj.key,
+          name: dayObj.name,
+          mins: dayMins,
+          score: dayScoreAvg
+        };
+      });
+
+    } else if (speechTimeframe === 'month') {
+      const currentYear = speechYear;
+      const currentMonth = speechMonth;
+
+      const startOfMonth = new Date(currentYear, currentMonth, 1, 0, 0, 0, 0);
+      const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999);
+
+      filteredByTimeframeSpeech = relevantSpeech.filter(s => {
+        if (!s.createdAt) return false;
+        const formatted = s.createdAt.includes('T') ? s.createdAt : s.createdAt.replace(' ', 'T');
+        const dt = new Date(formatted);
+        return dt >= startOfMonth && dt <= endOfMonth;
+      });
+
+      filteredByTimeframeResults = relevantResults.filter(r => {
+        const dateStr = r.startedAt || r.completedAt;
+        if (!dateStr) return false;
+        const formatted = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T');
+        const dt = new Date(formatted);
+        return dt >= startOfMonth && dt <= endOfMonth;
+      });
+
+      const weeks = [
+        { key: 'Tuần 1', startDay: 1, endDay: 7, name: 'Tuần 1 (Ngày 1-7)' },
+        { key: 'Tuần 2', startDay: 8, endDay: 14, name: 'Tuần 2 (Ngày 8-14)' },
+        { key: 'Tuần 3', startDay: 15, endDay: 21, name: 'Tuần 3 (Ngày 15-21)' },
+        { key: 'Tuần 4', startDay: 22, endDay: 31, name: 'Tuần 4 (Ngày 22-31)' },
+      ];
+
+      chartData = weeks.map(wObj => {
+        const weekSpeech = filteredByTimeframeSpeech.filter(s => {
+          const formatted = s.createdAt.includes('T') ? s.createdAt : s.createdAt.replace(' ', 'T');
+          const day = new Date(formatted).getDate();
+          return day >= wObj.startDay && day <= wObj.endDay;
+        });
+
+        const accuracyAvg = weekSpeech.length > 0
+          ? Math.round(weekSpeech.reduce((sum, s) => sum + (s.accuracyScore || 0), 0) / weekSpeech.length)
+          : 0;
+
+        return {
+          label: wObj.key,
+          name: wObj.name,
+          accuracy: accuracyAvg,
+          totalRecords: weekSpeech.length
+        };
+      });
+
+      vrChartData = weeks.map(wObj => {
+        const weekResults = filteredByTimeframeResults.filter(r => {
+          const dateStr = r.startedAt || r.completedAt || '';
+          const formatted = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T');
+          const day = new Date(formatted).getDate();
+          return day >= wObj.startDay && day <= wObj.endDay;
+        });
+
+        const mins = Math.round(weekResults.reduce((sum, r) => sum + (r.durationSeconds || 0), 0) / 60);
+        const score = weekResults.length > 0
+          ? Math.round(weekResults.reduce((sum, r) => sum + (r.score || 0), 0) / weekResults.length)
+          : 0;
+
+        return {
+          label: wObj.key,
+          name: wObj.name,
+          mins,
+          score
+        };
+      });
+
+    } else {
+      const matchedSemester = dbSemesters.find(sem => String(sem.id) === speechSemester);
+
+      if (matchedSemester) {
+        const semStart = new Date(matchedSemester.startDate);
+        const semEnd = new Date(matchedSemester.endDate);
+
+        filteredByTimeframeSpeech = relevantSpeech.filter(s => {
+          if (!s.createdAt) return false;
+          const dt = new Date(s.createdAt);
+          return dt >= semStart && dt <= semEnd;
+        });
+
+        filteredByTimeframeResults = relevantResults.filter(r => {
+          const dateStr = r.startedAt || r.completedAt;
+          if (!dateStr) return false;
+          const dt = new Date(dateStr);
+          return dt >= semStart && dt <= semEnd;
+        });
+
+        const startMonth = semStart.getMonth();
+        const endMonth = semEnd.getMonth();
+        let allowedMonths: number[] = [];
+
+        if (startMonth <= endMonth) {
+          for (let m = startMonth; m <= endMonth; m++) allowedMonths.push(m);
+        } else {
+          for (let m = startMonth; m <= 11; m++) allowedMonths.push(m);
+          for (let m = 0; m <= endMonth; m++) allowedMonths.push(m);
+        }
+
+        const monthNames = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
+
+        chartData = allowedMonths.map(mIdx => {
+          const monthSpeech = filteredByTimeframeSpeech.filter(s => new Date(s.createdAt).getMonth() === mIdx);
+          const accuracyAvg = monthSpeech.length > 0
+            ? Math.round(monthSpeech.reduce((sum, s) => sum + (s.accuracyScore || 0), 0) / monthSpeech.length)
+            : 0;
+
+          return {
+            label: monthNames[mIdx],
+            name: `Tháng ${mIdx + 1}`,
+            accuracy: accuracyAvg,
+            totalRecords: monthSpeech.length
+          };
+        });
+
+        vrChartData = allowedMonths.map(mIdx => {
+          const monthResults = filteredByTimeframeResults.filter(r => new Date(r.startedAt || r.completedAt || '').getMonth() === mIdx);
+          const mins = Math.round(monthResults.reduce((sum, r) => sum + (r.durationSeconds || 0), 0) / 60);
+          const score = monthResults.length > 0
+            ? Math.round(monthResults.reduce((sum, r) => sum + (r.score || 0), 0) / monthResults.length)
+            : 0;
+
+          return {
+            label: monthNames[mIdx],
+            name: `Tháng ${mIdx + 1}`,
+            mins,
+            score
+          };
+        });
+      } else {
+        let allowedMonths: number[] = [];
+        if (speechSemester === 'HK1') {
+          allowedMonths = [8, 9, 10, 11, 0];
+        } else if (speechSemester === 'HK2') {
+          allowedMonths = [1, 2, 3, 4, 5];
+        } else {
+          allowedMonths = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+        }
+
+        filteredByTimeframeSpeech = relevantSpeech.filter(s => {
+          if (!s.createdAt) return false;
+          const m = new Date(s.createdAt).getMonth();
+          return allowedMonths.includes(m);
+        });
+
+        filteredByTimeframeResults = relevantResults.filter(r => {
+          const dateStr = r.startedAt || r.completedAt;
+          if (!dateStr) return false;
+          const m = new Date(dateStr).getMonth();
+          return allowedMonths.includes(m);
+        });
+
+        const monthNames = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
+
+        chartData = allowedMonths.map(mIdx => {
+          const monthSpeech = filteredByTimeframeSpeech.filter(s => new Date(s.createdAt).getMonth() === mIdx);
+          const accuracyAvg = monthSpeech.length > 0
+            ? Math.round(monthSpeech.reduce((sum, s) => sum + (s.accuracyScore || 0), 0) / monthSpeech.length)
+            : 0;
+
+          return {
+            label: monthNames[mIdx],
+            name: `Tháng ${mIdx + 1}`,
+            accuracy: accuracyAvg,
+            totalRecords: monthSpeech.length
+          };
+        });
+
+        vrChartData = allowedMonths.map(mIdx => {
+          const monthResults = filteredByTimeframeResults.filter(r => new Date(r.startedAt || r.completedAt || '').getMonth() === mIdx);
+          const mins = Math.round(monthResults.reduce((sum, r) => sum + (r.durationSeconds || 0), 0) / 60);
+          const score = monthResults.length > 0
+            ? Math.round(monthResults.reduce((sum, r) => sum + (r.score || 0), 0) / monthResults.length)
+            : 0;
+
+          return {
+            label: monthNames[mIdx],
+            name: `Tháng ${mIdx + 1}`,
+            mins,
+            score
+          };
+        });
+      }
+    }
+
+    // Word Breakdown & Error Type Aggregation
+    const wordMap: Record<string, { word: string; count: number; totalScore: number; errors: Record<string, number> }> = {};
+    const errorTypeCounts: Record<string, number> = {
+      Mispronunciation: 0,
+      Omission: 0,
+      Insertion: 0,
+      None: 0
+    };
+
+    filteredByTimeframeSpeech.forEach(s => {
+      const w = s.word?.trim() || 'Khác';
+      if (!wordMap[w]) {
+        wordMap[w] = { word: w, count: 0, totalScore: 0, errors: {} };
+      }
+      wordMap[w].count += 1;
+      wordMap[w].totalScore += (s.accuracyScore || 0);
+
+      const err = s.errorType || 'None';
+      errorTypeCounts[err] = (errorTypeCounts[err] || 0) + 1;
+      wordMap[w].errors[err] = (wordMap[w].errors[err] || 0) + 1;
+    });
+
+    const breakdownList = Object.values(wordMap).map(item => ({
+      word: item.word,
+      count: item.count,
+      avgAccuracy: Math.round(item.totalScore / item.count),
+      topError: Object.entries(item.errors).sort((a, b) => b[1] - a[1])[0]?.[0] || 'None'
+    })).sort((a, b) => b.avgAccuracy - a.avgAccuracy);
+
+    const overallAvg = filteredByTimeframeSpeech.length > 0
+      ? Math.round(filteredByTimeframeSpeech.reduce((sum, s) => sum + (s.accuracyScore || 0), 0) / filteredByTimeframeSpeech.length)
+      : 0;
+
+    return {
+      speechChartData: chartData,
+      vrResultsChartData: vrChartData,
+      wordBreakdown: breakdownList,
+      speechStatsSummary: {
+        totalRecords: filteredByTimeframeSpeech.length,
+        overallAvg,
+        errorTypeCounts
+      }
+    };
+  }, [allResultsMap, speechAccuraciesMap, selectedChildId, speechSelectedLessonId, speechTimeframe, speechSemester, speechMonth, speechYear, dbSemesters, getRoleFilteredChildren]);
+
   // Render state indicator badges
   const renderProgressLevelBadge = (level: Analysis['ProgressLevel'] | string) => {
     const styler: Record<string, { bg: string; text: string; label: string; dot: string }> = {
@@ -836,100 +1195,365 @@ export default function ProgressAnalysis() {
       </div>
 
       {/* 4. Dual Analytical Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="space-y-4">
 
-        {/* Left Chart: Bar Chart for Score & Practice Duration */}
-        <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#4EACAF]/10 rounded-xl flex items-center justify-center text-[#4EACAF]">
-                <Activity className="w-5 h-5" />
+        {/* Global Filter Bar for Analytical Charts */}
+        <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+          {/* Top Row: Title & Primary Fixed Controls */}
+          <div className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white">
+            <div className="flex items-center gap-2.5 text-slate-800">
+              <div className="w-8 h-8 bg-cyan-50 rounded-lg flex items-center justify-center text-[#20D0D4]">
+                <Filter className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="font-extrabold text-slate-800 text-base leading-tight">Điểm số & Thời lượng rèn luyện</h3>
-                <p className="text-xs text-slate-400 font-medium">Thống kê theo các ngày trong tuần</p>
+                <h4 className="font-extrabold text-sm leading-tight text-slate-800">Bộ lọc Thống kê Biểu đồ</h4>
+                <p className="text-[11px] text-slate-400 font-medium">Áp dụng bộ lọc bài học và thời gian cho cả 2 biểu đồ bên dưới</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 text-xs font-bold">
-              <div className="flex items-center gap-1.5 text-[#4EACAF]">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#4EACAF] inline-block" />
-                <span>Thời lượng (phút)</span>
+
+            <div className="flex items-center gap-2.5 shrink-0">
+              {/* Lesson Select */}
+              <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 w-52 shrink-0">
+                <BookOpen className="w-4 h-4 text-slate-400 shrink-0" />
+                <select
+                  value={speechSelectedLessonId}
+                  onChange={(e) => setSpeechSelectedLessonId(e.target.value)}
+                  className="bg-transparent text-xs font-bold text-slate-700 outline-none w-full cursor-pointer"
+                >
+                  <option value="ALL">Tất cả bài học</option>
+                  {allLessons.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.lessonName}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="flex items-center gap-1.5 text-[#FF8E8E]">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#FF8E8E] inline-block" />
-                <span>Điểm số (đ)</span>
+
+              {/* Timeframe Selector Tabs */}
+              <div className="flex items-center bg-slate-100 p-1 rounded-lg gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setSpeechTimeframe('week')}
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-bold rounded-md transition-all text-center",
+                    speechTimeframe === 'week' ? "bg-white text-[#20D0D4] shadow-xs" : "text-slate-500 hover:text-slate-800"
+                  )}
+                >
+                  Theo Tuần
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSpeechTimeframe('month')}
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-bold rounded-md transition-all text-center",
+                    speechTimeframe === 'month' ? "bg-white text-[#20D0D4] shadow-xs" : "text-slate-500 hover:text-slate-800"
+                  )}
+                >
+                  Theo Tháng
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSpeechTimeframe('semester')}
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-bold rounded-md transition-all text-center",
+                    speechTimeframe === 'semester' ? "bg-white text-[#20D0D4] shadow-xs" : "text-slate-500 hover:text-slate-800"
+                  )}
+                >
+                  Theo Học Kỳ
+                </button>
               </div>
             </div>
           </div>
 
-          <div className="h-64 w-full pt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weeklyChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12, fontWeight: 700 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12 }} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#1E293B', borderRadius: '12px', color: '#fff', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2)' }}
-                  labelStyle={{ fontWeight: 800, color: '#94A3B8' }}
-                  formatter={(val: any, name: any) => [name === 'mins' ? `${val} phút` : `${val} điểm`, name === 'mins' ? 'Thời lượng VR' : 'Điểm số trung bình']}
-                />
-                <Bar dataKey="mins" name="mins" fill="#4EACAF" radius={[6, 6, 0, 0]} maxBarSize={28} />
-                <Bar dataKey="score" name="score" fill="#FF8E8E" radius={[6, 6, 0, 0]} maxBarSize={28} />
-              </BarChart>
-            </ResponsiveContainer>
+          {/* Sub-Filter Toolbar (Dedicated fixed sub-bar so top bar never jitters) */}
+          <div className="px-4 py-2 bg-slate-50/80 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 min-h-[42px]">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+              <Calendar className="w-3.5 h-3.5 text-[#20D0D4]" />
+              <span>Phạm vi thời gian chi tiết:</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {speechTimeframe === 'week' && (
+                <span className="text-xs font-bold text-slate-600 bg-white px-3 py-1 rounded-md border border-slate-200/80 shadow-2xs">
+                  7 ngày trong tuần hiện tại (Thứ 2 - Chủ Nhật)
+                </span>
+              )}
+
+              {speechTimeframe === 'month' && (
+                <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-md border border-slate-200/80 shadow-2xs">
+                  <span className="text-xs font-medium text-slate-500">Chọn tháng:</span>
+                  <select
+                    value={speechMonth}
+                    onChange={(e) => setSpeechMonth(Number(e.target.value))}
+                    className="bg-transparent font-extrabold text-xs text-[#20D0D4] outline-none cursor-pointer"
+                  >
+                    {[
+                      'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4',
+                      'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8',
+                      'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
+                    ].map((mName, mIdx) => (
+                      <option key={mIdx} value={mIdx}>
+                        {mName} ({mIdx === new Date().getMonth() ? 'Hiện tại' : `T${mIdx + 1}`})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {speechTimeframe === 'semester' && (
+                <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                  {dbSemesters.map((sem) => (
+                    <button
+                      key={sem.id}
+                      type="button"
+                      onClick={() => setSpeechSemester(String(sem.id))}
+                      className={cn(
+                        "px-2.5 py-1 rounded-md text-xs font-bold transition-all border",
+                        speechSemester === String(sem.id) 
+                          ? "bg-[#20D0D4] text-white border-[#20D0D4] shadow-2xs" 
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                      )}
+                    >
+                      {sem.semesterName}
+                    </button>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={() => setSpeechSemester('HK1')}
+                    className={cn(
+                      "px-2.5 py-1 rounded-md text-xs font-bold transition-all border",
+                      speechSemester === 'HK1' 
+                        ? "bg-[#20D0D4] text-white border-[#20D0D4] shadow-2xs" 
+                        : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                    )}
+                  >
+                    HK1 (T9-T1)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSpeechSemester('HK2')}
+                    className={cn(
+                      "px-2.5 py-1 rounded-md text-xs font-bold transition-all border",
+                      speechSemester === 'HK2' 
+                        ? "bg-[#20D0D4] text-white border-[#20D0D4] shadow-2xs" 
+                        : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                    )}
+                  >
+                    HK2 (T2-T6)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSpeechSemester('ALL_YEAR')}
+                    className={cn(
+                      "px-2.5 py-1 rounded-md text-xs font-bold transition-all border",
+                      speechSemester === 'ALL_YEAR' 
+                        ? "bg-[#20D0D4] text-white border-[#20D0D4] shadow-2xs" 
+                        : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                    )}
+                  >
+                    Cả Năm
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Right Chart: Area Chart for Speech Accuracy matching Image 2 */}
-        <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-cyan-50 rounded-xl flex items-center justify-center text-[#20D0D4]">
-                <TrendingUp className="w-5 h-5" />
+        {/* Charts Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* Left Chart: Bar Chart for Score & Practice Duration */}
+          <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#4EACAF]/10 rounded-xl flex items-center justify-center text-[#4EACAF]">
+                  <Activity className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-800 text-base leading-tight">Điểm số & Thời lượng rèn luyện</h3>
+                  <p className="text-xs text-slate-400 font-medium">Thống kê điểm & thời gian VR theo bộ lọc trên</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-extrabold text-slate-800 text-base leading-tight">Hoạt động luyện tập hàng tuần</h3>
-                <p className="text-xs text-slate-400 font-medium">Độ chính xác phát âm khi nói (ChildSpeechAccuracies API)</p>
+              <div className="flex items-center gap-3 text-xs font-bold">
+                <div className="flex items-center gap-1.5 text-[#4EACAF]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#4EACAF] inline-block" />
+                  <span>Thời lượng (phút)</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[#FF8E8E]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#FF8E8E] inline-block" />
+                  <span>Điểm số (đ)</span>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-xs font-bold text-[#20D0D4]">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#20D0D4] inline-block animate-pulse" />
-              <span>Độ chính xác (%)</span>
+
+            <div className="h-64 w-full pt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={vrResultsChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12, fontWeight: 700 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#1E293B', borderRadius: '12px', color: '#fff', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2)' }}
+                    labelStyle={{ fontWeight: 800, color: '#94A3B8' }}
+                    labelFormatter={(label, items) => {
+                      const item = items?.[0]?.payload;
+                      return item ? `${item.name} (${label})` : label;
+                    }}
+                    formatter={(val: any, name: any) => [name === 'mins' ? `${val} phút` : `${val} điểm`, name === 'mins' ? 'Thời lượng VR' : 'Điểm số trung bình']}
+                  />
+                  <Bar dataKey="mins" name="mins" fill="#4EACAF" radius={[6, 6, 0, 0]} maxBarSize={28} />
+                  <Bar dataKey="score" name="score" fill="#FF8E8E" radius={[6, 6, 0, 0]} maxBarSize={28} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="h-64 w-full pt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={weeklyChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorAccuracy" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#20D0D4" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#20D0D4" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12, fontWeight: 700 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12 }} domain={[0, 100]} tickFormatter={(val) => `${val}%`} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#1E293B', borderRadius: '12px', color: '#fff', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2)' }}
-                  formatter={(val: any) => [`${val}%`, 'Độ chính xác phát âm']}
-                  labelStyle={{ fontWeight: 800, color: '#94A3B8' }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="accuracy"
-                  stroke="#20D0D4"
-                  strokeWidth={3}
-                  fillOpacity={1}
-                  fill="url(#colorAccuracy)"
-                  dot={{ r: 4, fill: '#20D0D4', strokeWidth: 2, stroke: '#FFFFFF' }}
-                  activeDot={{ r: 6, fill: '#20D0D4', strokeWidth: 2, stroke: '#FFFFFF' }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          {/* Right Chart: Area Chart for Speech Accuracy */}
+          <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-cyan-50 rounded-xl flex items-center justify-center text-[#20D0D4]">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-800 text-base leading-tight">Hoạt động luyện tập phát âm</h3>
+                  <p className="text-xs text-slate-400 font-medium">Tỉ lệ chính xác âm lời nói theo bộ lọc trên</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[#20D0D4]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#20D0D4] inline-block animate-pulse" />
+                <span>Độ chính xác (%)</span>
+              </div>
+            </div>
+
+            <div className="h-64 w-full pt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={speechChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorAccuracy" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#20D0D4" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#20D0D4" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12, fontWeight: 700 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12 }} domain={[0, 100]} tickFormatter={(val) => `${val}%`} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#1E293B', borderRadius: '12px', color: '#fff', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2)' }}
+                    formatter={(val: any) => [`${val}%`, 'Độ chính xác phát âm']}
+                    labelFormatter={(label, items) => {
+                      const item = items?.[0]?.payload;
+                      return item ? `${item.name} (${label})` : label;
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="accuracy"
+                    stroke="#20D0D4"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#colorAccuracy)"
+                    dot={{ r: 4, fill: '#20D0D4', strokeWidth: 2, stroke: '#FFFFFF' }}
+                    activeDot={{ r: 6, fill: '#20D0D4', strokeWidth: 2, stroke: '#FFFFFF' }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* 5. Detailed Phoneme & Word Speech Breakdown Card */}
+      <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+              <Mic className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-slate-800 text-base leading-tight">Phân tích Chi tiết Từ & Lỗi Phát âm trong Bài học</h3>
+              <p className="text-xs text-slate-400 font-medium">Thống kê theo lượt phát âm thực tế của bé trong khoảng thời gian đã chọn</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
+            <div className="bg-cyan-50 text-[#20D0D4] px-3 py-1.5 rounded-lg border border-cyan-100">
+              Tổng lượt đọc: <strong className="font-extrabold">{speechStatsSummary.totalRecords}</strong>
+            </div>
+            <div className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg border border-emerald-100">
+              Độ chính xác TB: <strong className="font-extrabold">{speechStatsSummary.overallAvg}%</strong>
+            </div>
+            {speechStatsSummary.errorTypeCounts.Mispronunciation > 0 && (
+              <div className="bg-rose-50 text-rose-600 px-3 py-1.5 rounded-lg border border-rose-100">
+                Phát âm sai: <strong className="font-extrabold">{speechStatsSummary.errorTypeCounts.Mispronunciation}</strong>
+              </div>
+            )}
+            {speechStatsSummary.errorTypeCounts.Omission > 0 && (
+              <div className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded-lg border border-amber-100">
+                Đọc thiếu âm: <strong className="font-extrabold">{speechStatsSummary.errorTypeCounts.Omission}</strong>
+              </div>
+            )}
           </div>
         </div>
 
+        {wordBreakdown.length === 0 ? (
+          <div className="py-8 text-center text-slate-400 text-xs font-medium">
+            Chưa có ghi nhận dữ liệu phát âm lời nói nào phù hợp với bộ lọc bài học / thời gian hiện tại.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+            {/* Column 1: Top High Accuracy Words */}
+            <div className="bg-emerald-50/40 rounded-xl p-4 border border-emerald-100 space-y-2">
+              <div className="flex items-center gap-2 text-emerald-700 text-xs font-extrabold pb-1 border-b border-emerald-100">
+                <CheckCircle className="w-4 h-4 text-emerald-500" />
+                <span>Từ / Âm bé phát âm tốt nhất (&ge; 75%)</span>
+              </div>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {wordBreakdown.filter(w => w.avgAccuracy >= 75).slice(0, 10).map((w, idx) => (
+                  <div key={idx} className="bg-white px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-2 shadow-xs">
+                    <span className="font-extrabold text-slate-800 text-xs">{w.word}</span>
+                    <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                      {w.avgAccuracy}%
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">({w.count} lần)</span>
+                  </div>
+                ))}
+                {wordBreakdown.filter(w => w.avgAccuracy >= 75).length === 0 && (
+                  <p className="text-xs text-slate-400 italic">Chưa có từ phát âm đạt từ 75% trở lên.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Column 2: Words needing practice */}
+            <div className="bg-rose-50/40 rounded-xl p-4 border border-rose-100 space-y-2">
+              <div className="flex items-center gap-2 text-rose-700 text-xs font-extrabold pb-1 border-b border-rose-100">
+                <ShieldAlert className="w-4 h-4 text-rose-500" />
+                <span>Từ / Âm bé cần chú ý rèn luyện thêm (&lt; 75%)</span>
+              </div>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {wordBreakdown.filter(w => w.avgAccuracy < 75).slice(0, 10).map((w, idx) => (
+                  <div key={idx} className="bg-white px-3 py-1.5 rounded-lg border border-rose-200 flex items-center gap-2 shadow-xs">
+                    <span className="font-extrabold text-slate-800 text-xs">{w.word}</span>
+                    <span className="text-[11px] font-black text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">
+                      {w.avgAccuracy}%
+                    </span>
+                    {w.topError !== 'None' && (
+                      <span className="text-[10px] text-amber-700 bg-amber-50 px-1 rounded font-bold">
+                        {w.topError === 'Mispronunciation' ? 'Sai âm' : w.topError === 'Omission' ? 'Thiếu âm' : w.topError}
+                      </span>
+                    )}
+                  </div>
+                ))}
+                {wordBreakdown.filter(w => w.avgAccuracy < 75).length === 0 && (
+                  <p className="text-xs text-emerald-600 font-medium italic">Tuyệt vời! Bé không có từ phát âm nào dưới 75%.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 6. Multi functional search & search filter options for the table analysis rows */}
@@ -990,7 +1614,7 @@ export default function ProgressAnalysis() {
         {filteredAnalysesList.length === 0 ? (
           <div className="py-24 text-center space-y-4">
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto border-4 border-dashed border-gray-100">
-              <ShieldAlert className="w-8 h-8 text-gray-300 animate-bounce" />
+              <ShieldAlert className="w-8 h-8 text-gray-300 animate-pulse" />
             </div>
             <p className="text-xl font-black text-gray-700">Không tìm thấy phân tích tiến bộ của dải dữ liệu được chọn!</p>
             <p className="text-xs text-gray-400 max-w-sm mx-auto">Vui lòng điều hòa lại bộ lọc góc nhìn giảng dạy hoặc chọn học sinh khác trên thanh công cụ.</p>
