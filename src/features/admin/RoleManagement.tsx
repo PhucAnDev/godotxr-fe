@@ -110,15 +110,11 @@ export default function RoleManagement() {
         )}
       </AnimatePresence>
 
-      {/* 1. Header */}
-      <div className="bg-white/45 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-1">
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Phân Quyền <span className="text-[#4EACAF]">Thành Viên</span>
           </h1>
-          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
-            Phân định quyền hạn, cấu hình giới hạn tính năng và quản lý danh sách vai trò cho học tập, can thiệp hoặc quản lý vận hành GodotXR.
-          </p>
         </div>
 
         <button

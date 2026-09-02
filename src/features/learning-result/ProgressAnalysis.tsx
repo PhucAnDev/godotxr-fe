@@ -1112,16 +1112,11 @@ export default function ProgressAnalysis() {
         )}
       </AnimatePresence>
 
-      {/* Header Block showcasing beautiful modern rounded theme */}
-      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm relative z-20">
-
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-1 relative z-20">
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Phân Tích <span className="text-[#4EACAF]">Tiến Độ</span>
           </h1>
-          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
-            Kiểm duyệt tốc độ hoàn thành, dải điểm trung bình, ghi nhận độ cứng phát âm khẩu hình và đưa ra các khuyến nghị ôn luyện can thiệp tối ưu cho trẻ.
-          </p>
         </div>
 
         {/* Child Selector Dropdown on the right side of the Header */}
@@ -1309,8 +1304,8 @@ export default function ProgressAnalysis() {
                       onClick={() => setSpeechSemester(String(sem.id))}
                       className={cn(
                         "px-2.5 py-1 rounded-md text-xs font-bold transition-all border",
-                        speechSemester === String(sem.id) 
-                          ? "bg-[#20D0D4] text-white border-[#20D0D4] shadow-2xs" 
+                        speechSemester === String(sem.id)
+                          ? "bg-[#20D0D4] text-white border-[#20D0D4] shadow-2xs"
                           : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
                       )}
                     >
@@ -1323,8 +1318,8 @@ export default function ProgressAnalysis() {
                     onClick={() => setSpeechSemester('HK1')}
                     className={cn(
                       "px-2.5 py-1 rounded-md text-xs font-bold transition-all border",
-                      speechSemester === 'HK1' 
-                        ? "bg-[#20D0D4] text-white border-[#20D0D4] shadow-2xs" 
+                      speechSemester === 'HK1'
+                        ? "bg-[#20D0D4] text-white border-[#20D0D4] shadow-2xs"
                         : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
                     )}
                   >
@@ -1335,8 +1330,8 @@ export default function ProgressAnalysis() {
                     onClick={() => setSpeechSemester('HK2')}
                     className={cn(
                       "px-2.5 py-1 rounded-md text-xs font-bold transition-all border",
-                      speechSemester === 'HK2' 
-                        ? "bg-[#20D0D4] text-white border-[#20D0D4] shadow-2xs" 
+                      speechSemester === 'HK2'
+                        ? "bg-[#20D0D4] text-white border-[#20D0D4] shadow-2xs"
                         : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
                     )}
                   >
@@ -1347,8 +1342,8 @@ export default function ProgressAnalysis() {
                     onClick={() => setSpeechSemester('ALL_YEAR')}
                     className={cn(
                       "px-2.5 py-1 rounded-md text-xs font-bold transition-all border",
-                      speechSemester === 'ALL_YEAR' 
-                        ? "bg-[#20D0D4] text-white border-[#20D0D4] shadow-2xs" 
+                      speechSemester === 'ALL_YEAR'
+                        ? "bg-[#20D0D4] text-white border-[#20D0D4] shadow-2xs"
                         : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
                     )}
                   >

@@ -629,14 +629,11 @@ export default function ChildManagement() {
         )}
       </AnimatePresence>
 
-      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-1">
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Quản Lý <span className="text-[#4EACAF]">Hồ Sơ Trẻ Em</span>
           </h1>
-          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
-            Quản lý thông tin chi tiết, hồ sơ cá nhân và theo dõi tiến trình học tập, can thiệp phát triển ngôn ngữ của trẻ em trên hệ thống GodotXR.
-          </p>
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center gap-3">

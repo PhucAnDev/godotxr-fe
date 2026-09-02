@@ -216,14 +216,11 @@ export default function AccountSettings() {
 
   return (
     <div className="space-y-4 pb-2 text-left">
-      <div className="bg-white/40 backdrop-blur-md rounded-xl p-4 md:p-5 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm">
-        <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight leading-tight">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-1">
+        <div className="space-y-2">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Thiết Lập <span className="text-[#4EACAF]">Tài Khoản</span>
           </h1>
-          <p className="text-slate-500 font-medium max-w-xl text-xs md:text-sm leading-relaxed">
-            Đồng bộ thông tin tài khoản theo dữ liệu hệ thống và cập nhật các thiết lập bảo mật của bạn.
-          </p>
         </div>
       </div>
 

@@ -216,14 +216,11 @@ export default function ParentDashboard() {
     <div className="space-y-4 text-left">
       
       {/* Header Card */}
-      <div className="bg-white/45 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/70 flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-1">
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Chào mừng trở lại, <span className="text-[#FF8E8E]">Phụ huynh</span>
           </h1>
-          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
-            Tổng quan tiến trình luyện tập phát âm VR và cập nhật thông báo can thiệp mới nhất của con.
-          </p>
         </div>
         
         {children.length > 1 && (

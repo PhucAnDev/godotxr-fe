@@ -212,14 +212,11 @@ export default function ParentChildClass() {
     <div className="space-y-4 pb-20 text-left" id="parent-child-classroom-container">
 
       {/* Header */}
-      <div className="bg-white/45 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/70 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-1">
         <div className="space-y-3">
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Lớp Học <span className="text-[#4EACAF]">Của Con</span>
           </h1>
-          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
-            Theo dõi lớp học hoạt động, giáo viên đảm trách và hành trình bài bản bài học.
-          </p>
         </div>
 
         {/* Child selector */}

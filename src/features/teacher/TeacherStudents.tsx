@@ -380,30 +380,24 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
 
   return (
     <div className="space-y-4" id="teacher-students-container">
-      <div className="relative overflow-hidden rounded-3xl border border-white/80 bg-gradient-to-r from-[#4EACAF]/10 to-[#FF8E8E]/10 p-8 shadow-sm">
-        <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-teal-100/30 blur-3xl" />
-        <div className="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
-          <div className="space-y-2">
-            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
-              Quản Lý <span className="text-[#4EACAF]">Học Viên</span>
-            </h1>
-            <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
-              Màn hình này đã được đồng bộ dữ liệu theo các lớp học mà giáo viên đang phụ trách, giúp quy trình chuyển tiếp từ danh sách sang chi tiết học sinh được đồng bộ hoàn toàn.
-            </p>
-          </div>
+      <div className="flex flex-col justify-between gap-4 py-1 md:flex-row md:items-center">
+        <div className="space-y-2">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
+            Quản Lý <span className="text-[#4EACAF]">Học Viên</span>
+          </h1>
+        </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-4 rounded-3xl border border-gray-100 bg-white p-4 shadow-md">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FF8E8E]/10 text-[#FF8E8E]">
-                <Award className="h-6 w-6" />
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4 rounded-3xl border border-gray-100 bg-white p-4 shadow-md">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FF8E8E]/10 text-[#FF8E8E]">
+              <Award className="h-6 w-6" />
+            </div>
+            <div>
+              <div className="text-2xl font-black text-gray-900">
+                {stats.total}
               </div>
-              <div>
-                <div className="text-2xl font-black text-gray-900">
-                  {stats.total}
-                </div>
-                <div className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-                  Tổng học viên
-                </div>
+              <div className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                Tổng học viên
               </div>
             </div>
           </div>
@@ -669,7 +663,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                     )}
 
                     {child.Note && (
-                      <p className="border-l-4 border-slate-100 pl-3 text-xs font-bold italic leading-relaxed text-slate-400">
+                      <p className="border-l-2 border-slate-200 pl-3 text-xs font-medium italic leading-relaxed text-slate-500">
                         "{child.Note}"
                       </p>
                     )}

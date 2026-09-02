@@ -321,14 +321,11 @@ export default function ParentRecommendations() {
     <div className="space-y-4 pb-20 text-left" id="parent-recommendations-view">
       
       {/* 1. Header Card */}
-      <div className="bg-white/45 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/70 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-1">
         <div className="space-y-3">
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Khuyến Nghị <span className="text-[#FF8E8E]">Luyện Tập</span>
           </h1>
-          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
-            Gợi ý các hoạt động hỗ trợ thiết thực giúp con nâng cao giọng nói tự nhiên hàng ngày.
-          </p>
         </div>
 
         {/* 2. Child selector */}
@@ -369,18 +366,18 @@ export default function ParentRecommendations() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="recommendations-summary-cards">
             
             {/* Metric 1: Average Score */}
-            <div className="bg-white rounded-xl p-6 border-b-4 border-[#FFA800] shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
+            <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex items-center gap-5 transition-all hover:-translate-y-0.5 hover:shadow-md">
               <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center shrink-0 text-[#FFA800]">
                 <Award className="w-7 h-7" />
               </div>
               <div>
                 <p className="text-3xl font-black text-gray-900 tracking-tight leading-none">{averageScore}đ</p>
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Điểm bình quân nói</p>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1.5">Điểm bình quân nói</p>
               </div>
             </div>
 
             {/* Metric 2: Progress level */}
-            <div className="bg-white rounded-xl p-6 border-b-4 border-indigo-400 shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
+            <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex items-center gap-5 transition-all hover:-translate-y-0.5 hover:shadow-md">
               <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center shrink-0 text-indigo-500">
                 <TrendingUp className="w-7 h-7" />
               </div>
@@ -392,12 +389,12 @@ export default function ParentRecommendations() {
                   <span className={cn("w-1.5 h-1.5 rounded-full", progressStyle.dot)} />
                   {progressStyle.label}
                 </span>
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider block">Xếp hạng tiến độ</p>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider block">Xếp hạng tiến độ</p>
               </div>
             </div>
 
             {/* Metric 3: Tasks completed */}
-            <div className="bg-white rounded-xl p-6 border-b-4 border-teal-400 shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
+            <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex items-center gap-5 transition-all hover:-translate-y-0.5 hover:shadow-md">
               <div className="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center shrink-0 text-[#4EACAF]">
                 <CheckCircle className="w-7 h-7" />
               </div>
@@ -405,18 +402,18 @@ export default function ParentRecommendations() {
                 <p className="text-3xl font-black text-gray-900 tracking-tight leading-none">
                   {completedExercisesCount}/{totalExercisesCount}
                 </p>
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Nhiệm vụ vượt ải</p>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1.5">Nhiệm vụ vượt ải</p>
               </div>
             </div>
 
             {/* Metric 4: Total practice time */}
-            <div className="bg-white rounded-xl p-6 border-b-4 border-[#FF8E8E] shadow-sm flex items-center gap-5 transition-transform hover:-translate-y-1">
+            <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex items-center gap-5 transition-all hover:-translate-y-0.5 hover:shadow-md">
               <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center shrink-0 text-[#FF8E8E]">
                 <Clock className="w-7 h-7" />
               </div>
               <div>
                 <p className="text-3xl font-black text-gray-900 tracking-tight leading-none">{totalPracticeTime} Phút</p>
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Tích lũy âm ngữ tương tác</p>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1.5">Tích lũy âm ngữ tương tác</p>
               </div>
             </div>
 

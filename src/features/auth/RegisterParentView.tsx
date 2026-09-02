@@ -201,7 +201,7 @@ export default function RegisterParentView({ onBackToLogin, onRegisterSuccess }:
               <Logo />
             </div>
 
-            <div className="bg-white rounded-[56px] p-8 sm:p-14 shadow-[0_32px_80px_-20px_rgba(0,0,0,0.1)] border-b-8 border-gray-100 relative overflow-hidden">
+            <div className="bg-white rounded-3xl p-8 sm:p-12 shadow-xl border border-slate-100 relative overflow-hidden">
               
               {/* Registration Header */}
               <div className="text-center mb-10">
@@ -231,9 +231,9 @@ export default function RegisterParentView({ onBackToLogin, onRegisterSuccess }:
                 <motion.div 
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mb-6 p-4.5 bg-rose-50 border border-rose-100 rounded-2xl text-rose-700 text-xs font-black flex items-start gap-2.5 leading-snug"
+                  className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-xl text-rose-700 text-xs font-bold flex items-start gap-2.5 leading-snug"
                 >
-                  <span className="shrink-0 w-2 h-2 rounded-full bg-rose-500 mt-1.5 animate-bounce" />
+                  <span className="shrink-0 w-2 h-2 rounded-full bg-rose-500 mt-1.5 animate-pulse" />
                   <span>{validationError}</span>
                 </motion.div>
               )}

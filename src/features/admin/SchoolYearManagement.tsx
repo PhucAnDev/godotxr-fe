@@ -390,15 +390,11 @@ export default function SchoolYearManagement() {
         )}
       </AnimatePresence>
 
-      {/* 1. Header Hero Panel */}
-      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-1">
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Quản Lý <span className="text-[#4EACAF]">Năm Học</span>
           </h1>
-          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
-            Thiết lập năm học, quản lý các mốc thời kỳ làm cơ sở xây dựng kế hoạch, tổ chức lớp học và phân phối học bạ điện tử trong hệ thống bổ trợ rèn luyện ngữ âm GodotXR.
-          </p>
         </div>
 
         <button 

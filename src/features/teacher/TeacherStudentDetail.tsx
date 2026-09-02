@@ -619,7 +619,7 @@ export default function TeacherStudentDetail({
         )}
       </AnimatePresence>
 
-      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-1">
         <div className="space-y-4">
           <button
             onClick={() => {
@@ -639,9 +639,6 @@ export default function TeacherStudentDetail({
             <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
               Hồ sơ học sinh <span className="text-[#4EACAF]">chi tiết</span>
             </h1>
-            <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
-              Theo dõi kết quả luyện tập, lỗi phát âm và gợi ý can thiệp dựa trên dữ liệu thực từ backend.
-            </p>
           </div>
         </div>
 

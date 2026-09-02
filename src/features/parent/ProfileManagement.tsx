@@ -277,14 +277,11 @@ export default function ProfileManagement() {
       )}
 
       {/* Header card with refresh button */}
-      <div className="bg-white/45 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/70 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-1">
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Quản Lý <span className="text-[#FF8E8E]">Hồ Sơ Của Bé</span>
           </h1>
-          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
-            Quản lý hồ sơ, tình trạng học và đồng hành phát triển cùng bé.
-          </p>
         </div>
         <button
           type="button"
@@ -583,7 +580,7 @@ export default function ProfileManagement() {
       )}
 
       {/* Floating Bot Illustration */}
-      <div className="fixed bottom-12 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-[55%] animate-bounce pointer-events-none">
+      <div className="fixed bottom-12 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-[55%] animate-pulse pointer-events-none">
         <img 
           src="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Lucky&backgroundColor=ffffff" 
           alt="Bot" 

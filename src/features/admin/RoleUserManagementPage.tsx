@@ -568,7 +568,7 @@ export default function RoleUserManagementPage({
         onClose={() => setAlertConfig(null)}
       />
 
-      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-1">
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             {config.title.includes('giáo viên') || config.title.includes('Giáo viên') ? (
@@ -581,9 +581,6 @@ export default function RoleUserManagementPage({
               </>
             )}
           </h1>
-          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
-            {config.description}
-          </p>
           {config.note && (
             <div className="inline-flex items-start gap-2 rounded-xl border border-amber-100/60 bg-amber-50/70 p-3 text-xs font-bold text-amber-850 max-w-2xl mt-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />

@@ -512,14 +512,11 @@ export default function AssetManagement() {
   return (
     <div className="space-y-4 pb-24 relative">
       {/* Top Header */}
-      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-1">
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Thư Viện <span className="text-[#4EACAF]">Vật Phẩm 3D</span>
           </h1>
-          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
-            Quản lý và cập nhật động các mô hình 3D, hình ảnh và âm thanh phát âm mẫu cho các spawner trong bài học.
-          </p>
         </div>
         <button
           onClick={openCreateModal}
@@ -707,7 +704,7 @@ export default function AssetManagement() {
         >
           {isDraggingToModal && (
             <div className="absolute inset-0 bg-blue-600/90 dark:bg-blue-900/90 backdrop-blur-sm z-[60] flex flex-col items-center justify-center text-white p-6 animate-in fade-in duration-200 pointer-events-none">
-              <div className="p-6 bg-white/10 rounded-full border border-white/20 animate-bounce mb-4">
+              <div className="p-6 bg-white/10 rounded-full border border-white/20 animate-pulse mb-4">
                 <Upload className="h-12 w-12 text-white" />
               </div>
               <h4 className="text-2xl font-bold">Thả tệp vào đây</h4>

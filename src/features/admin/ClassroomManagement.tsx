@@ -618,15 +618,11 @@ export default function ClassroomManagement() {
         )}
       </AnimatePresence>
 
-      {/* 1. Header component */}
-      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm" id="classroom-header">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-1" id="classroom-header">
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Thiết Lập <span className="text-[#4EACAF]">Lớp Học VR</span>
           </h1>
-          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
-            Kiến tạo điều phối lớp học, liên kết giáo viên chuyên môn cao và chương trình giảng dạy rèn luyện phát âm thông minh của nền tảng GodotXR.
-          </p>
         </div>
 
         <button

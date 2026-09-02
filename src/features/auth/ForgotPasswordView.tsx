@@ -152,7 +152,7 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
               <Logo />
             </div>
 
-            <div className="bg-white rounded-[32px] p-6 sm:p-8 md:p-10 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.08)] border-b-8 border-gray-100 relative overflow-hidden">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 md:p-10 shadow-xl border border-slate-100 relative overflow-hidden">
               
               {/* Back button at top-left of the card */}
               <button 
@@ -242,8 +242,8 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                     transition={{ duration: 0.2 }}
                   >
                     {validationError && (
-                      <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-700 text-xs font-black flex items-start gap-2 leading-snug">
-                        <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 animate-bounce" />
+                      <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-700 text-xs font-bold flex items-start gap-2 leading-snug">
+                        <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 animate-pulse" />
                         <span>{validationError}</span>
                       </div>
                     )}
@@ -273,9 +273,9 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                       <motion.button
                         type="submit"
                         disabled={isLoading}
-                        whileHover={{ y: -2 }}
+                        whileHover={{ y: -1 }}
                         whileTap={{ scale: 0.98 }}
-                        className="w-full py-3.5 bg-[#FF8E8E] hover:bg-[#ef7e7e] text-white text-base font-black rounded-2xl shadow-lg shadow-[#FF8E8E]/10 transition-all flex items-center justify-center gap-2 border-b-4 border-[#d46565] cursor-pointer"
+                        className="w-full py-3.5 bg-[#FF8E8E] hover:bg-[#ef7e7e] text-white text-base font-extrabold rounded-xl shadow-sm shadow-[#FF8E8E]/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                       >
                         {isLoading ? (
                           <>
@@ -305,8 +305,8 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                     transition={{ duration: 0.2 }}
                   >
                     {validationError && (
-                      <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-700 text-xs font-black flex items-start gap-2 leading-snug">
-                        <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 animate-bounce" />
+                      <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-700 text-xs font-bold flex items-start gap-2 leading-snug">
+                        <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 animate-pulse" />
                         <span>{validationError}</span>
                       </div>
                     )}
@@ -367,9 +367,9 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                       <motion.button
                         type="submit"
                         disabled={isLoading}
-                        whileHover={{ y: -2 }}
+                        whileHover={{ y: -1 }}
                         whileTap={{ scale: 0.98 }}
-                        className="w-full py-3.5 bg-[#FF8E8E] hover:bg-[#ef7e7e] text-white text-base font-black rounded-2xl shadow-lg shadow-[#FF8E8E]/10 transition-all flex items-center justify-center gap-2 border-b-4 border-[#d46565] cursor-pointer disabled:opacity-50"
+                        className="w-full py-3.5 bg-[#FF8E8E] hover:bg-[#ef7e7e] text-white text-base font-extrabold rounded-xl shadow-sm shadow-[#FF8E8E]/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                       >
                         {isLoading ? (
                           <>
@@ -399,8 +399,8 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                     transition={{ duration: 0.2 }}
                   >
                     {validationError && (
-                      <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-700 text-xs font-black flex items-start gap-2 leading-snug">
-                        <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 animate-bounce" />
+                      <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-700 text-xs font-bold flex items-start gap-2 leading-snug">
+                        <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 animate-pulse" />
                         <span>{validationError}</span>
                       </div>
                     )}
@@ -467,9 +467,9 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                       <motion.button
                         type="submit"
                         disabled={isLoading}
-                        whileHover={{ y: -2 }}
+                        whileHover={{ y: -1 }}
                         whileTap={{ scale: 0.98 }}
-                        className="w-full py-3.5 bg-[#FF8E8E] hover:bg-[#ef7e7e] text-white text-base font-black rounded-2xl shadow-lg shadow-[#FF8E8E]/10 transition-all flex items-center justify-center gap-2 border-b-4 border-[#d46565] cursor-pointer"
+                        className="w-full py-3.5 bg-[#FF8E8E] hover:bg-[#ef7e7e] text-white text-base font-extrabold rounded-xl shadow-sm shadow-[#FF8E8E]/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
                       >
                         {isLoading ? (
                           <>
@@ -497,7 +497,7 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                     transition={{ duration: 0.2 }}
                   >
                     <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex flex-col items-center gap-2 text-center">
-                      <CheckCircle2 className="w-10 h-10 text-emerald-500 animate-bounce" />
+                      <CheckCircle2 className="w-10 h-10 text-emerald-500 animate-pulse" />
                       <div>
                         <h4 className="text-[#107F4A] font-black text-sm mb-1">Cập nhật thành công!</h4>
                         <p className="text-gray-500 font-bold text-xs leading-relaxed">
@@ -509,10 +509,10 @@ export default function ForgotPasswordView({ onBackToLogin, onBackToHome }: Forg
                     <div className="pt-2">
                       <motion.button
                         type="button"
-                        whileHover={{ y: -2 }}
+                        whileHover={{ y: -1 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={onBackToLogin}
-                        className="w-full py-3.5 bg-[#4EACAF] text-white text-base font-black rounded-2xl shadow-lg shadow-[#4EACAF]/10 transition-all flex items-center justify-center gap-2 border-b-4 border-[#378183] hover:bg-[#3d9092] cursor-pointer"
+                        className="w-full py-3.5 bg-[#4EACAF] hover:bg-[#3d9092] text-white text-base font-extrabold rounded-xl shadow-sm shadow-[#4EACAF]/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
                       >
                         Quay lại đăng nhập
                       </motion.button>

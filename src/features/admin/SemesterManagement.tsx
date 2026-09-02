@@ -521,15 +521,11 @@ export default function SemesterManagement() {
         )}
       </AnimatePresence>
 
-      {/* 1. Header Hero Panel */}
-      <div className="bg-white/40 backdrop-blur-md rounded-xl p-8 md:p-10 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-sm">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-1">
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Quản Lý <span className="text-[#4EACAF]">Học Kỳ</span>
           </h1>
-          <p className="text-slate-500 font-medium max-w-xl text-sm leading-relaxed">
-            Gán lớp học và giáo viên vào từng học kỳ. Điều tiết kế hoạch rèn luyện, phân hóa chương trình dạy học GodotXR.
-          </p>
         </div>
 
         <button 

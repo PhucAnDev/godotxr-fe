@@ -207,11 +207,11 @@ export default function LoginView({
 
                 <div className="pt-3">
                   <motion.button
-                    whileHover={{ y: -2 }}
+                    whileHover={{ y: -1 }}
                     whileTap={{ scale: 0.98 }}
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-3.5 bg-[#4EACAF] hover:bg-[#398d90] text-white text-lg font-black rounded-2xl shadow-lg shadow-[#4EACAF]/10 transition-all italic tracking-tight border-b-4 border-b-[#3d8a8c] active:border-b-2 active:translate-y-0.5 cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full py-3.5 bg-[#4EACAF] hover:bg-[#398d90] text-white text-base font-extrabold rounded-xl shadow-sm shadow-[#4EACAF]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70"
                   >
                     {isLoading ? (
                       <>

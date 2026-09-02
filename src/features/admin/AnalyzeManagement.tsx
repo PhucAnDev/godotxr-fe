@@ -573,14 +573,11 @@ export default function AnalyzeManagement() {
       </AnimatePresence>
 
       {/* Header section */}
-      <div className="bg-white/40 backdrop-blur-md rounded-xl p-4 md:p-5 border border-white/60 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm">
-        <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight leading-tight">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-1">
+        <div className="space-y-2">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Quản Lý <span className="text-[#4EACAF]">Đánh Giá Trẻ</span>
           </h1>
-          <p className="text-slate-500 font-medium max-w-xl text-xs md:text-sm leading-relaxed">
-            Xem nhanh, cập nhật chẩn đoán học tập và đánh giá tiến trình phát triển ngôn ngữ định kỳ của học sinh.
-          </p>
         </div>
 
         <button
