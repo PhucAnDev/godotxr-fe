@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  BookOpen, 
-  Languages, 
-  Baby, 
-  Plus, 
-  Search, 
-  ChevronDown, 
-  X, 
-  Edit3, 
-  ToggleLeft, 
-  ToggleRight, 
-  Check, 
-  AlertTriangle, 
-  Eye, 
+  BookOpen,
+  Languages,
+  Baby,
+  Plus,
+  Search,
+  ChevronDown,
+  X,
+  Edit3,
+  ToggleLeft,
+  ToggleRight,
+  Check,
+  AlertTriangle,
+  Eye,
   Calendar,
   Sparkles,
   Smile,
@@ -106,7 +106,7 @@ export default function ProgramManagement() {
     Record<string, Lesson[]>
   >({});
   const [isLessonsLoading, setIsLessonsLoading] = useState(false);
-  
+
   // Filtering and searching states
   const [searchQuery, setSearchQuery] = useState('');
   const [filterLanguage, setFilterLanguage] = useState<string>('ALL');
@@ -338,8 +338,8 @@ export default function ProgramManagement() {
   // Filter chain logic
   const filteredPrograms = programs.filter(item => {
     // Search by ProgramName
-    const matchesSearch = item.ProgramName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          item.ProgramId.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = item.ProgramName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.ProgramId.toLowerCase().includes(searchQuery.toLowerCase());
 
     // Language filter
     const matchesLanguage = filterLanguage === 'ALL' || item.Language === filterLanguage;
@@ -393,7 +393,7 @@ export default function ProgramManagement() {
 
   return (
     <div className="space-y-4 pb-24 relative" id="program-view-root">
-      
+
       {/* Toast Alert Banner */}
       <AnimatePresence>
         {alertConfig && (
@@ -420,8 +420,8 @@ export default function ProgramManagement() {
               <div className="flex-1 min-w-0 font-bold">
                 <p className="italic text-sm tracking-tight text-white leading-snug">{alertConfig.message}</p>
               </div>
-              <button 
-                onClick={() => setAlertConfig(null)} 
+              <button
+                onClick={() => setAlertConfig(null)}
                 className="p-1 hover:bg-white/10 rounded-full transition-colors text-white shrink-0"
               >
                 <X className="w-5 h-5" />
@@ -439,7 +439,7 @@ export default function ProgramManagement() {
           </h1>
         </div>
 
-        <button 
+        <button
           onClick={handleOpenAdd}
           className="bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black italic tracking-tight py-4 px-8 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[#4EACAF]/20 transition-all hover:scale-105 active:scale-95 shrink-0 cursor-pointer"
           id="add-program-btn"
@@ -451,35 +451,35 @@ export default function ProgramManagement() {
 
       {/* 2. Kid-friendly stats cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatItem 
-          title="Tổng Chương Trình" 
-          value={totalCount} 
-          subtitle="Hệ đào tạo hiện có hệ thống" 
-          icon={<BookOpen className="w-6 h-6 text-[#4EACAF]" />} 
+        <StatItem
+          title="Tổng Chương Trình"
+          value={totalCount}
+          subtitle="Hệ đào tạo hiện có hệ thống"
+          icon={<BookOpen className="w-6 h-6 text-[#4EACAF]" />}
           bgColor="bg-teal-50"
           borderColor="border-teal-100"
         />
-        <StatItem 
-          title="Đang Hoạt Động" 
-          value={activeCount} 
-          subtitle="Sẵn sàng gán lớp VR mới" 
-          icon={<Smile className="w-6 h-6 text-emerald-500" />} 
+        <StatItem
+          title="Đang Hoạt Động"
+          value={activeCount}
+          subtitle="Sẵn sàng gán lớp VR mới"
+          icon={<Smile className="w-6 h-6 text-emerald-500" />}
           bgColor="bg-emerald-50"
           borderColor="border-emerald-100"
         />
-        <StatItem 
-          title="Tiếng Việt" 
-          value={vnCount} 
-          subtitle="Ngôn ngữ mẹ đẻ bản xứ" 
-          icon={<Languages className="w-6 h-6 text-indigo-500" />} 
+        <StatItem
+          title="Tiếng Việt"
+          value={vnCount}
+          subtitle="Ngôn ngữ mẹ đẻ bản xứ"
+          icon={<Languages className="w-6 h-6 text-indigo-500" />}
           bgColor="bg-indigo-50"
           borderColor="border-indigo-100"
         />
-        <StatItem 
-          title="Tiếng Anh" 
-          value={enCount} 
-          subtitle="Kích hoạt phản xạ ngoại ngữ" 
-          icon={<Sparkles className="w-6 h-6 text-rose-400" />} 
+        <StatItem
+          title="Tiếng Anh"
+          value={enCount}
+          subtitle="Kích hoạt phản xạ ngoại ngữ"
+          icon={<Sparkles className="w-6 h-6 text-rose-400" />}
           bgColor="bg-rose-50"
           borderColor="border-rose-100"
         />
@@ -489,15 +489,15 @@ export default function ProgramManagement() {
       <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 space-y-3">
         {/* Search Input */}
         <div className="relative">
-          <input 
-            type="text" 
-            placeholder="Tìm kiếm chương trình theo tên hoặc mã định danh..." 
+          <input
+            type="text"
+            placeholder="Tìm kiếm chương trình theo tên hoặc mã định danh..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-4 pr-10 py-2.5 rounded-lg bg-slate-50 border border-slate-200 font-normal text-slate-600 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs" 
+            className="w-full pl-4 pr-10 py-2.5 rounded-lg bg-slate-50 border border-slate-200 font-normal text-slate-600 placeholder-slate-400 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs"
           />
           {searchQuery && (
-            <button 
+            <button
               onClick={() => setSearchQuery('')}
               className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-gray-250 hover:bg-gray-200 rounded-full transition-colors cursor-pointer"
             >
@@ -549,7 +549,7 @@ export default function ProgramManagement() {
               <BookOpen className="w-8 h-8 text-gray-300" />
             </div>
             <p className="text-xl font-black text-gray-700 text-center">Không tìm thấy giáo án đào tạo nào trùng khớp!</p>
-            <button 
+            <button
               onClick={() => {
                 setSearchQuery('');
                 setFilterLanguage('ALL');
@@ -563,7 +563,7 @@ export default function ProgramManagement() {
           </div>
         ) : (
           <>
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden" id="programs-table-container">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden" id="programs-table-container">
               <div className="overflow-x-auto text-left">
                 <table className="w-full border-collapse" id="programs-table">
                   <thead>
@@ -682,8 +682,8 @@ export default function ProgramManagement() {
                           <td className="py-5 px-4">
                             <span className={cn(
                               "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border",
-                              prog.Language === 'Vietnamese' 
-                                ? 'bg-sky-50 text-sky-600 border-sky-100' 
+                              prog.Language === 'Vietnamese'
+                                ? 'bg-sky-50 text-sky-600 border-sky-100'
                                 : 'bg-red-50 text-red-600 border-red-100'
                             )}>
                               <Languages className="w-3 h-3" />
@@ -703,7 +703,7 @@ export default function ProgramManagement() {
                           {/* Status */}
                           <td className="py-5 px-4">
                             <div className="flex items-center gap-2">
-                              <button 
+                              <button
                                 onClick={() => handleToggleStatus(prog.ProgramId)}
                                 className="p-0.5 hover:bg-gray-100 rounded-lg text-gray-650 transition-colors"
                                 title="Bật tắt trạng thái"
@@ -726,7 +726,7 @@ export default function ProgramManagement() {
                           {/* Actions */}
                           <td className="py-5 px-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
-                              <button 
+                              <button
                                 onClick={() => handleOpenLessons(prog)}
                                 className="px-2.5 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-extrabold flex items-center gap-1 transition-colors"
                                 title="Xem bài học"
@@ -755,7 +755,7 @@ export default function ProgramManagement() {
                   </tbody>
                 </table>
               </div>
-              
+
               <div className="p-4 border-t border-slate-100 bg-white">
                 <Pagination
                   currentPage={currentPage}
@@ -778,7 +778,7 @@ export default function ProgramManagement() {
       <AnimatePresence>
         {modalType && (
           <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-gray-900/10 animate-in fade-in duration-300 overflow-y-auto w-full h-full" id="program-modal-overlay">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 12 }}
@@ -789,8 +789,8 @@ export default function ProgramManagement() {
               <div className={cn(
                 "px-8 py-6 flex items-center justify-between border-b",
                 modalType === 'add' ? 'bg-[#4EACAF]/10 border-[#4EACAF]/10 text-gray-900' :
-                modalType === 'edit' ? 'bg-sky-50 border-sky-100 text-gray-900' :
-                modalType === 'delete' ? 'bg-rose-50 border-rose-100 text-gray-900' : 'bg-indigo-50 border-indigo-100 text-gray-900'
+                  modalType === 'edit' ? 'bg-sky-50 border-sky-100 text-gray-900' :
+                    modalType === 'delete' ? 'bg-rose-50 border-rose-100 text-gray-900' : 'bg-indigo-50 border-indigo-100 text-gray-900'
               )}>
                 <div>
                   <h2 className="text-2xl font-black italic tracking-tight flex items-center gap-2">
@@ -798,21 +798,16 @@ export default function ProgramManagement() {
                     {modalType === 'edit' && <Edit3 className="w-6 h-6 text-sky-500" />}
                     {modalType === 'lessons' && <BookOpen className="w-6 h-6 text-indigo-500" />}
                     {modalType === 'delete' && <Trash2 className="w-6 h-6 text-rose-500" />}
-                    
-                    {modalType === 'add' && 'Thêm chương trình học chuẩn'}
-                    {modalType === 'edit' && `Cấu hình thông số: ${selectedProgram?.ProgramId}`}
+
+                    {modalType === 'add' && 'Thêm chương trình học'}
+                    {modalType === 'edit' && `Chỉnh sửa thông tin chương trình học: ${selectedProgram?.ProgramId}`}
                     {modalType === 'lessons' && `Bài học trong: ${selectedProgram?.ProgramName}`}
                     {modalType === 'delete' && 'Xác nhận xóa chương trình'}
                   </h2>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-                    {modalType === 'add' && 'Cung cấp tài nguyên can thiệp mới vào hệ sinh thái VR'}
-                    {modalType === 'edit' && 'Cập nhật điều chỉnh thang mức độ tuổi, ngôn ngữ giảng dạy'}
-                    {modalType === 'lessons' && 'Danh sách định hình các phân cảnh VR tương tác phụ huynh & trẻ'}
-                    {modalType === 'delete' && 'Hành động này không thể khôi phục và có thể ảnh hưởng liên kết'}
-                  </p>
+
                 </div>
-                <button 
-                  onClick={handleCloseModal} 
+                <button
+                  onClick={handleCloseModal}
                   className="p-2.5 hover:bg-white/70 rounded-full transition-colors"
                   id="program-modal-close"
                 >
@@ -874,7 +869,7 @@ export default function ProgramManagement() {
                   </div>
 
                   <div className="flex justify-end pt-4 border-t border-gray-50">
-                    <button 
+                    <button
                       onClick={handleCloseModal}
                       className="py-4 px-8 bg-gray-100 hover:bg-gray-200 text-gray-600 font-extrabold rounded-2xl transition-all uppercase text-xs tracking-wider"
                     >
@@ -895,14 +890,14 @@ export default function ProgramManagement() {
                   </div>
 
                   <div className="app-modal-actions pt-6 border-t border-gray-150 flex gap-4">
-                    <button 
+                    <button
                       type="button"
                       onClick={handleCloseModal}
                       className="flex-1 py-4 border-4 border-gray-100 hover:border-gray-200 text-gray-400 hover:text-gray-600 font-extrabold rounded-2xl transition-all uppercase text-xs tracking-wider cursor-pointer"
                     >
                       Hủy bỏ
                     </button>
-                    <button 
+                    <button
                       type="button"
                       onClick={handleDeleteProgram}
                       className="flex-1 py-4 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-2xl shadow-xl shadow-rose-500/15 transition-all text-sm uppercase tracking-wider cursor-pointer"
@@ -915,16 +910,16 @@ export default function ProgramManagement() {
                 /* Modal Body: ADD OR EDIT FORM */
                 <form onSubmit={handleSaveProgram} className="app-modal-body p-8 md:p-10 space-y-6" id="program-add-edit-form">
                   <div className="space-y-4">
-                    
+
                     {/* Program Name */}
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
                         Tên chương trình học <span className="text-[#FF8E8E]">*</span>
                       </label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         required
-                        placeholder="Ví dụ: Luyện âm đôi, thám hiểm Đảo Khủng Long VR..." 
+                        placeholder="Ví dụ: Luyện âm đôi, thám hiểm Đảo Khủng Long VR..."
                         value={formName}
                         onChange={(e) => setFormName(e.target.value)}
                         className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 placeholder-gray-300 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
@@ -934,12 +929,12 @@ export default function ProgramManagement() {
                     {/* Description */}
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                        Mô tả chương trình can thiệp ngôn ngữ <span className="text-[#FF8E8E]">*</span>
+                        Mô tả chương trình học <span className="text-[#FF8E8E]">*</span>
                       </label>
-                      <textarea 
+                      <textarea
                         required
                         rows={4}
-                        placeholder="Hãy tóm tắt kịch bản tương tác và lỗi phát âm trẻ sẽ sửa tại chương trình..." 
+                        placeholder="Hãy tóm tắt kịch bản tương tác và lỗi phát âm trẻ sẽ sửa tại chương trình..."
                         value={formDesc}
                         onChange={(e) => setFormDesc(e.target.value)}
                         className="resize-y w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 placeholder-gray-300 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
@@ -947,13 +942,13 @@ export default function ProgramManagement() {
                     </div>
 
                     <div className="app-modal-form-grid grid grid-cols-1 md:grid-cols-2 gap-6">
-                      
+
                       {/* Age range From */}
                       <div className="space-y-2">
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
                           Độ tuổi bắt đầu <span className="text-[#FF8E8E]">*</span>
                         </label>
-                        <input 
+                        <input
                           type="text"
                           required
                           inputMode="numeric"
@@ -969,7 +964,7 @@ export default function ProgramManagement() {
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
                           Độ tuổi tối đa <span className="text-[#FF8E8E]">*</span>
                         </label>
-                        <input 
+                        <input
                           type="text"
                           required
                           inputMode="numeric"
@@ -999,15 +994,15 @@ export default function ProgramManagement() {
                       {/* Status select only when edit */}
                       <div className="space-y-2">
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                          Trạng thái hoạt động <span className="text-[#FF8E8E]">*</span>
+                          Trạng thái <span className="text-[#FF8E8E]">*</span>
                         </label>
                         <CustomSelect
                           value={formStatus}
                           onChange={(val) => setFormStatus(val as 'Active' | 'Inactive')}
                           variant="form"
                           options={[
-                            { value: 'Active', label: 'Hoạt động (Active)' },
-                            { value: 'Inactive', label: 'Tạm ngưng (Inactive)' }
+                            { value: 'Active', label: 'Hoạt động' },
+                            { value: 'Inactive', label: 'Tạm ngưng' }
                           ]}
                         />
                       </div>
@@ -1016,14 +1011,14 @@ export default function ProgramManagement() {
                   </div>
 
                   <div className="app-modal-actions pt-6 border-t border-gray-150 flex gap-4">
-                    <button 
+                    <button
                       type="button"
                       onClick={handleCloseModal}
                       className="flex-1 py-4 border-4 border-gray-100 hover:border-gray-200 text-gray-400 hover:text-gray-600 font-extrabold rounded-2xl transition-all uppercase text-xs tracking-wider"
                     >
                       Hủy thao tác
                     </button>
-                    <button 
+                    <button
                       type="submit"
                       className="flex-1 py-4 bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black rounded-2xl shadow-xl shadow-[#4EACAF]/15 transition-all text-sm uppercase tracking-wider"
                       id="program-submit-save"

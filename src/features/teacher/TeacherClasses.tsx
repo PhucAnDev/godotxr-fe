@@ -665,9 +665,9 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
             const averageScore =
               classResults.length > 0
                 ? Math.round(
-                    classResults.reduce((sum, result) => sum + result.Score, 0) /
-                      classResults.length
-                  )
+                  classResults.reduce((sum, result) => sum + result.Score, 0) /
+                  classResults.length
+                )
                 : 0;
 
             return (
@@ -682,9 +682,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                     <span className="rounded-md bg-slate-100 px-3 py-1 text-[10px] font-mono font-black uppercase text-slate-500">
                       Mã lớp: {classroom.id}
                     </span>
-                    <span className="rounded-md bg-[#4EACAF]/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#4EACAF]">
-                      API_DATABASE
-                    </span>
+
                     <span
                       className={cn(
                         'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-wider',

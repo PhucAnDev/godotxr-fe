@@ -993,17 +993,12 @@ export default function ClassroomManagement() {
                     {modalType === 'students' && <Users className="w-6 h-6 text-orange-500" />}
                     {modalType === 'detail' && <Info className="w-6 h-6 text-purple-600" />}
 
-                    {modalType === 'add' && 'Kiến tạo lớp học mới'}
-                    {modalType === 'edit' && `Chỉnh sửa: Lớp ${selectedClass?.ClassName}`}
+                    {modalType === 'add' && 'Tạo lớp học mới'}
+                    {modalType === 'edit' && `Chỉnh sửa Lớp học: ${selectedClass?.ClassName}`}
                     {modalType === 'students' && `Học viên lớp ${selectedClass?.ClassName}`}
-                    {modalType === 'detail' && 'Thông tin lớp học rèn luyện'}
+                    {modalType === 'detail' && 'Thông tin lớp học'}
                   </h2>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-                    {modalType === 'add' && 'Thiết lập đầy đủ lịch giảng, giáo viên đồng hành và nội dung bài chơi tương tác'}
-                    {modalType === 'edit' && 'Cập nhật lại thời gian biểu, tình trạng giảng dạy phối hợp'}
-                    {modalType === 'students' && 'Danh sách học sinh đang theo học lớp rèn luyện VR trực thuộc'}
-                    {modalType === 'detail' && 'Lược đồ chi tiết về dữ liệu khóa học rèn luyện trực thuộc hệ thống'}
-                  </p>
+
                 </div>
                 <button
                   onClick={handleCloseModal}
@@ -1069,19 +1064,16 @@ export default function ClassroomManagement() {
                           value={selectedClassroomDetail?.status || selectedClass.Status}
                         />
                         <DetailRow
-                          label="Sĩ số học sinh ghi danh"
+                          label="Số học sinh đã tham gia"
                           value={`${selectedClassroomDetail?.enrollmentCount ?? selectedClass.EnrollmentCount} học sinh`}
                         />
                         <DetailRow
                           label="Tên Chương trình học"
                           value={selectedClassroomDetail?.programName || programs.find(p => p.ProgramId === selectedClass.ProgramId)?.ProgramName || 'Không rõ'}
                         />
+
                         <DetailRow
-                          label="Mã định danh chương trình"
-                          value={String(selectedClassroomDetail?.programId || selectedClass.ProgramId)}
-                        />
-                        <DetailRow
-                          label="Nhóm tuổi tương thích học phần"
+                          label="Tuổi phù hợp tham gia lớp học"
                           value={`Từ ${selectedClassroomDetail?.targetAgeFrom ?? programs.find(p => p.ProgramId === selectedClass.ProgramId)?.TargetAgeFrom ?? 3} tuổi tới ${selectedClassroomDetail?.targetAgeTo ?? programs.find(p => p.ProgramId === selectedClass.ProgramId)?.TargetAgeTo ?? 10} tuổi`}
                         />
                         <DetailRow
@@ -1092,10 +1084,7 @@ export default function ClassroomManagement() {
                           label="Giáo viên đảm nhiệm"
                           value={selectedClassroomDetail?.teacherName || teachers.find(t => t.TeacherId === selectedClass.TeacherId)?.FullName || 'Không rõ'}
                         />
-                        <DetailRow
-                          label="Mã định danh giáo viên"
-                          value={String(selectedClassroomDetail?.userId || selectedClass.TeacherId)}
-                        />
+
                         <DetailRow
                           label="Chuyên môn giáo dục đồng hành"
                           value={selectedClassroomDetail?.teacherSpecialty || teachers.find(t => t.TeacherId === selectedClass.TeacherId)?.Specialty || 'Chưa thiết lập'}
@@ -1104,22 +1093,12 @@ export default function ClassroomManagement() {
                           label="Học kỳ liên kết"
                           value={selectedClassroomDetail?.semesterName || 'Chưa rõ'}
                         />
-                        <DetailRow
-                          label="Mã học kỳ"
-                          value={String(selectedClassroomDetail?.semesterId || selectedClass.SemesterId || 'Chưa rõ')}
-                        />
+
                         <DetailRow
                           label="Thời gian hoạt động lớp học"
                           value={`Từ ${formatDateDMY(selectedClassroomDetail ? selectedClassroomDetail.startDate : selectedClass.StartDate)} tới ${formatDateDMY(selectedClassroomDetail ? selectedClassroomDetail.endDate : selectedClass.EndDate)}`}
                         />
-                        <DetailRow
-                          label="Thời gian tạo lớp học"
-                          value={formatDateDMY(selectedClassroomDetail?.createdAt || selectedClass.CreatedAt)}
-                        />
-                        <DetailRow
-                          label="Thời điểm cập nhật lớp học"
-                          value={formatDateDMY(selectedClassroomDetail?.updatedAt || selectedClass.UpdatedAt || 'Chưa có cập nhật')}
-                        />
+
 
                         <div className="space-y-1.5 p-4 rounded-2xl bg-[#FDFCF5]/60 border border-[#F2ECD8]/40 col-span-1 md:col-span-2">
                           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block font-bold">Mô tả giáo trình & Phương tiện VR</span>
@@ -1167,7 +1146,7 @@ export default function ClassroomManagement() {
 
                         <div className="flex items-center gap-4">
                           <div className="text-right text-xs">
-                            <p className="text-gray-700 font-extrabold">PH: {student.ParentName}</p>
+                            <p className="text-gray-700 font-extrabold">Phụ huynh: {student.ParentName}</p>
                             <p className="text-gray-400">{student.Phone}</p>
                           </div>
                           <button

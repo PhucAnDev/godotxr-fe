@@ -220,8 +220,8 @@ function buildAnalysis(child: Child, results: Result[]): Analysis {
   const averageScore =
     results.length > 0
       ? Math.round(
-          results.reduce((sum, result) => sum + result.Score, 0) / results.length
-        )
+        results.reduce((sum, result) => sum + result.Score, 0) / results.length
+      )
       : 0;
   const completedResults = results.filter(
     (result) => result.CompletionStatus === 'Completed'
@@ -495,9 +495,9 @@ export default function TeacherClassDetail({
     const avgClassScore =
       classResults.length > 0
         ? Math.round(
-            classResults.reduce((sum, result) => sum + result.Score, 0) /
-              classResults.length
-          )
+          classResults.reduce((sum, result) => sum + result.Score, 0) /
+          classResults.length
+        )
         : 0;
     const totalPracticeMinutes = Math.round(
       classResults.reduce((sum, result) => sum + result.DurationSeconds, 0) / 60
@@ -750,9 +750,7 @@ export default function TeacherClassDetail({
                   Lớp học: {activeClass.id}
                 </span>
                 {renderStatusBadge(classStatus)}
-                <span className="rounded bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                  API_DATABASE
-                </span>
+
               </div>
 
               <h1 className="text-xl font-black tracking-tight text-slate-800 md:text-25">
@@ -963,7 +961,7 @@ export default function TeacherClassDetail({
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
-                    <th 
+                    <th
                       onClick={() => handleSort('ChildId')}
                       className="px-4 py-3 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Mã bé"
@@ -977,7 +975,7 @@ export default function TeacherClassDetail({
                         )}
                       </div>
                     </th>
-                    <th 
+                    <th
                       onClick={() => handleSort('FullName')}
                       className="px-4 py-3 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Họ tên"
@@ -991,7 +989,7 @@ export default function TeacherClassDetail({
                         )}
                       </div>
                     </th>
-                    <th 
+                    <th
                       onClick={() => handleSort('Age')}
                       className="px-4 py-3 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
                       title="Sắp xếp theo Tuổi"
@@ -1005,7 +1003,7 @@ export default function TeacherClassDetail({
                         )}
                       </div>
                     </th>
-                    <th 
+                    <th
                       onClick={() => handleSort('Gender')}
                       className="px-4 py-3 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
                       title="Sắp xếp theo Giới tính"
@@ -1019,7 +1017,7 @@ export default function TeacherClassDetail({
                         )}
                       </div>
                     </th>
-                    <th 
+                    <th
                       onClick={() => handleSort('LearningLevel')}
                       className="px-4 py-3 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Trình độ"
@@ -1033,7 +1031,7 @@ export default function TeacherClassDetail({
                         )}
                       </div>
                     </th>
-                    <th 
+                    <th
                       onClick={() => handleSort('ChildType')}
                       className="px-4 py-3 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Phân loại"
@@ -1047,7 +1045,7 @@ export default function TeacherClassDetail({
                         )}
                       </div>
                     </th>
-                    <th 
+                    <th
                       onClick={() => handleSort('AverageScore')}
                       className="px-4 py-3 cursor-pointer hover:bg-slate-100/50 transition-colors select-none text-center"
                       title="Sắp xếp theo Điểm TB"
@@ -1061,7 +1059,7 @@ export default function TeacherClassDetail({
                         )}
                       </div>
                     </th>
-                    <th 
+                    <th
                       onClick={() => handleSort('ProgressLevel')}
                       className="px-4 py-3 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
                       title="Sắp xếp theo Tiến độ"

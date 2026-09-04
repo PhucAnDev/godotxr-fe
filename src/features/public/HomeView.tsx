@@ -135,7 +135,7 @@ export default function HomeView({
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[54px] font-black text-gray-900 leading-[1.1] tracking-tighter italic">
-              Luyện nói cùng <span className="text-[#FF8E8E] relative inline-block">VR<span className="absolute left-0 bottom-1 w-full h-2.5 bg-[#FF8E8E]/15 -z-10" /></span> <br />
+              Luyện nói cùng <span className="text-[#FF8E8E] relative inline-block">VR.<span className="absolute left-0 bottom-1 w-full h-2.5 bg-[#FF8E8E]/15 -z-10" /></span> <br />
               Theo dõi tiến độ trên <span className="text-[#4EACAF] relative inline-block">Dashboard<span className="absolute left-0 bottom-1 w-full h-2.5 bg-[#4EACAF]/15 -z-10" /></span>
             </h1>
 
@@ -187,7 +187,7 @@ export default function HomeView({
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.1 }}
-            className="lg:col-span-5 relative mt-8 lg:mt-0 flex items-center justify-center p-6"
+            className="lg:col-span-5 relative mt-8 lg:mt-0 flex items-center justify-center p-10 md:p-14"
           >
             {/* Visual background ornament */}
             <div className="absolute inset-0 bg-[#F2ECD8]/30 rounded-[48px] rotate-2 transform pointer-events-none -z-10 scale-95" />
@@ -271,7 +271,7 @@ export default function HomeView({
             <motion.div 
               {...floatAnimation(0)}
               whileHover={{ scale: 1.05 }}
-              className="absolute -top-6 -right-4 md:-right-8 bg-white/95 border-2 border-[#E5DFCA]/40 rounded-2xl p-3 shadow-xl flex items-center gap-2.5 max-w-[190px] z-20 cursor-default"
+              className="absolute -top-8 -right-8 md:-right-16 bg-white/95 border-2 border-[#E5DFCA]/40 rounded-2xl p-3 shadow-xl flex items-center gap-2.5 max-w-[190px] z-20 cursor-default"
             >
               <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-orange-500 shrink-0">
                 <PlayCircle className="w-4 h-4" />
@@ -286,7 +286,7 @@ export default function HomeView({
             <motion.div 
               {...floatAnimation(1)}
               whileHover={{ scale: 1.05 }}
-              className="absolute -bottom-4 -left-4 md:-left-8 bg-white/95 border-2 border-[#E5DFCA]/40 rounded-2xl p-3 shadow-xl flex items-center gap-2.5 max-w-[190px] z-20 cursor-default"
+              className="absolute -bottom-8 -left-8 md:-left-16 bg-white/95 border-2 border-[#E5DFCA]/40 rounded-2xl p-3 shadow-xl flex items-center gap-2.5 max-w-[190px] z-20 cursor-default"
             >
               <div className="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center text-teal-600 shrink-0">
                 <Mic className="w-4 h-4" />
@@ -301,7 +301,7 @@ export default function HomeView({
             <motion.div 
               {...floatAnimation(1.8)}
               whileHover={{ scale: 1.05 }}
-              className="absolute bottom-[40px] -right-4 bg-white/95 border-2 border-[#E5DFCA]/40 rounded-2xl p-3 shadow-xl flex items-center gap-2.5 max-w-[190px] z-20 cursor-default"
+              className="absolute bottom-[20px] -right-10 md:-right-18 bg-white/95 border-2 border-[#E5DFCA]/40 rounded-2xl p-3 shadow-xl flex items-center gap-2.5 max-w-[190px] z-20 cursor-default"
             >
               <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center text-violet-500 shrink-0">
                 <Sparkles className="w-4 h-4" />
@@ -316,7 +316,7 @@ export default function HomeView({
             <motion.div 
               {...floatAnimation(2.5)}
               whileHover={{ scale: 1.05 }}
-              className="absolute top-[40px] -left-8 bg-white/95 border-2 border-[#E5DFCA]/40 rounded-2xl p-3 shadow-xl flex items-center gap-2.5 max-w-[190px] z-20 cursor-default"
+              className="absolute top-[20px] -left-12 md:-left-22 bg-white/95 border-2 border-[#E5DFCA]/40 rounded-2xl p-3 shadow-xl flex items-center gap-2.5 max-w-[190px] z-20 cursor-default"
             >
               <div className="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center text-sky-500 shrink-0">
                 <TrendingUp className="w-4 h-4" />

@@ -303,7 +303,7 @@ export default function ParentChildClass() {
 
               <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-50 pb-5">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 bg-[#4EACAF]/10 text-[#4EACAF] rounded-2xl flex items-center justify-center shrink-0">
                     <School className="w-6 h-6" />
                   </div>
                   <div>
@@ -317,9 +317,6 @@ export default function ParentChildClass() {
                 <div className="flex items-center gap-2">
                   <span className="px-3.5 py-1 bg-emerald-50 text-emerald-600 rounded-full font-black text-[10px] uppercase border border-emerald-100">
                     {displayStatus === 'Active' ? 'Đang hoạt động' : displayStatus}
-                  </span>
-                  <span className="px-3.5 py-1 bg-indigo-50 text-indigo-600 rounded-full font-black text-[10px] uppercase border border-indigo-100">
-                    {displayEnrollmentStatus === 'Active' ? 'Đã ghi danh' : displayEnrollmentStatus}
                   </span>
                 </div>
               </div>
@@ -372,7 +369,7 @@ export default function ParentChildClass() {
 
                   {/* Left: Lesson list */}
                   <div className="space-y-4">
-                    <span className="text-[10px] text-indigo-400 font-black uppercase tracking-wider block">Bài học của trẻ:</span>
+                    <span className="text-[10px] text-[#4EACAF] font-black uppercase tracking-wider block">Bài học của trẻ:</span>
                     <div className="space-y-3">
                       {lessons.map((les) => (
                         <button
@@ -382,13 +379,13 @@ export default function ParentChildClass() {
                           className={cn(
                             'w-full text-left p-5 rounded-3xl border-2 transition-all flex items-start gap-4 cursor-pointer relative group',
                             selectedLessonId === les.id
-                              ? 'bg-indigo-50/50 border-indigo-400 shadow-sm'
-                              : 'bg-white border-gray-100 hover:border-indigo-150'
+                              ? 'bg-[#4EACAF]/10 border-[#4EACAF] shadow-xs'
+                              : 'bg-white border-gray-100 hover:border-[#4EACAF]/30'
                           )}
                         >
                           <div className={cn(
                             'w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-xs leading-none',
-                            selectedLessonId === les.id ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-500'
+                            selectedLessonId === les.id ? 'bg-[#4EACAF] text-white' : 'bg-slate-100 text-slate-500'
                           )}>
                             {les.lessonOrder}
                           </div>
@@ -396,14 +393,14 @@ export default function ParentChildClass() {
                           <div className="space-y-1 flex-1 min-w-0 pr-8">
                             <h4 className={cn(
                               'font-extrabold text-sm leading-tight truncate',
-                              selectedLessonId === les.id ? 'text-indigo-700' : 'text-gray-800'
+                              selectedLessonId === les.id ? 'text-[#4EACAF]' : 'text-gray-800'
                             )}>
                               {les.lessonName}
                             </h4>
                             <p className="text-[10px] text-gray-400 font-semibold line-clamp-1">{les.description}</p>
                             <div className="flex items-center gap-2 mt-1.5">
                               {les.targetSkill && (
-                                <span className="text-[8px] uppercase font-black bg-indigo-50 text-indigo-500 px-1.5 py-0.5 rounded truncate max-w-[120px]">
+                                <span className="text-[8px] uppercase font-black bg-[#4EACAF]/10 text-[#4EACAF] px-1.5 py-0.5 rounded truncate max-w-[120px]">
                                   {les.targetSkill}
                                 </span>
                               )}
@@ -424,7 +421,7 @@ export default function ParentChildClass() {
                               e.stopPropagation();
                               setActiveLessonDetail(les);
                             }}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 rounded-full transition-all opacity-60 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100"
+                            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-[#4EACAF]/10 text-slate-400 hover:text-[#4EACAF] rounded-full transition-all opacity-60 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100"
                             title="Xem chi tiết bài học"
                           >
                             <Eye className="w-4 h-4" />
@@ -495,10 +492,10 @@ export default function ParentChildClass() {
 
             {/* Teacher card */}
             <div className="bg-white rounded-xl p-8 border border-gray-100 shadow-sm relative overflow-hidden space-y-6">
-              <div className="absolute top-0 left-0 w-32 h-32 bg-indigo-500/5 rounded-full -ml-8 -mt-8 pointer-events-none" />
+              <div className="absolute top-0 left-0 w-32 h-32 bg-[#4EACAF]/5 rounded-full -ml-8 -mt-8 pointer-events-none" />
 
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden">
+                <div className="w-12 h-12 bg-[#4EACAF]/10 text-[#4EACAF] rounded-2xl flex items-center justify-center shrink-0 overflow-hidden">
                   {teacherDetail?.avatar ? (
                     <img src={teacherDetail.avatar} alt={displayTeacherName} className="w-full h-full object-cover" />
                   ) : (
@@ -506,7 +503,7 @@ export default function ParentChildClass() {
                   )}
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest leading-none">Giáo viên đồng hành</h4>
+                  <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest leading-none">Giáo viên: </h4>
                   <span className="text-base font-extrabold text-gray-800 block mt-1.5 leading-none">
                     {displayTeacherName}
                   </span>
@@ -554,9 +551,9 @@ export default function ParentChildClass() {
 
             {/* Program card */}
             {classroomDetail && (
-              <div className="bg-[#FFFDF5]/40 rounded-xl p-8 border border-yellow-100 shadow-sm relative space-y-6">
+              <div className="bg-white rounded-xl p-8 border border-gray-100 shadow-sm relative space-y-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 bg-[#4EACAF]/10 text-[#4EACAF] rounded-2xl flex items-center justify-center shrink-0">
                     <BookMarked className="w-6 h-6" />
                   </div>
                   <div>
@@ -578,7 +575,7 @@ export default function ParentChildClass() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-400">Ngôn ngữ áp dụng:</span>
-                    <strong className="text-indigo-600 font-black">{classroomDetail.programLanguage === 'Vietnamese' ? 'Tiếng Việt' : classroomDetail.programLanguage}</strong>
+                    <strong className="text-gray-800 font-extrabold">{classroomDetail.programLanguage === 'Vietnamese' ? 'Tiếng Việt' : classroomDetail.programLanguage}</strong>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-400">Học kỳ:</span>
@@ -608,11 +605,11 @@ export default function ParentChildClass() {
             </button>
 
             <div className="flex items-center gap-4 shrink-0 mb-4">
-              <div className="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center font-black text-lg">
+              <div className="w-12 h-12 bg-[#4EACAF]/10 text-[#4EACAF] rounded-2xl flex items-center justify-center font-black text-lg">
                 {activeLessonDetail.lessonOrder}
               </div>
               <div className="text-left">
-                <span className="text-[10px] text-indigo-400 font-black uppercase tracking-wider block">Chi tiết bài học</span>
+                <span className="text-[10px] text-[#4EACAF] font-black uppercase tracking-wider block">Chi tiết bài học</span>
                 <h3 className="text-xl font-black text-slate-800 leading-snug">{activeLessonDetail.lessonName}</h3>
               </div>
             </div>
