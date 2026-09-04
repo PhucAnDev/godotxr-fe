@@ -22,10 +22,10 @@ import { cn } from '../../lib/utils';
 import CustomSelect from '../../components/common/CustomSelect';
 import { useChildManagementApi } from '../../hooks/useChildManagementApi';
 import { getLessonsByProgram, type LessonResponse } from '../../services/lessonService';
+import { getProgramById, type ProgramResponse } from '../../services/programService';
 import type { ChildProfileResponse } from '../../services/childProfileService';
 import { getEnrollmentsByChild, type EnrollmentResponse } from '../../services/enrollmentService';
 import { getClassroomById, type ClassroomResponse } from '../../services/classroomService';
-import { getLessonSlots, type LessonSlotResponse } from '../../services/lessonSlotService';
 import { getUserById, type UserResponse } from '../../services/userService';
 
 const formatDateDMY = (dateStr: string): string => {
@@ -46,8 +46,8 @@ export default function ParentChildClass() {
   // Real API data
   const [enrollment, setEnrollment] = useState<EnrollmentResponse | null>(null);
   const [classroomDetail, setClassroomDetail] = useState<ClassroomResponse | null>(null);
+  const [programDetail, setProgramDetail] = useState<ProgramResponse | null>(null);
   const [lessons, setLessons] = useState<LessonResponse[]>([]);
-  const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isClassLoading, setIsClassLoading] = useState(false);
@@ -92,8 +92,8 @@ export default function ParentChildClass() {
     setIsClassLoading(true);
     setEnrollment(null);
     setClassroomDetail(null);
+    setProgramDetail(null);
     setLessons([]);
-    setSelectedLessonId(null);
     setNoEnrollment(false);
 
     // Get enrollments for this child (new endpoint, Parent-accessible)
@@ -112,14 +112,19 @@ export default function ParentChildClass() {
     const clsRes = await getClassroomById(activeEnroll.classId);
     if (clsRes.success && clsRes.data) {
       setClassroomDetail(clsRes.data);
-      // Fetch lessons for this program
+      // Fetch lessons and program detail for this program
       if (clsRes.data.programId) {
         setIsLessonsLoading(true);
-        const lessonsRes = await getLessonsByProgram(clsRes.data.programId);
+        const [lessonsRes, progRes] = await Promise.all([
+          getLessonsByProgram(clsRes.data.programId),
+          getProgramById(clsRes.data.programId)
+        ]);
         if (lessonsRes.success && lessonsRes.data) {
           const sorted = [...lessonsRes.data].sort((a, b) => a.lessonOrder - b.lessonOrder);
           setLessons(sorted);
-          if (sorted.length > 0) setSelectedLessonId(sorted[0].id);
+        }
+        if (progRes.success && progRes.data) {
+          setProgramDetail(progRes.data);
         }
         setIsLessonsLoading(false);
       }
@@ -145,29 +150,6 @@ export default function ParentChildClass() {
       label: `👦 ${ch.fullName} (${ch.age} tuổi)`
     })),
     [children]);
-
-  const [slots, setSlots] = useState<LessonSlotResponse[]>([]);
-  const [isSlotsLoading, setIsSlotsLoading] = useState(false);
-
-  // Fetch real slots from API when selectedLessonId changes
-  useEffect(() => {
-    const fetchSlots = async (lessonId: number) => {
-      setIsSlotsLoading(true);
-      const res = await getLessonSlots(lessonId);
-      if (res.success && res.data) {
-        setSlots(res.data);
-      } else {
-        setSlots([]);
-      }
-      setIsSlotsLoading(false);
-    };
-
-    if (selectedLessonId) {
-      void fetchSlots(selectedLessonId);
-    } else {
-      setSlots([]);
-    }
-  }, [selectedLessonId]);
 
   // Fetch teacher details when classroomDetail changes
   useEffect(() => {
@@ -322,11 +304,11 @@ export default function ParentChildClass() {
               </div>
 
               <div className="space-y-4">
-                <p className="text-gray-600 font-bold text-sm leading-relaxed italic bg-slate-50/70 p-5 rounded-2xl border border-slate-100/30">
+                <p className="text-gray-600 font-bold text-sm leading-relaxed italic bg-slate-50/70 p-5 rounded-2xl border border-slate-100/30 whitespace-pre-line">
                   &ldquo;{displayDescription}&rdquo;
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-semibold text-gray-500">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-semibold text-gray-500">
                   <div className="p-4 bg-slate-50 rounded-2xl">
                     <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider block mb-1">Thời hạn học</span>
                     <span className="text-gray-700 font-medium">{displayStartDate} &rarr; {displayEndDate}</span>
@@ -336,8 +318,12 @@ export default function ParentChildClass() {
                     <span className="text-gray-700 font-medium">{displayClassId}</span>
                   </div>
                   <div className="p-4 bg-slate-50 rounded-2xl">
-                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider block mb-1">Ngày ghi danh vào học</span>
+                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider block mb-1">Ngày ghi danh</span>
                     <span className="text-gray-700 font-medium">{displayEnrollmentDate}</span>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-2xl">
+                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider block mb-1">Trạng thái</span>
+                    <span className="text-emerald-600 font-bold">{displayEnrollmentStatus === 'Active' ? 'Đã ghi danh' : displayEnrollmentStatus}</span>
                   </div>
                 </div>
               </div>
@@ -353,7 +339,7 @@ export default function ParentChildClass() {
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-50 pb-6">
                 <div>
-                  <h3 className="text-2xl font-black text-gray-900 leading-none italic">Danh sách bài học và bài tập tương ứng</h3>
+                  <h3 className="text-2xl font-black text-gray-900 leading-none italic">Danh sách bài học</h3>
                 </div>
                 <span className="text-xs bg-[#4EACAF]/10 text-[#4EACAF] px-3.5 py-1 rounded-full font-black">
                   Tổng số: {lessons.length} Chương buổi
@@ -365,123 +351,57 @@ export default function ParentChildClass() {
                   {isLessonsLoading ? 'Đang tải bài học...' : 'Chưa có bài giảng nào được cấu hình cho chương trình này.'}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-                  {/* Left: Lesson list */}
-                  <div className="space-y-4">
-                    <span className="text-[10px] text-[#4EACAF] font-black uppercase tracking-wider block">Bài học của trẻ:</span>
-                    <div className="space-y-3">
-                      {lessons.map((les) => (
-                        <button
-                          key={les.id}
-                          type="button"
-                          onClick={() => setSelectedLessonId(les.id)}
-                          className={cn(
-                            'w-full text-left p-5 rounded-3xl border-2 transition-all flex items-start gap-4 cursor-pointer relative group',
-                            selectedLessonId === les.id
-                              ? 'bg-[#4EACAF]/10 border-[#4EACAF] shadow-xs'
-                              : 'bg-white border-gray-100 hover:border-[#4EACAF]/30'
-                          )}
-                        >
-                          <div className={cn(
-                            'w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-xs leading-none',
-                            selectedLessonId === les.id ? 'bg-[#4EACAF] text-white' : 'bg-slate-100 text-slate-500'
-                          )}>
+                <div className="space-y-4">
+                  <span className="text-[10px] text-[#4EACAF] font-black uppercase tracking-wider block">Bài học của trẻ:</span>
+                  <div className="space-y-3">
+                    {lessons.map((les) => (
+                      <div
+                        key={les.id}
+                        className="w-full p-5 rounded-2xl border border-gray-100 bg-white hover:border-[#4EACAF]/40 hover:shadow-xs transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group"
+                      >
+                        <div className="flex items-start sm:items-center gap-4 flex-1 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-[#4EACAF]/10 text-[#4EACAF] flex items-center justify-center shrink-0 font-black text-sm">
                             {les.lessonOrder}
                           </div>
 
-                          <div className="space-y-1 flex-1 min-w-0 pr-8">
-                            <h4 className={cn(
-                              'font-extrabold text-sm leading-tight truncate',
-                              selectedLessonId === les.id ? 'text-[#4EACAF]' : 'text-gray-800'
-                            )}>
-                              {les.lessonName}
-                            </h4>
-                            <p className="text-[10px] text-gray-400 font-semibold line-clamp-1">{les.description}</p>
-                            <div className="flex items-center gap-2 mt-1.5">
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-extrabold text-base text-gray-800 leading-tight">
+                                {les.lessonName}
+                              </h4>
                               {les.targetSkill && (
-                                <span className="text-[8px] uppercase font-black bg-[#4EACAF]/10 text-[#4EACAF] px-1.5 py-0.5 rounded truncate max-w-[120px]">
+                                <span className="text-[10px] uppercase font-black bg-[#4EACAF]/10 text-[#4EACAF] px-2 py-0.5 rounded-md">
                                   {les.targetSkill}
                                 </span>
                               )}
-                              <span className="text-[8px] uppercase font-black text-gray-400 flex items-center gap-1 shrink-0">
-                                <Clock className="w-2.5 h-2.5" />
+                            </div>
+                            {les.description && (
+                              <p className="text-xs text-gray-500 font-medium line-clamp-2">{les.description}</p>
+                            )}
+                            <div className="flex items-center gap-4 text-xs font-semibold text-gray-400 pt-0.5">
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3.5 h-3.5 text-[#4EACAF]" />
                                 {les.estimatedDuration} phút
                               </span>
-                              <span className="text-[8px] uppercase font-black text-gray-400 flex items-center gap-1 shrink-0">
-                                <Award className="w-2.5 h-2.5 text-amber-500" />
-                                {les.maxScore ?? 100}đ
+                              <span className="flex items-center gap-1">
+                                <Award className="w-3.5 h-3.5 text-amber-500" />
+                                Thang điểm: {les.maxScore ?? 100}đ
                               </span>
                             </div>
                           </div>
+                        </div>
 
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveLessonDetail(les);
-                            }}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-[#4EACAF]/10 text-slate-400 hover:text-[#4EACAF] rounded-full transition-all opacity-60 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100"
-                            title="Xem chi tiết bài học"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveLessonDetail(les)}
+                          className="self-end sm:self-center shrink-0 px-4 py-2 bg-slate-50 hover:bg-[#4EACAF] hover:text-white text-slate-600 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-slate-100 hover:border-[#4EACAF] cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Xem chi tiết</span>
                         </button>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
-
-                  {/* Right: Slots for selected lesson */}
-                  <div className="bg-[#FDFCF6]/50 rounded-xl p-6 border-2 border-dashed border-[#F2ECD8] space-y-4">
-                    <div className="border-b border-[#F2ECD8] pb-4">
-                      <span className="text-[10px] text-amber-600 font-black uppercase tracking-wider block">Các Spawner vật phẩm trong bài học:</span>
-                      <h4 className="text-base font-black text-gray-800 leading-tight italic mt-1">
-                        {lessons.find(l => l.id === selectedLessonId)?.lessonOrder}. {lessons.find(l => l.id === selectedLessonId)?.lessonName}
-                      </h4>
-                    </div>
-
-                    <div className="space-y-3.5">
-                      {isSlotsLoading ? (
-                        <div className="py-12 text-center text-gray-400 font-bold italic text-sm flex flex-col items-center justify-center gap-2">
-                          <RefreshCw className="h-6 w-6 text-[#4EACAF] animate-spin" />
-                          <p>Đang tải danh sách Spawner...</p>
-                        </div>
-                      ) : slots.length === 0 ? (
-                        <div className="py-6 text-center text-gray-400 italic font-semibold text-xs leading-relaxed space-y-2">
-                          <Compass className="w-8 h-8 text-[#FFA800] mx-auto opacity-40" />
-                          <p>Chưa cấu hình các spawner vật phẩm cho bài học này.</p>
-                        </div>
-                      ) : (
-                        slots.map((slot) => (
-                          <div key={slot.id} className="bg-white p-4 rounded-2xl border border-gray-100 space-y-3 relative group">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="space-y-0.5 flex-1 min-w-0 pr-6">
-                                <strong className="text-gray-800 font-extrabold text-xs block leading-snug truncate">
-                                  📦 Vị trí: {slot.slotName}
-                                </strong>
-                              </div>
-                            </div>
-
-                            <div className="flex flex-col text-[11px] text-gray-500 font-semibold border-t border-slate-50 pt-2 space-y-1">
-                              {slot.itemAsset ? (
-                                <>
-                                  <p className="text-emerald-700">
-                                    🎯 Vật phẩm: <strong className="text-emerald-950">{slot.itemAsset.name}</strong>
-                                  </p>
-                                  <p className="text-slate-600">
-                                    🗣️ Từ chuẩn: <strong className="text-slate-800">"{slot.itemAsset.answerSentence}"</strong>
-                                  </p>
-                                </>
-                              ) : (
-                                <span className="text-slate-400 italic">Chưa gán mô hình 3D</span>
-                              )}
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-
                 </div>
               )}
             </div>
@@ -560,22 +480,32 @@ export default function ParentChildClass() {
                     <span className="text-xs bg-[#FF8E8E]/10 text-[#FF8E8E] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider block w-fit">
                       Chương Trình học
                     </span>
-                    <h3 className="text-base font-black text-gray-800 leading-snug mt-1.5">{classroomDetail.programName}</h3>
+                    <h3 className="text-base font-black text-gray-800 leading-snug mt-1.5">
+                      {programDetail?.programName || classroomDetail.programName}
+                    </h3>
                   </div>
                 </div>
 
-                <p className="text-xs text-gray-500 leading-relaxed font-bold italic bg-white p-4 rounded-2xl border border-yellow-50">
-                  {classroomDetail.description || 'Chương trình rèn luyện uốn âm đơn kết hợp cột hơi cho trẻ nhỏ.'}
+                <p className="text-xs text-gray-600 leading-relaxed font-bold italic bg-slate-50/70 p-4 rounded-2xl border border-slate-100/50 whitespace-pre-line">
+                  {programDetail?.description || 'Chương trình rèn luyện uốn âm đơn kết hợp cột hơi cho trẻ nhỏ.'}
                 </p>
 
-                <div className="space-y-3 pt-1 text-xs font-bold text-gray-600 border-t border-yellow-100">
+                <div className="space-y-3 pt-1 text-xs font-bold text-gray-600 border-t border-gray-100">
                   <div className="flex items-center justify-between">
                     <span className="text-gray-400">Độ tuổi phục vụ:</span>
-                    <strong className="text-gray-800 font-extrabold">{classroomDetail.targetAgeFrom} &rarr; {classroomDetail.targetAgeTo} tuổi</strong>
+                    <strong className="text-gray-800 font-extrabold">
+                      {programDetail ? `${programDetail.targetAgeFrom} → ${programDetail.targetAgeTo} tuổi` : `${classroomDetail.targetAgeFrom} → ${classroomDetail.targetAgeTo} tuổi`}
+                    </strong>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-400">Ngôn ngữ áp dụng:</span>
-                    <strong className="text-gray-800 font-extrabold">{classroomDetail.programLanguage === 'Vietnamese' ? 'Tiếng Việt' : classroomDetail.programLanguage}</strong>
+                    <strong className="text-gray-800 font-extrabold">
+                      {(programDetail?.language ?? classroomDetail.programLanguage) === 'Vietnamese' ? 'Tiếng Việt' : (programDetail?.language ?? classroomDetail.programLanguage)}
+                    </strong>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Số bài giảng:</span>
+                    <strong className="text-gray-800 font-extrabold">{lessons.length} bài học</strong>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-400">Học kỳ:</span>
@@ -662,7 +592,7 @@ export default function ParentChildClass() {
 
               <div className="space-y-2">
                 <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Nội dung chi tiết chương trình học:</span>
-                <p className="text-slate-600 text-sm font-semibold leading-relaxed bg-slate-50 p-5 rounded-2xl border border-slate-100/50">
+                <p className="text-slate-600 text-sm font-semibold leading-relaxed bg-slate-50 p-5 rounded-2xl border border-slate-100/50 whitespace-pre-line">
                   {activeLessonDetail.description || 'Chưa có thông tin mô tả chi tiết cho bài học này.'}
                 </p>
               </div>
@@ -762,7 +692,7 @@ export default function ParentChildClass() {
 
               <div className="space-y-2">
                 <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Hướng dẫn luyện tập cho trẻ:</span>
-                <p className="text-slate-600 text-xs font-semibold leading-relaxed bg-[#FFFDF5]/60 p-4 rounded-xl border border-yellow-100/50">
+                <p className="text-slate-600 text-xs font-semibold leading-relaxed bg-[#FFFDF5]/60 p-4 rounded-xl border border-yellow-100/50 whitespace-pre-line">
                   {activeExerciseDetail.instruction || 'Chưa có thông tin hướng dẫn cụ thể.'}
                 </p>
               </div>

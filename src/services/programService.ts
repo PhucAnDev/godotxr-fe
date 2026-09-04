@@ -23,6 +23,8 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<Serv
 
 export const getPrograms = (pageNumber = 1, pageSize = 100) =>
   request<PagedResponse<ProgramResponse>>(`/api/programs?pageNumber=${pageNumber}&pageSize=${pageSize}`);
+export const getProgramById = (id: number) =>
+  request<ProgramResponse>(`/api/programs/${id}`);
 export const createProgram = (payload: ProgramPayload) =>
   request<ProgramResponse>('/api/programs', { method: 'POST', body: JSON.stringify(payload) });
 export const updateProgram = (id: number, payload: ProgramPayload) =>

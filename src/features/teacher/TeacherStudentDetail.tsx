@@ -182,10 +182,11 @@ function mapResultRecord(
   return {
     ResultId: String(result.id),
     ChildId: String(result.childId),
-    ExerciseId: String(result.exerciseId),
+    ExerciseId: result.exerciseId ? String(result.exerciseId) : (result.lessonId ? String(result.lessonId) : '0'),
     ExerciseName:
-      exerciseNameLookup[String(result.exerciseId)] ||
-      `Bài tập #${result.exerciseId}`,
+      (result.exerciseId && exerciseNameLookup[String(result.exerciseId)]) ||
+      (result.lessonId ? `Bài học đi chợ mua đồ` : null) ||
+      (result.exerciseId ? `Bài tập #${result.exerciseId}` : `Bài rèn luyện VR`),
     AttemptNumber: result.attemptNumber,
     CompletionStatus: normalizedStatus,
     Score: Math.round(result.score),
@@ -208,8 +209,8 @@ function mapPronunciationDetailRecord(
   return {
     DetailId: String(detail.id),
     ResultId: String(detail.resultId),
-    ExpectedPhoneme: detail.expectedPhoneme,
-    ActualPhoneme: detail.actualPhoneme,
+    ExpectedPhoneme: detail.expectedPhoneme || '—',
+    ActualPhoneme: detail.actualPhoneme || '—',
     AccuracyScore: detail.accuracyScore,
     IssueType: detail.issueType ?? 'Chưa phân loại',
     ReplayDataUrl: detail.replayDataUrl ?? '',
@@ -750,12 +751,12 @@ export default function TeacherStudentDetail({
 
           <div className="bg-white rounded-[36px] p-8 border border-gray-100 shadow-sm">
             <div className="flex flex-col lg:flex-row lg:items-start gap-8">
-              <div className="flex items-center gap-5 min-w-[280px]">
-                <div className="w-20 h-20 rounded-[28px] bg-[#E2F2F3] flex items-center justify-center text-[#4EACAF]">
+              <div className="flex items-center gap-5 min-w-[280px] shrink-0">
+                <div className="w-20 h-20 rounded-[28px] bg-[#E2F2F3] flex items-center justify-center text-[#4EACAF] shrink-0">
                   <User className="w-10 h-10" />
                 </div>
-                <div className="space-y-2">
-                  <h2 className="text-2xl font-black text-gray-900 leading-none">
+                <div className="space-y-1.5 min-w-0 flex-1">
+                  <h2 className="text-2xl font-black text-gray-900 leading-tight truncate">
                     {child.FullName}
                   </h2>
                   <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
