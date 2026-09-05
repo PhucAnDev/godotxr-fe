@@ -89,7 +89,7 @@ export default function CustomSelect({
             ? "bg-slate-100/80 border border-slate-200 cursor-not-allowed text-gray-400 opacity-60" 
             : "cursor-pointer",
           isForm 
-            ? cn("bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 text-sm", !disabled && "focus:border-[#4EACAF]")
+            ? cn("bg-[#FDFCF5] border border-slate-200 rounded-xl px-3.5 py-2.5 font-bold text-slate-700 text-xs transition-all", !disabled && "focus:border-[#4EACAF] focus:bg-white")
             : isSubform
               ? cn("bg-white border border-slate-200 rounded-xl px-4 py-2.5 font-medium text-slate-800 text-sm focus:border-blue-500", !disabled && "focus:border-blue-500")
               : "bg-slate-50 border border-slate-200 hover:border-[#4EACAF]/20 px-3 py-2 rounded-lg font-bold text-xs text-slate-600 focus:bg-white focus:border-[#4EACAF] uppercase"

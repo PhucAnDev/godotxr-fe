@@ -1,4 +1,4 @@
-import { Bell, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { cn, resolveAvatarUrl } from '../../lib/utils';
 import { getSessionUser } from '../../lib/authSession';
 import { getCurrentUser as getMockUser } from '../../lib/authMock';
@@ -63,19 +63,8 @@ export function Topbar({
       </div>
 
       <div className="flex items-center space-x-4">
-        <button
-          className={cn(
-            'p-2 rounded-xl transition-all relative cursor-pointer',
-            isAdmin ? 'hover:bg-slate-800 text-slate-300' : isTeacher ? 'hover:bg-[#D7E5E0] text-gray-700' : 'hover:bg-[#E5DFCA] text-[#555]'
-          )}
-        >
-          <Bell className="w-5 h-5 shrink-0" />
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-        </button>
-
         <div className={cn(
-          'flex items-center space-x-2 pl-3 border-l shrink-0',
-          isAdmin ? 'border-slate-800' : isTeacher ? 'border-[#D2E0DC]' : 'border-[#E5DFCA]'
+          'flex items-center space-x-2 shrink-0'
         )}>
           <img
             src={resolveAvatarUrl((currentUser as any)?.Avatar || (currentUser as any)?.avatar, avatarSeed, 'open-peeps')}

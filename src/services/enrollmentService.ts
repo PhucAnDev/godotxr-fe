@@ -1,6 +1,6 @@
 import { apiRequest } from './apiClient';
 import { fromError, fromResponse, type PagedResponse, type ServiceResult } from './serviceTypes';
-export interface EnrollmentResponse { id: number; childId: number; childFullName: string; childLearningLevel: string; classId: number; className: string; enrollmentDate: string; status: string; createdAt: string; updatedAt: string; }
+export interface EnrollmentResponse { id: number; childId: number; childFullName: string; childLearningLevel: string; childType?: string; classId: number; className: string; enrollmentDate: string; status: string; createdAt: string; updatedAt: string; }
 export interface EnrollmentPayload { childId: number; classId: number; enrollmentDate: string; status: string; }
 async function request<T>(endpoint: string, options?: RequestInit): Promise<ServiceResult<T>> { try { return fromResponse(await apiRequest<T>(endpoint, options)); } catch (error) { return fromError(error); } }
 export const getEnrollments = (pageNumber = 1, pageSize = 100) => request<PagedResponse<EnrollmentResponse>>(`/api/enrollments?pageNumber=${pageNumber}&pageSize=${pageSize}`);

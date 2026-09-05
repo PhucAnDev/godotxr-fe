@@ -951,9 +951,6 @@ export default function RoleUserManagementPage({
                         ? `Thêm ${config.itemLabel} mới`
                         : `Chi tiết ${config.itemLabel}`}
                   </h2>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-                    {modalMode === 'add' ? 'Khởi tạo tài khoản mới' : selectedUser?.fullName}
-                  </p>
                 </div>
                 <button
                   type="button"

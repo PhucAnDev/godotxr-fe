@@ -693,9 +693,6 @@ export default function SchoolYearManagement() {
                     {modalMode === 'add' ? <Plus className="w-6 h-6 text-[#4EACAF]" strokeWidth={2.5} /> : <Edit3 className="w-6 h-6 text-sky-500" />}
                     {modalMode === 'add' ? 'Thêm Niên Khóa Mới' : `Chỉnh Sửa Niên Khóa: ${selectedYear?.SchoolYearId}`}
                   </h2>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-                    Cân đối cơ số phòng học, phân phối trẻ thơ đúng tiến độ học kì
-                  </p>
                 </div>
                 <button 
                   onClick={() => setIsOpenFormModal(false)}

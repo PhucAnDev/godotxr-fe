@@ -1363,7 +1363,7 @@ function ModalFrame({
               <Info className="h-6 w-6" />
               {title}
             </h2>
-            <p className="mt-1 text-xs font-normal uppercase tracking-wider text-gray-400">{subtitle}</p>
+
           </div>
           <button onClick={onClose} className="rounded-full p-2.5 transition-colors hover:bg-white/70">
             <X className="h-6 w-6 text-gray-500" />

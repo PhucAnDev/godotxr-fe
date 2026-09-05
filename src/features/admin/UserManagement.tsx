@@ -647,14 +647,6 @@ export default function UserManagement() {
                     {modalType === 'edit' && `Chỉnh sửa: ${selectedUser?.fullName}`}
                     {modalType === 'detail' && 'Chi tiết tài khoản'}
                   </h2>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-                    {modalType === 'add' &&
-                      (isChoosingCreateRole
-                        ? 'Chọn loại tài khoản trước khi nhập thông tin'
-                        : 'Nhập thông tin để hệ thống gửi email xác minh')}
-                    {modalType === 'edit' && 'Cập nhật lại thông tin cá nhân và cài đặt trạng thái'}
-                    {modalType === 'detail' && 'Toàn bộ dữ liệu người dùng từ hệ thống BE'}
-                  </p>
                 </div>
                 <button
                   onClick={handleCloseUserModal}

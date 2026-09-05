@@ -927,9 +927,6 @@ export default function SemesterManagement() {
                     {modalMode === 'add' ? <Plus className="w-6 h-6 text-[#4EACAF]" strokeWidth={2.5} /> : <Edit3 className="w-6 h-6 text-sky-500" />}
                     {modalMode === 'add' ? 'Thiết lập Học kỳ rèn luyện mới' : `Chỉnh sửa học kỳ: ${selectedSemester?.SemesterId}`}
                   </h2>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-                    Gán lớp học, chọn giáo viên chủ quản điều tiết khóa rèn luyện VR
-                  </p>
                 </div>
                 <button 
                   onClick={() => setIsOpenFormModal(false)}

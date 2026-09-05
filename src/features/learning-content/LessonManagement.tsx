@@ -3,8 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   BookOpen,
   Plus,
-  Search,
-  ChevronDown,
   X,
   Edit3,
   ToggleLeft,
@@ -409,7 +407,19 @@ export default function LessonManagement() {
   const handleToggleStatus = async (lessonId: string) => {
     const lesson = lessons.find(l => l.LessonId === lessonId);
     if (!lesson) return;
-    const result = await updateLesson(Number(lessonId), { lessonName: lesson.LessonName, lessonOrder: lesson.LessonOrder, description: lesson.Description, targetSkill: lesson.TargetSkill, estimatedDuration: lesson.EstimatedDuration, status: lesson.Status === 'Active' ? 'Inactive' : 'Active', maxScore: lesson.MaxScore });
+    const result = await updateLesson(Number(lessonId), {
+      lessonName: lesson.LessonName,
+      lessonOrder: lesson.LessonOrder,
+      description: lesson.Description,
+      targetSkill: lesson.TargetSkill,
+      estimatedDuration: lesson.EstimatedDuration,
+      status: lesson.Status === 'Active' ? 'Inactive' : 'Active',
+      maxScore: lesson.MaxScore ?? 100,
+      completionBonusPoints: lesson.CompletionBonusPoints ?? 20,
+      correctAnswerScore: lesson.CorrectAnswerScore ?? 10,
+      incorrectAnswerScore: lesson.IncorrectAnswerScore ?? 0,
+      note: lesson.Note || null,
+    });
     if (result.success && result.data) setLessons(current => current.map(l => l.LessonId === lessonId ? mapLesson(result.data!) : l));
     else triggerToast(result.errors.join(' ') || result.message, 'warning');
   };
@@ -424,6 +434,8 @@ export default function LessonManagement() {
     setFormStatus('Active');
     setFormMaxScore(100);
     setFormCompletionBonusPoints(20);
+    setFormCorrectAnswerScore(10);
+    setFormIncorrectAnswerScore(0);
     setFormNote('');
     setSelectedLesson(null);
     setModalType('add');
@@ -440,6 +452,8 @@ export default function LessonManagement() {
     setFormStatus(les.Status);
     setFormMaxScore(les.MaxScore ?? 100);
     setFormCompletionBonusPoints(les.CompletionBonusPoints ?? 20);
+    setFormCorrectAnswerScore(les.CorrectAnswerScore ?? 10);
+    setFormIncorrectAnswerScore(les.IncorrectAnswerScore ?? 0);
     setFormNote(les.Note ?? '');
     setModalType('edit');
   };
@@ -502,6 +516,8 @@ export default function LessonManagement() {
       status: selectedLesson.Status,
       maxScore: newMaxScore,
       completionBonusPoints: newBonusPoints,
+      correctAnswerScore: selectedLesson.CorrectAnswerScore ?? 10,
+      incorrectAnswerScore: selectedLesson.IncorrectAnswerScore ?? 0,
       note: selectedLesson.Note || null,
     });
     if (result.success && result.data) {
@@ -743,7 +759,7 @@ export default function LessonManagement() {
     e.preventDefault();
 
     if (!formProgramId) {
-      triggerToast('Vui lòng chọn một chương trình học trực thuộc!', 'warning');
+      triggerToast('Vui lòng chọn một chương trình học!', 'warning');
       return;
     }
     if (!formLessonName.trim()) {
@@ -762,8 +778,37 @@ export default function LessonManagement() {
       triggerToast('Thời lượng ước tính lý tưởng từ 5 đến 120 phút!', 'warning');
       return;
     }
-    if (formMaxScore === '' || formMaxScore < 0) {
-      triggerToast('Điểm tối đa không được âm!', 'warning');
+    const maxScoreVal = (formMaxScore as string | number) === '' ? 100 : Number(formMaxScore);
+    const bonusVal = (formCompletionBonusPoints as string | number) === '' ? 20 : Number(formCompletionBonusPoints);
+    const correctVal = (formCorrectAnswerScore as string | number) === '' ? 10 : Number(formCorrectAnswerScore);
+    const incorrectVal = (formIncorrectAnswerScore as string | number) === '' ? 0 : Number(formIncorrectAnswerScore);
+
+    if (maxScoreVal <= 0) {
+      triggerToast('Điểm tối đa của bài học phải lớn hơn 0!', 'warning');
+      return;
+    }
+    if (bonusVal < 0) {
+      triggerToast('Điểm thưởng hoàn thành bài không được là số âm!', 'warning');
+      return;
+    }
+    if (bonusVal > maxScoreVal) {
+      triggerToast(`Điểm thưởng (${bonusVal}đ) không được vượt quá điểm tối đa (${maxScoreVal}đ)!`, 'warning');
+      return;
+    }
+    if (correctVal < 0) {
+      triggerToast('Điểm câu đúng không được là số âm!', 'warning');
+      return;
+    }
+    if (correctVal > maxScoreVal) {
+      triggerToast(`Điểm câu đúng (${correctVal}đ) không được vượt quá điểm tối đa của bài học (${maxScoreVal}đ)!`, 'warning');
+      return;
+    }
+    if (incorrectVal < 0) {
+      triggerToast('Điểm câu sai không được là số âm!', 'warning');
+      return;
+    }
+    if (incorrectVal > maxScoreVal) {
+      triggerToast(`Điểm câu sai (${incorrectVal}đ) không được vượt quá điểm tối đa của bài học (${maxScoreVal}đ)!`, 'warning');
       return;
     }
 
@@ -774,10 +819,10 @@ export default function LessonManagement() {
       targetSkill: formTargetSkill,
       estimatedDuration: Number(formDuration),
       status: formStatus,
-      maxScore: Number(formMaxScore),
-      completionBonusPoints: Number(formCompletionBonusPoints) || 20,
-      correctAnswerScore: Number(formCorrectAnswerScore) || 10,
-      incorrectAnswerScore: Number(formIncorrectAnswerScore) || 0,
+      maxScore: maxScoreVal,
+      completionBonusPoints: bonusVal,
+      correctAnswerScore: correctVal,
+      incorrectAnswerScore: incorrectVal,
       note: formNote.trim() || null,
     };
     const result = modalType === 'add'
@@ -1145,7 +1190,6 @@ export default function LessonManagement() {
                         </td>
                         <td className="py-5 px-4 font-bold text-slate-650 whitespace-nowrap">
                           <div>{lesson.MaxScore ?? 100}đ</div>
-                          <div className="text-[10px] text-emerald-600 font-bold tracking-tight">Thưởng: +{lesson.CompletionBonusPoints ?? 20}đ</div>
                         </td>
                         <td className="py-5 px-4 whitespace-nowrap">
                           <span className={cn(
@@ -1210,19 +1254,19 @@ export default function LessonManagement() {
               exit={{ opacity: 0, scale: 0.95, y: 12 }}
               className={cn(
                 "app-modal-panel bg-white rounded-[32px] shadow-2xl w-full overflow-hidden border border-gray-100 relative z-30 my-0 transition-all",
-                modalType === 'exercises' ? "max-w-5xl" : "max-w-2xl"
+                modalType === 'exercises' ? "max-w-5xl" : "max-w-3xl"
               )}
               id="lesson-modal-box"
             >
               {/* Modal Header banner */}
               <div className={cn(
-                "px-4 py-3 flex items-center justify-between border-b",
+                "px-6 py-4.5 flex items-center justify-between border-b",
                 modalType === 'add' ? 'bg-[#4EACAF]/10 border-[#4EACAF]/10 text-gray-900' :
                   modalType === 'edit' ? 'bg-sky-50 border-sky-100 text-gray-900' :
                     modalType === 'delete' ? 'bg-rose-50 border-rose-100 text-gray-900' : 'bg-indigo-50 border-indigo-100 text-gray-900'
               )}>
                 <div>
-                  <h2 className="text-xl font-black italic tracking-tight flex items-center gap-2">
+                  <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
                     {modalType === 'add' && <Plus className="w-5 h-5 text-[#4EACAF]" />}
                     {modalType === 'edit' && <Edit3 className="w-5 h-5 text-sky-500" />}
                     {modalType === 'exercises' && <Boxes className="w-5 h-5 text-indigo-500" />}
@@ -1233,12 +1277,6 @@ export default function LessonManagement() {
                     {modalType === 'exercises' && (userRole === 'TEACHER' ? 'Gán vật phẩm cho phân cảnh VR' : 'Cấu hình phân cảnh học tập VR')}
                     {modalType === 'delete' && 'Xác nhận xóa bài học'}
                   </h2>
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
-                    {modalType === 'add' && 'Thiết lập nội dung và gán lớp kỹ năng rèn nói cho bài học'}
-                    {modalType === 'edit' && 'Cập nhật lại thông tin thứ tự và thời lượng can thiệp của bài giảng'}
-                    {modalType === 'exercises' && (userRole === 'TEACHER' ? 'Gán mô hình 3D cho các vị trí spawner của bài học trong phòng học VR' : 'Quản lý góc chụp phòng học và cấu hình Spawner vật phẩm 3D cho Client VR')}
-                    {modalType === 'delete' && 'Hành động này không thể khôi phục và có thể ảnh hưởng đến kết quả học tập'}
-                  </p>
                 </div>
                 <button
                   onClick={handleCloseModal}
@@ -1973,32 +2011,57 @@ export default function LessonManagement() {
                 </div>
               ) : (
                 /* Modal Body: ADD OR EDIT FORM rendering */
-                <form onSubmit={handleSaveLesson} className="app-modal-body p-8 md:p-10 space-y-6" id="lesson-add-edit-form">
+                <form onSubmit={handleSaveLesson} className="app-modal-body p-6 md:p-8 space-y-6 max-h-[82vh] overflow-y-auto" id="lesson-add-edit-form">
+                  {/* SECTION 1: THÔNG TIN CƠ BẢN */}
                   <div className="space-y-4">
-
-                    {/* Program Selection drop-down */}
-                    <div className="space-y-2">
-                      <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                        Chương trình học trực thuộc <span className="text-[#FF8E8E]">*</span>
-                      </label>
-                      <CustomSelect
-                        value={formProgramId}
-                        onChange={setFormProgramId}
-                        variant="form"
-                        options={programs
-                          .filter(p => p.Status === 'Active')
-                          .map(p => ({
-                            value: p.ProgramId,
-                            label: p.ProgramName
-                          }))}
-                      />
+                    <div className="border-b border-slate-200/80 pb-2 flex items-center justify-between">
+                      <h3 className="text-xs font-extrabold text-slate-700 flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#4EACAF]"></span>
+                        Thông tin cơ bản bài học
+                      </h3>
+                      <span className="text-[11px] text-slate-400 font-normal">* Các trường bắt buộc nhập</span>
                     </div>
 
-                    <div className="app-modal-form-grid grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Program Selection */}
+                      <div className="md:col-span-2 space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide ml-0.5">
+                          Chương trình học <span className="text-[#FF8E8E]">*</span>
+                        </label>
+                        <CustomSelect
+                          value={formProgramId}
+                          onChange={setFormProgramId}
+                          variant="form"
+                          options={programs
+                            .filter(p => p.Status === 'Active')
+                            .map(p => ({
+                              value: p.ProgramId,
+                              label: p.ProgramName
+                            }))}
+                        />
+                      </div>
 
+                      {/* Status select */}
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide ml-0.5">
+                          Trạng thái <span className="text-[#FF8E8E]">*</span>
+                        </label>
+                        <CustomSelect
+                          value={formStatus}
+                          onChange={(val) => setFormStatus(val as 'Active' | 'Inactive')}
+                          variant="form"
+                          options={[
+                            { value: 'Active', label: 'Hoạt động' },
+                            { value: 'Inactive', label: 'Tạm khóa' }
+                          ]}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {/* Lesson Name */}
-                      <div className="md:col-span-2 space-y-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
+                      <div className="md:col-span-2 space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide ml-0.5">
                           Tên bài học <span className="text-[#FF8E8E]">*</span>
                         </label>
                         <input
@@ -2007,13 +2070,13 @@ export default function LessonManagement() {
                           placeholder="Ví dụ: Đọc trơn tru thanh ngã, lisp sọc..."
                           value={formLessonName}
                           onChange={(e) => setFormLessonName(e.target.value)}
-                          className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-black italic tracking-wide text-gray-700 placeholder-gray-300 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
+                          className="w-full bg-[#FDFCF5] border border-slate-200 rounded-xl px-3.5 py-2.5 font-medium text-slate-800 placeholder-slate-300 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs"
                         />
                       </div>
 
                       {/* Lesson Order */}
-                      <div className="space-y-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide ml-0.5">
                           Thứ tự bài học <span className="text-[#FF8E8E]">*</span>
                         </label>
                         <input
@@ -2026,32 +2089,15 @@ export default function LessonManagement() {
                             const val = e.target.value;
                             setFormLessonOrder(val === '' ? '' : (parseInt(val) || 0));
                           }}
-                          className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
+                          className="w-full bg-[#FDFCF5] border border-slate-200 rounded-xl px-3.5 py-2.5 font-medium text-slate-800 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs"
                         />
                       </div>
-
                     </div>
 
-                    {/* Lesson Description */}
-                    <div className="space-y-2">
-                      <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                        Mô tả chi tiết bài học <span className="text-[#FF8E8E]">*</span>
-                      </label>
-                      <textarea
-                        required
-                        rows={3}
-                        placeholder="Tóm tắt kịch bản tương tác game và phân bổ kỹ năng để phụ huynh tiện theo dõi..."
-                        value={formDesc}
-                        onChange={(e) => setFormDesc(e.target.value)}
-                        className="resize-y w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 placeholder-gray-300 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
-                      />
-                    </div>
-
-                    <div className="app-modal-form-grid grid grid-cols-1 md:grid-cols-4 gap-6">
-
-                      {/* Target Skill badge category */}
-                      <div className="space-y-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Target Skill */}
+                      <div className="md:col-span-2 space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide ml-0.5">
                           Kỹ năng bổ trợ <span className="text-[#FF8E8E]">*</span>
                         </label>
                         <CustomSelect
@@ -2063,9 +2109,9 @@ export default function LessonManagement() {
                       </div>
 
                       {/* Estimated Duration */}
-                      <div className="space-y-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                          Thời lượng ước tính (Phút) <span className="text-[#FF8E8E]">*</span>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide ml-0.5">
+                          Thời lượng (Phút) <span className="text-[#FF8E8E]">*</span>
                         </label>
                         <input
                           type="number"
@@ -2077,13 +2123,41 @@ export default function LessonManagement() {
                             const val = e.target.value;
                             setFormDuration(val === '' ? '' : (parseInt(val) || 0));
                           }}
-                          className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
+                          className="w-full bg-[#FDFCF5] border border-slate-200 rounded-xl px-3.5 py-2.5 font-medium text-slate-800 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs"
                         />
                       </div>
+                    </div>
 
+                    {/* Lesson Description */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide ml-0.5">
+                        Mô tả chi tiết bài học <span className="text-[#FF8E8E]">*</span>
+                      </label>
+                      <textarea
+                        required
+                        rows={3}
+                        placeholder="Tóm tắt kịch bản tương tác game và phân bổ kỹ năng để phụ huynh tiện theo dõi..."
+                        value={formDesc}
+                        onChange={(e) => setFormDesc(e.target.value)}
+                        className="resize-y w-full bg-[#FDFCF5] border border-slate-200 rounded-xl px-3.5 py-2.5 font-normal text-slate-800 placeholder-slate-300 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs leading-relaxed"
+                      />
+                    </div>
+                  </div>
+
+                  {/* SECTION 2: CẤU HÌNH ĐIỂM SỐ & GHI CHÚ */}
+                  <div className="space-y-4 pt-2">
+                    <div className="border-b border-slate-200/80 pb-2">
+                      <h3 className="text-xs font-extrabold text-slate-700 flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                        Cấu hình điểm số & Ghi chú
+                      </h3>
+                    </div>
+
+                    {/* Grid 4 columns for Score parameters */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
                       {/* Max Score */}
-                      <div className="space-y-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide ml-0.5 truncate block">
                           Điểm tối đa <span className="text-[#FF8E8E]">*</span>
                         </label>
                         <input
@@ -2096,14 +2170,14 @@ export default function LessonManagement() {
                             const val = e.target.value;
                             setFormMaxScore(val === '' ? '' : (parseFloat(val) || 0));
                           }}
-                          className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
+                          className="w-full bg-[#FDFCF5] border border-slate-200 rounded-xl px-3 py-2.5 font-medium text-slate-800 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs"
                         />
                       </div>
 
                       {/* Completion Bonus Points */}
-                      <div className="space-y-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                          Điểm thưởng hoàn thành bài
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide ml-0.5 truncate block">
+                          Điểm thưởng hoàn thành
                         </label>
                         <input
                           type="number"
@@ -2115,14 +2189,14 @@ export default function LessonManagement() {
                             const val = e.target.value;
                             setFormCompletionBonusPoints(val === '' ? '' : (parseFloat(val) || 0));
                           }}
-                          className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm"
+                          className="w-full bg-[#FDFCF5] border border-slate-200 rounded-xl px-3 py-2.5 font-medium text-slate-800 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs"
                         />
                       </div>
 
                       {/* Correct Answer Score */}
-                      <div className="space-y-2">
-                        <label className="text-xs font-black text-emerald-700 uppercase tracking-widest ml-1 font-bold">
-                          Điểm câu đúng (Correct Score)
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-emerald-700 uppercase tracking-wide ml-0.5 truncate block">
+                          🎯 Điểm câu đúng
                         </label>
                         <input
                           type="number"
@@ -2134,14 +2208,14 @@ export default function LessonManagement() {
                             const val = e.target.value;
                             setFormCorrectAnswerScore(val === '' ? '' : (parseFloat(val) || 0));
                           }}
-                          className="w-full bg-emerald-50/40 border-2 border-emerald-100 rounded-2xl px-5 py-4 font-bold text-emerald-900 outline-none transition-all focus:border-emerald-500 focus:bg-white text-sm"
+                          className="w-full bg-emerald-50/50 border border-emerald-200 rounded-xl px-3 py-2.5 font-bold text-emerald-900 outline-none transition-all focus:border-emerald-500 focus:bg-white text-xs"
                         />
                       </div>
 
                       {/* Incorrect Answer Score */}
-                      <div className="space-y-2">
-                        <label className="text-xs font-black text-rose-700 uppercase tracking-widest ml-1 font-bold">
-                          Điểm câu sai (Incorrect Score)
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-rose-700 uppercase tracking-wide ml-0.5 truncate block">
+                          ⚠️ Điểm câu sai
                         </label>
                         <input
                           type="number"
@@ -2153,58 +2227,41 @@ export default function LessonManagement() {
                             const val = e.target.value;
                             setFormIncorrectAnswerScore(val === '' ? '' : (parseFloat(val) || 0));
                           }}
-                          className="w-full bg-rose-50/40 border-2 border-rose-100 rounded-2xl px-5 py-4 font-bold text-rose-900 outline-none transition-all focus:border-rose-500 focus:bg-white text-sm"
+                          className="w-full bg-rose-50/50 border border-rose-200 rounded-xl px-3 py-2.5 font-bold text-rose-900 outline-none transition-all focus:border-rose-500 focus:bg-white text-xs"
                         />
                       </div>
+                    </div>
 
-                      {/* Note */}
-                      <div className="space-y-2 md:col-span-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                          Ghi chú bài học (Note)
-                        </label>
-                        <textarea
-                          rows={2}
-                          placeholder="Nhập ghi chú bổ sung cho giáo viên hoặc hệ thống..."
-                          value={formNote}
-                          onChange={(e) => setFormNote(e.target.value)}
-                          className="w-full bg-[#FDFCF5] border-2 border-transparent rounded-2xl px-5 py-4 font-bold text-gray-700 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-sm resize-none"
-                        />
-                      </div>
-
-                      {/* Status select */}
-                      <div className="space-y-2">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 font-bold">
-                          Trạng thái giáo trình <span className="text-[#FF8E8E]">*</span>
-                        </label>
-                        <CustomSelect
-                          value={formStatus}
-                          onChange={(val) => setFormStatus(val as 'Active' | 'Inactive')}
-                          variant="form"
-                          options={[
-                            { value: 'Active', label: 'Hoạt động (Active)' },
-                            { value: 'Inactive', label: 'Tạm khóa (Inactive)' }
-                          ]}
-                        />
-                      </div>
-
+                    {/* Note */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide ml-0.5">
+                        Ghi chú bài học
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="Nhập ghi chú bổ sung cho giáo viên hoặc hệ thống..."
+                        value={formNote}
+                        onChange={(e) => setFormNote(e.target.value)}
+                        className="w-full bg-[#FDFCF5] border border-slate-200 rounded-xl px-3.5 py-2.5 font-normal text-slate-800 outline-none transition-all focus:border-[#4EACAF] focus:bg-white text-xs resize-none"
+                      />
                     </div>
                   </div>
 
-                  {/* Submit and Cancel block button bar */}
-                  <div className="app-modal-actions pt-6 border-t border-gray-150 flex gap-4">
+                  {/* Action buttons */}
+                  <div className="app-modal-actions pt-4 border-t border-slate-150 flex gap-3 justify-end">
                     <button
                       type="button"
                       onClick={handleCloseModal}
-                      className="flex-1 py-4 border-4 border-gray-100 hover:border-gray-200 text-gray-400 hover:text-gray-600 font-extrabold rounded-2xl transition-all uppercase text-xs tracking-wider"
+                      className="px-6 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold rounded-xl transition-all text-xs uppercase tracking-wider cursor-pointer"
                     >
-                      Hủy cấu hình
+                      Hủy bỏ
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 py-4 bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black rounded-2xl shadow-xl shadow-[#4EACAF]/15 transition-all text-sm uppercase tracking-wider"
+                      className="px-6 py-2.5 bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black rounded-xl shadow-md shadow-[#4EACAF]/20 transition-all text-xs uppercase tracking-wider cursor-pointer"
                       id="lesson-submit-button"
                     >
-                      Xác nhận lưu trữ
+                      Lưu thông tin
                     </button>
                   </div>
                 </form>
@@ -2231,9 +2288,6 @@ export default function LessonManagement() {
                     <Boxes className="w-5.5 h-5.5 text-blue-600" />
                     Thư viện vật phẩm 3D
                   </h3>
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
-                    Chọn mô hình 3D để gán vào vị trí spawner của bài học
-                  </p>
                 </div>
                 <button
                   type="button"

@@ -333,11 +333,6 @@ export default function RoleManagement() {
                     {modalType === 'edit' && `Chỉnh sửa: ${selectedRole?.roleName}`}
                     {modalType === 'detail' && 'Chi tiết vai trò bảo mật'}
                   </h2>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-                    {modalType === 'add' && 'Khai báo các đặc quyền cùng mô tả phân cấp mới'}
-                    {modalType === 'edit' && 'Cập nhật lại quyền hạn hoặc tắt mở trạng thái hoạt động'}
-                    {modalType === 'detail' && 'Toàn bộ dữ liệu của Role thuộc cơ sở dữ liệu ROLES'}
-                  </p>
                 </div>
                 <button onClick={handleCloseModal} className="p-2.5 hover:bg-white/70 rounded-full transition-colors">
                   <X className="w-6 h-6 text-gray-500" />

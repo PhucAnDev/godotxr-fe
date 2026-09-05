@@ -83,12 +83,14 @@ export const parentSidebarItems: SidebarItem[] = [
     icon: School,
     path: '/parent/class',
   },
+  /*
   {
     id: 'PARENT_RECOMMENDATIONS',
     label: 'Khuyến nghị luyện tập',
     icon: Lightbulb,
     path: '/parent/recommendations',
   },
+  */
   {
     id: 'PROFILES',
     label: 'Hồ sơ của bé',
