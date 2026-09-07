@@ -146,6 +146,31 @@ interface ParsedEvent {
   isCorrect?: boolean;
 }
 
+export function cleanSpeechText(raw?: string): string {
+  if (!raw) return '';
+  let cleaned = raw.trim();
+
+  // Strip surrounding quotes '...' or "..."
+  cleaned = cleaned.replace(/^['"]\s*|\s*['"]$/g, '').trim();
+
+  // Strip bonus/penalty in parentheses, e.g. "(+ 20 điểm)", "(-10 điểm)", "(+20)"
+  cleaned = cleaned.replace(/\s*\([+\-]?\s*\d+\s*(?:điểm(?:\s*thưởng)?|diem|pts?|points?|đ)?(?:\s*thưởng)?!*?\)/gi, '').trim();
+
+  // Strip trailing score/points with explicit + or - sign, e.g. "+ 20 điểm", "+20 điểm thưởng!", "- 10 điểm", "-5 điểm", "+ 20"
+  cleaned = cleaned.replace(/\s*[+\-]\s*\d+\s*(?:điểm(?:\s*thưởng)?|diem|pts?|points?|đ|thưởng)?!*$/gi, '').trim();
+
+  // Strip attached score suffix without leading space (e.g. "]-5 điểm", "kẹo'-10 điểm")
+  cleaned = cleaned.replace(/[+\-]\s*\d+\s*(?:điểm(?:\s*thưởng)?|diem|pts?|points?|đ|thưởng)?!*$/gi, '').trim();
+
+  // Strip trailing score suffix without sign if accompanied by điểm / diem / points (e.g. "túi khoai tây chiên 20 điểm")
+  cleaned = cleaned.replace(/\s+\d+\s*(?:điểm(?:\s*thưởng)?|diem|pts?|points?|đ)(?:\s*thưởng)?!*$/gi, '').trim();
+
+  // Strip any leftover quotes
+  cleaned = cleaned.replace(/^['"]\s*|\s*['"]$/g, '').trim();
+
+  return cleaned;
+}
+
 function parseInteractionLog(log: string): ParsedEvent[] {
   if (!log) return [];
   const segments = log.split(/[|\n]+/);
@@ -153,14 +178,15 @@ function parseInteractionLog(log: string): ParsedEvent[] {
 
   for (const segment of segments) {
     const wrongMatch =
+      segment.match(/\[(\d+)s?\]\s*Wrong\s+Answer:\s*từ\s+đúng\s*['"]?([^,'"]+?)['"]?,?\s*trẻ\s+nói:\s*['"]?([^'"]+?)['"]?(?:\s*-\s*\d+\s*điểm)?$/i) ||
       segment.match(/\[(\d+)s?\]\s*Wrong\s+Answer:\s*từ\s+đúng\s*'([^']+)',?\s*trẻ\s+nói:\s*'([^']+)'/i) ||
       segment.match(/\[(\d+)s?\]\s*Wrong\s+Answer:\s*từ\s+đúng\s*'([^']+)'/i);
 
     if (wrongMatch) {
       events.push({
         timeSeconds: parseInt(wrongMatch[1], 10),
-        text: wrongMatch[2].trim(),
-        spokenText: wrongMatch[3] ? wrongMatch[3].trim() : 'chưa đủ từ',
+        text: cleanSpeechText(wrongMatch[2]),
+        spokenText: wrongMatch[3] ? cleanSpeechText(wrongMatch[3]) : 'chưa đủ từ',
         isCorrect: false,
       });
       continue;
@@ -168,10 +194,11 @@ function parseInteractionLog(log: string): ParsedEvent[] {
 
     const correctMatch = segment.match(/\[(\d+)s?\]\s*Correct\s+Answer:\s*(.+)/i);
     if (correctMatch) {
+      const cleaned = cleanSpeechText(correctMatch[2]);
       events.push({
         timeSeconds: parseInt(correctMatch[1], 10),
-        text: correctMatch[2].trim(),
-        spokenText: correctMatch[2].trim(),
+        text: cleaned,
+        spokenText: cleaned,
         isCorrect: true,
       });
       continue;
@@ -179,6 +206,7 @@ function parseInteractionLog(log: string): ParsedEvent[] {
   }
   return events;
 }
+
 
 export function isSilentOrUnclearSpeech(spokenText?: string): boolean {
   if (!spokenText) return false;
@@ -599,12 +627,13 @@ export default function LearningResultManagement() {
       const logEvents = parseInteractionLog(selectedResult.InteractionLog);
       const event = logEvents[chunkIndex];
 
+      const isCorrectAnswer = event?.isCorrect === true;
       const res = await assessChunk({
         childProfileId: childIdVal,
         sessionId: selectedResult.SessionId,
         chunkIndex,
-        referenceText: text,
-        spokenText: event?.spokenText
+        referenceText: cleanSpeechText(text),
+        spokenText: isCorrectAnswer ? '' : cleanSpeechText(event?.spokenText)
       });
 
       if (res.success && res.data) {
@@ -1145,7 +1174,7 @@ export default function LearningResultManagement() {
                                           ? "bg-amber-50 text-amber-800 border-amber-200"
                                           : event.isCorrect ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
                                       )}>
-                                        "{event.spokenText}"
+                                        "{assessment?.recognizedText || assessment?.RecognizedText || assessment?.display || assessment?.Display || event.spokenText}"
                                       </span>
                                     </div>
                                     {isSilentOrUnclear && (
@@ -1177,7 +1206,7 @@ export default function LearningResultManagement() {
                                           ? "bg-amber-50 text-amber-800 border-amber-200"
                                           : event.isCorrect ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
                                       )}>
-                                        "{event.spokenText}"
+                                        "{assessment?.recognizedText || assessment?.RecognizedText || assessment?.display || assessment?.Display || event.spokenText}"
                                       </span>
                                     </div>
                                     {isSilentOrUnclear && (

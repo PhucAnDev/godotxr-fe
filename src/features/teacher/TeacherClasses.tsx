@@ -12,11 +12,9 @@ import {
   FileSpreadsheet,
   Globe,
   GraduationCap,
-  Info,
   Search,
   Sparkles,
   TrendingUp,
-  User,
   Users,
   X,
 } from 'lucide-react';
@@ -473,34 +471,6 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Lớp Học <span className="text-[#4EACAF]">Của Tôi</span>
           </h1>
-        </div>
-
-        <div className="flex items-center gap-4 self-start rounded-[24px] border border-[#C5E1E3] bg-[#E2F2F3] p-4 shadow-sm lg:self-center">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/80 bg-white/60 text-[#4EACAF] shadow-sm">
-            <User className="h-6 w-6" />
-          </div>
-          <div>
-            <h5 className="text-sm font-black leading-tight text-[#264E50]">
-              {currentUser?.FullName || 'Teacher'}
-            </h5>
-            <p className="mt-1 text-[10px] font-black uppercase tracking-wider text-[#264E50]/60">
-              {currentUser?.Specialty || 'Teacher flow API'}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs font-medium leading-relaxed text-slate-600">
-        <Info className="mt-0.5 h-5 w-5 shrink-0 text-[#4EACAF]" />
-        <div className="space-y-0.5">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-700">
-            Trạng thái đồng bộ:
-          </p>
-          <span>
-            Hệ thống đang sử dụng dữ liệu từ 'lớp học + học viên ghi danh + kết quả'. Các chỉ
-            số kết quả lớp được tổng hợp từ kết quả của các học sinh đang ghi danh trong
-            lớp.
-          </span>
         </div>
       </div>
 
