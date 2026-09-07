@@ -24,7 +24,8 @@ import {
   VolumeX,
   FileAudio,
   CheckCircle,
-  FileText
+  FileText,
+  Edit3
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
@@ -32,7 +33,7 @@ import CustomSelect from '../../components/common/CustomSelect';
 import { useLearningResultApi } from '../../hooks/useLearningResultApi';
 import { getSessionUser } from '../../lib/authSession';
 import { getLessons } from '../../services/lessonService';
-import { getSpeechAccuracyBySession } from '../../services/childSpeechAccuracyService';
+import { getSpeechAccuracyBySession, createSpeechAccuracy } from '../../services/childSpeechAccuracyService';
 import type { ChildProfileResponse } from '../../services/childProfileService';
 import type { ResultResponse } from '../../services/resultService';
 import type { LessonResponse } from '../../services/lessonService';
@@ -261,6 +262,14 @@ export default function LearningResultManagement() {
   const [referenceTexts, setReferenceTexts] = useState<Record<number, string>>({});
   const [feedbackInput, setFeedbackInput] = useState('');
   const [savingFeedback, setSavingFeedback] = useState(false);
+  const [scoringChunkIndex, setScoringChunkIndex] = useState<number | null>(null);
+  const [manualScores, setManualScores] = useState({
+    accuracy: 90,
+    pronunciation: 90,
+    fluency: 90,
+    completeness: 100
+  });
+  const [isSavingManualScore, setIsSavingManualScore] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -646,6 +655,95 @@ export default function LearningResultManagement() {
       showToast('Lỗi kết nối dịch vụ đánh giá phát âm AI.', 'warn');
     } finally {
       setAssessingChunkIndex(null);
+    }
+  };
+
+  // Open manual score modal
+  const handleOpenManualScore = (chunkIndex: number) => {
+    const existing = chunkAssessments[chunkIndex];
+    if (existing) {
+      const acc = existing.accuracyScore ?? existing.AccuracyScore ?? existing.pronunciationAssessment?.accuracyScore ?? existing.PronunciationAssessment?.AccuracyScore ?? 90;
+      const pron = existing.pronunciationScore ?? existing.PronunciationScore ?? existing.pronScore ?? existing.PronScore ?? existing.pronunciationAssessment?.pronunciationScore ?? existing.PronunciationAssessment?.PronScore ?? 90;
+      const flu = existing.fluencyScore ?? existing.FluencyScore ?? existing.pronunciationAssessment?.fluencyScore ?? existing.PronunciationAssessment?.FluencyScore ?? 90;
+      const comp = existing.completenessScore ?? existing.CompletenessScore ?? existing.pronunciationAssessment?.completenessScore ?? existing.PronunciationAssessment?.CompletenessScore ?? 100;
+      setManualScores({
+        accuracy: Math.round(Number(acc)),
+        pronunciation: Math.round(Number(pron)),
+        fluency: Math.round(Number(flu)),
+        completeness: Math.round(Number(comp))
+      });
+    } else {
+      setManualScores({
+        accuracy: 90,
+        pronunciation: 90,
+        fluency: 90,
+        completeness: 100
+      });
+    }
+    setScoringChunkIndex(chunkIndex);
+  };
+
+  // Save manual scores
+  const handleSaveManualScore = async () => {
+    if (scoringChunkIndex === null || !selectedResult) return;
+    setIsSavingManualScore(true);
+
+    try {
+      const child = children.find(c => c.ChildId === selectedResult.ChildId);
+      const childIdVal = child ? Number(child.ChildId) : Number(selectedResult.ChildId);
+      const word = referenceTexts[scoringChunkIndex]?.trim() || parsedEvents[scoringChunkIndex]?.text || 'N/A';
+      const cleanWord = cleanSpeechText(word);
+
+      const payload = {
+        childProfileId: childIdVal,
+        sessionId: selectedResult.SessionId,
+        audioChunkIndex: scoringChunkIndex,
+        word: cleanWord,
+        accuracyScore: Number(manualScores.accuracy),
+        pronunciationScore: Number(manualScores.pronunciation),
+        fluencyScore: Number(manualScores.fluency),
+        completenessScore: Number(manualScores.completeness),
+        errorType: Number(manualScores.accuracy) < 50 ? 'Mispronunciation' : 'None',
+        lessonId: selectedResult.LessonId ? Number(selectedResult.LessonId) : undefined,
+        resultId: selectedResult.ResultId ? Number(selectedResult.ResultId) : undefined
+      };
+
+      const res = await createSpeechAccuracy(payload);
+      if (res.success && res.data) {
+        const updatedAssessment = {
+          AccuracyScore: Number(manualScores.accuracy),
+          accuracyScore: Number(manualScores.accuracy),
+          PronScore: Number(manualScores.pronunciation),
+          pronScore: Number(manualScores.pronunciation),
+          PronunciationScore: Number(manualScores.pronunciation),
+          pronunciationScore: Number(manualScores.pronunciation),
+          FluencyScore: Number(manualScores.fluency),
+          fluencyScore: Number(manualScores.fluency),
+          CompletenessScore: Number(manualScores.completeness),
+          completenessScore: Number(manualScores.completeness),
+          recognizedText: cleanWord,
+          Words: [
+            {
+              Word: cleanWord,
+              word: cleanWord,
+              AccuracyScore: Number(manualScores.accuracy),
+              accuracyScore: Number(manualScores.accuracy),
+              ErrorType: Number(manualScores.accuracy) < 50 ? 'Mispronunciation' : 'None',
+              errorType: Number(manualScores.accuracy) < 50 ? 'Mispronunciation' : 'None'
+            }
+          ]
+        };
+
+        setChunkAssessments(prev => ({ ...prev, [scoringChunkIndex]: updatedAssessment }));
+        showToast('Đã lưu điểm đánh giá thành công!', 'success');
+        setScoringChunkIndex(null);
+      } else {
+        showToast('Lưu điểm thất bại.', 'warn');
+      }
+    } catch (err) {
+      showToast('Lỗi hệ thống khi lưu điểm.', 'warn');
+    } finally {
+      setIsSavingManualScore(false);
     }
   };
 
@@ -1163,6 +1261,15 @@ export default function LearningResultManagement() {
                                     )}
                                     AI Đánh giá
                                   </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenManualScore(cIndex)}
+                                    title="Giáo viên nhập / điều chỉnh 4 thông số điểm"
+                                    className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 cursor-pointer shadow-sm hover:shadow"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5 text-amber-600" />
+                                    Nhập điểm
+                                  </button>
                                 </div>
                                 {event && event.spokenText && (
                                   <div className="space-y-1">
@@ -1247,26 +1354,70 @@ export default function LearningResultManagement() {
 
                               return (
                                 <div className="p-4 bg-white border border-slate-200/85 rounded-xl space-y-3 animate-in fade-in duration-300">
+                                  {currentRoleView !== 'PARENT' && (
+                                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                                        <Activity className="w-3.5 h-3.5 text-[#4EACAF]" />
+                                        4 Thông số thẩm âm:
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenManualScore(cIndex)}
+                                        className="text-xs font-bold text-[#4EACAF] hover:text-[#388285] bg-[#4EACAF]/10 hover:bg-[#4EACAF]/20 border border-[#4EACAF]/25 px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                                      >
+                                        <Edit3 className="w-3.5 h-3.5" />
+                                        Chỉnh sửa 4 thông số
+                                      </button>
+                                    </div>
+                                  )}
                                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                                    <div className="p-2 bg-emerald-50/50 rounded-lg border border-emerald-100/50">
+                                    <div
+                                      onClick={currentRoleView !== 'PARENT' ? () => handleOpenManualScore(cIndex) : undefined}
+                                      className={cn(
+                                        "p-2 bg-emerald-50/50 rounded-lg border border-emerald-100/50 transition-all",
+                                        currentRoleView !== 'PARENT' && "cursor-pointer hover:border-emerald-300 hover:shadow-sm"
+                                      )}
+                                      title={currentRoleView !== 'PARENT' ? "Nhấp để giáo viên điều chỉnh 4 thông số" : undefined}
+                                    >
                                       <div className="text-xs font-bold text-slate-450">Độ chính xác</div>
                                       <div className="text-sm font-black text-emerald-600 mt-0.5">
                                         {accuracyVal}%
                                       </div>
                                     </div>
-                                    <div className="p-2 bg-indigo-50/50 rounded-lg border border-indigo-100/50">
+                                    <div
+                                      onClick={currentRoleView !== 'PARENT' ? () => handleOpenManualScore(cIndex) : undefined}
+                                      className={cn(
+                                        "p-2 bg-indigo-50/50 rounded-lg border border-indigo-100/50 transition-all",
+                                        currentRoleView !== 'PARENT' && "cursor-pointer hover:border-indigo-300 hover:shadow-sm"
+                                      )}
+                                      title={currentRoleView !== 'PARENT' ? "Nhấp để giáo viên điều chỉnh 4 thông số" : undefined}
+                                    >
                                       <div className="text-xs font-bold text-slate-450">Phát âm</div>
                                       <div className="text-sm font-black text-indigo-600 mt-0.5">
                                         {pronVal}%
                                       </div>
                                     </div>
-                                    <div className="p-2 bg-purple-50/50 rounded-lg border border-purple-100/50">
+                                    <div
+                                      onClick={currentRoleView !== 'PARENT' ? () => handleOpenManualScore(cIndex) : undefined}
+                                      className={cn(
+                                        "p-2 bg-purple-50/50 rounded-lg border border-purple-100/50 transition-all",
+                                        currentRoleView !== 'PARENT' && "cursor-pointer hover:border-purple-300 hover:shadow-sm"
+                                      )}
+                                      title={currentRoleView !== 'PARENT' ? "Nhấp để giáo viên điều chỉnh 4 thông số" : undefined}
+                                    >
                                       <div className="text-xs font-bold text-slate-450">Trôi chảy</div>
                                       <div className="text-sm font-black text-purple-600 mt-0.5">
                                         {fluencyVal}%
                                       </div>
                                     </div>
-                                    <div className="p-2 bg-teal-50/50 rounded-lg border border-teal-100/50">
+                                    <div
+                                      onClick={currentRoleView !== 'PARENT' ? () => handleOpenManualScore(cIndex) : undefined}
+                                      className={cn(
+                                        "p-2 bg-teal-50/50 rounded-lg border border-teal-100/50 transition-all",
+                                        currentRoleView !== 'PARENT' && "cursor-pointer hover:border-teal-300 hover:shadow-sm"
+                                      )}
+                                      title={currentRoleView !== 'PARENT' ? "Nhấp để giáo viên điều chỉnh 4 thông số" : undefined}
+                                    >
                                       <div className="text-xs font-bold text-slate-450">Hoàn thành</div>
                                       <div className="text-sm font-black text-teal-600 mt-0.5">
                                         {completenessVal}%
@@ -1333,6 +1484,225 @@ export default function LearningResultManagement() {
         </div>
 
       </div>
+      {/* Manual Scoring Modal */}
+      <AnimatePresence>
+        {scoringChunkIndex !== null && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-[#4EACAF]/10 text-[#4EACAF] rounded-xl">
+                    <Edit3 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-800">
+                      Chấm điểm đoạn #{scoringChunkIndex + 1}
+                    </h3>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      Từ kỳ vọng: <span className="font-bold text-[#4EACAF]">"{referenceTexts[scoringChunkIndex] || parsedEvents[scoringChunkIndex]?.text || 'N/A'}"</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setScoringChunkIndex(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 space-y-4">
+                {/* Accuracy */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-bold text-slate-700">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                      Độ chính xác
+                    </span>
+                    <span className="text-emerald-600 font-black text-sm">{manualScores.accuracy}%</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={manualScores.accuracy}
+                      onChange={(e) => setManualScores(prev => ({ ...prev, accuracy: Number(e.target.value) }))}
+                      className="flex-1 accent-emerald-600 h-2 bg-slate-100 rounded-lg cursor-pointer"
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={manualScores.accuracy}
+                      onChange={(e) => setManualScores(prev => ({ ...prev, accuracy: Math.min(100, Math.max(0, Number(e.target.value))) }))}
+                      className="w-16 px-2 py-1 text-xs font-bold text-center border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Pronunciation */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-bold text-slate-700">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+                      Phát âm
+                    </span>
+                    <span className="text-indigo-600 font-black text-sm">{manualScores.pronunciation}%</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={manualScores.pronunciation}
+                      onChange={(e) => setManualScores(prev => ({ ...prev, pronunciation: Number(e.target.value) }))}
+                      className="flex-1 accent-indigo-600 h-2 bg-slate-100 rounded-lg cursor-pointer"
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={manualScores.pronunciation}
+                      onChange={(e) => setManualScores(prev => ({ ...prev, pronunciation: Math.min(100, Math.max(0, Number(e.target.value))) }))}
+                      className="w-16 px-2 py-1 text-xs font-bold text-center border border-slate-200 rounded-lg focus:border-indigo-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Fluency */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-bold text-slate-700">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+                      Trôi chảy
+                    </span>
+                    <span className="text-purple-600 font-black text-sm">{manualScores.fluency}%</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={manualScores.fluency}
+                      onChange={(e) => setManualScores(prev => ({ ...prev, fluency: Number(e.target.value) }))}
+                      className="flex-1 accent-purple-600 h-2 bg-slate-100 rounded-lg cursor-pointer"
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={manualScores.fluency}
+                      onChange={(e) => setManualScores(prev => ({ ...prev, fluency: Math.min(100, Math.max(0, Number(e.target.value))) }))}
+                      className="w-16 px-2 py-1 text-xs font-bold text-center border border-slate-200 rounded-lg focus:border-purple-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Completeness */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-bold text-slate-700">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-teal-500" />
+                      Hoàn thành
+                    </span>
+                    <span className="text-teal-600 font-black text-sm">{manualScores.completeness}%</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={manualScores.completeness}
+                      onChange={(e) => setManualScores(prev => ({ ...prev, completeness: Number(e.target.value) }))}
+                      className="flex-1 accent-teal-600 h-2 bg-slate-100 rounded-lg cursor-pointer"
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={manualScores.completeness}
+                      onChange={(e) => setManualScores(prev => ({ ...prev, completeness: Math.min(100, Math.max(0, Number(e.target.value))) }))}
+                      className="w-16 px-2 py-1 text-xs font-bold text-center border border-slate-200 rounded-lg focus:border-teal-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Presets */}
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                  <span>Mức gợi ý nhanh:</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setManualScores({ accuracy: 100, pronunciation: 100, fluency: 100, completeness: 100 })}
+                      className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100 transition-colors cursor-pointer"
+                    >
+                      100%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setManualScores({ accuracy: 90, pronunciation: 90, fluency: 85, completeness: 100 })}
+                      className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold hover:bg-indigo-100 transition-colors cursor-pointer"
+                    >
+                      90%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setManualScores({ accuracy: 75, pronunciation: 70, fluency: 70, completeness: 80 })}
+                      className="px-2 py-0.5 rounded bg-amber-50 text-amber-700 font-bold hover:bg-amber-100 transition-colors cursor-pointer"
+                    >
+                      75%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setManualScores({ accuracy: 50, pronunciation: 50, fluency: 40, completeness: 50 })}
+                      className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 font-bold hover:bg-rose-100 transition-colors cursor-pointer"
+                    >
+                      50%
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-end gap-2.5 px-6 py-4 bg-slate-50/80 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setScoringChunkIndex(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  disabled={isSavingManualScore}
+                  onClick={handleSaveManualScore}
+                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#4EACAF] hover:bg-[#3D8C8F] transition-all flex items-center gap-1.5 shadow-md shadow-[#4EACAF]/20 disabled:opacity-50 cursor-pointer"
+                >
+                  {isSavingManualScore ? (
+                    <Activity className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <CheckCircle className="w-3.5 h-3.5" />
+                  )}
+                  Lưu điểm
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
