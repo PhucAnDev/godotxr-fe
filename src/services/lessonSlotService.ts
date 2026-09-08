@@ -89,6 +89,9 @@ export const deleteLessonSlot = (
     method: 'DELETE',
   });
 
+export const getLessonClientConfig = (lessonId: number) =>
+  request<LessonSlotResponse[]>(`/api/lessons/${lessonId}/client-config`);
+
 // Export aliases matching the new educational naming conventions
 export const getLessonScenes = getLessonImages;
 export const uploadLessonScene = uploadLessonImage;
@@ -98,5 +101,6 @@ export const configureLessonExercise = configureLessonSlot;
 export const updateLessonExercise = updateLessonSlot;
 export const deleteLessonExercise = deleteLessonSlot;
 export const assignAssetToExercise = assignItemToSlot;
+
 
 
