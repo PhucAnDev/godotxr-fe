@@ -162,16 +162,32 @@ function getAvatarUrl(child: Child) {
   return resolveAvatarUrl(child.Avatar, child.FullName, 'avataaars');
 }
 
+interface TeacherStudentsCache {
+  teacherId?: string;
+  children: Child[];
+  parentById: Record<string, ParentUser>;
+  timestamp: number;
+}
+let memoryTeacherStudentsCache: TeacherStudentsCache | null = null;
+
 export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
   const currentUser = getCurrentUser();
-  const [children, setChildren] = useState<Child[]>([]);
-  const [parentById, setParentById] = useState<Record<string, ParentUser>>({});
+  const hasFreshCache = Boolean(
+    memoryTeacherStudentsCache && memoryTeacherStudentsCache.teacherId === currentUser?.UserId
+  );
+
+  const [children, setChildren] = useState<Child[]>(() =>
+    hasFreshCache && memoryTeacherStudentsCache ? memoryTeacherStudentsCache.children : []
+  );
+  const [parentById, setParentById] = useState<Record<string, ParentUser>>(() =>
+    hasFreshCache && memoryTeacherStudentsCache ? memoryTeacherStudentsCache.parentById : {}
+  );
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGender, setSelectedGender] = useState<string>('All');
   const [selectedLevel, setSelectedLevel] = useState<string>('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(4);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(() => !hasFreshCache);
   const [errorMessage, setErrorMessage] = useState('');
   const [reloadSeed, setReloadSeed] = useState(0);
 
@@ -183,7 +199,9 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
     let isMounted = true;
 
     const loadTeacherStudents = async () => {
-      setIsLoading(true);
+      if (!memoryTeacherStudentsCache || memoryTeacherStudentsCache.teacherId !== currentUser?.UserId) {
+        setIsLoading(true);
+      }
       setErrorMessage('');
 
       try {
@@ -283,12 +301,20 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
           }))
           .sort((left, right) => left.FullName.localeCompare(right.FullName));
 
-        setChildren(nextChildren);
-        setParentById(
-          Object.fromEntries(parentEntries.filter(Boolean) as Array<
-            readonly [string, ParentUser]
-          >)
+        const parentsMap = Object.fromEntries(
+          parentEntries.filter(Boolean) as Array<readonly [string, ParentUser]>
         );
+
+        setChildren(nextChildren);
+        setParentById(parentsMap);
+
+        // Save to in-memory SWR cache for 0ms instant reload
+        memoryTeacherStudentsCache = {
+          teacherId: currentUser?.UserId,
+          children: nextChildren,
+          parentById: parentsMap,
+          timestamp: Date.now(),
+        };
       } catch (error) {
         if (!isMounted) return;
         setErrorMessage(

@@ -8,6 +8,9 @@ import {
   SlidersHorizontal,
   Info,
   CheckCircle,
+  CheckCircle2,
+  AlertTriangle,
+  RefreshCw,
   Award,
   Clock,
   Smile,
@@ -51,7 +54,7 @@ import { cn, resolveAvatarUrl } from '../../lib/utils';
 import CustomSelect from '../../components/common/CustomSelect';
 import ActionButton from '../../components/common/ActionButton';
 import { getSessionUser } from '../../lib/authSession';
-import { getMyChildProfiles, getChildProfiles } from '../../services/childProfileService';
+import { getMyChildProfiles, getChildProfiles, getMyStudents } from '../../services/childProfileService';
 import { getAnalyzesByChildId, getAnalyzes } from '../../services/analyzeService';
 import { getResultsByChild, type ResultResponse } from '../../services/resultService';
 import { getLessons } from '../../services/lessonService';
@@ -60,6 +63,32 @@ import { getSpeechAccuracyByChild, type ChildSpeechAccuracyResponse } from '../.
 import type { ChildProfileResponse } from '../../services/childProfileService';
 import type { AnalyzeResponse } from '../../services/analyzeService';
 import type { LessonResponse } from '../../services/lessonService';
+import {
+  parseInteractionLog,
+  cleanSpeechText,
+  isSilentOrUnclearSpeech
+} from './LearningResultManagement';
+
+export interface AnalyzedVocabularyItem {
+  word: string;
+  lessonId: number | null;
+  lessonName: string;
+  totalAttempts: number;
+  correctCount: number;
+  wrongCount: number;
+  accuracyRate: number;
+  avgSpeechScore?: number;
+  masteryStatus: 'MASTERED' | 'PRACTICING' | 'NEEDS_HELP' | 'NOT_PRACTICED';
+  lastPracticed: string;
+  correctExamples: Array<{ spokenText: string; timeSeconds: number; dateStr?: string }>;
+  wrongExamples: Array<{ spokenText: string; timeSeconds: number; dateStr?: string; errorType?: string }>;
+  allTimeAttempts: number;
+  allTimeAccuracyRate: number;
+  allTimeMasteryStatus: 'MASTERED' | 'PRACTICING' | 'NEEDS_HELP';
+  allTimeLastPracticed: string;
+  hasTimeframeData: boolean;
+}
+
 
 // DB Interfaces according to project specification
 interface Child {
@@ -118,20 +147,48 @@ interface LessonProgress {
   description: string;
 }
 
+interface ProgressAnalysisCache {
+  roleView: string;
+  analyses: Analysis[];
+  children: Child[];
+  allResultsMap: Map<number, ResultResponse[]>;
+  speechAccuraciesMap: Map<number, ChildSpeechAccuracyResponse[]>;
+  allLessons: LessonResponse[];
+  dbSemesters: SemesterResponse[];
+  timestamp: number;
+}
+let memoryProgressCache: ProgressAnalysisCache | null = null;
+
 export default function ProgressAnalysis() {
   const currentUser = getSessionUser();
   const actualRole = currentUser?.Role || 'PARENT';
+  const storedRoleView = (localStorage.getItem('user_role') as 'ADMIN' | 'TEACHER' | 'PARENT') || actualRole;
+  const hasFreshProgressCache = Boolean(
+    memoryProgressCache && memoryProgressCache.roleView === storedRoleView
+  );
 
   // Database datasets state
-  const [analyses, setAnalyses] = useState<Analysis[]>([]);
-  const [children, setChildren] = useState<Child[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [analyses, setAnalyses] = useState<Analysis[]>(() =>
+    hasFreshProgressCache && memoryProgressCache ? memoryProgressCache.analyses : []
+  );
+  const [children, setChildren] = useState<Child[]>(() =>
+    hasFreshProgressCache && memoryProgressCache ? memoryProgressCache.children : []
+  );
+  const [isLoading, setIsLoading] = useState<boolean>(() => !hasFreshProgressCache);
 
   // Maps for chart aggregation
-  const [allResultsMap, setAllResultsMap] = useState<Map<number, ResultResponse[]>>(new Map());
-  const [speechAccuraciesMap, setSpeechAccuraciesMap] = useState<Map<number, ChildSpeechAccuracyResponse[]>>(new Map());
-  const [allLessons, setAllLessons] = useState<LessonResponse[]>([]);
-  const [dbSemesters, setDbSemesters] = useState<SemesterResponse[]>([]);
+  const [allResultsMap, setAllResultsMap] = useState<Map<number, ResultResponse[]>>(() =>
+    hasFreshProgressCache && memoryProgressCache ? memoryProgressCache.allResultsMap : new Map()
+  );
+  const [speechAccuraciesMap, setSpeechAccuraciesMap] = useState<Map<number, ChildSpeechAccuracyResponse[]>>(() =>
+    hasFreshProgressCache && memoryProgressCache ? memoryProgressCache.speechAccuraciesMap : new Map()
+  );
+  const [allLessons, setAllLessons] = useState<LessonResponse[]>(() =>
+    hasFreshProgressCache && memoryProgressCache ? memoryProgressCache.allLessons : []
+  );
+  const [dbSemesters, setDbSemesters] = useState<SemesterResponse[]>(() =>
+    hasFreshProgressCache && memoryProgressCache ? memoryProgressCache.dbSemesters : []
+  );
 
   // Selector state
   const [selectedChildId, setSelectedChildId] = useState<string>('ALL');
@@ -142,6 +199,12 @@ export default function ProgressAnalysis() {
   const [speechSemester, setSpeechSemester] = useState<string>('HK1');
   const [speechMonth, setSpeechMonth] = useState<number>(new Date().getMonth());
   const [speechYear, setSpeechYear] = useState<number>(new Date().getFullYear());
+
+  // Vocabulary & Spoken Word Analysis filter & search states
+  const [vocabSearchQuery, setVocabSearchQuery] = useState('');
+  const [vocabStatusFilter, setVocabStatusFilter] = useState<'ALL' | 'MASTERED' | 'PRACTICING' | 'NEEDS_HELP'>('ALL');
+  const [vocabSortBy, setVocabSortBy] = useState<'MOST_PRACTICED' | 'HIGHEST_ACCURACY' | 'LOWEST_ACCURACY' | 'RECENT'>('MOST_PRACTICED');
+  const [vocabTimeScope, setVocabTimeScope] = useState<'ALL_TIME' | 'FILTERED'>('ALL_TIME');
 
   // Search & Filter table parameters
   const [searchQuery, setSearchQuery] = useState('');
@@ -166,7 +229,7 @@ export default function ProgressAnalysis() {
   };
 
   // Role Switch Simulator - Admin, Teacher, Parent
-  const [currentRoleView, setCurrentRoleView] = useState<'ADMIN' | 'TEACHER' | 'PARENT'>(actualRole);
+  const [currentRoleView, setCurrentRoleView] = useState<'ADMIN' | 'TEACHER' | 'PARENT'>(storedRoleView);
 
   // Modal display control
   const [selectedAnalysis, setSelectedAnalysis] = useState<Analysis | null>(null);
@@ -335,19 +398,34 @@ export default function ProgressAnalysis() {
       return;
     }
 
+    const childId = Number(selectedAnalysis.ChildId);
+    const existingResults = allResultsMap.get(childId);
+
+    // Instant computation if child results and lessons already cached in memory
+    if (existingResults && existingResults.length > 0 && allLessons.length > 0) {
+      const progress = computeLessonProgress(existingResults, allLessons);
+      setLessonProgressList(progress);
+      return;
+    }
+
     let isMounted = true;
     async function loadProgressDetails() {
       setLoadingProgressDetails(true);
       try {
         const [resultsRes, lessonsRes] = await Promise.all([
-          getResultsByChild(Number(selectedAnalysis.ChildId)),
-          loadAllPages<LessonResponse>(getLessons).catch(() => [] as LessonResponse[]),
+          existingResults
+            ? Promise.resolve({ success: true, data: existingResults })
+            : getResultsByChild(childId),
+          allLessons.length > 0
+            ? Promise.resolve({ success: true, data: { items: allLessons } })
+            : getLessons(1, 100).catch(() => ({ success: false, data: { items: [] as LessonResponse[] } }))
         ]);
 
         if (!isMounted) return;
 
         if (resultsRes.success && resultsRes.data) {
-          const progress = computeLessonProgress(resultsRes.data, lessonsRes);
+          const lessonsList = (lessonsRes.success && (lessonsRes as any).data?.items) ? (lessonsRes as any).data.items : allLessons;
+          const progress = computeLessonProgress(resultsRes.data, lessonsList);
           setLessonProgressList(progress);
         }
       } catch (err) {
@@ -362,18 +440,23 @@ export default function ProgressAnalysis() {
     return () => {
       isMounted = false;
     };
-  }, [selectedAnalysis]);
+  }, [selectedAnalysis, allResultsMap, allLessons]);
 
   const loadData = async () => {
-    setIsLoading(true);
+    // If fresh cache exists, perform silent background update without full page loader
+    if (!memoryProgressCache || memoryProgressCache.roleView !== currentRoleView) {
+      setIsLoading(true);
+    }
     try {
       let fetchedChildren: ChildProfileResponse[] = [];
 
-      // 0. Fetch lessons & semesters list from API for speech & timeframe dropdown filters
-      const [lessonsData, semestersData] = await Promise.all([
-        loadAllPages<LessonResponse>(getLessons).catch(() => [] as LessonResponse[]),
-        loadAllPages<SemesterResponse>(getSemesters).catch(() => [] as SemesterResponse[]),
+      // 0. Fetch lessons & semesters list from API in 1 parallel round-trip
+      const [lessonsRes, semestersRes] = await Promise.all([
+        getLessons(1, 100).catch(() => ({ success: false, data: { items: [] as LessonResponse[] } })),
+        getSemesters(1, 100).catch(() => ({ success: false, data: { items: [] as SemesterResponse[] } })),
       ]);
+      const lessonsData = (lessonsRes.success && lessonsRes.data?.items) ? lessonsRes.data.items : [];
+      const semestersData = (semestersRes.success && semestersRes.data?.items) ? semestersRes.data.items : [];
       setAllLessons(lessonsData);
       setDbSemesters(semestersData);
 
@@ -383,20 +466,17 @@ export default function ProgressAnalysis() {
         if (res.success && res.data) {
           fetchedChildren = res.data;
         }
-      } else {
-        // Teacher/Admin can view all children profiles (load all pages)
-        let page = 1;
-        let hasMore = true;
-        while (hasMore) {
-          const res = await getChildProfiles(page, 100);
-          if (res.success && res.data?.items) {
-            fetchedChildren = [...fetchedChildren, ...res.data.items];
-            hasMore = res.data.items.length === 100 && page < 10;
-            page++;
-          } else {
-            hasMore = false;
-          }
+      } else if (currentRoleView === 'TEACHER') {
+        const res = await getMyStudents(1, 100);
+        if (res.success && res.data?.items && res.data.items.length > 0) {
+          fetchedChildren = res.data.items;
+        } else {
+          const fallbackRes = await getChildProfiles(1, 100);
+          fetchedChildren = fallbackRes.data?.items || [];
         }
+      } else {
+        const res = await getChildProfiles(1, 100);
+        fetchedChildren = res.data?.items || [];
       }
 
       // Map to Child state format
@@ -504,6 +584,17 @@ export default function ProgressAnalysis() {
       });
       setAnalyses(mappedAnalyses);
 
+      // Save to in-memory SWR cache for 0ms instant reload
+      memoryProgressCache = {
+        roleView: currentRoleView,
+        analyses: mappedAnalyses,
+        children: mappedChildren,
+        allResultsMap: resultsMap,
+        speechAccuraciesMap: speechMap,
+        allLessons: lessonsData,
+        dbSemesters: semestersData,
+        timestamp: Date.now(),
+      };
     } catch (error) {
       console.error("Error loading Progress Analysis data:", error);
     } finally {
@@ -1042,6 +1133,398 @@ export default function ProgressAnalysis() {
     };
   }, [allResultsMap, speechAccuraciesMap, selectedChildId, speechSelectedLessonId, speechTimeframe, speechSemester, speechMonth, speechYear, dbSemesters, getRoleFilteredChildren]);
 
+  // Comprehensive Vocabulary & Spoken Word Analysis
+  const vocabularyAnalysis = useMemo(() => {
+    const targetChildIds: number[] = [];
+    if (selectedChildId !== 'ALL') {
+      targetChildIds.push(Number(selectedChildId));
+    } else {
+      getRoleFilteredChildren.forEach(c => targetChildIds.push(Number(c.ChildId)));
+    }
+
+    let allResultsPool: ResultResponse[] = [];
+    let allSpeechPool: ChildSpeechAccuracyResponse[] = [];
+
+    targetChildIds.forEach(id => {
+      const resList = allResultsMap.get(id);
+      if (resList) allResultsPool.push(...resList);
+
+      const spList = speechAccuraciesMap.get(id);
+      if (spList) allSpeechPool.push(...spList);
+    });
+
+    // Filter by lesson if selected
+    if (speechSelectedLessonId !== 'ALL') {
+      const lessonIdNum = Number(speechSelectedLessonId);
+      allResultsPool = allResultsPool.filter(r => r.lessonId === lessonIdNum);
+      allSpeechPool = allSpeechPool.filter(s => s.lessonId === lessonIdNum);
+    }
+
+    // Timeframe-filtered subsets for comparison
+    let timeframeResultsPool: ResultResponse[] = [];
+    let timeframeSpeechPool: ChildSpeechAccuracyResponse[] = [];
+
+    const now = new Date();
+    if (speechTimeframe === 'week') {
+      const currentDay = now.getDay();
+      const distanceToMon = currentDay === 0 ? -6 : 1 - currentDay;
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() + distanceToMon);
+      startOfWeek.setHours(0, 0, 0, 0);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+
+      timeframeResultsPool = allResultsPool.filter(r => {
+        const d = r.startedAt || r.completedAt;
+        if (!d) return false;
+        const dt = new Date(d.includes('T') ? d : d.replace(' ', 'T'));
+        return dt >= startOfWeek && dt <= endOfWeek;
+      });
+      timeframeSpeechPool = allSpeechPool.filter(s => {
+        if (!s.createdAt) return false;
+        const dt = new Date(s.createdAt.includes('T') ? s.createdAt : s.createdAt.replace(' ', 'T'));
+        return dt >= startOfWeek && dt <= endOfWeek;
+      });
+    } else if (speechTimeframe === 'month') {
+      const startOfMonth = new Date(speechYear, speechMonth, 1);
+      const endOfMonth = new Date(speechYear, speechMonth + 1, 0, 23, 59, 59, 999);
+      timeframeResultsPool = allResultsPool.filter(r => {
+        const d = r.startedAt || r.completedAt;
+        if (!d) return false;
+        const dt = new Date(d.includes('T') ? d : d.replace(' ', 'T'));
+        return dt >= startOfMonth && dt <= endOfMonth;
+      });
+      timeframeSpeechPool = allSpeechPool.filter(s => {
+        if (!s.createdAt) return false;
+        const dt = new Date(s.createdAt.includes('T') ? s.createdAt : s.createdAt.replace(' ', 'T'));
+        return dt >= startOfMonth && dt <= endOfMonth;
+      });
+    } else if (speechTimeframe === 'semester') {
+      let allowedMonths: number[] = [];
+      if (speechSemester === 'HK1') {
+        allowedMonths = [8, 9, 10, 11, 0];
+      } else if (speechSemester === 'HK2') {
+        allowedMonths = [1, 2, 3, 4, 5];
+      } else {
+        allowedMonths = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+      }
+      timeframeResultsPool = allResultsPool.filter(r => {
+        const d = r.startedAt || r.completedAt;
+        if (!d) return false;
+        const dt = new Date(d.includes('T') ? d : d.replace(' ', 'T'));
+        return allowedMonths.includes(dt.getMonth());
+      });
+      timeframeSpeechPool = allSpeechPool.filter(s => {
+        if (!s.createdAt) return false;
+        const dt = new Date(s.createdAt.includes('T') ? s.createdAt : s.createdAt.replace(' ', 'T'));
+        return allowedMonths.includes(dt.getMonth());
+      });
+    }
+
+    interface WordStatAggregator {
+      word: string;
+      lessonId: number | null;
+      lessonName: string;
+      lastPracticed: string;
+      allAttempts: number;
+      allCorrect: number;
+      allWrong: number;
+      allCorrectEx: Array<{ spokenText: string; timeSeconds: number; dateStr?: string }>;
+      allWrongEx: Array<{ spokenText: string; timeSeconds: number; dateStr?: string; errorType?: string }>;
+      allSpeechScores: number[];
+      tfAttempts: number;
+      tfCorrect: number;
+      tfWrong: number;
+      tfCorrectEx: Array<{ spokenText: string; timeSeconds: number; dateStr?: string }>;
+      tfWrongEx: Array<{ spokenText: string; timeSeconds: number; dateStr?: string; errorType?: string }>;
+      tfSpeechScores: number[];
+    }
+
+    const masterMap = new Map<string, WordStatAggregator>();
+
+    const getOrCreateMaster = (rawWord: string, lessonId: number | null, dateStr?: string): WordStatAggregator => {
+      const cleaned = cleanSpeechText(rawWord);
+      const key = cleaned.toLowerCase().trim();
+      if (masterMap.has(key)) {
+        const existing = masterMap.get(key)!;
+        if (!existing.lessonId && lessonId) {
+          existing.lessonId = lessonId;
+          existing.lessonName = allLessons.find(l => l.id === lessonId)?.lessonName || `Bài học #${lessonId}`;
+        }
+        if (dateStr && (!existing.lastPracticed || new Date(dateStr) > new Date(existing.lastPracticed))) {
+          existing.lastPracticed = dateStr;
+        }
+        return existing;
+      }
+
+      const lessonName = lessonId
+        ? (allLessons.find(l => l.id === lessonId)?.lessonName || `Bài học #${lessonId}`)
+        : 'Bài rèn luyện';
+
+      const newItem: WordStatAggregator = {
+        word: cleaned,
+        lessonId,
+        lessonName,
+        lastPracticed: dateStr || new Date().toISOString(),
+        allAttempts: 0,
+        allCorrect: 0,
+        allWrong: 0,
+        allCorrectEx: [],
+        allWrongEx: [],
+        allSpeechScores: [],
+        tfAttempts: 0,
+        tfCorrect: 0,
+        tfWrong: 0,
+        tfCorrectEx: [],
+        tfWrongEx: [],
+        tfSpeechScores: []
+      };
+      masterMap.set(key, newItem);
+      return newItem;
+    };
+
+    const isTfResult = (r: ResultResponse) => timeframeResultsPool.includes(r);
+    const isTfSpeech = (s: ChildSpeechAccuracyResponse) => timeframeSpeechPool.includes(s);
+
+    // 1. Process all results
+    allResultsPool.forEach(r => {
+      if (!r.interactionLog) return;
+      const events = parseInteractionLog(r.interactionLog);
+      const sessionDate = r.completedAt || r.startedAt;
+      const inTf = isTfResult(r);
+
+      events.forEach(evt => {
+        if (!evt.text || evt.text.trim().length === 0) return;
+        const entry = getOrCreateMaster(evt.text, r.lessonId || null, sessionDate);
+        entry.allAttempts += 1;
+        if (inTf) entry.tfAttempts += 1;
+
+        if (evt.isCorrect) {
+          entry.allCorrect += 1;
+          const spoken = cleanSpeechText(evt.spokenText) || entry.word;
+          if (entry.allCorrectEx.length < 5) {
+            entry.allCorrectEx.push({ spokenText: spoken, timeSeconds: evt.timeSeconds, dateStr: sessionDate });
+          }
+          if (inTf) {
+            entry.tfCorrect += 1;
+            if (entry.tfCorrectEx.length < 5) {
+              entry.tfCorrectEx.push({ spokenText: spoken, timeSeconds: evt.timeSeconds, dateStr: sessionDate });
+            }
+          }
+        } else {
+          entry.allWrong += 1;
+          const spoken = cleanSpeechText(evt.spokenText) || 'chưa đủ từ';
+          if (entry.allWrongEx.length < 5) {
+            entry.allWrongEx.push({ spokenText: spoken, timeSeconds: evt.timeSeconds, dateStr: sessionDate });
+          }
+          if (inTf) {
+            entry.tfWrong += 1;
+            if (entry.tfWrongEx.length < 5) {
+              entry.tfWrongEx.push({ spokenText: spoken, timeSeconds: evt.timeSeconds, dateStr: sessionDate });
+            }
+          }
+        }
+      });
+    });
+
+    // 2. Process all speech accuracy records
+    allSpeechPool.forEach(sp => {
+      if (!sp.word) return;
+      const rawWord = cleanSpeechText(sp.word);
+      if (!rawWord) return;
+      const entry = getOrCreateMaster(rawWord, sp.lessonId || null, sp.createdAt);
+      const inTf = isTfSpeech(sp);
+
+      if (sp.accuracyScore !== undefined && sp.accuracyScore !== null) {
+        entry.allSpeechScores.push(sp.accuracyScore);
+        if (inTf) entry.tfSpeechScores.push(sp.accuracyScore);
+      }
+
+      if (entry.allAttempts === 0) {
+        entry.allAttempts += 1;
+        const isGood = (sp.accuracyScore || 0) >= 75 && sp.errorType === 'None';
+        if (isGood) {
+          entry.allCorrect += 1;
+          entry.allCorrectEx.push({ spokenText: entry.word, timeSeconds: 0, dateStr: sp.createdAt });
+        } else {
+          entry.allWrong += 1;
+          const errDesc = sp.errorType === 'Mispronunciation' ? 'Sai âm' : sp.errorType === 'Omission' ? 'Đọc thiếu âm' : (sp.errorType || 'Phát âm chưa chuẩn');
+          entry.allWrongEx.push({ spokenText: errDesc, timeSeconds: 0, dateStr: sp.createdAt, errorType: sp.errorType || undefined });
+        }
+
+        if (inTf) {
+          entry.tfAttempts += 1;
+          if (isGood) {
+            entry.tfCorrect += 1;
+            entry.tfCorrectEx.push({ spokenText: entry.word, timeSeconds: 0, dateStr: sp.createdAt });
+          } else {
+            entry.tfWrong += 1;
+            const errDesc = sp.errorType === 'Mispronunciation' ? 'Sai âm' : sp.errorType === 'Omission' ? 'Đọc thiếu âm' : (sp.errorType || 'Phát âm chưa chuẩn');
+            entry.tfWrongEx.push({ spokenText: errDesc, timeSeconds: 0, dateStr: sp.createdAt, errorType: sp.errorType || undefined });
+          }
+        }
+      }
+    });
+
+    // Build the master list with both allTime and timeframe data
+    const allItems: AnalyzedVocabularyItem[] = Array.from(masterMap.values()).map(entry => {
+      const allScore = entry.allSpeechScores.length > 0
+        ? Math.round(entry.allSpeechScores.reduce((a, b) => a + b, 0) / entry.allSpeechScores.length)
+        : undefined;
+
+      const allRate = entry.allAttempts > 0
+        ? Math.round((entry.allCorrect / entry.allAttempts) * 100)
+        : (allScore || 0);
+
+      const allMastery: 'MASTERED' | 'PRACTICING' | 'NEEDS_HELP' = allRate >= 80 ? 'MASTERED' : allRate >= 50 ? 'PRACTICING' : 'NEEDS_HELP';
+
+      const tfScore = entry.tfSpeechScores.length > 0
+        ? Math.round(entry.tfSpeechScores.reduce((a, b) => a + b, 0) / entry.tfSpeechScores.length)
+        : undefined;
+
+      const tfRate = entry.tfAttempts > 0
+        ? Math.round((entry.tfCorrect / entry.tfAttempts) * 100)
+        : (tfScore || 0);
+
+      let tfMastery: 'MASTERED' | 'PRACTICING' | 'NEEDS_HELP' | 'NOT_PRACTICED' = 'NOT_PRACTICED';
+      if (entry.tfAttempts > 0) {
+        tfMastery = tfRate >= 80 ? 'MASTERED' : tfRate >= 50 ? 'PRACTICING' : 'NEEDS_HELP';
+      }
+
+      const hasTf = entry.tfAttempts > 0;
+
+      if (vocabTimeScope === 'ALL_TIME') {
+        return {
+          word: entry.word,
+          lessonId: entry.lessonId,
+          lessonName: entry.lessonName,
+          totalAttempts: entry.allAttempts,
+          correctCount: entry.allCorrect,
+          wrongCount: entry.allWrong,
+          accuracyRate: allRate,
+          avgSpeechScore: allScore,
+          masteryStatus: allMastery,
+          lastPracticed: entry.lastPracticed,
+          correctExamples: entry.allCorrectEx,
+          wrongExamples: entry.allWrongEx,
+          allTimeAttempts: entry.allAttempts,
+          allTimeAccuracyRate: allRate,
+          allTimeMasteryStatus: allMastery,
+          allTimeLastPracticed: entry.lastPracticed,
+          hasTimeframeData: true
+        };
+      } else {
+        return {
+          word: entry.word,
+          lessonId: entry.lessonId,
+          lessonName: entry.lessonName,
+          totalAttempts: entry.tfAttempts,
+          correctCount: entry.tfCorrect,
+          wrongCount: entry.tfWrong,
+          accuracyRate: tfRate,
+          avgSpeechScore: tfScore,
+          masteryStatus: tfMastery,
+          lastPracticed: entry.lastPracticed,
+          correctExamples: entry.tfCorrectEx,
+          wrongExamples: entry.tfWrongEx,
+          allTimeAttempts: entry.allAttempts,
+          allTimeAccuracyRate: allRate,
+          allTimeMasteryStatus: allMastery,
+          allTimeLastPracticed: entry.lastPracticed,
+          hasTimeframeData: hasTf
+        };
+      }
+    });
+
+    const totalWords = allItems.length;
+    const timeframePracticedWords = allItems.filter(i => i.hasTimeframeData && i.totalAttempts > 0).length;
+
+    const activeItems = vocabTimeScope === 'ALL_TIME' ? allItems : allItems.filter(i => i.hasTimeframeData && i.totalAttempts > 0);
+    const masteredCount = activeItems.filter(i => i.masteryStatus === 'MASTERED').length;
+    const practicingCount = activeItems.filter(i => i.masteryStatus === 'PRACTICING').length;
+    const needsHelpCount = activeItems.filter(i => i.masteryStatus === 'NEEDS_HELP').length;
+
+    const totalCorrect = activeItems.reduce((sum, i) => sum + i.correctCount, 0);
+    const totalWrong = activeItems.reduce((sum, i) => sum + i.wrongCount, 0);
+    const totalSpoken = totalCorrect + totalWrong;
+    const overallSpokenAccuracy = totalSpoken > 0 ? Math.round((totalCorrect / totalSpoken) * 100) : 0;
+
+    return {
+      allItems,
+      totalWords,
+      timeframePracticedWords,
+      masteredCount,
+      practicingCount,
+      needsHelpCount,
+      totalCorrect,
+      totalWrong,
+      totalSpoken,
+      overallSpokenAccuracy
+    };
+  }, [
+    allResultsMap,
+    speechAccuraciesMap,
+    allLessons,
+    selectedChildId,
+    speechSelectedLessonId,
+    vocabTimeScope,
+    speechTimeframe,
+    speechSemester,
+    speechMonth,
+    speechYear,
+    getRoleFilteredChildren
+  ]);
+
+  // Filtered and sorted vocabulary list with STABLE ordering to prevent jitter and layout rearrangement
+  const filteredVocabularyItems = useMemo(() => {
+    let list = [...vocabularyAnalysis.allItems];
+
+    if (vocabStatusFilter !== 'ALL') {
+      list = list.filter(item => item.masteryStatus === vocabStatusFilter);
+    }
+
+    if (vocabSearchQuery.trim()) {
+      const q = vocabSearchQuery.toLowerCase().trim();
+      list = list.filter(item =>
+        item.word.toLowerCase().includes(q) ||
+        item.lessonName.toLowerCase().includes(q) ||
+        item.correctExamples.some(ex => ex.spokenText.toLowerCase().includes(q)) ||
+        item.wrongExamples.some(ex => ex.spokenText.toLowerCase().includes(q))
+      );
+    }
+
+    // ALWAYS sort by stable allTime properties so switching vocabTimeScope never swaps cards!
+    list.sort((a, b) => {
+      if (vocabSortBy === 'MOST_PRACTICED') {
+        return b.allTimeAttempts - a.allTimeAttempts;
+      }
+      if (vocabSortBy === 'HIGHEST_ACCURACY') {
+        return b.allTimeAccuracyRate - a.allTimeAccuracyRate;
+      }
+      if (vocabSortBy === 'LOWEST_ACCURACY') {
+        return a.allTimeAccuracyRate - b.allTimeAccuracyRate;
+      }
+      if (vocabSortBy === 'RECENT') {
+        return new Date(b.allTimeLastPracticed).getTime() - new Date(a.allTimeLastPracticed).getTime();
+      }
+      return 0;
+    });
+
+    return list;
+  }, [vocabularyAnalysis.allItems, vocabStatusFilter, vocabSearchQuery, vocabSortBy]);
+
+  const formatVocabDate = (dateStr?: string) => {
+    if (!dateStr) return 'Gần đây';
+    try {
+      const d = new Date(dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T'));
+      if (isNaN(d.getTime())) return 'Gần đây';
+      return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+    } catch {
+      return 'Gần đây';
+    }
+  };
+
   // Render state indicator badges
   const renderProgressLevelBadge = (level: Analysis['ProgressLevel'] | string) => {
     const styler: Record<string, { bg: string; text: string; label: string; dot: string }> = {
@@ -1148,7 +1631,7 @@ export default function ProgressAnalysis() {
       </div>
 
       {/* 3. Kid-friendly colorful Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
 
         {/* Total assign exercises */}
         <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
@@ -1184,6 +1667,34 @@ export default function ProgressAnalysis() {
               {metrics.avgScore}/100
             </p>
             <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Điểm bình quân</p>
+          </div>
+        </div>
+
+        {/* Total Vocabulary Words Learned */}
+        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
+          <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0 border border-emerald-100">
+            <BookOpen className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div>
+            <p className="text-2xl font-black text-slate-800 leading-none">
+              {vocabularyAnalysis.totalWords} <span className="text-xs font-bold text-slate-400">từ</span>
+            </p>
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Vốn từ đã học</p>
+          </div>
+        </div>
+
+        {/* Spoken Correct vs Wrong Counts */}
+        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
+          <div className="w-12 h-12 bg-cyan-50 rounded-xl flex items-center justify-center shrink-0 border border-cyan-100">
+            <Mic className="w-5 h-5 text-[#20D0D4]" />
+          </div>
+          <div>
+            <p className="text-2xl font-black text-slate-800 leading-none flex items-center">
+              <span className="text-emerald-600">{vocabularyAnalysis.totalCorrect}</span>
+              <span className="text-slate-300 mx-1 text-lg font-normal">/</span>
+              <span className="text-rose-500">{vocabularyAnalysis.totalWrong}</span>
+            </p>
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Nói đúng / sai</p>
           </div>
         </div>
 
@@ -1461,92 +1972,410 @@ export default function ProgressAnalysis() {
 
       </div>
 
-      {/* 5. Detailed Phoneme & Word Speech Breakdown Card */}
-      <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
-              <Mic className="w-5 h-5" />
+      {/* 5. Comprehensive Vocabulary Mastery & Speech Analysis Widget */}
+      <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-5" id="vocab-analysis-section">
+        {/* Header & Main Controls */}
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 bg-teal-50 rounded-2xl flex items-center justify-center text-teal-600 border border-teal-100/60 shadow-xs shrink-0">
+              <BookOpen className="w-5 h-5 text-[#20D0D4]" />
             </div>
-            <div>
-              <h3 className="font-extrabold text-slate-800 text-base leading-tight">Phân tích Chi tiết Từ & Lỗi Phát âm trong Bài học</h3>
-              <p className="text-xs text-slate-400 font-medium">Thống kê theo lượt phát âm thực tế của bé trong khoảng thời gian đã chọn</p>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-extrabold text-slate-800 text-base sm:text-lg leading-tight tracking-tight whitespace-nowrap">
+                  Phân tích Vốn Từ Vựng &amp; Luyện Phát Âm của Trẻ
+                </h3>
+                <span className="bg-emerald-50 text-emerald-700 text-[11px] font-black px-2 py-0.5 rounded-full border border-emerald-200 whitespace-nowrap shrink-0">
+                  {vocabularyAnalysis.totalWords} từ vựng
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 font-medium mt-0.5 whitespace-nowrap truncate">
+                Chi tiết các từ vựng bé đã rèn luyện, số lần nói đúng/sai và phân tích lỗi phát âm
+              </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-            <div className="bg-cyan-50 text-[#20D0D4] px-3 py-1.5 rounded-lg border border-cyan-100">
-              Tổng lượt đọc: <strong className="font-extrabold">{speechStatsSummary.totalRecords}</strong>
+          {/* Time Scope Toggle and Quick Spoken Accuracy - strictly on 1 row */}
+          <div className="flex items-center gap-2 shrink-0 flex-nowrap">
+            <div className="flex items-center bg-slate-100/80 p-1 rounded-xl border border-slate-200/60 shrink-0">
+              <button
+                type="button"
+                onClick={() => setVocabTimeScope('ALL_TIME')}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap text-center",
+                  vocabTimeScope === 'ALL_TIME'
+                    ? "bg-white text-slate-800 shadow-xs font-black"
+                    : "text-slate-500 hover:text-slate-800"
+                )}
+              >
+                Toàn bộ từ đã học ({vocabularyAnalysis.totalWords})
+              </button>
+              <button
+                type="button"
+                onClick={() => setVocabTimeScope('FILTERED')}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap text-center",
+                  vocabTimeScope === 'FILTERED'
+                    ? "bg-white text-slate-800 shadow-xs font-black"
+                    : "text-slate-500 hover:text-slate-800"
+                )}
+              >
+                Theo bộ lọc biểu đồ
+              </button>
             </div>
-            <div className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg border border-emerald-100">
-              Độ chính xác TB: <strong className="font-extrabold">{speechStatsSummary.overallAvg}%</strong>
+
+            <div className="flex items-center gap-1.5 text-xs font-bold bg-cyan-50/70 text-cyan-800 px-3 py-1.5 rounded-xl border border-cyan-100 shrink-0 whitespace-nowrap">
+              <Mic className="w-3.5 h-3.5 text-[#20D0D4] shrink-0" />
+              <span>Chính xác TB: <strong className="font-black text-cyan-900">{vocabularyAnalysis.overallSpokenAccuracy}%</strong> ({vocabularyAnalysis.totalCorrect} đúng / {vocabularyAnalysis.totalWrong} sai)</span>
             </div>
-            {speechStatsSummary.errorTypeCounts.Mispronunciation > 0 && (
-              <div className="bg-rose-50 text-rose-600 px-3 py-1.5 rounded-lg border border-rose-100">
-                Phát âm sai: <strong className="font-extrabold">{speechStatsSummary.errorTypeCounts.Mispronunciation}</strong>
-              </div>
-            )}
-            {speechStatsSummary.errorTypeCounts.Omission > 0 && (
-              <div className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded-lg border border-amber-100">
-                Đọc thiếu âm: <strong className="font-extrabold">{speechStatsSummary.errorTypeCounts.Omission}</strong>
-              </div>
-            )}
           </div>
         </div>
 
-        {wordBreakdown.length === 0 ? (
-          <div className="py-8 text-center text-slate-400 text-xs font-medium">
-            Chưa có ghi nhận dữ liệu phát âm lời nói nào phù hợp với bộ lọc bài học / thời gian hiện tại.
+        {/* Filter Categories Chips (Clickable) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <button
+            type="button"
+            onClick={() => setVocabStatusFilter('ALL')}
+            className={cn(
+              "p-3 rounded-xl border text-left transition-colors flex items-center justify-between",
+              vocabStatusFilter === 'ALL'
+                ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                : "bg-slate-50/70 hover:bg-slate-100 border-slate-200/70 text-slate-700"
+            )}
+          >
+            <div className="min-w-0">
+              <p className={cn("text-[11px] font-bold uppercase tracking-wider whitespace-nowrap truncate", vocabStatusFilter === 'ALL' ? "text-slate-300" : "text-slate-400")}>
+                Tất cả từ đã học
+              </p>
+              <div className="flex items-baseline gap-1.5 mt-0.5 whitespace-nowrap">
+                <span className="text-lg font-black leading-tight">{vocabularyAnalysis.totalWords}</span>
+                {vocabTimeScope === 'FILTERED' && (
+                  <span className={cn("text-[10px] font-bold whitespace-nowrap", vocabStatusFilter === 'ALL' ? "text-slate-300" : "text-slate-400")}>
+                    ({vocabularyAnalysis.timeframePracticedWords} có lượt)
+                  </span>
+                )}
+              </div>
+            </div>
+            <BookOpen className={cn("w-4 h-4 shrink-0 ml-1", vocabStatusFilter === 'ALL' ? "text-slate-300" : "text-slate-400")} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setVocabStatusFilter('MASTERED')}
+            className={cn(
+              "p-3 rounded-xl border text-left transition-colors flex items-center justify-between",
+              vocabStatusFilter === 'MASTERED'
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                : "bg-emerald-50/50 hover:bg-emerald-50 border-emerald-200/70 text-emerald-800"
+            )}
+          >
+            <div className="min-w-0">
+              <p className={cn("text-[11px] font-bold uppercase tracking-wider whitespace-nowrap truncate", vocabStatusFilter === 'MASTERED' ? "text-emerald-100" : "text-emerald-600")}>
+                Đã thành thạo (&ge;80%)
+              </p>
+              <p className="text-lg font-black leading-tight mt-0.5">{vocabularyAnalysis.masteredCount}</p>
+            </div>
+            <CheckCircle2 className={cn("w-4 h-4 shrink-0 ml-1", vocabStatusFilter === 'MASTERED' ? "text-emerald-100" : "text-emerald-600")} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setVocabStatusFilter('PRACTICING')}
+            className={cn(
+              "p-3 rounded-xl border text-left transition-colors flex items-center justify-between",
+              vocabStatusFilter === 'PRACTICING'
+                ? "bg-cyan-600 text-white border-cyan-600 shadow-xs"
+                : "bg-cyan-50/50 hover:bg-cyan-50 border-cyan-200/70 text-cyan-800"
+            )}
+          >
+            <div className="min-w-0">
+              <p className={cn("text-[11px] font-bold uppercase tracking-wider whitespace-nowrap truncate", vocabStatusFilter === 'PRACTICING' ? "text-cyan-100" : "text-cyan-600")}>
+                Đang rèn luyện (50-79%)
+              </p>
+              <p className="text-lg font-black leading-tight mt-0.5">{vocabularyAnalysis.practicingCount}</p>
+            </div>
+            <RefreshCw className={cn("w-4 h-4 shrink-0 ml-1", vocabStatusFilter === 'PRACTICING' ? "text-cyan-100" : "text-cyan-600")} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setVocabStatusFilter('NEEDS_HELP')}
+            className={cn(
+              "p-3 rounded-xl border text-left transition-colors flex items-center justify-between",
+              vocabStatusFilter === 'NEEDS_HELP'
+                ? "bg-rose-600 text-white border-rose-600 shadow-xs"
+                : "bg-rose-50/50 hover:bg-rose-50 border-rose-200/70 text-rose-800"
+            )}
+          >
+            <div className="min-w-0">
+              <p className={cn("text-[11px] font-bold uppercase tracking-wider whitespace-nowrap truncate", vocabStatusFilter === 'NEEDS_HELP' ? "text-rose-100" : "text-rose-600")}>
+                Cần chú ý / Sai (&lt;50%)
+              </p>
+              <p className="text-lg font-black leading-tight mt-0.5">{vocabularyAnalysis.needsHelpCount}</p>
+            </div>
+            <AlertTriangle className={cn("w-4 h-4 shrink-0 ml-1", vocabStatusFilter === 'NEEDS_HELP' ? "text-rose-100" : "text-rose-600")} />
+          </button>
+        </div>
+
+        {/* Search & Sort Controls */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Tìm nhanh từ vựng (ví dụ: quả táo, bánh quy, xúc xích, cần câu...)"
+              value={vocabSearchQuery}
+              onChange={(e) => setVocabSearchQuery(e.target.value)}
+              className="w-full pl-3.5 pr-8 py-2 text-xs font-semibold rounded-xl border border-slate-200/80 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all placeholder:text-slate-400"
+            />
+            {vocabSearchQuery && (
+              <button
+                type="button"
+                onClick={() => setVocabSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs font-bold text-slate-400">Sắp xếp:</span>
+            <CustomSelect
+              value={vocabSortBy}
+              onChange={(val) => setVocabSortBy(val as any)}
+              options={[
+                { value: 'MOST_PRACTICED', label: 'Luyện nhiều nhất' },
+                { value: 'HIGHEST_ACCURACY', label: 'Tỷ lệ đúng cao nhất' },
+                { value: 'LOWEST_ACCURACY', label: 'Cần rèn luyện nhất' },
+                { value: 'RECENT', label: 'Mới học gần đây' }
+              ]}
+              className="min-w-[170px] text-xs font-bold"
+            />
+          </div>
+        </div>
+
+        {/* Word Cards Grid */}
+        {filteredVocabularyItems.length === 0 ? (
+          <div className="py-12 px-4 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 space-y-2">
+            <BookOpen className="w-8 h-8 text-slate-300 mx-auto" />
+            <p className="text-sm font-bold text-slate-600">
+              {vocabSearchQuery
+                ? `Không tìm thấy từ vựng nào khớp với "${vocabSearchQuery}"`
+                : 'Chưa có dữ liệu từ vựng nào phù hợp với bộ lọc hiện tại'}
+            </p>
+            <p className="text-xs text-slate-400 max-w-md mx-auto">
+              Hãy thử chọn &ldquo;Toàn bộ từ đã học&rdquo; hoặc bấm chuyển bộ lọc trạng thái để xem danh mục từ ngữ khác của bé.
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-            {/* Column 1: Top High Accuracy Words */}
-            <div className="bg-emerald-50/40 rounded-xl p-4 border border-emerald-100 space-y-2">
-              <div className="flex items-center gap-2 text-emerald-700 text-xs font-extrabold pb-1 border-b border-emerald-100">
-                <CheckCircle className="w-4 h-4 text-emerald-500" />
-                <span>Từ / Âm bé phát âm tốt nhất (&ge; 75%)</span>
-              </div>
-              <div className="flex flex-wrap gap-2 pt-1">
-                {wordBreakdown.filter(w => w.avgAccuracy >= 75).slice(0, 10).map((w, idx) => (
-                  <div key={idx} className="bg-white px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-2 shadow-xs">
-                    <span className="font-extrabold text-slate-800 text-xs">{w.word}</span>
-                    <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                      {w.avgAccuracy}%
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-medium">({w.count} lần)</span>
-                  </div>
-                ))}
-                {wordBreakdown.filter(w => w.avgAccuracy >= 75).length === 0 && (
-                  <p className="text-xs text-slate-400 italic">Chưa có từ phát âm đạt từ 75% trở lên.</p>
-                )}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            {filteredVocabularyItems.map((item) => {
+              const isNotPracticed = item.totalAttempts === 0;
+              const isMastered = !isNotPracticed && item.masteryStatus === 'MASTERED';
+              const isNeedsHelp = !isNotPracticed && item.masteryStatus === 'NEEDS_HELP';
 
-            {/* Column 2: Words needing practice */}
-            <div className="bg-rose-50/40 rounded-xl p-4 border border-rose-100 space-y-2">
-              <div className="flex items-center gap-2 text-rose-700 text-xs font-extrabold pb-1 border-b border-rose-100">
-                <ShieldAlert className="w-4 h-4 text-rose-500" />
-                <span>Từ / Âm bé cần chú ý rèn luyện thêm (&lt; 75%)</span>
-              </div>
-              <div className="flex flex-wrap gap-2 pt-1">
-                {wordBreakdown.filter(w => w.avgAccuracy < 75).slice(0, 10).map((w, idx) => (
-                  <div key={idx} className="bg-white px-3 py-1.5 rounded-lg border border-rose-200 flex items-center gap-2 shadow-xs">
-                    <span className="font-extrabold text-slate-800 text-xs">{w.word}</span>
-                    <span className="text-[11px] font-black text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">
-                      {w.avgAccuracy}%
-                    </span>
-                    {w.topError !== 'None' && (
-                      <span className="text-[10px] text-amber-700 bg-amber-50 px-1 rounded font-bold">
-                        {w.topError === 'Mispronunciation' ? 'Sai âm' : w.topError === 'Omission' ? 'Thiếu âm' : w.topError}
-                      </span>
-                    )}
+              return (
+                <div
+                  key={item.word}
+                  className={cn(
+                    "rounded-2xl p-5 border bg-white shadow-xs hover:shadow-md transition-colors space-y-3.5 flex flex-col justify-between",
+                    isNotPracticed ? "border-slate-200/80" : isMastered ? "border-emerald-100/90" : isNeedsHelp ? "border-rose-100/90" : "border-cyan-100/90"
+                  )}
+                >
+                  {/* Top: Word & Status Badges */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 shrink-0">
+                          <Volume2 className="w-4 h-4 text-slate-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-black text-slate-900 text-base leading-tight tracking-tight capitalize">
+                            {item.word}
+                          </h4>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 mt-0.5">
+                            <BookOpen className="w-3 h-3 text-teal-600" />
+                            {item.lessonName}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0">
+                      {isNotPracticed ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                          <Clock className="w-3.5 h-3.5 text-slate-400" />
+                          Chưa luyện mốc này
+                        </span>
+                      ) : isMastered ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          Đã thành thạo
+                        </span>
+                      ) : isNeedsHelp ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200">
+                          <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                          Cần chú ý
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-cyan-50 text-cyan-700 border border-cyan-200">
+                          <RefreshCw className="w-3.5 h-3.5 text-cyan-600" />
+                          Đang rèn luyện
+                        </span>
+                      )}
+                    </div>
                   </div>
-                ))}
-                {wordBreakdown.filter(w => w.avgAccuracy < 75).length === 0 && (
-                  <p className="text-xs text-emerald-600 font-medium italic">Tuyệt vời! Bé không có từ phát âm nào dưới 75%.</p>
-                )}
-              </div>
-            </div>
+
+                  {/* Accuracy Bar & Numerical Counts */}
+                  <div className="space-y-1.5 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+                    <div className="flex items-center justify-between text-xs gap-2 flex-wrap sm:flex-nowrap">
+                      <span className="font-bold text-slate-600 whitespace-nowrap shrink-0">
+                        Độ chính xác: <strong className={cn("text-sm font-black", isNotPracticed ? "text-slate-400" : isMastered ? "text-emerald-700" : isNeedsHelp ? "text-rose-600" : "text-cyan-700")}>{isNotPracticed ? '0%' : `${item.accuracyRate}%`}</strong>
+                      </span>
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold shrink-0 whitespace-nowrap">
+                        <span className="text-slate-500 font-medium whitespace-nowrap">Tổng: {item.totalAttempts} lượt</span>
+                        <span className={cn("px-1.5 py-0.5 rounded font-black whitespace-nowrap", isNotPracticed ? "text-slate-400 bg-slate-100" : "text-emerald-700 bg-emerald-100/70")}>
+                          {item.correctCount} đúng
+                        </span>
+                        <span className={cn("px-1.5 py-0.5 rounded font-black whitespace-nowrap", isNotPracticed ? "text-slate-400 bg-slate-100" : "text-rose-700 bg-rose-100/70")}>
+                          {item.wrongCount} sai
+                        </span>
+                        {item.avgSpeechScore !== undefined && (
+                          <span className="text-indigo-700 bg-indigo-100/70 px-1.5 py-0.5 rounded font-black whitespace-nowrap">
+                            AI: {item.avgSpeechScore}đ
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="w-full h-2 bg-slate-200/70 rounded-full overflow-hidden">
+                      <div
+                        className={cn(
+                          "h-full rounded-full transition-all",
+                          isNotPracticed ? "bg-slate-300" : item.accuracyRate >= 80 ? "bg-emerald-500" : item.accuracyRate >= 50 ? "bg-[#20D0D4]" : "bg-rose-500"
+                        )}
+                        style={{ width: `${isNotPracticed ? 0 : Math.min(100, Math.max(5, item.accuracyRate))}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Balanced Side-by-side Comparison Slots: Lúc nói đúng vs Lúc nói sai */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
+                    {/* Left Slot: Lúc nói đúng */}
+                    <div className="bg-[#F2FAF4] border border-emerald-100/80 rounded-xl p-3 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between pb-1.5 border-b border-emerald-100 mb-2 gap-2">
+                          <div className="flex items-center gap-1.5 text-emerald-800 text-xs font-black min-w-0 truncate">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span className="truncate">Lúc nói đúng ({item.correctCount} lần)</span>
+                          </div>
+                          <span className="text-[10px] font-black text-emerald-700 uppercase bg-emerald-100/70 px-1.5 py-0.5 rounded shrink-0 whitespace-nowrap">
+                            Chuẩn
+                          </span>
+                        </div>
+
+                        <div className="min-h-[72px] flex flex-col justify-center">
+                          {item.correctExamples.length > 0 ? (
+                            <div className="space-y-1.5">
+                              {item.correctExamples.slice(0, 2).map((ex, exIdx) => (
+                                <div
+                                  key={exIdx}
+                                  className="bg-white/95 px-2.5 py-1.5 rounded-lg border border-emerald-200/70 text-xs flex items-center justify-between shadow-2xs gap-2"
+                                >
+                                  <span className="text-slate-700 font-medium truncate mr-1">
+                                    trẻ nói: <strong className="text-emerald-700 font-extrabold">&ldquo;{ex.spokenText}&rdquo;</strong>
+                                  </span>
+                                  {ex.timeSeconds > 0 && (
+                                    <span className="text-[10px] text-slate-400 font-medium shrink-0 whitespace-nowrap">
+                                      [{ex.timeSeconds}s]
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center text-xs text-slate-400 italic">
+                              {isNotPracticed
+                                ? "Chưa có lượt phát âm trong mốc này"
+                                : "Chưa có lượt phát âm đúng nào"}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Slot: Lúc nói sai & Lỗi */}
+                    <div className="bg-[#FFF2F2] border border-rose-100/80 rounded-xl p-3 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between pb-1.5 border-b border-rose-100 mb-2">
+                          <div className="flex items-center gap-1.5 text-rose-800 text-xs font-black">
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                            <span>Lúc nói sai &amp; lỗi ({item.wrongCount} lần)</span>
+                          </div>
+                          <span className="text-[10px] font-black text-rose-700 uppercase bg-rose-100/70 px-1.5 py-0.5 rounded">
+                            Cần sửa
+                          </span>
+                        </div>
+
+                        <div className="min-h-[72px] flex flex-col justify-center">
+                          {item.wrongExamples.length > 0 ? (
+                            <div className="space-y-1.5">
+                              {item.wrongExamples.slice(0, 2).map((ex, exIdx) => (
+                                <div
+                                  key={exIdx}
+                                  className="bg-white/95 px-2.5 py-1.5 rounded-lg border border-rose-200/70 text-xs flex items-center justify-between shadow-2xs"
+                                >
+                                  <span className="text-slate-700 font-medium truncate mr-1">
+                                    trẻ nói: <strong className="text-rose-700 font-extrabold">&ldquo;{ex.spokenText}&rdquo;</strong>
+                                  </span>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    {ex.errorType && (
+                                      <span className="text-[9px] font-bold bg-amber-50 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200">
+                                        {ex.errorType === 'Mispronunciation' ? 'Sai âm' : ex.errorType === 'Omission' ? 'Thiếu âm' : ex.errorType}
+                                      </span>
+                                    )}
+                                    {ex.timeSeconds > 0 && (
+                                      <span className="text-[10px] text-slate-400 font-medium">
+                                        [{ex.timeSeconds}s]
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className={cn("text-center text-xs italic flex items-center justify-center gap-1", isNotPracticed ? "text-slate-400" : "text-emerald-600 font-semibold")}>
+                              {isNotPracticed ? (
+                                "Chưa có lượt phát âm trong mốc này"
+                              ) : (
+                                <>
+                                  <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                                  Bé phát âm rất chuẩn, không sai lần nào!
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Footer: Timestamp and Teacher Advice */}
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                    <span>Lần tập: <strong className="text-slate-600">{isNotPracticed ? `Toàn kỳ: ${formatVocabDate(item.allTimeLastPracticed)}` : formatVocabDate(item.lastPracticed)}</strong></span>
+                    <span className={cn("font-medium", isNotPracticed ? "text-slate-400" : isMastered ? "text-emerald-600" : isNeedsHelp ? "text-rose-500" : "text-cyan-600")}>
+                      {isNotPracticed
+                        ? "Chưa rèn luyện mốc này"
+                        : isMastered
+                        ? "⭐ Bé đã ghi nhớ tốt"
+                        : isNeedsHelp
+                        ? "⚠️ Nhắc bé phát âm chậm và rõ từ"
+                        : "🔄 Đang quen dần, cần duy trì"}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

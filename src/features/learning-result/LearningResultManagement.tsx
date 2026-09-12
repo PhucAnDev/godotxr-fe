@@ -25,7 +25,10 @@ import {
   FileAudio,
   CheckCircle,
   FileText,
-  Edit3
+  Edit3,
+  Filter,
+  BookOpen,
+  BarChart2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
@@ -69,6 +72,23 @@ interface LearningResult {
 type RoleView = 'ADMIN' | 'TEACHER' | 'PARENT';
 
 const API_PAGE_SIZE = 100;
+
+interface DashboardCache {
+  roleView: RoleView;
+  children: Child[];
+  lessons: LessonResponse[];
+  results: LearningResult[];
+  timestamp: number;
+}
+let memoryDashboardCache: DashboardCache | null = null;
+
+interface SessionDetailCache {
+  chunks: any[];
+  assessments: Record<number, any>;
+  timestamp: number;
+}
+const sessionDetailCache = new Map<string, SessionDetailCache>();
+const audioBlobCache = new Map<string, string>();
 
 function getStoredRoleView(): RoleView {
   const role = localStorage.getItem('user_role');
@@ -140,7 +160,7 @@ async function loadAllPages<T>(
   return allItems;
 }
 
-interface ParsedEvent {
+export interface ParsedEvent {
   timeSeconds: number;
   text: string;
   spokenText?: string;
@@ -150,6 +170,9 @@ interface ParsedEvent {
 export function cleanSpeechText(raw?: string): string {
   if (!raw) return '';
   let cleaned = raw.trim();
+
+  // Strip prefix "từ đúng:" or "từ đúng" if present
+  cleaned = cleaned.replace(/^(?:từ\s+đúng\s*[:']?\s*)/i, '').trim();
 
   // Strip surrounding quotes '...' or "..."
   cleaned = cleaned.replace(/^['"]\s*|\s*['"]$/g, '').trim();
@@ -172,27 +195,37 @@ export function cleanSpeechText(raw?: string): string {
   return cleaned;
 }
 
-function parseInteractionLog(log: string): ParsedEvent[] {
+export function parseInteractionLog(log: string): ParsedEvent[] {
   if (!log) return [];
   const segments = log.split(/[|\n]+/);
   const events: ParsedEvent[] = [];
 
   for (const segment of segments) {
-    const wrongMatch =
-      segment.match(/\[(\d+)s?\]\s*Wrong\s+Answer:\s*từ\s+đúng\s*['"]?([^,'"]+?)['"]?,?\s*trẻ\s+nói:\s*['"]?([^'"]+?)['"]?(?:\s*-\s*\d+\s*điểm)?$/i) ||
-      segment.match(/\[(\d+)s?\]\s*Wrong\s+Answer:\s*từ\s+đúng\s*'([^']+)',?\s*trẻ\s+nói:\s*'([^']+)'/i) ||
-      segment.match(/\[(\d+)s?\]\s*Wrong\s+Answer:\s*từ\s+đúng\s*'([^']+)'/i);
-
-    if (wrongMatch) {
+    // 1. Wrong answer with child speech: [12s] Wrong Answer: từ đúng 'cần câu', trẻ nói: 'cần' -10 điểm
+    const wrongWithSpoken = segment.match(/\[(\d+)s?\]\s*Wrong\s+Answer:\s*(?:từ\s+đúng\s*)?['"]?([^,'"\n]+?)['"]?,?\s*trẻ\s+nói:\s*['"]?([^'"\n]+?)['"]?(?:\s*-\s*\d+\s*điểm)?.*$/i);
+    if (wrongWithSpoken) {
       events.push({
-        timeSeconds: parseInt(wrongMatch[1], 10),
-        text: cleanSpeechText(wrongMatch[2]),
-        spokenText: wrongMatch[3] ? cleanSpeechText(wrongMatch[3]) : 'chưa đủ từ',
+        timeSeconds: parseInt(wrongWithSpoken[1], 10),
+        text: cleanSpeechText(wrongWithSpoken[2]),
+        spokenText: cleanSpeechText(wrongWithSpoken[3]),
         isCorrect: false,
       });
       continue;
     }
 
+    // 2. Wrong answer without child speech: [12s] Wrong Answer: từ đúng 'con cá'
+    const wrongOnly = segment.match(/\[(\d+)s?\]\s*Wrong\s+Answer:\s*(?:từ\s+đúng\s*)?['"]?([^,'"\n\-]+?)['"]?(?:\s*-\s*\d+\s*điểm)?.*$/i);
+    if (wrongOnly) {
+      events.push({
+        timeSeconds: parseInt(wrongOnly[1], 10),
+        text: cleanSpeechText(wrongOnly[2]),
+        spokenText: 'chưa đủ từ',
+        isCorrect: false,
+      });
+      continue;
+    }
+
+    // 3. Correct answer: [25s] Correct Answer: cần câu (+ 20 điểm)
     const correctMatch = segment.match(/\[(\d+)s?\]\s*Correct\s+Answer:\s*(.+)/i);
     if (correctMatch) {
       const cleaned = cleanSpeechText(correctMatch[2]);
@@ -223,6 +256,8 @@ export function isSilentOrUnclearSpeech(spokenText?: string): boolean {
 export default function LearningResultManagement() {
   const {
     getChildProfiles,
+    getMyChildProfiles,
+    getMyStudents,
     getCurrentUserWithChildrenProfiles,
     getResultsByChild,
     updateResultFeedback,
@@ -233,10 +268,21 @@ export default function LearningResultManagement() {
     getEnrollments
   } = useLearningResultApi();
 
-  const [results, setResults] = useState<LearningResult[]>([]);
-  const [children, setChildren] = useState<Child[]>([]);
-  const [lessons, setLessons] = useState<LessonResponse[]>([]);
-  const [isApiLoading, setIsApiLoading] = useState(true);
+  const currentRoleView = getStoredRoleView();
+  const hasFreshCache = Boolean(
+    memoryDashboardCache && memoryDashboardCache.roleView === currentRoleView
+  );
+
+  const [results, setResults] = useState<LearningResult[]>(() =>
+    hasFreshCache && memoryDashboardCache ? memoryDashboardCache.results : []
+  );
+  const [children, setChildren] = useState<Child[]>(() =>
+    hasFreshCache && memoryDashboardCache ? memoryDashboardCache.children : []
+  );
+  const [lessons, setLessons] = useState<LessonResponse[]>(() =>
+    hasFreshCache && memoryDashboardCache ? memoryDashboardCache.lessons : []
+  );
+  const [isApiLoading, setIsApiLoading] = useState<boolean>(() => !hasFreshCache);
   const [apiError, setApiError] = useState<string | null>(null);
 
   // Search & Filter state
@@ -245,7 +291,6 @@ export default function LearningResultManagement() {
   const [filterDateRange, setFilterDateRange] = useState<string>('ALL');
   const [filterChildId, setFilterChildId] = useState<string>('ALL');
 
-  const currentRoleView = getStoredRoleView();
   const canEditFeedback = currentRoleView === 'ADMIN' || currentRoleView === 'TEACHER';
 
   // Left Panel Pagination states
@@ -257,9 +302,20 @@ export default function LearningResultManagement() {
   const [chunks, setChunks] = useState<any[]>([]);
   const [loadingChunks, setLoadingChunks] = useState<boolean>(false);
   const [playingChunkIndex, setPlayingChunkIndex] = useState<number | null>(null);
+  const [loadingAudioIndex, setLoadingAudioIndex] = useState<number | null>(null);
+  const [audioBlobUrls, setAudioBlobUrls] = useState<Record<number, string>>({});
   const [assessingChunkIndex, setAssessingChunkIndex] = useState<number | null>(null);
   const [chunkAssessments, setChunkAssessments] = useState<Record<number, any>>({});
   const [referenceTexts, setReferenceTexts] = useState<Record<number, string>>({});
+
+  // Audio Chunk Filter States
+  const [chunkStatusFilter, setChunkStatusFilter] = useState<'ALL' | 'CORRECT' | 'WRONG' | 'SILENT' | 'ASSESSED'>('ALL');
+  const [chunkSearchQuery, setChunkSearchQuery] = useState('');
+
+  // Left Panel Tab State: results list vs cumulative vocabulary stats
+  const [leftPanelTab, setLeftPanelTab] = useState<'RESULTS' | 'VOCABULARY'>('RESULTS');
+  const [vocabSearchQuery, setVocabSearchQuery] = useState('');
+  const [vocabFilterStatus, setVocabFilterStatus] = useState<'ALL' | 'HAS_ERROR' | 'ALL_CORRECT'>('ALL');
   const [feedbackInput, setFeedbackInput] = useState('');
   const [savingFeedback, setSavingFeedback] = useState(false);
   const [scoringChunkIndex, setScoringChunkIndex] = useState<number | null>(null);
@@ -277,6 +333,73 @@ export default function LearningResultManagement() {
     return selectedResult ? parseInteractionLog(selectedResult.InteractionLog) : [];
   }, [selectedResult]);
 
+  const chunkStats = useMemo(() => {
+    let correctCount = 0;
+    let wrongCount = 0;
+    let silentCount = 0;
+    let assessedCount = 0;
+
+    chunks.forEach((chunk) => {
+      const cIndex = chunk.chunkIndex;
+      const event = parsedEvents[cIndex];
+      const isSilent = isSilentOrUnclearSpeech(event?.spokenText);
+      const isAssessed = Boolean(chunkAssessments[cIndex]);
+
+      if (isSilent) {
+        silentCount++;
+      } else if (event?.isCorrect === true) {
+        correctCount++;
+      } else if (event?.isCorrect === false) {
+        wrongCount++;
+      }
+
+      if (isAssessed) {
+        assessedCount++;
+      }
+    });
+
+    return {
+      total: chunks.length,
+      correctCount,
+      wrongCount,
+      silentCount,
+      assessedCount,
+    };
+  }, [chunks, parsedEvents, chunkAssessments]);
+
+  const filteredChunks = useMemo(() => {
+    return chunks.filter((chunk) => {
+      const cIndex = chunk.chunkIndex;
+      const event = parsedEvents[cIndex];
+      const isSilent = isSilentOrUnclearSpeech(event?.spokenText);
+      const isAssessed = Boolean(chunkAssessments[cIndex]);
+      const refText = referenceTexts[cIndex] || event?.text || '';
+      const spoken = event?.spokenText || '';
+      const assessment = chunkAssessments[cIndex];
+      const recognized = assessment?.recognizedText || assessment?.RecognizedText || assessment?.display || assessment?.Display || '';
+
+      // Status filter
+      if (chunkStatusFilter === 'CORRECT' && (event?.isCorrect !== true || isSilent)) return false;
+      if (chunkStatusFilter === 'WRONG' && (event?.isCorrect !== false || isSilent)) return false;
+      if (chunkStatusFilter === 'SILENT' && !isSilent) return false;
+      if (chunkStatusFilter === 'ASSESSED' && !isAssessed) return false;
+
+      // Keyword search
+      if (chunkSearchQuery.trim()) {
+        const q = chunkSearchQuery.trim().toLowerCase();
+        const matchesRef = refText.toLowerCase().includes(q);
+        const matchesSpoken = spoken.toLowerCase().includes(q);
+        const matchesRecognized = recognized.toLowerCase().includes(q);
+        const matchesIndex = `đoạn ${cIndex + 1}`.includes(q) || `[${event?.timeSeconds}s]`.includes(q) || `${event?.timeSeconds}s`.includes(q);
+        if (!matchesRef && !matchesSpoken && !matchesRecognized && !matchesIndex) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [chunks, chunkStatusFilter, chunkSearchQuery, parsedEvents, referenceTexts, chunkAssessments]);
+
   // Toast feedback triggers
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'warn' } | null>(null);
   const showToast = (text: string, type: 'success' | 'info' | 'warn' = 'success') => {
@@ -289,12 +412,15 @@ export default function LearningResultManagement() {
     setCurrentPage(1);
   }, [searchQuery, filterStatus, filterDateRange, filterChildId]);
 
-  // Load results list
+  // Load results list with in-memory SWR cache & optimized parallel queries
   useEffect(() => {
     let cancelled = false;
 
     async function loadDashboardData() {
-      setIsApiLoading(true);
+      // If we don't have fresh cache for this role view, show loading skeleton/spinner
+      if (!memoryDashboardCache || memoryDashboardCache.roleView !== currentRoleView) {
+        setIsApiLoading(true);
+      }
       setApiError(null);
 
       try {
@@ -305,55 +431,82 @@ export default function LearningResultManagement() {
         let lessonRecords: LessonResponse[] = [];
 
         if (roleView === 'PARENT') {
-          const [parentResult, lessonsData] = await Promise.all([
-            getCurrentUserWithChildrenProfiles(),
-            loadAllPages<LessonResponse>(getLessons).catch(() => [] as LessonResponse[])
+          const [parentResult, lessonsRes] = await Promise.all([
+            getMyChildProfiles().catch(() => ({ success: false, data: [] as ChildProfileResponse[] })),
+            getLessons(1, 100).catch(() => ({ success: false, data: { items: [] as LessonResponse[] } }))
           ]);
-          if (parentResult.success && parentResult.data) {
-            childRecords = parentResult.data.childProfiles;
+          if (parentResult.success && Array.isArray(parentResult.data) && parentResult.data.length > 0) {
+            childRecords = parentResult.data;
+          } else {
+            const fallbackUser = await getCurrentUserWithChildrenProfiles().catch(() => ({ success: false, data: null }));
+            if (fallbackUser.success && fallbackUser.data?.childProfiles) {
+              childRecords = fallbackUser.data.childProfiles;
+            }
           }
-          lessonRecords = lessonsData;
+          lessonRecords = (lessonsRes.success && lessonsRes.data?.items) ? lessonsRes.data.items : [];
         } else if (roleView === 'TEACHER') {
-          const [allClassrooms, allEnrollments, allChildren, lessonsData] = await Promise.all([
-            loadAllPages<any>(getClassrooms).catch(() => []),
-            loadAllPages<any>(getEnrollments).catch(() => []),
-            loadAllPages<ChildProfileResponse>(getChildProfiles).catch(() => []),
-            loadAllPages<LessonResponse>(getLessons).catch(() => [] as LessonResponse[])
+          // Direct endpoint for teacher's students in 1 single fast query
+          const [myStudentsRes, lessonsRes] = await Promise.all([
+            getMyStudents(1, 100).catch(() => ({ success: false, data: { items: [] } })),
+            getLessons(1, 100).catch(() => ({ success: false, data: { items: [] as LessonResponse[] } }))
           ]);
 
-          const teacherId = Number(sessionUser?.UserId.replace(/\D/g, '')) || undefined;
-          const teacherName = sessionUser?.FullName.trim().toLowerCase() ?? '';
+          lessonRecords = (lessonsRes.success && lessonsRes.data?.items) ? lessonsRes.data.items : [];
 
-          const teacherClassIds = new Set(
-            allClassrooms
-              .filter((classroom: any) => {
-                const matchedById = teacherId ? classroom.userId === teacherId : false;
-                const matchedByName = teacherName ? classroom.teacherName.trim().toLowerCase() === teacherName : false;
-                return matchedById || matchedByName;
-              })
-              .map((classroom) => classroom.id)
-          );
+          if (myStudentsRes.success && myStudentsRes.data?.items && myStudentsRes.data.items.length > 0) {
+            childRecords = myStudentsRes.data.items;
+          } else {
+            // Fallback only if my-students returns empty
+            const [allClassrooms, allEnrollments, allChildren] = await Promise.all([
+              getClassrooms(1, 100).catch(() => ({ success: false, data: { items: [] } })),
+              getEnrollments(1, 100).catch(() => ({ success: false, data: { items: [] } })),
+              getChildProfiles(1, 100).catch(() => ({ success: false, data: { items: [] } }))
+            ]);
 
-          const teacherEnrollments = allEnrollments.filter((enrollment: any) =>
-            teacherClassIds.has(enrollment.classId)
-          );
+            const classrooms = allClassrooms.data?.items || [];
+            const enrollments = allEnrollments.data?.items || [];
+            const allKids = allChildren.data?.items || [];
 
-          const childIds = Array.from(
-            new Set(teacherEnrollments.map((enrollment: any) => enrollment.childId))
-          );
+            const teacherId = Number(sessionUser?.UserId.replace(/\D/g, '')) || undefined;
+            const teacherName = sessionUser?.FullName.trim().toLowerCase() ?? '';
 
-          childRecords = allChildren.filter((child) => childIds.includes(child.id));
-          lessonRecords = lessonsData;
+            const teacherClassIds = new Set(
+              classrooms
+                .filter((classroom: any) => {
+                  const matchedById = teacherId ? classroom.userId === teacherId : false;
+                  const matchedByName = teacherName ? classroom.teacherName?.trim().toLowerCase() === teacherName : false;
+                  return matchedById || matchedByName;
+                })
+                .map((classroom: any) => classroom.id)
+            );
+
+            const teacherEnrollments = enrollments.filter((enrollment: any) =>
+              teacherClassIds.has(enrollment.classId)
+            );
+
+            const childIds = Array.from(
+              new Set(teacherEnrollments.map((enrollment: any) => enrollment.childId))
+            );
+
+            childRecords = allKids.filter((child: any) => childIds.includes(child.id));
+          }
         } else {
           // ADMIN view: load all children and lessons
-          const [allChildren, lessonsData] = await Promise.all([
-            loadAllPages<ChildProfileResponse>(getChildProfiles).catch(() => []),
-            loadAllPages<LessonResponse>(getLessons).catch(() => [] as LessonResponse[])
+          const [allChildrenRes, lessonsRes] = await Promise.all([
+            getChildProfiles(1, 100).catch(() => ({ success: false, data: { items: [] } })),
+            getLessons(1, 100).catch(() => ({ success: false, data: { items: [] as LessonResponse[] } }))
           ]);
-          childRecords = allChildren;
-          lessonRecords = lessonsData;
+          childRecords = allChildrenRes.data?.items || [];
+          lessonRecords = lessonsRes.data?.items || [];
         }
 
+        if (cancelled) return;
+
+        const mappedChildren = childRecords.map(mapChildRecord);
+        setChildren(mappedChildren);
+        setLessons(lessonRecords);
+
+        // Fetch results for all children concurrently
         const resultSettled = await Promise.allSettled(
           childRecords.map((child) => getResultsByChild(child.id))
         );
@@ -374,9 +527,17 @@ export default function LearningResultManagement() {
 
         if (cancelled) return;
 
-        setChildren(childRecords.map(mapChildRecord));
-        setLessons(lessonRecords);
-        setResults(uniqueResults.map(mapResultRecord));
+        const mappedResults = uniqueResults.map(mapResultRecord);
+        setResults(mappedResults);
+
+        // Save to in-memory SWR cache for instant load next time
+        memoryDashboardCache = {
+          roleView: roleView,
+          children: mappedChildren,
+          lessons: lessonRecords,
+          results: mappedResults,
+          timestamp: Date.now(),
+        };
       } catch (error) {
         if (cancelled) return;
         setApiError(error instanceof Error ? error.message : 'Không thể tải dữ liệu kết quả từ API.');
@@ -392,7 +553,7 @@ export default function LearningResultManagement() {
     return () => {
       cancelled = true;
     };
-  }, [getChildProfiles, getCurrentUserWithChildrenProfiles, getResultsByChild, getClassrooms, getEnrollments]);
+  }, [getChildProfiles, getMyChildProfiles, getMyStudents, getCurrentUserWithChildrenProfiles, getResultsByChild, getClassrooms, getEnrollments, currentRoleView]);
 
   // Statistics computations
   const filteredResultsForStats = useMemo(() => {
@@ -412,7 +573,171 @@ export default function LearningResultManagement() {
     return Math.round((completedCount / totalAttempts) * 100);
   }, [filteredResultsForStats, totalAttempts]);
 
-  // Expanded Right Panel selection handler
+  // Overall Word totals (Correct / Wrong) across all sessions in current filter (all students or selected student)
+  const overallWordTotals = useMemo(() => {
+    let correct = 0;
+    let wrong = 0;
+
+    filteredResultsForStats.forEach((res) => {
+      const cCount = res.CorrectCount ?? 0;
+      const eCount = res.ErrorCount ?? 0;
+      if (cCount > 0 || eCount > 0) {
+        correct += cCount;
+        wrong += eCount;
+      } else if (res.InteractionLog) {
+        const events = parseInteractionLog(res.InteractionLog);
+        correct += events.filter(e => e.isCorrect === true).length;
+        wrong += events.filter(e => e.isCorrect === false).length;
+      }
+    });
+
+    const total = correct + wrong;
+    const accuracyRate = total > 0 ? Math.round((correct / total) * 100) : 0;
+    return { correct, wrong, total, accuracyRate };
+  }, [filteredResultsForStats]);
+
+  // Cumulative word-level stats across all sessions for the student/all students
+  const cumulativeWordStats = useMemo(() => {
+    const map = new Map<string, {
+      word: string;
+      correctCount: number;
+      wrongCount: number;
+      totalCount: number;
+      accuracyRate: number;
+      lastPracticed?: string;
+      mistakes: Array<{ spokenText: string; timeSeconds: number; sessionDate?: string }>;
+    }>();
+
+    filteredResultsForStats.forEach((res) => {
+      if (!res.InteractionLog) return;
+      const events = parseInteractionLog(res.InteractionLog);
+      const dateStr = res.CompletedAt || res.StartedAt || '';
+
+      events.forEach((ev) => {
+        const w = cleanSpeechText(ev.text);
+        if (!w) return;
+        const key = w.toLowerCase().trim();
+
+        const existing = map.get(key) || {
+          word: w,
+          correctCount: 0,
+          wrongCount: 0,
+          totalCount: 0,
+          accuracyRate: 0,
+          lastPracticed: dateStr,
+          mistakes: [],
+        };
+
+        if (ev.isCorrect === true) {
+          existing.correctCount++;
+        } else if (ev.isCorrect === false) {
+          existing.wrongCount++;
+          if (ev.spokenText && ev.spokenText.toLowerCase() !== key && existing.mistakes.length < 5) {
+            existing.mistakes.push({
+              spokenText: ev.spokenText,
+              timeSeconds: ev.timeSeconds,
+              sessionDate: dateStr,
+            });
+          }
+        }
+
+        existing.totalCount = existing.correctCount + existing.wrongCount;
+        existing.accuracyRate = existing.totalCount > 0
+          ? Math.round((existing.correctCount / existing.totalCount) * 100)
+          : 0;
+
+        if (dateStr && (!existing.lastPracticed || dateStr > existing.lastPracticed)) {
+          existing.lastPracticed = dateStr;
+        }
+
+        map.set(key, existing);
+      });
+    });
+
+    return Array.from(map.values()).sort((a, b) => b.totalCount - a.totalCount);
+  }, [filteredResultsForStats]);
+
+  const filteredVocabStats = useMemo(() => {
+    return cumulativeWordStats.filter((item) => {
+      if (vocabSearchQuery.trim()) {
+        const q = vocabSearchQuery.toLowerCase().trim();
+        if (!item.word.toLowerCase().includes(q)) return false;
+      }
+      if (vocabFilterStatus === 'HAS_ERROR' && item.wrongCount === 0) return false;
+      if (vocabFilterStatus === 'ALL_CORRECT' && item.wrongCount > 0) return false;
+      return true;
+    });
+  }, [cumulativeWordStats, vocabSearchQuery, vocabFilterStatus]);
+
+  // Session-level stats for the currently selected session
+  const sessionWordStats = useMemo(() => {
+    if (!selectedResult || parsedEvents.length === 0) return [];
+    const map = new Map<string, {
+      word: string;
+      correctCount: number;
+      wrongCount: number;
+      totalCount: number;
+      accuracyRate: number;
+      attempts: Array<{
+        timeSeconds: number;
+        spokenText?: string;
+        isCorrect?: boolean;
+      }>;
+    }>();
+
+    parsedEvents.forEach((ev) => {
+      const w = cleanSpeechText(ev.text);
+      if (!w) return;
+      const key = w.toLowerCase().trim();
+
+      const existing = map.get(key) || {
+        word: w,
+        correctCount: 0,
+        wrongCount: 0,
+        totalCount: 0,
+        accuracyRate: 0,
+        attempts: [],
+      };
+
+      if (ev.isCorrect === true) {
+        existing.correctCount++;
+      } else if (ev.isCorrect === false) {
+        existing.wrongCount++;
+      }
+
+      existing.attempts.push({
+        timeSeconds: ev.timeSeconds,
+        spokenText: ev.spokenText,
+        isCorrect: ev.isCorrect,
+      });
+
+      existing.totalCount = existing.correctCount + existing.wrongCount;
+      existing.accuracyRate = existing.totalCount > 0
+        ? Math.round((existing.correctCount / existing.totalCount) * 100)
+        : 0;
+
+      map.set(key, existing);
+    });
+
+    return Array.from(map.values()).sort((a, b) => b.totalCount - a.totalCount);
+  }, [selectedResult, parsedEvents]);
+
+  const sessionCorrectWords = useMemo(() => {
+    const parsedCorrect = parsedEvents.filter(e => e.isCorrect === true).length;
+    return Math.max(selectedResult?.CorrectCount ?? 0, parsedCorrect);
+  }, [selectedResult, parsedEvents]);
+
+  const sessionWrongWords = useMemo(() => {
+    const parsedWrong = parsedEvents.filter(e => e.isCorrect === false).length;
+    return Math.max(selectedResult?.ErrorCount ?? 0, parsedWrong);
+  }, [selectedResult, parsedEvents]);
+
+  const sessionTotalWords = sessionCorrectWords + sessionWrongWords;
+  const sessionAccuracy = sessionTotalWords > 0
+    ? Math.round((sessionCorrectWords / sessionTotalWords) * 100)
+    : 0;
+
+  // Expanded Right Panel selection handler - Optimized with instant metadata load & session cache
   const handleSelectResult = async (res: LearningResult) => {
     if (selectedResult?.ResultId === res.ResultId) {
       return;
@@ -425,9 +750,9 @@ export default function LearningResultManagement() {
     }
 
     setSelectedResult(res);
-    setChunks([]);
-    setChunkAssessments({});
     setFeedbackInput(res.FeedbackText || '');
+    setChunkSearchQuery('');
+    setChunkStatusFilter('ALL');
 
     // Parse InteractionLog to pre-populate expected reference text for each chunk
     const logEvents = parseInteractionLog(res.InteractionLog);
@@ -437,98 +762,86 @@ export default function LearningResultManagement() {
     });
     setReferenceTexts(initialRefTexts);
 
+    // 0ms INSTANT DISPLAY FROM SESSION CACHE
+    if (sessionDetailCache.has(res.SessionId)) {
+      const cached = sessionDetailCache.get(res.SessionId)!;
+      setChunks(cached.chunks);
+      setChunkAssessments(cached.assessments);
+      setLoadingChunks(false);
+      return;
+    }
+
+    setChunks([]);
+    setChunkAssessments({});
     setLoadingChunks(true);
 
     try {
       const child = children.find(c => c.ChildId === res.ChildId);
       const childIdVal = child ? Number(child.ChildId) : Number(res.ChildId);
 
-      const chunkRes = await getChunksBySession(childIdVal, res.SessionId);
+      // Fetch chunk metadata and pre-stored speech accuracy IN PARALLEL (instant JSON, no heavy WAV downloads upfront)
+      const [chunkRes, accuracyRes] = await Promise.all([
+        getChunksBySession(childIdVal, res.SessionId),
+        getSpeechAccuracyBySession(res.SessionId).catch(err => {
+          console.error('Error fetching stored speech accuracy:', err);
+          return { success: false, data: [] } as any;
+        })
+      ]);
+
       if (chunkRes.success && chunkRes.data) {
-        const formattedChunks = await Promise.all(
-          chunkRes.data.map(async (chunk: any) => {
-            const blobRes = await downloadAudioChunk(childIdVal, res.SessionId, chunk.chunkIndex);
-            if (blobRes.success && blobRes.data) {
-              const blobUrl = URL.createObjectURL(blobRes.data);
-              return { ...chunk, chunkUrl: blobUrl };
-            }
-            return {
-              ...chunk,
-              chunkUrl: chunk.chunkUrl?.replace('http://minio:9000', 'https://minio.103-162-30-111.sslip.io')
-            };
-          })
-        );
+        // Map chunks with resolved endpoint URLs without blocking UI
+        const formattedChunks = chunkRes.data.map((chunk: any) => ({
+          ...chunk,
+          chunkUrl: chunk.chunkUrl?.replace('http://minio:9000', 'https://minio.103-162-30-111.sslip.io')
+        }));
         setChunks(formattedChunks);
 
-        // Fetch pre-stored speech accuracy entries from DB for this session
-        try {
-          const accuracyRes = await getSpeechAccuracyBySession(res.SessionId);
-          if (accuracyRes.success && accuracyRes.data && accuracyRes.data.length > 0) {
-            const groupedByChunk: Record<number, any> = {};
-            accuracyRes.data.forEach(item => {
-              const cIndex = item.audioChunkIndex ?? 0;
-              if (!groupedByChunk[cIndex]) {
-                groupedByChunk[cIndex] = {
-                  accuracyScore: item.accuracyScore,
-                  AccuracyScore: item.accuracyScore,
-                  pronunciationScore: item.pronunciationScore ?? 0,
-                  PronunciationScore: item.pronunciationScore ?? 0,
-                  fluencyScore: item.fluencyScore ?? 0,
-                  FluencyScore: item.fluencyScore ?? 0,
-                  completenessScore: item.completenessScore ?? 0,
-                  CompletenessScore: item.completenessScore ?? 0,
-                  PronunciationAssessment: {
-                    AccuracyScore: item.accuracyScore,
-                    accuracyScore: item.accuracyScore,
-                    FluencyScore: item.fluencyScore ?? 0,
-                    fluencyScore: item.fluencyScore ?? 0,
-                    PronunciationScore: item.pronunciationScore ?? 0,
-                    pronunciationScore: item.pronunciationScore ?? 0,
-                    CompletenessScore: item.completenessScore ?? 0,
-                    completenessScore: item.completenessScore ?? 0,
-                  },
-                  Words: []
-                };
-              }
-              groupedByChunk[cIndex].Words.push({
-                Word: item.word,
-                word: item.word,
-                AccuracyScore: item.accuracyScore,
+        // Process stored speech accuracy entries from DB
+        const groupedByChunk: Record<number, any> = {};
+        if (accuracyRes.success && accuracyRes.data && accuracyRes.data.length > 0) {
+          accuracyRes.data.forEach((item: any) => {
+            const cIndex = item.audioChunkIndex ?? 0;
+            if (!groupedByChunk[cIndex]) {
+              groupedByChunk[cIndex] = {
                 accuracyScore: item.accuracyScore,
-                ErrorType: item.errorType,
-                errorType: item.errorType
-              });
+                AccuracyScore: item.accuracyScore,
+                pronunciationScore: item.pronunciationScore ?? 0,
+                PronunciationScore: item.pronunciationScore ?? 0,
+                fluencyScore: item.fluencyScore ?? 0,
+                FluencyScore: item.fluencyScore ?? 0,
+                completenessScore: item.completenessScore ?? 0,
+                CompletenessScore: item.completenessScore ?? 0,
+                PronunciationAssessment: {
+                  AccuracyScore: item.accuracyScore,
+                  accuracyScore: item.accuracyScore,
+                  FluencyScore: item.fluencyScore ?? 0,
+                  fluencyScore: item.fluencyScore ?? 0,
+                  PronunciationScore: item.pronunciationScore ?? 0,
+                  pronunciationScore: item.pronunciationScore ?? 0,
+                  CompletenessScore: item.completenessScore ?? 0,
+                  completenessScore: item.completenessScore ?? 0,
+                },
+                Words: []
+              };
+            }
+            groupedByChunk[cIndex].Words.push({
+              Word: item.word,
+              word: item.word,
+              AccuracyScore: item.accuracyScore,
+              accuracyScore: item.accuracyScore,
+              ErrorType: item.errorType,
+              errorType: item.errorType
             });
-            setChunkAssessments(prev => ({ ...prev, ...groupedByChunk }));
-          }
-        } catch (err) {
-          console.error('Error fetching stored speech accuracy:', err);
+          });
+          setChunkAssessments(groupedByChunk);
         }
 
-        // Automatically trigger AI assessment for each chunk in parent view
-        if (getStoredRoleView() === 'PARENT') {
-          formattedChunks.forEach(async (chunk) => {
-            const cIndex = chunk.chunkIndex;
-            const event = logEvents[cIndex];
-            const text = initialRefTexts[cIndex]?.trim();
-            if (text && !isSilentOrUnclearSpeech(event?.spokenText)) {
-              try {
-                const assessRes = await assessChunk({
-                  childProfileId: childIdVal,
-                  sessionId: res.SessionId,
-                  chunkIndex: cIndex,
-                  referenceText: text,
-                  spokenText: event?.spokenText
-                });
-                if (assessRes.success && assessRes.data) {
-                  setChunkAssessments(prev => ({ ...prev, [cIndex]: assessRes.data }));
-                }
-              } catch (err) {
-                console.error(`Auto assessment failed for chunk ${cIndex}:`, err);
-              }
-            }
-          });
-        }
+        // Cache session details for 0ms instant display next time
+        sessionDetailCache.set(res.SessionId, {
+          chunks: formattedChunks,
+          assessments: groupedByChunk,
+          timestamp: Date.now()
+        });
       } else {
         setChunks([]);
       }
@@ -539,19 +852,20 @@ export default function LearningResultManagement() {
     }
   };
 
-  // Revoke object URLs to avoid memory leaks
+  // Revoke object URLs on component unmount
   useEffect(() => {
     return () => {
-      chunks.forEach(chunk => {
-        if (chunk.chunkUrl && chunk.chunkUrl.startsWith('blob:')) {
-          URL.revokeObjectURL(chunk.chunkUrl);
+      audioBlobCache.forEach((url) => {
+        if (url && url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
         }
       });
+      audioBlobCache.clear();
     };
-  }, [chunks]);
+  }, []);
 
-  // Audio Play handler
-  const handlePlayChunk = (url: string, index: number) => {
+  // Audio Play handler - On-demand lazy download and in-memory cache
+  const handlePlayChunk = async (rawUrl: string, index: number) => {
     const event = parsedEvents[index];
     if (isSilentOrUnclearSpeech(event?.spokenText)) {
       showToast("Không có file âm thanh khả dụng do trẻ im lặng hoặc không nghe rõ.", "warn");
@@ -564,15 +878,50 @@ export default function LearningResultManagement() {
       return;
     }
 
-    if (audioRef.current) audioRef.current.pause();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setPlayingChunkIndex(null);
+    }
 
-    const audio = new Audio(url);
+    const audioKey = `${selectedResult?.SessionId}_${index}`;
+    let playUrl = audioBlobUrls[index] || audioBlobCache.get(audioKey);
+
+    // If not cached yet, download this single audio chunk on-demand
+    if (!playUrl) {
+      if (!selectedResult) return;
+      const child = children.find(c => c.ChildId === selectedResult.ChildId);
+      const childIdVal = child ? Number(child.ChildId) : Number(selectedResult.ChildId);
+
+      setLoadingAudioIndex(index);
+      try {
+        const blobRes = await downloadAudioChunk(childIdVal, selectedResult.SessionId, index);
+        if (blobRes.success && blobRes.data) {
+          playUrl = URL.createObjectURL(blobRes.data);
+          audioBlobCache.set(audioKey, playUrl);
+          setAudioBlobUrls(prev => ({ ...prev, [index]: playUrl! }));
+        } else {
+          playUrl = rawUrl?.replace('http://minio:9000', 'https://minio.103-162-30-111.sslip.io');
+        }
+      } catch (err) {
+        console.error('Failed to download audio chunk:', err);
+        playUrl = rawUrl?.replace('http://minio:9000', 'https://minio.103-162-30-111.sslip.io');
+      } finally {
+        setLoadingAudioIndex(null);
+      }
+    }
+
+    if (!playUrl) {
+      showToast("Không thể tải file âm thanh của đoạn này.", "warn");
+      return;
+    }
+
+    const audio = new Audio(playUrl);
     audioRef.current = audio;
     setPlayingChunkIndex(index);
 
     audio.play().catch(err => {
       console.error("Audio playback failed:", err);
-      showToast("Không thể phát âm thanh này.", "warn");
+      showToast("Không thể phát âm thanh trên trình duyệt.", "warn");
       setPlayingChunkIndex(null);
     });
 
@@ -861,7 +1210,7 @@ export default function LearningResultManagement() {
       </div>
 
       {/* Statistics indicators */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
           <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center shrink-0 border border-teal-100">
             <Activity className="w-5 h-5 text-[#4EACAF]" />
@@ -891,6 +1240,29 @@ export default function LearningResultManagement() {
             <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Tỷ lệ hoàn thành</p>
           </div>
         </div>
+
+        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
+          <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0 border border-emerald-100">
+            <Sparkles className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl font-black text-slate-800 leading-none">
+                {overallWordTotals.total}
+              </span>
+              <span className="text-xs font-semibold text-slate-400">từ đã luyện</span>
+            </div>
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1">Tổng từ đúng / sai</p>
+            <div className="text-xs font-bold mt-1.5 flex items-center gap-1.5 flex-wrap">
+              <span className="text-emerald-600 font-extrabold">✓ {overallWordTotals.correct} đúng</span>
+              <span className="text-slate-300">|</span>
+              <span className="text-rose-500 font-extrabold">✕ {overallWordTotals.wrong} sai</span>
+              <span className="text-[10px] bg-emerald-100/70 text-emerald-800 px-1.5 py-0.2 rounded-full font-extrabold ml-0.5">
+                {overallWordTotals.accuracyRate}%
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {apiError && (
@@ -905,121 +1277,322 @@ export default function LearningResultManagement() {
         {/* Left Side: Results List */}
         <div className="lg:col-span-5 space-y-4">
           <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
-            <h2 className="text-lg font-bold text-slate-800">Lịch sử luyện tập</h2>
+            {/* Header with Tabs */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setLeftPanelTab('RESULTS')}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5",
+                    leftPanelTab === 'RESULTS'
+                      ? "bg-white text-slate-800 shadow-xs"
+                      : "text-slate-500 hover:text-slate-800"
+                  )}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Lịch sử luyện tập</span>
+                  <span className={cn(
+                    "text-[10px] px-1.5 py-0.2 rounded-full font-bold",
+                    leftPanelTab === 'RESULTS' ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-600"
+                  )}>
+                    {filteredResults.length}
+                  </span>
+                </button>
 
-            {/* Filters Subsystem */}
-            <div className="space-y-3">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Tìm theo học sinh, bài tập, Session ID..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-4 pr-4 py-2.5 rounded-xl border border-slate-200 outline-none text-xs font-semibold focus:border-[#4EACAF] transition-colors"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <CustomSelect
-                  value={filterStatus}
-                  onChange={setFilterStatus}
-                  options={[
-                    { value: 'ALL', label: 'Tất cả trạng thái' },
-                    { value: 'Completed', label: 'Đã hoàn thành' },
-                    { value: 'InComplete', label: 'Chưa hoàn thành' }
-                  ]}
-                  className="w-full"
-                />
-
-                <CustomSelect
-                  value={filterDateRange}
-                  onChange={setFilterDateRange}
-                  options={[
-                    { value: 'ALL', label: 'Tất cả thời gian' },
-                    { value: 'TODAY', label: 'Hôm nay' },
-                    { value: 'WEEK', label: '7 ngày qua' },
-                    { value: 'MONTH', label: '30 ngày qua' }
-                  ]}
-                  className="w-full"
-                />
+                <button
+                  type="button"
+                  onClick={() => setLeftPanelTab('VOCABULARY')}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5",
+                    leftPanelTab === 'VOCABULARY'
+                      ? "bg-[#4EACAF] text-white shadow-xs"
+                      : "text-slate-500 hover:text-[#4EACAF]"
+                  )}
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Thống kê từ vựng</span>
+                  <span className={cn(
+                    "text-[10px] px-1.5 py-0.2 rounded-full font-bold",
+                    leftPanelTab === 'VOCABULARY' ? "bg-white/25 text-white" : "bg-teal-100 text-[#4EACAF]"
+                  )}>
+                    {cumulativeWordStats.length}
+                  </span>
+                </button>
               </div>
             </div>
 
-            {/* Results Items List */}
-            {isApiLoading ? (
-              <div className="py-12 text-center">
-                <Activity className="w-8 h-8 text-[#4EACAF] animate-spin mx-auto mb-2" />
-                <p className="text-sm font-semibold text-slate-500">Đang tải danh sách kết quả...</p>
-              </div>
-            ) : filteredResults.length === 0 ? (
-              <div className="py-12 text-center text-slate-400">
-                <VolumeX className="w-12 h-12 mx-auto mb-3 opacity-40" />
-                <p className="font-semibold text-sm">Không tìm thấy lượt luyện tập phù hợp.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {paginatedResults.map((res) => {
-                  const isSelected = selectedResult?.ResultId === res.ResultId;
-                  const child = getChildDetailInfo(res.ChildId);
-                  const lesson = lessons.find(l => String(l.id) === res.LessonId);
+            {leftPanelTab === 'RESULTS' ? (
+              <>
+                {/* Filters Subsystem */}
+                <div className="space-y-3">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Tìm theo học sinh, bài tập, Session ID..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-4 pr-4 py-2.5 rounded-xl border border-slate-200 outline-none text-xs font-semibold focus:border-[#4EACAF] transition-colors"
+                    />
+                  </div>
 
-                  return (
-                    <div
-                      key={res.ResultId}
-                      onClick={() => handleSelectResult(res)}
-                      className={cn(
-                        "rounded-2xl border p-4.5 transition-all cursor-pointer space-y-3",
-                        isSelected
-                          ? "border-[#4EACAF] bg-[#4EACAF]/5 shadow-sm"
-                          : "border-slate-100 hover:border-slate-200 bg-white"
-                      )}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <p className="font-bold text-slate-800 text-sm">{child?.FullName || `Bé (ID: ${res.ChildId})`}</p>
-                            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
-                              Session #{res.SessionId || res.ResultId}
+                  <div className="grid grid-cols-2 gap-2">
+                    <CustomSelect
+                      value={filterStatus}
+                      onChange={setFilterStatus}
+                      options={[
+                        { value: 'ALL', label: 'Tất cả trạng thái' },
+                        { value: 'Completed', label: 'Đã hoàn thành' },
+                        { value: 'InComplete', label: 'Chưa hoàn thành' }
+                      ]}
+                      className="w-full"
+                    />
+
+                    <CustomSelect
+                      value={filterDateRange}
+                      onChange={setFilterDateRange}
+                      options={[
+                        { value: 'ALL', label: 'Tất cả thời gian' },
+                        { value: 'TODAY', label: 'Hôm nay' },
+                        { value: 'WEEK', label: '7 ngày qua' },
+                        { value: 'MONTH', label: '30 ngày qua' }
+                      ]}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+
+                {/* Results Items List */}
+                {isApiLoading ? (
+                  <div className="py-12 text-center">
+                    <Activity className="w-8 h-8 text-[#4EACAF] animate-spin mx-auto mb-2" />
+                    <p className="text-sm font-semibold text-slate-500">Đang tải danh sách kết quả...</p>
+                  </div>
+                ) : filteredResults.length === 0 ? (
+                  <div className="py-12 text-center text-slate-400">
+                    <VolumeX className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                    <p className="font-semibold text-sm">Không tìm thấy lượt luyện tập phù hợp.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {paginatedResults.map((res) => {
+                      const isSelected = selectedResult?.ResultId === res.ResultId;
+                      const child = getChildDetailInfo(res.ChildId);
+                      const lesson = lessons.find(l => String(l.id) === res.LessonId);
+
+                      return (
+                        <div
+                          key={res.ResultId}
+                          onClick={() => handleSelectResult(res)}
+                          className={cn(
+                            "rounded-2xl border p-4.5 transition-all cursor-pointer space-y-3",
+                            isSelected
+                              ? "border-[#4EACAF] bg-[#4EACAF]/5 shadow-sm"
+                              : "border-slate-100 hover:border-slate-200 bg-white"
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <p className="font-bold text-slate-800 text-sm">{child?.FullName || `Bé (ID: ${res.ChildId})`}</p>
+                                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
+                                  Session #{res.SessionId || res.ResultId}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+                                {lesson?.lessonName || 'Bài tập tự do'}
+                              </p>
+                            </div>
+                            <span className={cn(
+                              "text-[9px] px-2 py-0.5 rounded font-extrabold uppercase shrink-0 tracking-wider",
+                              res.CompletionStatus === 'Completed'
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                                : "bg-amber-50 text-amber-700 border border-amber-100"
+                            )}>
+                              {res.CompletionStatus === 'Completed' ? 'Đạt' : 'Chưa hoàn thành'}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-400 font-semibold leading-relaxed">
-                            {lesson?.lessonName || 'Bài tập tự do'}
-                          </p>
-                        </div>
-                        <span className={cn(
-                          "text-[9px] px-2 py-0.5 rounded font-extrabold uppercase shrink-0 tracking-wider",
-                          res.CompletionStatus === 'Completed'
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                            : "bg-amber-50 text-amber-700 border border-amber-100"
-                        )}>
-                          {res.CompletionStatus === 'Completed' ? 'Đạt' : 'Chưa hoàn thành'}
-                        </span>
-                      </div>
 
-                      <div className="flex items-center justify-between border-t border-slate-100/60 pt-3 text-[11px] font-bold text-slate-500">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{res.DurationSeconds}s</span>
-                          <span className="text-slate-300">|</span>
-                          <span className="text-[#4EACAF]">Điểm: {res.Score}/{lessons.find(l => String(l.id) === res.LessonId)?.maxScore ?? 95}</span>
+                          <div className="flex items-center justify-between border-t border-slate-100/60 pt-3 text-[11px] font-bold text-slate-500">
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{res.DurationSeconds}s</span>
+                              <span className="text-slate-300">|</span>
+                              <span className="text-[#4EACAF]">Điểm: {res.Score}/{lessons.find(l => String(l.id) === res.LessonId)?.maxScore ?? 95}</span>
+                            </div>
+                            <span className="text-slate-400">{formatDateDMY(res.CompletedAt)}</span>
+                          </div>
                         </div>
-                        <span className="text-slate-400">{formatDateDMY(res.CompletedAt)}</span>
-                      </div>
-                    </div>
-                  );
-                })}
+                      );
+                    })}
 
-                <Pagination
-                  currentPage={currentPage}
-                  totalItems={filteredResults.length}
-                  pageSize={pageSize}
-                  onPageChange={setCurrentPage}
-                  onPageSizeChange={(size) => {
-                    setPageSize(size);
-                    setCurrentPage(1);
-                  }}
-                  itemLabel="lượt luyện"
-                />
+                    <Pagination
+                      currentPage={currentPage}
+                      totalItems={filteredResults.length}
+                      pageSize={pageSize}
+                      onPageChange={setCurrentPage}
+                      onPageSizeChange={(size) => {
+                        setPageSize(size);
+                        setCurrentPage(1);
+                      }}
+                      itemLabel="lượt luyện"
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              /* Cumulative Vocabulary Tab */
+              <div className="space-y-3">
+                {/* Search & Filter for Vocabulary */}
+                <div className="space-y-2.5">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm từ vựng (ví dụ: con cá, cần câu...)"
+                      value={vocabSearchQuery}
+                      onChange={(e) => setVocabSearchQuery(e.target.value)}
+                      className="w-full pl-4 pr-8 py-2.5 rounded-xl border border-slate-200 outline-none text-xs font-semibold focus:border-[#4EACAF] transition-colors"
+                    />
+                    {vocabSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setVocabSearchQuery('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5 flex-wrap text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setVocabFilterStatus('ALL')}
+                      className={cn(
+                        "px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1 text-[11px] border",
+                        vocabFilterStatus === 'ALL'
+                          ? "bg-slate-800 text-white border-slate-800"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                      )}
+                    >
+                      <span>Tất cả</span>
+                      <span className="text-[10px] opacity-75">({cumulativeWordStats.length})</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVocabFilterStatus('HAS_ERROR')}
+                      className={cn(
+                        "px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1 text-[11px] border",
+                        vocabFilterStatus === 'HAS_ERROR'
+                          ? "bg-rose-600 text-white border-rose-600"
+                          : "bg-white text-rose-700 border-rose-200 hover:bg-rose-50"
+                      )}
+                    >
+                      <span>✕ Có phát âm sai</span>
+                      <span className="text-[10px] opacity-75">
+                        ({cumulativeWordStats.filter(w => w.wrongCount > 0).length})
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVocabFilterStatus('ALL_CORRECT')}
+                      className={cn(
+                        "px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1 text-[11px] border",
+                        vocabFilterStatus === 'ALL_CORRECT'
+                          ? "bg-emerald-600 text-white border-emerald-600"
+                          : "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                      )}
+                    >
+                      <span>✓ Đúng 100%</span>
+                      <span className="text-[10px] opacity-75">
+                        ({cumulativeWordStats.filter(w => w.wrongCount === 0).length})
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Vocabulary Items List */}
+                {filteredVocabStats.length === 0 ? (
+                  <div className="py-12 text-center text-slate-400">
+                    <VolumeX className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                    <p className="font-semibold text-sm">Không tìm thấy từ vựng nào phù hợp.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5 max-h-[600px] overflow-y-auto pr-1">
+                    {filteredVocabStats.map((item) => {
+                      return (
+                        <div
+                          key={item.word}
+                          className="rounded-2xl border border-slate-200/80 bg-white p-4 space-y-2.5 hover:border-slate-300 transition-all shadow-xs"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Từ vựng</span>
+                              <h4 className="text-sm font-extrabold text-slate-850 capitalize">
+                                {item.word}
+                              </h4>
+                            </div>
+                            <span className={cn(
+                              "text-[10px] font-extrabold px-2 py-0.5 rounded-full",
+                              item.accuracyRate >= 80 ? "bg-emerald-100 text-emerald-800" :
+                              item.accuracyRate >= 50 ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800"
+                            )}>
+                              {item.accuracyRate}% đúng
+                            </span>
+                          </div>
+
+                          {/* Đúng / Sai / Tổng số lần */}
+                          <div className="flex items-center gap-2 text-xs flex-wrap">
+                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/70 px-2 py-0.5 rounded-md font-bold">
+                              ✓ Đúng: {item.correctCount} lần
+                            </span>
+                            <span className="bg-rose-50 text-rose-700 border border-rose-200/70 px-2 py-0.5 rounded-md font-bold">
+                              ✕ Sai: {item.wrongCount} lần
+                            </span>
+                            <span className="text-[11px] text-slate-400 font-semibold ml-auto">
+                              Tổng luyện: {item.totalCount} lần
+                            </span>
+                          </div>
+
+                          {/* Progress bar */}
+                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden flex">
+                            <div
+                              className="bg-emerald-500 h-full transition-all duration-500"
+                              style={{ width: `${item.accuracyRate}%` }}
+                            />
+                            <div
+                              className="bg-rose-500 h-full transition-all duration-500"
+                              style={{ width: `${100 - item.accuracyRate}%` }}
+                            />
+                          </div>
+
+                          {/* Mistakes details */}
+                          {item.mistakes.length > 0 && (
+                            <div className="text-[11px] text-rose-700 bg-rose-50/70 p-2 rounded-lg border border-rose-100 leading-snug">
+                              <span className="font-bold">Các lần nói sai: </span>
+                              {item.mistakes.map(m => `"${m.spokenText}"`).join(', ')}
+                            </div>
+                          )}
+
+                          {/* Quick action to filter results */}
+                          <div className="flex justify-end pt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setLeftPanelTab('RESULTS');
+                                setSearchQuery(item.word);
+                              }}
+                              className="text-[11px] font-bold text-[#4EACAF] hover:text-[#3D8C8F] flex items-center gap-1 cursor-pointer transition-colors"
+                            >
+                              <span>Xem các lượt luyện từ này</span>
+                              <ArrowRight className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1066,9 +1639,144 @@ export default function LearningResultManagement() {
                   </span>
                 </div>
                 <div className="text-center">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tương tác</span>
-                  <span className="text-xs font-bold text-emerald-600 mt-1.5 block">Đúng: {selectedResult.CorrectCount} lần| Sai: {selectedResult.ErrorCount} lần</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tổng từ đúng / sai</span>
+                  <div className="text-xs font-bold mt-1.5 flex items-center justify-center gap-1.5">
+                    <span className="text-emerald-600 font-extrabold">Đúng: {sessionCorrectWords} từ</span>
+                    <span className="text-slate-300">|</span>
+                    <span className="text-rose-500 font-extrabold">Sai: {sessionWrongWords} từ</span>
+                  </div>
+                  <span className="text-[10px] font-semibold text-slate-400 block mt-0.5">
+                    (Tổng {sessionTotalWords} từ · {sessionAccuracy}% chuẩn)
+                  </span>
                 </div>
+              </div>
+
+              {/* Thống kê chi tiết theo từng từ trong phiên */}
+              <div className="space-y-3 bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h4 className="text-sm font-bold text-slate-850 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[#4EACAF]" />
+                    <span>Thống kê theo từng từ trong phiên</span>
+                    <span className="text-xs bg-teal-50 text-[#4EACAF] border border-teal-100 px-2 py-0.5 rounded-full font-bold">
+                      {sessionWordStats.length} từ
+                    </span>
+                  </h4>
+                  <div className="text-xs font-semibold flex items-center gap-1.5">
+                    <span className="text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md font-bold">
+                      ✓ Đúng: {sessionCorrectWords}
+                    </span>
+                    <span className="text-rose-700 bg-rose-50 border border-rose-200/60 px-2 py-0.5 rounded-md font-bold">
+                      ✕ Sai: {sessionWrongWords}
+                    </span>
+                  </div>
+                </div>
+
+                {sessionWordStats.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    {sessionWordStats.map((item) => {
+                      const isAllCorrect = item.wrongCount === 0;
+                      const isAllWrong = item.correctCount === 0;
+
+                      return (
+                        <div
+                          key={item.word}
+                          className={cn(
+                            "p-3.5 rounded-2xl border transition-all flex flex-col gap-2.5",
+                            isAllCorrect
+                              ? "bg-emerald-50/30 border-emerald-200/80 hover:border-emerald-300"
+                              : isAllWrong
+                              ? "bg-rose-50/30 border-rose-200/80 hover:border-rose-300"
+                              : "bg-slate-50/80 border-slate-200 hover:border-slate-300"
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-2 min-h-[44px]">
+                            <div>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Từ vựng</span>
+                              <span className="text-sm font-extrabold text-slate-800 capitalize leading-snug line-clamp-2">
+                                {item.word}
+                              </span>
+                            </div>
+                            <span className={cn(
+                              "text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0",
+                              item.accuracyRate >= 80 ? "bg-emerald-100 text-emerald-800" :
+                              item.accuracyRate >= 50 ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800"
+                            )}>
+                              {item.accuracyRate}% đúng
+                            </span>
+                          </div>
+
+                          {/* Chi tiết đúng bao nhiêu lần, sai bao nhiêu lần */}
+                          <div className="flex items-center gap-1.5 text-xs flex-wrap">
+                            <div className="flex items-center gap-1 bg-emerald-100/80 text-emerald-900 px-2 py-0.5 rounded-md font-bold">
+                              <span>✓ Đúng:</span>
+                              <span>{item.correctCount} lần</span>
+                            </div>
+                            <div className="flex items-center gap-1 bg-rose-100/80 text-rose-900 px-2 py-0.5 rounded-md font-bold">
+                              <span>✕ Sai:</span>
+                              <span>{item.wrongCount} lần</span>
+                            </div>
+                            <span className="text-[11px] text-slate-400 font-semibold ml-auto">
+                              Tổng: {item.totalCount} lần
+                            </span>
+                          </div>
+
+                          {/* Stacked visual progress bar */}
+                          <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden flex">
+                            <div
+                              className="bg-emerald-500 h-full transition-all duration-500"
+                              style={{ width: `${item.accuracyRate}%` }}
+                            />
+                            <div
+                              className="bg-rose-500 h-full transition-all duration-500"
+                              style={{ width: `${100 - item.accuracyRate}%` }}
+                            />
+                          </div>
+
+                          {/* Khu vực chi tiết phát âm: ngang bằng nhau trên cùng một hàng */}
+                          <div className="space-y-2 pt-1 flex-1 flex flex-col justify-start">
+                            {/* Ghi chú khi trẻ phát âm đúng */}
+                            {item.correctCount > 0 ? (
+                              <div className="text-[11px] text-emerald-700 bg-white/90 p-2 rounded-lg border border-emerald-200 leading-snug">
+                                <span className="font-bold">Lúc nói đúng: </span>
+                                {item.attempts.some(a => a.isCorrect)
+                                  ? item.attempts
+                                      .filter(a => a.isCorrect)
+                                      .map((a) => `[${a.timeSeconds}s] Trẻ nói "${a.spokenText || item.word}"`)
+                                      .join(', ')
+                                  : `Phát âm chính xác ${item.correctCount} lần`}
+                              </div>
+                            ) : (
+                              <div className="text-[11px] text-slate-400 bg-slate-50/70 p-2 rounded-lg border border-dashed border-slate-200 leading-snug">
+                                <span className="font-semibold text-slate-500">Lúc nói đúng: </span>Chưa có lần nào đúng
+                              </div>
+                            )}
+
+                            {/* Ghi chú khi trẻ phát âm sai */}
+                            {item.wrongCount > 0 ? (
+                              <div className="text-[11px] text-rose-700 bg-white/90 p-2 rounded-lg border border-rose-200 leading-snug">
+                                <span className="font-bold">Lúc nói sai: </span>
+                                {item.attempts.some(a => !a.isCorrect && a.spokenText)
+                                  ? item.attempts
+                                      .filter(a => !a.isCorrect && a.spokenText)
+                                      .map((a) => `[${a.timeSeconds}s] Trẻ nói "${a.spokenText}"`)
+                                      .join(', ')
+                                  : `Phát âm chưa đúng ${item.wrongCount} lần`}
+                              </div>
+                            ) : (
+                              <div className="text-[11px] text-emerald-700 bg-emerald-50/50 p-2 rounded-lg border border-dashed border-emerald-200/80 leading-snug">
+                                <span className="font-bold text-emerald-800">Lúc nói sai: </span>Không có lần nào sai (Bé nói chuẩn 100%)
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-4 bg-slate-50 rounded-xl text-center text-xs text-slate-400 italic border border-slate-100">
+                    Chưa có nhật ký tương tác chi tiết từng từ cho lượt luyện tập này.
+                  </div>
+                )}
               </div>
 
               {/* Comments feedback text section */}
@@ -1142,26 +1850,179 @@ export default function LearningResultManagement() {
 
               {/* Chunk audio listing section */}
               <div className="space-y-4 pt-4 border-t border-slate-100">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Danh sách các file âm thanh ghi âm:</h4>
-                  <span className="text-xs bg-[#4EACAF]/10 text-[#4EACAF] px-2 py-0.5 rounded font-bold">
-                    {chunks.length} đoạn âm thanh
-                  </span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                      <Filter className="w-4 h-4 text-[#4EACAF]" />
+                      <span>Danh sách các file âm thanh ghi âm</span>
+                    </h4>
+                    <span className="text-xs bg-[#4EACAF]/10 text-[#4EACAF] px-2.5 py-0.5 rounded-full font-bold">
+                      {filteredChunks.length} / {chunks.length} đoạn
+                    </span>
+                  </div>
+                  {(chunkSearchQuery || chunkStatusFilter !== 'ALL') && (
+                    <button
+                      type="button"
+                      onClick={() => { setChunkSearchQuery(''); setChunkStatusFilter('ALL'); }}
+                      className="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer self-start sm:self-auto flex items-center gap-1"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Đặt lại bộ lọc</span>
+                    </button>
+                  )}
                 </div>
+
+                {/* Filter and Search Toolbar */}
+                {chunks.length > 0 && !loadingChunks && (
+                  <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-200/60 space-y-2.5">
+                    {/* Search Input */}
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={chunkSearchQuery}
+                        onChange={(e) => setChunkSearchQuery(e.target.value)}
+                        placeholder="Tìm theo từ chuẩn, từ trẻ nói, mốc giây [..s] hoặc số thứ tự đoạn..."
+                        className="w-full px-3.5 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold placeholder:text-slate-400 focus:outline-none focus:border-[#4EACAF] focus:ring-2 focus:ring-[#4EACAF]/15 transition-all text-slate-800"
+                      />
+                      {chunkSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setChunkSearchQuery('')}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Filter Status Pills */}
+                    <div className="flex items-center gap-1.5 flex-wrap text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setChunkStatusFilter('ALL')}
+                        className={cn(
+                          "px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 border",
+                          chunkStatusFilter === 'ALL'
+                            ? "bg-slate-800 text-white border-slate-800 shadow-xs"
+                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100/70"
+                        )}
+                      >
+                        <span>Tất cả</span>
+                        <span className={cn(
+                          "text-[10px] px-1.5 py-0.2 rounded-full",
+                          chunkStatusFilter === 'ALL' ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                        )}>
+                          {chunkStats.total}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setChunkStatusFilter('CORRECT')}
+                        className={cn(
+                          "px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 border",
+                          chunkStatusFilter === 'CORRECT'
+                            ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                            : "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50/70"
+                        )}
+                      >
+                        <span>✓ Phát âm đúng</span>
+                        <span className={cn(
+                          "text-[10px] px-1.5 py-0.2 rounded-full font-extrabold",
+                          chunkStatusFilter === 'CORRECT' ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-800"
+                        )}>
+                          {chunkStats.correctCount}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setChunkStatusFilter('WRONG')}
+                        className={cn(
+                          "px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 border",
+                          chunkStatusFilter === 'WRONG'
+                            ? "bg-rose-600 text-white border-rose-600 shadow-xs"
+                            : "bg-white text-rose-700 border-rose-200 hover:bg-rose-50/70"
+                        )}
+                      >
+                        <span>✕ Phát âm sai</span>
+                        <span className={cn(
+                          "text-[10px] px-1.5 py-0.2 rounded-full font-extrabold",
+                          chunkStatusFilter === 'WRONG' ? "bg-white/20 text-white" : "bg-rose-100 text-rose-800"
+                        )}>
+                          {chunkStats.wrongCount}
+                        </span>
+                      </button>
+
+                      {chunkStats.silentCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setChunkStatusFilter('SILENT')}
+                          className={cn(
+                            "px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 border",
+                            chunkStatusFilter === 'SILENT'
+                              ? "bg-amber-600 text-white border-amber-600 shadow-xs"
+                              : "bg-white text-amber-700 border-amber-200 hover:bg-amber-50/70"
+                          )}
+                        >
+                          <span>Im lặng / Chưa rõ</span>
+                          <span className={cn(
+                            "text-[10px] px-1.5 py-0.2 rounded-full font-extrabold",
+                            chunkStatusFilter === 'SILENT' ? "bg-white/20 text-white" : "bg-amber-100 text-amber-800"
+                          )}>
+                            {chunkStats.silentCount}
+                          </span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => setChunkStatusFilter('ASSESSED')}
+                        className={cn(
+                          "px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 border",
+                          chunkStatusFilter === 'ASSESSED'
+                            ? "bg-[#4EACAF] text-white border-[#4EACAF] shadow-xs"
+                            : "bg-white text-[#3D8C8F] border-[#4EACAF]/30 hover:bg-[#4EACAF]/10"
+                        )}
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        <span>Đã đánh giá AI</span>
+                        <span className={cn(
+                          "text-[10px] px-1.5 py-0.2 rounded-full font-extrabold",
+                          chunkStatusFilter === 'ASSESSED' ? "bg-white/20 text-white" : "bg-[#4EACAF]/15 text-[#3D8C8F]"
+                        )}>
+                          {chunkStats.assessedCount}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {loadingChunks ? (
                   <div className="py-12 text-center">
                     <Activity className="w-8 h-8 text-[#4EACAF] animate-spin mx-auto mb-2" />
-                    <p className="text-xs font-semibold text-slate-500">Đang quét tìm các file âm thanh từ máy chủ MinIO...</p>
+                    <p className="text-xs font-semibold text-slate-500">Đang quét danh sách đoạn âm thanh...</p>
                   </div>
                 ) : chunks.length === 0 ? (
                   <div className="py-8 text-center text-slate-400 border-2 border-dashed border-slate-100 rounded-2xl">
                     <VolumeX className="w-8 h-8 mx-auto mb-2 opacity-50" />
                     <p className="text-xs font-semibold">Không quét thấy file audio chunk tương ứng trong session này.</p>
                   </div>
+                ) : filteredChunks.length === 0 ? (
+                  <div className="py-8 text-center text-slate-400 border-2 border-dashed border-slate-100 rounded-2xl space-y-2">
+                    <Search className="w-8 h-8 mx-auto text-slate-300" />
+                    <p className="text-xs font-semibold text-slate-600">Không tìm thấy đoạn âm thanh nào phù hợp với bộ lọc.</p>
+                    <button
+                      type="button"
+                      onClick={() => { setChunkSearchQuery(''); setChunkStatusFilter('ALL'); }}
+                      className="text-xs font-bold text-[#4EACAF] hover:underline cursor-pointer"
+                    >
+                      Xóa bộ lọc
+                    </button>
+                  </div>
                 ) : (
                   <div className="space-y-4">
-                    {chunks.map((chunk) => {
+                    {filteredChunks.map((chunk) => {
                       const cIndex = chunk.chunkIndex;
                       const assessment = chunkAssessments[cIndex];
                       const isAssessing = assessingChunkIndex === cIndex;
@@ -1196,24 +2057,31 @@ export default function LearningResultManagement() {
                               )}
                             </div>
 
-                            {/* Player control button */}
+                            {/* Player control button with on-demand loading state */}
                             <button
-                              disabled={isSilentOrUnclear}
+                              disabled={isSilentOrUnclear || loadingAudioIndex === cIndex}
                               onClick={() => handlePlayChunk(chunk.chunkUrl, cIndex)}
                               title={isSilentOrUnclear ? "Audio không khả dụng do trẻ im lặng hoặc không nghe rõ" : undefined}
                               className={cn(
                                 "flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm border self-start sm:self-auto",
                                 isSilentOrUnclear
                                   ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60"
-                                  : playingChunkIndex === cIndex
-                                    ? "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/80 cursor-pointer"
-                                    : "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/80 cursor-pointer"
+                                  : loadingAudioIndex === cIndex
+                                    ? "bg-sky-50 text-sky-600 border-sky-200 cursor-wait"
+                                    : playingChunkIndex === cIndex
+                                      ? "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/80 cursor-pointer"
+                                      : "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/80 cursor-pointer"
                               )}
                             >
                               {isSilentOrUnclear ? (
                                 <>
                                   <VolumeX className="w-3.5 h-3.5 text-slate-400" />
                                   <span>Không có ghi âm</span>
+                                </>
+                              ) : loadingAudioIndex === cIndex ? (
+                                <>
+                                  <Activity className="w-3.5 h-3.5 animate-spin text-sky-600" />
+                                  <span>Đang tải audio...</span>
                                 </>
                               ) : playingChunkIndex === cIndex ? (
                                 <>

@@ -387,8 +387,8 @@ export default function TeacherStudentDetail({
 
       try {
         const [childRecords, exerciseRecords] = await Promise.all([
-          loadAllPages(getChildProfiles),
-          loadAllPages(getExercises),
+          loadAllPages<ChildProfileResponse>(getChildProfiles),
+          loadAllPages<ExerciseResponse>(getExercises),
         ]);
 
         const nextChildren = childRecords.map(mapChildRecord);

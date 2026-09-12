@@ -1,5 +1,9 @@
 import { useCallback } from 'react';
-import { getChildProfiles as getChildProfilesService } from '../services/childProfileService';
+import {
+  getChildProfiles as getChildProfilesService,
+  getMyChildProfiles as getMyChildProfilesService,
+  getMyStudents as getMyStudentsService,
+} from '../services/childProfileService';
 import { getClassrooms as getClassroomsService } from '../services/classroomService';
 import { getEnrollments as getEnrollmentsService } from '../services/enrollmentService';
 import {
@@ -30,6 +34,16 @@ export function useLearningResultApi() {
   const getChildProfiles = useCallback(
     (...args: Parameters<typeof getChildProfilesService>) =>
       getChildProfilesService(...args),
+    []
+  );
+  const getMyChildProfiles = useCallback(
+    (...args: Parameters<typeof getMyChildProfilesService>) =>
+      getMyChildProfilesService(...args),
+    []
+  );
+  const getMyStudents = useCallback(
+    (...args: Parameters<typeof getMyStudentsService>) =>
+      getMyStudentsService(...args),
     []
   );
   const getCurrentUserWithChildrenProfiles = useCallback(
@@ -113,6 +127,8 @@ export function useLearningResultApi() {
 
   return {
     getChildProfiles,
+    getMyChildProfiles,
+    getMyStudents,
     getCurrentUserWithChildrenProfiles,
     getClassrooms,
     getEnrollments,

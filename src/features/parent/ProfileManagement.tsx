@@ -1,30 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Edit2, X, Check, Trash2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Eye, X, RefreshCw, Baby, Award, Activity, FileText, Check, AlertTriangle, User } from 'lucide-react';
 import { cn, resolveAvatarUrl } from '../../lib/utils';
 import { useChildManagementApi } from '../../hooks/useChildManagementApi';
 import type { ChildProfileResponse } from '../../services/childProfileService';
-import { getSessionUser } from '../../lib/authSession';
-import CustomSelect from '../../components/common/CustomSelect';
-
-const genderOptions = [
-  { value: 'Male', label: '👦 Nam' },
-  { value: 'Female', label: '👧 Nữ' },
-  { value: 'Other', label: '⚪ Khác' },
-];
-
-const levelOptions = [
-  { value: 'Beginner', label: '🎨 Sơ cấp (Beginner)' },
-  { value: 'Intermediate', label: '🚀 Trung cấp (Intermediate)' },
-  { value: 'Advanced', label: '🏆 Nâng cao (Advanced)' },
-];
-
-const childTypeOptions = [
-  { value: '', label: '⚪ Chưa phân loại' },
-  { value: 'SSD', label: '🗣️ Rối loạn âm lời nói (SSD)' },
-  { value: 'DLD', label: '📖 Phát triển ngôn ngữ (DLD)' },
-];
-
 
 const CARD_COLORS = [
   'bg-blue-300 border-blue-400',
@@ -37,45 +16,13 @@ const CARD_COLORS = [
   'bg-violet-400 border-violet-500',
 ];
 
-interface FormState {
-  fullName: string;
-  age: string;
-  gender: 'Male' | 'Female' | 'Other';
-  learningLevel: 'Beginner' | 'Intermediate' | 'Advanced';
-  childType: string;
-  note: string;
-  avatar: string | null;
-}
-
-const EMPTY_FORM: FormState = {
-  fullName: '',
-  age: '',
-  gender: 'Male',
-  learningLevel: 'Beginner',
-  childType: '',
-  note: '',
-  avatar: null,
-};
-
 export default function ProfileManagement() {
-  const {
-    getMyChildProfiles,
-    createChildProfile,
-    updateChildProfile,
-    deleteChildProfile,
-  } = useChildManagementApi();
+  const { getMyChildProfiles } = useChildManagementApi();
 
   const [children, setChildren] = useState<ChildProfileResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const [modalType, setModalType] = useState<'form' | 'delete' | null>(null);
-  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [selectedChild, setSelectedChild] = useState<ChildProfileResponse | null>(null);
-  const [formState, setFormState] = useState<FormState>(EMPTY_FORM);
-  const [formError, setFormError] = useState('');
-  
+
   const [alertConfig, setAlertConfig] = useState<{
     message: string;
     type: 'success' | 'warning';
@@ -107,138 +54,25 @@ export default function ProfileManagement() {
     void fetchMyChildren();
   }, [fetchMyChildren]);
 
-  const handleCloseModal = () => {
-    setModalType(null);
-    setSelectedChild(null);
-    setFormState(EMPTY_FORM);
-    setFormError('');
-  };
-
-  const openCreateModal = () => {
-    setFormMode('create');
-    setSelectedChild(null);
-    setFormState(EMPTY_FORM);
-    setFormError('');
-    setModalType('form');
-  };
-
-  const openEditModal = (child: ChildProfileResponse, e: React.MouseEvent) => {
-    e.stopPropagation(); // Avoid triggering card click
-    setFormMode('edit');
+  const handleOpenDetail = (child: ChildProfileResponse) => {
     setSelectedChild(child);
-    setFormState({
-      fullName: child.fullName,
-      age: String(child.age),
-      gender: child.gender,
-      learningLevel: child.learningLevel,
-      childType: child.childType || '',
-      note: child.note || '',
-      avatar: child.avatar || 'default',
-    });
-    setFormError('');
-    setModalType('form');
   };
 
-  const openDeleteModal = (child: ChildProfileResponse, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedChild(child);
-    setModalType('delete');
+  const handleCloseDetail = () => {
+    setSelectedChild(null);
   };
 
-  const handleFormChange = <K extends keyof FormState>(
-    key: K,
-    value: FormState[K]
-  ) => {
-    setFormState((current) => ({ ...current, [key]: value }));
-    setFormError('');
-  };
-
-  const validateForm = () => {
-    if (!formState.fullName.trim()) return 'Vui lòng nhập tên của bé.';
-    if (!formState.age.trim()) return 'Vui lòng nhập tuổi của bé.';
-    const parsedAge = Number(formState.age);
-    if (Number.isNaN(parsedAge) || parsedAge <= 0 || parsedAge > 100) {
-      return 'Độ tuổi của bé phải là một số hợp lệ từ 1 đến 100.';
-    }
-    return '';
-  };
-
-  const handleSubmitForm = async () => {
-    const valError = validateForm();
-    if (valError) {
-      setFormError(valError);
-      return;
-    }
-
-    const currentUser = getSessionUser();
-    if (!currentUser) {
-      setFormError('Không tìm thấy phiên làm việc của phụ huynh. Vui lòng đăng nhập lại.');
-      return;
-    }
-
-    setFormError('');
-    setIsSaving(true);
-
-    const payload = {
-      userId: Number(currentUser.UserId),
-      fullName: formState.fullName.trim(),
-      age: Number(formState.age),
-      gender: formState.gender,
-      learningLevel: formState.learningLevel,
-      childType: formState.childType.trim() || null,
-      note: formState.note.trim() || null,
-      status: 'Active' as const,
-      avatar: formState.avatar || 'default',
-    };
-
-    const result =
-      formMode === 'create'
-        ? await createChildProfile(payload)
-        : await updateChildProfile(selectedChild!.id, payload);
-
-    if (result.success && result.data) {
-      triggerNotification(
-        formMode === 'create' ? 'Đã tạo hồ sơ bé mới thành công!' : 'Đã cập nhật hồ sơ bé thành công!',
-        'success'
-      );
-      await fetchMyChildren();
-      handleCloseModal();
-    } else {
-      setFormError(result.errors?.join(' ') || result.message || 'Lưu thông tin thất bại.');
-    }
-    setIsSaving(false);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!selectedChild) return;
-
-    setFormError('');
-    setIsDeleting(true);
-
-    const result = await deleteChildProfile(selectedChild.id);
-    if (result.success) {
-      triggerNotification(`Đã xóa hồ sơ bé ${selectedChild.fullName} thành công!`, 'success');
-      await fetchMyChildren();
-      handleCloseModal();
-    } else {
-      triggerNotification(
-        result.errors?.join(' ') || result.message || 'Không thể xóa hồ sơ bé.',
-        'warning'
-      );
-    }
-    setIsDeleting(false);
-  };
-
-  const getGenderText = (gender: 'Male' | 'Female' | 'Other') => {
+  const getGenderText = (gender: 'Male' | 'Female' | 'Other' | string) => {
     if (gender === 'Male') return 'Nam';
     if (gender === 'Female') return 'Nữ';
     return 'Khác';
   };
 
-  const getLevelText = (level: 'Beginner' | 'Intermediate' | 'Advanced') => {
+  const getLevelText = (level: 'Beginner' | 'Intermediate' | 'Advanced' | string) => {
     if (level === 'Beginner') return 'Cấp độ: Sơ cấp';
     if (level === 'Intermediate') return 'Cấp độ: Trung cấp';
-    return 'Cấp độ: Nâng cao';
+    if (level === 'Advanced') return 'Cấp độ: Nâng cao';
+    return `Cấp độ: ${level}`;
   };
 
   const getChildTypeLabel = (childType: string | null | undefined) => {
@@ -249,8 +83,7 @@ export default function ProfileManagement() {
   };
 
   return (
-    <div className="space-y-4 pb-24 relative text-left">
-      
+    <div className="space-y-6 pb-24 relative text-left">
       {/* Notifications */}
       {alertConfig && (
         <div
@@ -276,17 +109,20 @@ export default function ProfileManagement() {
         </div>
       )}
 
-      {/* Header card with refresh button */}
+      {/* Header with title and refresh button */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-1">
-        <div className="space-y-2">
+        <div className="space-y-1">
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
             Quản Lý <span className="text-[#FF8E8E]">Hồ Sơ Của Bé</span>
           </h1>
+          <p className="text-sm font-medium text-slate-500">
+            Thông tin hồ sơ học tập và rèn luyện thực tế ảo của bé
+          </p>
         </div>
         <button
           type="button"
           onClick={() => void fetchMyChildren()}
-          className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white/60 px-6 py-4 text-sm font-bold text-slate-600 transition-all hover:bg-white/80 cursor-pointer active:scale-95 shrink-0 self-start md:self-auto"
+          className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white/60 px-6 py-4 text-sm font-bold text-slate-600 transition-all hover:bg-white/80 cursor-pointer active:scale-95 shrink-0 self-start md:self-auto shadow-xs"
         >
           <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
           Tải lại dữ liệu
@@ -299,41 +135,35 @@ export default function ProfileManagement() {
           <p className="text-gray-500 font-bold">Đang tải danh sách hồ sơ bé...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {children.map((child, idx) => {
             const cardBg = CARD_COLORS[idx % CARD_COLORS.length];
             return (
-              <div 
-                key={child.id} 
+              <div
+                key={child.id}
+                onClick={() => handleOpenDetail(child)}
                 className={cn(
                   "rounded-xl p-8 shadow-lg cursor-pointer transition-all hover:scale-105 active:scale-95 group relative border-2 border-transparent",
                   cardBg
                 )}
+                title="Nhấn để xem chi tiết hồ sơ bé"
               >
-                {/* Delete button (Trash icon) at the top-right corner of card */}
-                <button
-                  type="button"
-                  onClick={(e) => openDeleteModal(child, e)}
-                  className="absolute top-4 right-4 p-2 bg-white/30 hover:bg-red-500 hover:text-white rounded-full opacity-0 group-hover:opacity-100 transition-all z-10 text-gray-800"
-                  title="Xóa hồ sơ bé"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-
-                <div className="flex items-start gap-5" onClick={(e) => openEditModal(child, e)}>
+                <div className="flex items-start gap-5">
                   <div className="w-20 h-20 bg-white/40 rounded-[28px] p-2 backdrop-blur-md overflow-hidden relative border-4 border-white/50 shrink-0">
-                    <img 
-                      src={resolveAvatarUrl(child.avatar, child.fullName, 'adventurer')} 
-                      alt={child.fullName} 
-                      className="w-full h-full object-cover" 
-                      referrerPolicy="no-referrer" 
+                    <img
+                      src={resolveAvatarUrl(child.avatar, child.fullName, 'adventurer')}
+                      alt={child.fullName}
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
                     />
-                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                      <Edit2 className="w-6 h-6 text-white" />
+                    <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <Eye className="w-6 h-6 text-white" />
                     </div>
                   </div>
-                  <div className="space-y-1 text-gray-900 min-w-0">
-                    <h4 className="text-2xl font-black truncate" title={child.fullName}>{child.fullName}</h4>
+                  <div className="space-y-1 text-gray-900 min-w-0 flex-1">
+                    <h4 className="text-2xl font-black truncate" title={child.fullName}>
+                      {child.fullName}
+                    </h4>
                     <div className="text-xs font-bold opacity-80 space-y-0.5">
                       <p>Tuổi: {child.age}</p>
                       <p>Giới tính: {getGenderText(child.gender)}</p>
@@ -345,234 +175,137 @@ export default function ProfileManagement() {
                     </div>
                   </div>
                 </div>
+
+                {/* Subtle view hint badge */}
+                <div className="mt-4 pt-3 border-t border-black/5 flex items-center justify-between text-[11px] font-bold text-gray-800/70">
+                  <span>Trạng thái: <span className="text-emerald-700 font-extrabold">{child.status === 'Active' ? 'Hoạt động' : 'Tạm dừng'}</span></span>
+                  <span className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity text-slate-800">
+                    <Eye className="w-3.5 h-3.5" /> Chi tiết
+                  </span>
+                </div>
               </div>
             );
           })}
-
-          {/* Add profile card */}
-          <button 
-            onClick={openCreateModal}
-            className="rounded-xl bg-sky-50 border-4 border-dashed border-sky-300 p-8 flex flex-col items-center justify-center gap-4 group hover:bg-sky-100 transition-all cursor-pointer h-full min-h-[160px]"
-          >
-            <div className="w-16 h-16 rounded-full bg-sky-200 flex items-center justify-center text-sky-600 transition-transform group-hover:scale-110">
-              <Plus className="w-8 h-8" />
-            </div>
-            <span className="text-xl font-bold text-sky-800">Thêm hồ sơ mới</span>
-          </button>
         </div>
       )}
 
       {!isLoading && children.length === 0 && (
-        <p className="text-center text-gray-400 font-bold italic pt-12">Không còn hồ sơ nào để hiển thị</p>
+        <div className="rounded-3xl border border-dashed border-slate-200 bg-white/50 p-12 text-center space-y-3 max-w-lg mx-auto mt-10">
+          <Baby className="w-12 h-12 text-slate-300 mx-auto" />
+          <h3 className="text-lg font-bold text-slate-700">Chưa có hồ sơ của bé</h3>
+          <p className="text-sm text-slate-500 font-medium leading-relaxed">
+            Hiện tại chưa có hồ sơ của bé nào được kết nối với tài khoản phụ huynh. Vui lòng liên hệ với giáo viên hoặc quản trị viên nhà trường để được hỗ trợ tạo và ghép hồ sơ bé.
+          </p>
+        </div>
       )}
 
-      {/* Create / Edit Form Modal */}
-      {modalType === 'form' && createPortal(
-        <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-6 backdrop-blur-xl bg-blue-900/10 animate-in fade-in duration-300">
-          <div className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100">
-            <div className="bg-sky-100 px-10 py-6 flex items-center justify-between">
-              <h2 className="text-2xl font-black text-gray-900 italic">
-                {formMode === 'create' ? 'Đăng ký hồ sơ bé mới' : `Chỉnh sửa hồ sơ: ${selectedChild?.fullName}`}
-              </h2>
-              <button onClick={handleCloseModal} className="p-2 hover:bg-white/50 rounded-full transition-colors">
-                <X className="w-6 h-6 text-gray-500" />
+      {/* Read-only Detail Modal */}
+      {selectedChild && createPortal(
+        <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6 backdrop-blur-xl bg-blue-900/10 animate-in fade-in duration-300">
+          <div className="app-modal-panel bg-white rounded-[32px] md:rounded-[40px] shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-sky-100 to-teal-100 px-8 py-6 flex items-center justify-between border-b border-sky-200/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-white/80 rounded-2xl shadow-xs text-sky-600">
+                  <Baby className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-slate-800">
+                    Thông Tin Hồ Sơ Bé
+                  </h2>
+                  <p className="text-xs font-semibold text-slate-500">
+                    Chi tiết hồ sơ học tập và can thiệp
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleCloseDetail}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-white/60 rounded-full transition-colors cursor-pointer"
+                title="Đóng"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="app-modal-body p-10 flex flex-col md:flex-row gap-10">
-              <div className="space-y-6 flex-1 text-left">
-                {formError && (
-                  <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4 flex gap-3 text-rose-800 text-xs font-bold leading-normal">
-                    <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
-                    <span>{formError}</span>
+            {/* Body */}
+            <div className="p-8 space-y-6 text-left max-h-[75vh] overflow-y-auto">
+              {/* Profile Card Summary */}
+              <div className="flex items-center gap-5 p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                <div className="w-24 h-24 bg-white rounded-2xl p-1.5 shadow-sm border-2 border-sky-200 shrink-0 overflow-hidden">
+                  <img
+                    src={resolveAvatarUrl(selectedChild.avatar, selectedChild.fullName, 'adventurer')}
+                    alt={selectedChild.fullName}
+                    className="w-full h-full object-cover rounded-xl"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+                <div className="space-y-1 min-w-0">
+                  <h3 className="text-2xl font-black text-slate-800 truncate">
+                    {selectedChild.fullName}
+                  </h3>
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold bg-sky-100 text-sky-700">
+                      <User className="w-3 h-3" />
+                      {getGenderText(selectedChild.gender)} • {selectedChild.age} tuổi
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-700">
+                      <Activity className="w-3 h-3" />
+                      {selectedChild.status === 'Active' ? 'Đang hoạt động' : 'Tạm dừng'}
+                    </span>
                   </div>
-                )}
-
-                {/* Full name input */}
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Tên của bé</label>
-                  <input 
-                    type="text" 
-                    value={formState.fullName}
-                    onChange={(e) => handleFormChange('fullName', e.target.value)}
-                    placeholder="Nhập họ và tên..."
-                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-bold text-lg outline-none focus:ring-4 focus:ring-sky-100 focus:bg-white transition-all text-gray-800" 
-                  />
-                </div>
-
-                {/* Age input */}
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Tuổi của bé</label>
-                  <input 
-                    type="number" 
-                    value={formState.age}
-                    onChange={(e) => handleFormChange('age', e.target.value)}
-                    placeholder="Nhập tuổi (ví dụ: 6)..."
-                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-bold text-lg outline-none focus:ring-4 focus:ring-sky-100 focus:bg-white transition-all text-gray-800" 
-                  />
-                </div>
-
-                {/* Gender select */}
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Giới tính</label>
-                  <CustomSelect 
-                    value={formState.gender}
-                    onChange={(val) => handleFormChange('gender', val as any)}
-                    options={genderOptions}
-                    variant="form"
-                  />
-                </div>
-
-                {/* Learning level select */}
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Cấp độ học tập</label>
-                  <CustomSelect 
-                    value={formState.learningLevel}
-                    onChange={(val) => handleFormChange('learningLevel', val as any)}
-                    options={levelOptions}
-                    variant="form"
-                  />
-                </div>
-
-                {/* Child type select */}
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Phân loại trẻ</label>
-                  <CustomSelect 
-                    value={formState.childType}
-                    onChange={(val) => handleFormChange('childType', val as any)}
-                    options={childTypeOptions}
-                    variant="form"
-                  />
-                </div>
-
-                {/* Notes input */}
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Ghi chú bổ sung</label>
-                  <textarea 
-                    value={formState.note}
-                    onChange={(e) => handleFormChange('note', e.target.value)}
-                    placeholder="Nhập ghi chú đặc biệt về sức khỏe, thói quen hoặc quá trình tiếp thu của bé..."
-                    rows={3}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-bold text-base outline-none focus:ring-4 focus:ring-sky-100 focus:bg-white transition-all text-gray-800 resize-y"
-                  />
                 </div>
               </div>
 
-              {/* Right panel: Profile image preview and action buttons */}
-              <div className="flex flex-col items-center justify-center gap-6 w-full md:w-80 shrink-0">
-                <div className="text-center space-y-2">
-                  <div className="w-36 h-36 bg-orange-100 rounded-full border-8 border-gray-50 shadow-inner overflow-hidden mx-auto relative group">
-                    <img 
-                      src={resolveAvatarUrl(formState.avatar, formState.fullName || 'default', 'adventurer')} 
-                      alt="profile preview" 
-                      className="w-full h-full object-cover" 
-                      referrerPolicy="no-referrer" 
-                    />
-                  </div>
-                  <span className="text-xs font-black text-gray-400 uppercase tracking-widest block">Ảnh đại diện preview</span>
+              {/* Detailed Specs Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 space-y-1">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Award className="w-3.5 h-3.5 text-amber-500" />
+                    Cấp độ học tập
+                  </span>
+                  <p className="text-sm font-extrabold text-slate-800">
+                    {selectedChild.learningLevel === 'Beginner'
+                      ? '🎨 Sơ cấp (Beginner)'
+                      : selectedChild.learningLevel === 'Intermediate'
+                      ? '🚀 Trung cấp (Intermediate)'
+                      : selectedChild.learningLevel === 'Advanced'
+                      ? '🏆 Nâng cao (Advanced)'
+                      : selectedChild.learningLevel}
+                  </p>
                 </div>
 
-                {/* Avatar selector list */}
-                <div className="space-y-2 w-full">
-                  <span className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 block text-left">Chọn từ danh sách avatar</span>
-                  <div className="grid grid-cols-5 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                    {/* Default dynamic option */}
-                    <button
-                      type="button"
-                      onClick={() => handleFormChange('avatar', 'default')}
-                      className={cn(
-                        "w-10 h-10 rounded-xl bg-white border-2 flex items-center justify-center text-[10px] font-black text-slate-500 hover:border-sky-400 transition-all cursor-pointer",
-                        (!formState.avatar || formState.avatar === 'default') ? "border-sky-500 bg-sky-50 ring-2 ring-sky-100" : "border-slate-100"
-                      )}
-                      title="Mặc định"
-                    >
-                      MĐ
-                    </button>
-                    {/* 10 downloaded avatars */}
-                    {Array.from({ length: 10 }).map((_, idx) => {
-                      const avPath = `/avatars/avatar-${idx + 1}.svg`;
-                      return (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleFormChange('avatar', avPath)}
-                          className={cn(
-                            "w-10 h-10 rounded-xl overflow-hidden border-2 hover:border-sky-400 transition-all bg-white p-0.5 cursor-pointer",
-                            formState.avatar === avPath ? "border-sky-500 ring-2 ring-sky-100" : "border-slate-100"
-                          )}
-                        >
-                          <img src={avPath} alt={`Avatar ${idx + 1}`} className="w-full h-full object-cover" />
-                        </button>
-                      );
-                    })}
-                  </div>
+                <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 space-y-1">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Activity className="w-3.5 h-3.5 text-teal-500" />
+                    Phân loại trẻ
+                  </span>
+                  <p className="text-sm font-extrabold text-slate-800">
+                    {getChildTypeLabel(selectedChild.childType)}
+                  </p>
                 </div>
-                
-                <div className="flex gap-4 w-full">
-                  <button 
-                    type="button"
-                    onClick={handleCloseModal} 
-                    disabled={isSaving}
-                    className="flex-1 py-4 border-4 border-gray-100 text-gray-400 font-black rounded-2xl hover:bg-gray-50 transition-all cursor-pointer disabled:opacity-50 text-center"
-                  >
-                    Hủy
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={handleSubmitForm} 
-                    disabled={isSaving}
-                    className="flex-1 py-4 bg-sky-500 text-white font-black rounded-2xl shadow-lg shadow-sky-200 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {isSaving && <RefreshCw className="w-4 h-4 animate-spin text-white" />}
-                    Lưu
-                  </button>
-                </div>
+              </div>
+
+              {/* Special Note */}
+              <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 space-y-2">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-sky-500" />
+                  Ghi chú & dặn dò đặc biệt
+                </span>
+                <p className="text-sm font-medium text-slate-700 leading-relaxed italic bg-white p-3 rounded-xl border border-slate-100">
+                  {selectedChild.note ? selectedChild.note : 'Không có ghi chú đặc biệt nào từ nhà trường.'}
+                </p>
               </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
 
-      {/* Delete Confirmation Modal */}
-      {modalType === 'delete' && createPortal(
-        <div className="app-modal-overlay fixed inset-0 z-[200] flex items-center justify-center p-6 backdrop-blur-xl bg-red-900/10 animate-in fade-in duration-300">
-          <div className="app-modal-panel bg-white rounded-[40px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100">
-            <div className="bg-red-50 px-8 py-6 flex items-center justify-between border-b border-red-100">
-              <h2 className="text-xl font-black text-red-700 italic flex items-center gap-2">
-                <AlertTriangle className="w-6 h-6 text-red-500" />
-                Xác nhận xóa hồ sơ
-              </h2>
-              <button onClick={handleCloseModal} className="p-2 hover:bg-red-100 rounded-full transition-colors">
-                <X className="w-5 h-5 text-red-500" />
+            {/* Footer */}
+            <div className="px-8 py-5 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button
+                type="button"
+                onClick={handleCloseDetail}
+                className="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-sm shadow-md transition-all cursor-pointer active:scale-95"
+              >
+                Đóng
               </button>
-            </div>
-
-            <div className="p-8 text-left space-y-6">
-              <p className="text-gray-700 font-bold text-sm leading-relaxed">
-                Bạn có chắc chắn muốn xóa vĩnh viễn hồ sơ của bé <strong className="text-red-600 font-extrabold">{selectedChild?.fullName}</strong>?
-                Hành động này không thể hoàn tác và toàn bộ lịch sử học tập của bé sẽ bị xóa.
-              </p>
-
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  disabled={isDeleting}
-                  className="flex-1 py-3 border-2 border-slate-200 text-slate-500 font-bold rounded-xl hover:bg-slate-50 transition-all cursor-pointer text-center disabled:opacity-50"
-                >
-                  Không, giữ lại
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmDelete}
-                  disabled={isDeleting}
-                  className="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl shadow-lg shadow-red-200 hover:bg-red-600 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {isDeleting && <RefreshCw className="w-4 h-4 animate-spin text-white" />}
-                  Có, xóa hồ sơ
-                </button>
-              </div>
             </div>
           </div>
         </div>,
