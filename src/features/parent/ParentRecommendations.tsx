@@ -301,7 +301,7 @@ export default function ParentRecommendations() {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-center space-y-4">
         <RefreshCw className="w-10 h-10 text-[#4EACAF] animate-spin" />
-        <p className="text-slate-500 font-bold text-sm">Đang tải dữ liệu hồ sơ trẻ em...</p>
+        <p className="text-slate-500 font-normal text-sm">Đang tải dữ liệu hồ sơ trẻ em...</p>
       </div>
     );
   }
@@ -312,7 +312,7 @@ export default function ParentRecommendations() {
       <div className="flex flex-col items-center justify-center py-32 text-center space-y-4">
         <Baby className="w-16 h-16 text-slate-300" />
         <h3 className="text-xl font-bold text-slate-700">Chưa có thông tin hồ sơ bé</h3>
-        <p className="text-sm text-slate-500 max-w-sm">Hồ sơ trẻ em chưa được đăng ký dưới tài khoản này. Ba mẹ vui lòng liên hệ nhà trường hoặc quản trị viên.</p>
+        <p className="text-sm text-slate-500 max-w-sm font-normal">Hồ sơ trẻ em chưa được đăng ký dưới tài khoản này. Ba mẹ vui lòng liên hệ nhà trường hoặc quản trị viên.</p>
       </div>
     );
   }
@@ -323,7 +323,7 @@ export default function ParentRecommendations() {
       {/* 1. Header Card */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-1">
         <div className="space-y-3">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight leading-tight">
             Khuyến Nghị <span className="text-[#FF8E8E]">Luyện Tập</span>
           </h1>
         </div>
@@ -335,12 +335,12 @@ export default function ParentRecommendations() {
               <Baby className="w-5.5 h-5.5" />
             </div>
             <div className="space-y-1.5 flex-1 select-none">
-              <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest block leading-none">Hồ sơ của bé:</span>
+              <span className="text-[10px] text-gray-400 font-medium uppercase tracking-widest block leading-none">Hồ sơ của bé:</span>
               <CustomSelect
                 value={String(selectedChildId || '')}
                 onChange={(val) => setSelectedChildId(Number(val))}
                 options={childOptions}
-                className="w-56 font-black uppercase text-xs"
+                className="w-56 font-medium uppercase text-xs"
                 variant="filter"
               />
             </div>
@@ -352,12 +352,12 @@ export default function ParentRecommendations() {
       {isDataLoading ? (
         <div className="flex flex-col items-center justify-center py-20 text-center space-y-3 bg-white/20 rounded-xl p-10 border border-slate-100/50">
           <RefreshCw className="w-8 h-8 text-[#4EACAF] animate-spin" />
-          <p className="text-xs text-slate-500 font-bold">Đang tính toán các chỉ số rèn luyện của bé...</p>
+          <p className="text-xs text-slate-500 font-normal">Đang tính toán các chỉ số rèn luyện của bé...</p>
         </div>
       ) : (
         <>
           {errorMessage && (
-            <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl text-xs font-bold text-rose-600 flex items-center gap-2">
+            <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl text-xs font-medium text-rose-600 flex items-center gap-2">
               <AlertCircle className="w-4 h-4" />
               {errorMessage}
             </div>
@@ -371,8 +371,8 @@ export default function ParentRecommendations() {
                 <Award className="w-7 h-7" />
               </div>
               <div>
-                <p className="text-3xl font-black text-gray-900 tracking-tight leading-none">{averageScore}đ</p>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1.5">Điểm bình quân nói</p>
+                <p className="text-3xl font-bold text-gray-900 tracking-tight leading-none">{averageScore}đ</p>
+                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mt-1.5">Điểm bình quân nói</p>
               </div>
             </div>
 
@@ -383,13 +383,13 @@ export default function ParentRecommendations() {
               </div>
               <div className="space-y-1">
                 <span className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border",
+                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium uppercase tracking-wider border",
                   progressStyle.bg
                 )}>
                   <span className={cn("w-1.5 h-1.5 rounded-full", progressStyle.dot)} />
                   {progressStyle.label}
                 </span>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider block">Xếp hạng tiến độ</p>
+                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider block">Xếp hạng tiến độ</p>
               </div>
             </div>
 
@@ -399,10 +399,10 @@ export default function ParentRecommendations() {
                 <CheckCircle className="w-7 h-7" />
               </div>
               <div>
-                <p className="text-3xl font-black text-gray-900 tracking-tight leading-none">
+                <p className="text-3xl font-bold text-gray-900 tracking-tight leading-none">
                   {completedExercisesCount}/{totalExercisesCount}
                 </p>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1.5">Nhiệm vụ vượt ải</p>
+                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mt-1.5">Nhiệm vụ vượt ải</p>
               </div>
             </div>
 
@@ -412,8 +412,8 @@ export default function ParentRecommendations() {
                 <Clock className="w-7 h-7" />
               </div>
               <div>
-                <p className="text-3xl font-black text-gray-900 tracking-tight leading-none">{totalPracticeTime} Phút</p>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1.5">Tích lũy âm ngữ tương tác</p>
+                <p className="text-3xl font-bold text-gray-900 tracking-tight leading-none">{totalPracticeTime} Phút</p>
+                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mt-1.5">Tích lũy âm ngữ tương tác</p>
               </div>
             </div>
 
@@ -428,21 +428,21 @@ export default function ParentRecommendations() {
               {/* Analysis box for Strengths vs Areas to improve */}
               <div className="bg-white rounded-xl p-8 md:p-10 border border-gray-100 shadow-sm space-y-4">
                 <div className="border-b border-gray-50 pb-5">
-                  <h3 className="text-2xl font-black text-gray-950 italic">Dấu mộc ngôn từ của con</h3>
-                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Phân tích chuyên môn cụ thể về dải phát âm của trẻ</p>
+                  <h3 className="text-2xl font-bold text-gray-950">Dấu mộc ngôn từ của con</h3>
+                  <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mt-1.5">Phân tích chuyên môn cụ thể về dải phát âm của trẻ</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   
                   {/* Strengths list */}
                   <div className="space-y-4">
-                    <h4 className="text-sm font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                    <h4 className="text-sm font-semibold text-emerald-600 uppercase tracking-widest flex items-center gap-2">
                       <ThumbsUp className="w-4.5 h-4.5 text-emerald-500" />
                       Điểm mạnh phát âm tốt
                     </h4>
                     <div className="space-y-3">
                       {strengths.map((str, idx) => (
-                        <div key={idx} className="flex gap-3 p-4 bg-emerald-50/40 rounded-2xl border border-emerald-100/20 text-xs font-semibold text-emerald-800 leading-relaxed">
+                        <div key={idx} className="flex gap-3 p-4 bg-emerald-50/40 rounded-2xl border border-emerald-100/20 text-xs font-normal text-emerald-800 leading-relaxed">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
                           <span>{str}</span>
                         </div>
@@ -452,13 +452,13 @@ export default function ParentRecommendations() {
 
                   {/* Weaknesses list */}
                   <div className="space-y-4">
-                    <h4 className="text-sm font-black text-[#FF8E8E] uppercase tracking-widest flex items-center gap-2">
+                    <h4 className="text-sm font-semibold text-[#FF8E8E] uppercase tracking-widest flex items-center gap-2">
                       <ThumbsDown className="w-4.5 h-4.5" />
                       Góc can thiệp (Cần uốn lại)
                     </h4>
                     <div className="space-y-3">
                       {weaknesses.map((weak, idx) => (
-                        <div key={idx} className="flex gap-3 p-4 bg-rose-50/40 rounded-2xl border border-rose-100/20 text-xs font-semibold text-rose-800 leading-relaxed">
+                        <div key={idx} className="flex gap-3 p-4 bg-rose-50/40 rounded-2xl border border-rose-100/20 text-xs font-normal text-rose-800 leading-relaxed">
                           <span className="w-2 h-2 rounded-full bg-[#FF8E8E] mt-1.5 shrink-0" />
                           <span>{weak}</span>
                         </div>
@@ -477,18 +477,18 @@ export default function ParentRecommendations() {
                     <Lightbulb className="w-6 h-6 fill-amber-100" />
                   </div>
                   <div>
-                    <h4 className="text-xs text-amber-600 font-black uppercase tracking-widest leading-none">Chỉ dẫn định bài tại nhà cho cha mẹ</h4>
-                    <h3 className="text-lg font-black text-gray-850 italic mt-1.5 leading-none">Trích lược khuyến nghị sư phạm vàng</h3>
+                    <h4 className="text-xs text-amber-600 font-medium uppercase tracking-widest leading-none">Chỉ dẫn định bài tại nhà cho cha mẹ</h4>
+                    <h3 className="text-lg font-bold text-gray-850 mt-1.5 leading-none">Trích lược khuyến nghị sư phạm vàng</h3>
                   </div>
                 </div>
 
-                <p className="text-gray-700 font-bold text-sm leading-relaxed p-6 bg-white/70 rounded-3xl border border-yellow-101/40">
+                <p className="text-gray-700 font-normal text-sm leading-relaxed p-6 bg-white/70 rounded-3xl border border-yellow-101/40">
                   &ldquo;{recommendationText}&rdquo;
                 </p>
 
-                <div className="text-[11px] text-gray-400 font-semibold border-t border-yellow-105 pt-4 flex justify-between items-center bg-transparent">
-                  <span>Hệ thống phân tích lần cuối: <strong className="text-gray-600">{lastAnalyzedDate}</strong></span>
-                  <span className="text-amber-600 font-black uppercase tracking-wider">Hạ nhiễu lọc âm mộc</span>
+                <div className="text-[11px] text-gray-400 font-normal border-t border-yellow-105 pt-4 flex justify-between items-center bg-transparent">
+                  <span>Hệ thống phân tích lần cuối: <span className="text-gray-600 font-medium">{lastAnalyzedDate}</span></span>
+                  <span className="text-amber-600 font-medium uppercase tracking-wider">Hạ nhiễu lọc âm mộc</span>
                 </div>
               </div>
 
@@ -500,27 +500,27 @@ export default function ParentRecommendations() {
               {/* Suggested Exercises List */}
               <div className="bg-white rounded-xl p-8 border border-gray-100 shadow-sm space-y-4">
                 <div className="border-b border-gray-50 pb-4">
-                  <h3 className="text-xl font-black text-gray-900 leading-none italic">Bài tập nên luyện tiếp</h3>
-                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">Huấn tự chuyên biệt cho con</p>
+                  <h3 className="text-xl font-bold text-gray-900 leading-none">Bài tập nên luyện tiếp</h3>
+                  <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mt-1.5">Huấn tự chuyên biệt cho con</p>
                 </div>
 
                 <div className="space-y-5">
                   {suggestedExercises.length === 0 ? (
-                    <p className="text-xs text-slate-400 italic">Chưa có bài tập nào được giao.</p>
+                    <p className="text-xs text-slate-400 italic font-normal">Chưa có bài tập nào được giao.</p>
                   ) : (
                     suggestedExercises.map((ex) => (
                       <div key={ex.id} className="bg-slate-50/60 p-5 rounded-3xl border border-slate-100 space-y-4">
                         <div className="flex justify-between items-start gap-4">
                           <div className="space-y-1">
-                            <span className="text-[8px] uppercase font-black bg-indigo-50 text-indigo-500 px-2 py-0.5 rounded">
+                            <span className="text-[8px] uppercase font-medium bg-indigo-50 text-indigo-500 px-2 py-0.5 rounded">
                               {ex.targetSkill}
                             </span>
-                            <h4 className="text-sm font-extrabold text-gray-850 leading-tight">
+                            <h4 className="text-sm font-bold text-gray-850 leading-tight">
                               {ex.exerciseName}
                             </h4>
                           </div>
                           <span className={cn(
-                            "text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded shrink-0",
+                            "text-[8px] font-medium uppercase tracking-wider px-2 py-0.5 rounded shrink-0",
                             ex.difficultyLevel === 'Easy' ? 'bg-emerald-50 text-emerald-600' :
                             ex.difficultyLevel === 'Medium' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-500'
                           )}>
@@ -528,8 +528,8 @@ export default function ParentRecommendations() {
                           </span>
                         </div>
 
-                        <p className="text-[11px] text-gray-500 font-semibold leading-relaxed p-4 bg-white rounded-2xl border border-slate-100/50">
-                          <strong className="text-slate-700 font-black block mb-1">💡 Lý do khuyên luyện:</strong>
+                        <p className="text-[11px] text-gray-500 font-normal leading-relaxed p-4 bg-white rounded-2xl border border-slate-100/50">
+                          <span className="text-slate-700 font-medium block mb-1">💡 Lý do khuyên luyện:</span>
                           {ex.recommendationReason}
                         </p>
                       </div>
@@ -541,31 +541,31 @@ export default function ParentRecommendations() {
               {/* 6. Recent direct feedback list */}
               <div className="bg-[#4EACAF]/5 rounded-xl p-8 border border-[#4EACAF]/20 shadow-sm space-y-4">
                 <div className="border-b border-[#4EACAF]/10 pb-4">
-                  <h3 className="text-xl font-black text-[#264E50] leading-none italic flex items-center gap-2">
+                  <h3 className="text-xl font-bold text-[#264E50] leading-none flex items-center gap-2">
                     <MessageSquare className="w-5 h-5 text-[#4EACAF]" />
                     Nhận xét gần đây
                   </h3>
-                  <p className="text-xs text-[#4EACAF]/70 font-bold uppercase tracking-wider mt-1.5">Nhận xét từ giáo viên đồng hành</p>
+                  <p className="text-xs text-[#4EACAF]/70 font-medium uppercase tracking-wider mt-1.5">Nhận xét từ giáo viên đồng hành</p>
                 </div>
 
                 <div className="space-y-4">
                   {relevantResults.length === 0 ? (
-                    <p className="text-xs text-slate-400 italic">Chưa có nhận xét nào được lưu lại.</p>
+                    <p className="text-xs text-slate-400 italic font-normal">Chưa có nhận xét nào được lưu lại.</p>
                   ) : (
                     relevantResults.map((res) => (
                       <div key={res.ResultId} className="bg-white p-5 rounded-3xl space-y-3.5 border border-[#4EACAF]/10">
                         <div className="flex items-center justify-between border-b border-gray-50 pb-2">
                           <div className="space-y-0.5">
-                            <strong className="text-gray-800 font-extrabold text-xs block leading-tight truncate max-w-[150px]">
+                            <span className="text-gray-800 font-bold text-xs block leading-tight truncate max-w-[150px]">
                               🎯 {res.ExerciseName}
-                            </strong>
-                            <span className="text-[8px] text-gray-400 font-bold">{res.CreatedAt}</span>
+                            </span>
+                            <span className="text-[8px] text-gray-400 font-normal">{res.CreatedAt}</span>
                           </div>
                           
-                          <span className="font-mono text-[#4EACAF] text-sm font-black italic">{res.Score}đ</span>
+                          <span className="font-mono text-[#4EACAF] text-sm font-semibold">{res.Score}đ</span>
                         </div>
 
-                        <p className="text-xs text-gray-600 font-bold italic leading-relaxed">
+                        <p className="text-xs text-gray-600 font-normal italic leading-relaxed">
                           &ldquo;{res.FeedbackText}&rdquo;
                         </p>
                       </div>
@@ -581,7 +581,7 @@ export default function ParentRecommendations() {
       )}
 
       {/* General advisory disclaimer banner */}
-      <div className="bg-[#FFF8F8] p-5.5 rounded-2xl border border-rose-100 flex gap-3 text-xs font-semibold leading-relaxed text-rose-700 text-left">
+      <div className="bg-[#FFF8F8] p-5.5 rounded-2xl border border-rose-100 flex gap-3 text-xs font-normal leading-relaxed text-rose-700 text-left">
         <AlertCircle className="w-5 h-5 text-[#FF8E8E] shrink-0" />
         <span>Hệ thống phân tích dựa trên kết quả thu mẫu giọng của trẻ qua thiết bị thực tế ảo GodotXR nhằm khích lệ rèn luyện ngôn ngữ tại gia đình. Chỉ dẫn này mang tính bồi dưỡng, bổ trợ học tập, không có chức năng chẩn đoán sức khỏe y khoa hoặc thay thế tư vấn chuyên gia y sinh học chuyên sâu.</span>
       </div>

@@ -200,11 +200,11 @@ export default function TeacherDashboard() {
       {/* Page Header Component */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-1">
         <div className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight leading-tight">
             Bảng Điều Khiển <span className="text-[#4EACAF]">Giáo Viên</span>
           </h1>
         </div>
-        <div className="text-xs bg-[#4EACAF]/10 text-[#4EACAF] border border-[#4EACAF]/20 px-4 py-2 rounded-2xl font-bold self-start lg:self-center shrink-0">
+        <div className="text-xs bg-[#4EACAF]/10 text-[#4EACAF] border border-[#4EACAF]/20 px-4 py-2 rounded-2xl font-medium self-start lg:self-center shrink-0">
           Học kỳ II • Năm học 2025–2026
         </div>
       </div>
@@ -219,7 +219,7 @@ export default function TeacherDashboard() {
             <p className="text-xl font-bold text-slate-800 tracking-tight leading-none">
               {isLoading ? '...' : `${classCount} Lớp học`}
             </p>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">Đang hoạt động</p>
+            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-1">Đang hoạt động</p>
           </div>
         </div>
 
@@ -231,7 +231,7 @@ export default function TeacherDashboard() {
             <p className="text-xl font-bold text-slate-800 tracking-tight leading-none">
               {isLoading ? '...' : `${studentCount} Học sinh`}
             </p>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">Tổng học viên phụ trách</p>
+            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-1">Tổng học viên phụ trách</p>
           </div>
         </div>
 
@@ -243,7 +243,7 @@ export default function TeacherDashboard() {
             <p className="text-xl font-bold text-rose-600 tracking-tight leading-none">
               {isLoading ? '...' : `${needSupportCount} Học sinh`}
             </p>
-            <p className="text-[10px] text-rose-400 font-semibold uppercase tracking-wider mt-1">Cần hỗ trợ gấp</p>
+            <p className="text-[10px] text-rose-400 font-medium uppercase tracking-wider mt-1">Cần hỗ trợ gấp</p>
           </div>
         </div>
 
@@ -255,7 +255,7 @@ export default function TeacherDashboard() {
             <p className="text-xl font-bold text-slate-800 tracking-tight leading-none">
               {isLoading ? '...' : `${completedAttempts} Buổi`}
             </p>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">Luyện tập hoàn thành</p>
+            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-1">Luyện tập hoàn thành</p>
           </div>
         </div>
       </div>
@@ -268,13 +268,13 @@ export default function TeacherDashboard() {
           {/* Recent practice results */}
           <div className="bg-white rounded-xl shadow-xs border border-slate-100 overflow-hidden">
             <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+              <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                 <Volume2 className="w-4 h-4 text-teal-500" />
                 Kết quả luyện tập gần đây (Dữ liệu từ thiết bị VR)
               </h4>
               <button 
                 onClick={() => navigate('/teacher/results')}
-                className="text-xs text-[#4EACAF] hover:text-[#4eacaf]/80 font-semibold flex items-center gap-1 cursor-pointer animate-pulse"
+                className="text-xs text-[#4EACAF] hover:text-[#4eacaf]/80 font-medium flex items-center gap-1 cursor-pointer animate-pulse"
               >
                 Xem tất cả
                 <ArrowRight className="w-3 h-3" />
@@ -284,7 +284,7 @@ export default function TeacherDashboard() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/70 border-b border-slate-100 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                  <tr className="bg-slate-50/70 border-b border-slate-100 text-[10px] text-slate-400 font-medium uppercase tracking-wider">
                     <th className="px-[5px] py-3">Học sinh (Tuổi)</th>
                     <th className="px-[5px] py-3">Bài tập / Trò chơi</th>
                     <th className="px-[5px] py-3 text-center">Biểu điểm</th>
@@ -297,16 +297,16 @@ export default function TeacherDashboard() {
                     recentPractices.map((practice) => (
                       <tr key={practice.id} className="hover:bg-slate-50/30 transition-colors">
                         <td className="px-[5px] py-3">
-                          <span className="font-semibold text-slate-700 block">{practice.name}</span>
-                          <span className="text-[10px] text-slate-400 font-medium">Học viên {practice.age} tuổi</span>
+                          <span className="font-medium text-slate-700 block">{practice.name}</span>
+                          <span className="text-[10px] text-slate-400 font-normal">Học viên {practice.age} tuổi</span>
                         </td>
                         <td className="px-[5px] py-3">
-                          <span className="font-semibold text-slate-650 block">{practice.exercise}</span>
-                          <span className="text-[10px] text-slate-400 font-medium">{practice.class}</span>
+                          <span className="font-normal text-slate-600 block">{practice.exercise}</span>
+                          <span className="text-[10px] text-slate-400 font-normal">{practice.class}</span>
                         </td>
                         <td className="px-[5px] py-3 text-center">
                           <span className={cn(
-                            "px-2 py-0.5 rounded-md font-bold text-[11px]",
+                            "px-2 py-0.5 rounded-md font-medium text-[11px]",
                             practice.score >= 80 ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
                             practice.score >= 50 ? "bg-amber-50 text-amber-600 border border-amber-100" :
                             "bg-rose-50 text-rose-600 border border-rose-100"
@@ -316,7 +316,7 @@ export default function TeacherDashboard() {
                         </td>
                         <td className="px-[5px] py-3">
                           <span className={cn(
-                            "px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider",
+                            "px-2 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wider",
                             practice.progress === 'Improving' ? "bg-emerald-50 text-emerald-600" :
                             practice.progress === 'Stable' ? "bg-indigo-50 text-indigo-600" :
                             "bg-rose-50 text-rose-600 border border-rose-200"
@@ -325,14 +325,14 @@ export default function TeacherDashboard() {
                              practice.progress === 'Stable' ? 'Ổn định' : 'Cần hỗ trợ'}
                           </span>
                         </td>
-                        <td className="px-[5px] py-3 text-slate-400">
+                        <td className="px-[5px] py-3 text-slate-400 font-normal">
                           {formatRelativeTime(practice.date)}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="text-center py-8 text-slate-400 font-semibold">
+                      <td colSpan={5} className="text-center py-8 text-slate-400 font-normal">
                         {isLoading ? 'Đang tải dữ liệu kết quả học tập...' : 'Chưa ghi nhận lượt luyện tập VR nào từ học sinh.'}
                       </td>
                     </tr>
@@ -345,8 +345,8 @@ export default function TeacherDashboard() {
           {/* Educational Safety Disclaimer */}
           <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-200/60 flex items-start gap-3">
             <Info className="w-5 h-5 text-[#4EACAF] shrink-0 mt-0.5" />
-            <div className="space-y-0.5 text-xs text-slate-500 font-medium">
-              <p className="font-semibold text-slate-700">Khuyên dặn thông tin tham khảo chuyên môn:</p>
+            <div className="space-y-0.5 text-xs text-slate-500 font-normal">
+              <p className="font-medium text-slate-700">Khuyên dặn thông tin tham khảo chuyên môn:</p>
               <p>
                 Dữ liệu âm học và biểu đồ hiển thị trên hệ thống được thu nhận từ quá trình trải nghiệm kính thực tế ảo VR đóng vai trò bổ trợ và phục vụ nhu cầu tham khảo cho phụ huynh cùng giáo viên. Hệ thống không đại diện cho bất kỳ chẩn đoán y khoa chuyên nghiệp nào.
               </p>
@@ -360,7 +360,7 @@ export default function TeacherDashboard() {
 
           {/* Quick Actions Shortcuts */}
           <div className="bg-white rounded-xl p-5 shadow-xs border border-slate-100 space-y-3">
-            <h4 className="text-sm font-semibold text-slate-800 pb-1.5 border-b border-slate-100">
+            <h4 className="text-sm font-bold text-slate-800 pb-1.5 border-b border-slate-100">
               Phím tắt nhanh
             </h4>
             
@@ -370,7 +370,7 @@ export default function TeacherDashboard() {
             >
               <div className="flex items-center gap-2.5">
                 <School className="w-4 h-4 text-sky-500" />
-                <span className="font-bold text-slate-700 text-xs uppercase tracking-wide">Lớp học của tôi</span>
+                <span className="font-medium text-slate-700 text-xs uppercase tracking-wide">Lớp học của tôi</span>
               </div>
               <ArrowRight className="w-3.5 h-3.5 text-sky-400 group-hover:translate-x-1 transition-transform" />
             </button>
@@ -381,7 +381,7 @@ export default function TeacherDashboard() {
             >
               <div className="flex items-center gap-2.5">
                 <UserSquare2 className="w-4 h-4 text-[#4EACAF]" />
-                <span className="font-bold text-slate-700 text-xs uppercase tracking-wide">Quản lý Học sinh</span>
+                <span className="font-medium text-slate-700 text-xs uppercase tracking-wide">Quản lý Học sinh</span>
               </div>
               <ArrowRight className="w-3.5 h-3.5 text-[#4EACAF] group-hover:translate-x-1 transition-transform" />
             </button>
@@ -390,7 +390,7 @@ export default function TeacherDashboard() {
 
           {/* Warnings & Attention Needed */}
           <div className="bg-white rounded-xl p-5 shadow-xs border border-slate-100 space-y-4">
-            <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-2 pb-1.5 border-b border-slate-100">
+            <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2 pb-1.5 border-b border-slate-100">
               <AlertTriangle className="w-4.5 h-4.5 text-rose-500" />
               Cảnh báo tiến trình chậm
             </h4>
@@ -400,19 +400,19 @@ export default function TeacherDashboard() {
                 needSupportList.map((sup, idx) => (
                   <div key={idx} className={cn("space-y-1", idx > 0 && "pt-3")}>
                     <div className="flex items-center justify-between">
-                      <p className="font-bold text-slate-700 text-xs">{sup.childName}</p>
-                      <span className="text-[10px] text-rose-500 font-bold bg-rose-50 px-1.5 py-0.5 rounded">CẦN HỖ TRỢ</span>
+                      <p className="font-medium text-slate-700 text-xs">{sup.childName}</p>
+                      <span className="text-[10px] text-rose-500 font-medium bg-rose-50 px-1.5 py-0.5 rounded">CẦN HỖ TRỢ</span>
                     </div>
                     <p className="text-[11px] text-slate-500 leading-relaxed">
-                      Lượt rèn luyện gần nhất bài <b>{sup.activityName}</b> đạt <b>{sup.score}/100</b> dưới trung bình.
+                      Lượt rèn luyện gần nhất bài <span className="font-medium text-slate-700">{sup.activityName}</span> đạt <span className="font-medium text-rose-600">{sup.score}/100</span> dưới trung bình.
                     </p>
-                    <p className="text-[9px] text-slate-400 flex items-center gap-1">
+                    <p className="text-[9px] text-slate-400 flex items-center gap-1 font-normal">
                       <Calendar className="w-3 h-3" /> Ghi nhận {formatRelativeTime(sup.time)}
                     </p>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-4 text-xs text-slate-400 font-semibold">
+                <div className="text-center py-4 text-xs text-slate-400 font-normal">
                   {isLoading ? 'Đang phân tích dữ liệu cảnh báo...' : 'Không có cảnh báo tiến trình chậm nào. Tất cả trẻ đang tiến bộ tốt!'}
                 </div>
               )}

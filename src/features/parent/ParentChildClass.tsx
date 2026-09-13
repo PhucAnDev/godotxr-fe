@@ -196,7 +196,7 @@ export default function ParentChildClass() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-1">
         <div className="space-y-3">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight leading-tight">
             Lớp Học <span className="text-[#4EACAF]">Của Con</span>
           </h1>
         </div>
@@ -208,12 +208,12 @@ export default function ParentChildClass() {
               <Baby className="w-5 h-5" />
             </div>
             <div className="space-y-1.5 flex-1 select-none">
-              <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest block leading-none">Hồ sơ của bé:</span>
+              <span className="text-[10px] text-gray-400 font-medium uppercase tracking-widest block leading-none">Hồ sơ của bé:</span>
               <CustomSelect
                 value={String(selectedChildId || '')}
                 onChange={(val) => handleChildChange(Number(val))}
                 options={childOptions}
-                className="w-56 font-black uppercase text-xs"
+                className="w-56 font-medium uppercase text-xs"
                 variant="filter"
               />
             </div>
@@ -225,13 +225,13 @@ export default function ParentChildClass() {
       {isPageLoading && (
         <div className="flex flex-col items-center justify-center py-20 space-y-4 bg-white/40 rounded-3xl border border-white/60">
           <RefreshCw className="h-10 w-10 text-[#4EACAF] animate-spin" />
-          <p className="text-gray-500 font-bold">Đang tải thông tin lớp học...</p>
+          <p className="text-gray-500 font-normal">Đang tải thông tin lớp học...</p>
         </div>
       )}
 
       {/* Error */}
       {errorMessage && (
-        <div className="bg-rose-50 border border-rose-100 rounded-xl p-6 flex gap-4 text-rose-800 text-sm font-bold items-center max-w-2xl mx-auto">
+        <div className="bg-rose-50 border border-rose-100 rounded-xl p-6 flex gap-4 text-rose-800 text-sm font-medium items-center max-w-2xl mx-auto">
           <AlertTriangle className="w-6 h-6 text-rose-500 shrink-0" />
           <span>{errorMessage}</span>
           <button
@@ -250,10 +250,10 @@ export default function ParentChildClass() {
           <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
             <AlertTriangle className="w-8 h-8" />
           </div>
-          <h3 className="text-xl font-black text-slate-800">Chưa có hồ sơ bé nào</h3>
-          <p className="text-slate-500 text-sm font-bold leading-relaxed">
+          <h3 className="text-xl font-bold text-slate-800">Chưa có hồ sơ bé nào</h3>
+          <p className="text-slate-500 text-sm font-normal leading-relaxed">
             Hệ thống không tìm thấy hồ sơ trẻ em nào liên kết với tài khoản phụ huynh này.
-            Vui lòng chuyển qua tab <strong>Hồ sơ của bé</strong> để tạo hồ sơ cho bé.
+            Vui lòng chuyển qua tab <span className="font-semibold text-slate-700">Hồ sơ của bé</span> để tạo hồ sơ cho bé.
           </p>
         </div>
       )}
@@ -264,9 +264,9 @@ export default function ParentChildClass() {
           <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto">
             <School className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-xl font-black text-slate-800">Bé chưa tham gia lớp học</h3>
-          <p className="text-slate-500 text-sm font-bold leading-relaxed">
-            Bé <strong>{selectedChild.fullName}</strong> chưa tham gia lớp học nào trên hệ thống GodotXR.
+          <h3 className="text-xl font-bold text-slate-800">Bé chưa tham gia lớp học</h3>
+          <p className="text-slate-500 text-sm font-normal leading-relaxed">
+            Bé <span className="font-semibold text-slate-700">{selectedChild.fullName}</span> chưa tham gia lớp học nào trên hệ thống GodotXR.
             Vui lòng liên hệ với nhà trường hoặc giáo viên phụ trách để ghi danh bé vào lớp học.
           </p>
         </div>
@@ -289,26 +289,26 @@ export default function ParentChildClass() {
                     <School className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-extrabold text-gray-800 leading-none">{displayClassName}</h3>
-                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1.5">
+                    <h3 className="text-xl font-bold text-gray-800 leading-none">{displayClassName}</h3>
+                    <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mt-1.5">
                       {displayProgramName !== '—' ? `Chương trình: ${displayProgramName}` : 'Lớp học thuộc hệ thống GodotXR'}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="px-3.5 py-1 bg-emerald-50 text-emerald-600 rounded-full font-black text-[10px] uppercase border border-emerald-100">
+                  <span className="px-3.5 py-1 bg-emerald-50 text-emerald-600 rounded-full font-medium text-[10px] uppercase border border-emerald-100">
                     {displayStatus === 'Active' ? 'Đang hoạt động' : displayStatus}
                   </span>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <p className="text-gray-600 font-bold text-sm leading-relaxed italic bg-slate-50/70 p-5 rounded-2xl border border-slate-100/30 whitespace-pre-line">
+                <p className="text-gray-600 font-normal text-sm leading-relaxed italic bg-slate-50/70 p-5 rounded-2xl border border-slate-100/30 whitespace-pre-line">
                   &ldquo;{displayDescription}&rdquo;
                 </p>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-semibold text-gray-500">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-normal text-gray-500">
                   <div className="p-4 bg-slate-50 rounded-2xl">
                     <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider block mb-1">Thời hạn học</span>
                     <span className="text-gray-700 font-medium">{displayStartDate} &rarr; {displayEndDate}</span>
@@ -323,7 +323,7 @@ export default function ParentChildClass() {
                   </div>
                   <div className="p-4 bg-slate-50 rounded-2xl">
                     <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider block mb-1">Trạng thái</span>
-                    <span className="text-emerald-600 font-bold">{displayEnrollmentStatus === 'Active' ? 'Đã ghi danh' : displayEnrollmentStatus}</span>
+                    <span className="text-emerald-600 font-medium">{displayEnrollmentStatus === 'Active' ? 'Đã ghi danh' : displayEnrollmentStatus}</span>
                   </div>
                 </div>
               </div>
@@ -339,20 +339,20 @@ export default function ParentChildClass() {
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-50 pb-6">
                 <div>
-                  <h3 className="text-2xl font-black text-gray-900 leading-none italic">Danh sách bài học</h3>
+                  <h3 className="text-xl font-bold text-gray-900 leading-none italic">Danh sách bài học</h3>
                 </div>
-                <span className="text-xs bg-[#4EACAF]/10 text-[#4EACAF] px-3.5 py-1 rounded-full font-black">
+                <span className="text-xs bg-[#4EACAF]/10 text-[#4EACAF] px-3.5 py-1 rounded-full font-medium">
                   Tổng số: {lessons.length} Chương buổi
                 </span>
               </div>
 
               {lessons.length === 0 ? (
-                <div className="py-12 text-center text-gray-400 font-bold italic text-sm">
+                <div className="py-12 text-center text-gray-400 font-normal italic text-sm">
                   {isLessonsLoading ? 'Đang tải bài học...' : 'Chưa có bài giảng nào được cấu hình cho chương trình này.'}
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <span className="text-[10px] text-[#4EACAF] font-black uppercase tracking-wider block">Bài học của trẻ:</span>
+                  <span className="text-[10px] text-[#4EACAF] font-medium uppercase tracking-wider block">Bài học của trẻ:</span>
                   <div className="space-y-3">
                     {lessons.map((les) => (
                       <div
@@ -360,25 +360,25 @@ export default function ParentChildClass() {
                         className="w-full p-5 rounded-2xl border border-gray-100 bg-white hover:border-[#4EACAF]/40 hover:shadow-xs transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group"
                       >
                         <div className="flex items-start sm:items-center gap-4 flex-1 min-w-0">
-                          <div className="w-10 h-10 rounded-xl bg-[#4EACAF]/10 text-[#4EACAF] flex items-center justify-center shrink-0 font-black text-sm">
+                          <div className="w-10 h-10 rounded-xl bg-[#4EACAF]/10 text-[#4EACAF] flex items-center justify-center shrink-0 font-bold text-sm">
                             {les.lessonOrder}
                           </div>
 
                           <div className="space-y-1.5 flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className="font-extrabold text-base text-gray-800 leading-tight">
+                              <h4 className="font-bold text-base text-gray-800 leading-tight">
                                 {les.lessonName}
                               </h4>
                               {les.targetSkill && (
-                                <span className="text-[10px] uppercase font-black bg-[#4EACAF]/10 text-[#4EACAF] px-2 py-0.5 rounded-md">
+                                <span className="text-[10px] uppercase font-medium bg-[#4EACAF]/10 text-[#4EACAF] px-2 py-0.5 rounded-md">
                                   {les.targetSkill}
                                 </span>
                               )}
                             </div>
                             {les.description && (
-                              <p className="text-xs text-gray-500 font-medium line-clamp-2">{les.description}</p>
+                              <p className="text-xs text-gray-500 font-normal line-clamp-2">{les.description}</p>
                             )}
-                            <div className="flex items-center gap-4 text-xs font-semibold text-gray-400 pt-0.5">
+                            <div className="flex items-center gap-4 text-xs font-normal text-gray-400 pt-0.5">
                               <span className="flex items-center gap-1">
                                 <Clock className="w-3.5 h-3.5 text-[#4EACAF]" />
                                 {les.estimatedDuration} phút
@@ -394,7 +394,7 @@ export default function ParentChildClass() {
                         <button
                           type="button"
                           onClick={() => setActiveLessonDetail(les)}
-                          className="self-end sm:self-center shrink-0 px-4 py-2 bg-slate-50 hover:bg-[#4EACAF] hover:text-white text-slate-600 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-slate-100 hover:border-[#4EACAF] cursor-pointer"
+                          className="self-end sm:self-center shrink-0 px-4 py-2 bg-slate-50 hover:bg-[#4EACAF] hover:text-white text-slate-600 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 border border-slate-100 hover:border-[#4EACAF] cursor-pointer"
                         >
                           <Eye className="w-3.5 h-3.5" />
                           <span>Xem chi tiết</span>
@@ -423,14 +423,14 @@ export default function ParentChildClass() {
                   )}
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest leading-none">Giáo viên: </h4>
-                  <span className="text-base font-extrabold text-gray-800 block mt-1.5 leading-none">
+                  <h4 className="text-sm font-medium text-gray-400 uppercase tracking-widest leading-none">Giáo viên: </h4>
+                  <span className="text-base font-bold text-gray-800 block mt-1.5 leading-none">
                     {displayTeacherName}
                   </span>
                 </div>
               </div>
 
-              <div className="space-y-3 font-semibold text-xs text-gray-600 border-t border-gray-50 pt-4">
+              <div className="space-y-3 font-normal text-xs text-gray-600 border-t border-gray-50 pt-4">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400">Chuyên môn:</span>
                   <span className="text-gray-700 text-right font-medium max-w-[160px]">{displayTeacherSpecialty}</span>
@@ -441,7 +441,7 @@ export default function ParentChildClass() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400">Trạng thái lớp:</span>
-                  <span className="bg-emerald-100/80 text-emerald-800 px-3 py-1 rounded-md font-black text-[11px] uppercase tracking-wider border border-emerald-200 shadow-2xs">
+                  <span className="bg-emerald-100/80 text-emerald-800 px-3 py-1 rounded-md font-medium text-[11px] uppercase tracking-wider border border-emerald-200 shadow-2xs">
                     {displayStatus === 'Active' ? 'Hoạt động tốt' : displayStatus}
                   </span>
                 </div>
@@ -477,39 +477,39 @@ export default function ParentChildClass() {
                     <BookMarked className="w-6 h-6" />
                   </div>
                   <div>
-                    <span className="text-xs bg-[#FF8E8E]/10 text-[#FF8E8E] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider block w-fit">
+                    <span className="text-xs bg-[#FF8E8E]/10 text-[#FF8E8E] px-2.5 py-0.5 rounded-full font-medium uppercase tracking-wider block w-fit">
                       Chương Trình học
                     </span>
-                    <h3 className="text-base font-black text-gray-800 leading-snug mt-1.5">
+                    <h3 className="text-base font-bold text-gray-800 leading-snug mt-1.5">
                       {programDetail?.programName || classroomDetail.programName}
                     </h3>
                   </div>
                 </div>
 
-                <p className="text-xs text-gray-600 leading-relaxed font-bold italic bg-slate-50/70 p-4 rounded-2xl border border-slate-100/50 whitespace-pre-line">
+                <p className="text-xs text-gray-600 leading-relaxed font-normal italic bg-slate-50/70 p-4 rounded-2xl border border-slate-100/50 whitespace-pre-line">
                   {programDetail?.description || 'Chương trình rèn luyện uốn âm đơn kết hợp cột hơi cho trẻ nhỏ.'}
                 </p>
 
-                <div className="space-y-3 pt-1 text-xs font-bold text-gray-600 border-t border-gray-100">
+                <div className="space-y-3 pt-1 text-xs font-normal text-gray-600 border-t border-gray-100">
                   <div className="flex items-center justify-between">
                     <span className="text-gray-400">Độ tuổi phục vụ:</span>
-                    <strong className="text-gray-800 font-extrabold">
+                    <span className="text-gray-800 font-semibold">
                       {programDetail ? `${programDetail.targetAgeFrom} → ${programDetail.targetAgeTo} tuổi` : `${classroomDetail.targetAgeFrom} → ${classroomDetail.targetAgeTo} tuổi`}
-                    </strong>
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-400">Ngôn ngữ áp dụng:</span>
-                    <strong className="text-gray-800 font-extrabold">
+                    <span className="text-gray-800 font-semibold">
                       {(programDetail?.language ?? classroomDetail.programLanguage) === 'Vietnamese' ? 'Tiếng Việt' : (programDetail?.language ?? classroomDetail.programLanguage)}
-                    </strong>
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-400">Số bài giảng:</span>
-                    <strong className="text-gray-800 font-extrabold">{lessons.length} bài học</strong>
+                    <span className="text-gray-800 font-semibold">{lessons.length} bài học</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-400">Học kỳ:</span>
-                    <strong className="text-gray-700 font-extrabold">{classroomDetail.semesterName}</strong>
+                    <span className="text-gray-700 font-semibold">{classroomDetail.semesterName}</span>
                   </div>
                 </div>
               </div>

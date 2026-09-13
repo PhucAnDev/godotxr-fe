@@ -99,7 +99,7 @@ export default function ProfileManagement() {
               <AlertTriangle className="h-5 w-5 text-white" />
             )}
           </div>
-          <div className="flex-1 font-black italic tracking-tight">{alertConfig.message}</div>
+          <div className="flex-1 font-medium tracking-tight">{alertConfig.message}</div>
           <button
             onClick={() => setAlertConfig(null)}
             className="rounded-full p-1 text-white hover:bg-white/10"
@@ -112,17 +112,17 @@ export default function ProfileManagement() {
       {/* Header with title and refresh button */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-1">
         <div className="space-y-1">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight leading-tight">
             Quản Lý <span className="text-[#FF8E8E]">Hồ Sơ Của Bé</span>
           </h1>
-          <p className="text-sm font-medium text-slate-500">
+          <p className="text-sm font-normal text-slate-500">
             Thông tin hồ sơ học tập và rèn luyện thực tế ảo của bé
           </p>
         </div>
         <button
           type="button"
           onClick={() => void fetchMyChildren()}
-          className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white/60 px-6 py-4 text-sm font-bold text-slate-600 transition-all hover:bg-white/80 cursor-pointer active:scale-95 shrink-0 self-start md:self-auto shadow-xs"
+          className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white/60 px-6 py-4 text-sm font-medium text-slate-600 transition-all hover:bg-white/80 cursor-pointer active:scale-95 shrink-0 self-start md:self-auto shadow-xs"
         >
           <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
           Tải lại dữ liệu
@@ -132,7 +132,7 @@ export default function ProfileManagement() {
       {isLoading && children.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 space-y-4">
           <RefreshCw className="h-10 w-10 text-sky-500 animate-spin" />
-          <p className="text-gray-500 font-bold">Đang tải danh sách hồ sơ bé...</p>
+          <p className="text-gray-500 font-normal">Đang tải danh sách hồ sơ bé...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -161,10 +161,10 @@ export default function ProfileManagement() {
                     </div>
                   </div>
                   <div className="space-y-1 text-gray-900 min-w-0 flex-1">
-                    <h4 className="text-2xl font-black truncate" title={child.fullName}>
+                    <h4 className="text-2xl font-bold truncate" title={child.fullName}>
                       {child.fullName}
                     </h4>
-                    <div className="text-xs font-bold opacity-80 space-y-0.5">
+                    <div className="text-xs font-normal opacity-90 space-y-0.5">
                       <p>Tuổi: {child.age}</p>
                       <p>Giới tính: {getGenderText(child.gender)}</p>
                       {child.childType && <p>Phân loại: {getChildTypeLabel(child.childType)}</p>}
@@ -177,8 +177,8 @@ export default function ProfileManagement() {
                 </div>
 
                 {/* Subtle view hint badge */}
-                <div className="mt-4 pt-3 border-t border-black/5 flex items-center justify-between text-[11px] font-bold text-gray-800/70">
-                  <span>Trạng thái: <span className="text-emerald-700 font-extrabold">{child.status === 'Active' ? 'Hoạt động' : 'Tạm dừng'}</span></span>
+                <div className="mt-4 pt-3 border-t border-black/5 flex items-center justify-between text-[11px] font-normal text-gray-800/70">
+                  <span>Trạng thái: <span className="text-emerald-700 font-medium">{child.status === 'Active' ? 'Hoạt động' : 'Tạm dừng'}</span></span>
                   <span className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity text-slate-800">
                     <Eye className="w-3.5 h-3.5" /> Chi tiết
                   </span>
@@ -193,7 +193,7 @@ export default function ProfileManagement() {
         <div className="rounded-3xl border border-dashed border-slate-200 bg-white/50 p-12 text-center space-y-3 max-w-lg mx-auto mt-10">
           <Baby className="w-12 h-12 text-slate-300 mx-auto" />
           <h3 className="text-lg font-bold text-slate-700">Chưa có hồ sơ của bé</h3>
-          <p className="text-sm text-slate-500 font-medium leading-relaxed">
+          <p className="text-sm text-slate-500 font-normal leading-relaxed">
             Hiện tại chưa có hồ sơ của bé nào được kết nối với tài khoản phụ huynh. Vui lòng liên hệ với giáo viên hoặc quản trị viên nhà trường để được hỗ trợ tạo và ghép hồ sơ bé.
           </p>
         </div>
@@ -210,10 +210,10 @@ export default function ProfileManagement() {
                   <Baby className="w-6 h-6" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-slate-800">
+                  <h2 className="text-xl font-bold text-slate-800">
                     Thông Tin Hồ Sơ Bé
                   </h2>
-                  <p className="text-xs font-semibold text-slate-500">
+                  <p className="text-xs font-normal text-slate-500">
                     Chi tiết hồ sơ học tập và can thiệp
                   </p>
                 </div>
@@ -240,15 +240,15 @@ export default function ProfileManagement() {
                   />
                 </div>
                 <div className="space-y-1 min-w-0">
-                  <h3 className="text-2xl font-black text-slate-800 truncate">
+                  <h3 className="text-2xl font-bold text-slate-800 truncate">
                     {selectedChild.fullName}
                   </h3>
                   <div className="flex flex-wrap items-center gap-2 pt-1">
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold bg-sky-100 text-sky-700">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-sky-100 text-sky-700">
                       <User className="w-3 h-3" />
                       {getGenderText(selectedChild.gender)} • {selectedChild.age} tuổi
                     </span>
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-700">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
                       <Activity className="w-3 h-3" />
                       {selectedChild.status === 'Active' ? 'Đang hoạt động' : 'Tạm dừng'}
                     </span>
@@ -259,11 +259,11 @@ export default function ProfileManagement() {
               {/* Detailed Specs Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 space-y-1">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <Award className="w-3.5 h-3.5 text-amber-500" />
                     Cấp độ học tập
                   </span>
-                  <p className="text-sm font-extrabold text-slate-800">
+                  <p className="text-sm font-semibold text-slate-800">
                     {selectedChild.learningLevel === 'Beginner'
                       ? '🎨 Sơ cấp (Beginner)'
                       : selectedChild.learningLevel === 'Intermediate'
@@ -275,11 +275,11 @@ export default function ProfileManagement() {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 space-y-1">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <Activity className="w-3.5 h-3.5 text-teal-500" />
                     Phân loại trẻ
                   </span>
-                  <p className="text-sm font-extrabold text-slate-800">
+                  <p className="text-sm font-semibold text-slate-800">
                     {getChildTypeLabel(selectedChild.childType)}
                   </p>
                 </div>
@@ -287,11 +287,11 @@ export default function ProfileManagement() {
 
               {/* Special Note */}
               <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 space-y-2">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="text-xs font-medium text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-sky-500" />
                   Ghi chú & dặn dò đặc biệt
                 </span>
-                <p className="text-sm font-medium text-slate-700 leading-relaxed italic bg-white p-3 rounded-xl border border-slate-100">
+                <p className="text-sm font-normal text-slate-700 leading-relaxed italic bg-white p-3 rounded-xl border border-slate-100">
                   {selectedChild.note ? selectedChild.note : 'Không có ghi chú đặc biệt nào từ nhà trường.'}
                 </p>
               </div>
@@ -302,7 +302,7 @@ export default function ProfileManagement() {
               <button
                 type="button"
                 onClick={handleCloseDetail}
-                className="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-sm shadow-md transition-all cursor-pointer active:scale-95"
+                className="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-medium text-sm shadow-md transition-all cursor-pointer active:scale-95"
               >
                 Đóng
               </button>

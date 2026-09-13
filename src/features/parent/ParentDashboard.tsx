@@ -218,19 +218,19 @@ export default function ParentDashboard() {
       {/* Header Card */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-1">
         <div className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight leading-tight">
             Chào mừng trở lại, <span className="text-[#FF8E8E]">Phụ huynh</span>
           </h1>
         </div>
         
         {children.length > 1 && (
           <div className="flex items-center gap-3 shrink-0">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Đổi xem bé:</span>
+            <span className="text-[10px] font-medium text-gray-400 uppercase tracking-widest leading-none">Đổi xem bé:</span>
             <CustomSelect
               value={String(selectedChildId || '')}
               onChange={(val) => handleChildChange(Number(val))}
               options={childOptions}
-              className="w-48 font-black uppercase text-xs"
+              className="w-48 font-medium uppercase text-xs"
               variant="filter"
             />
           </div>
@@ -240,12 +240,12 @@ export default function ParentDashboard() {
       {isLoading && (
         <div className="flex flex-col items-center justify-center py-20 space-y-4 bg-white/40 rounded-3xl border border-white/60">
           <RefreshCw className="h-10 w-10 text-[#4EACAF] animate-spin" />
-          <p className="text-gray-500 font-bold">Đang tải dữ liệu hồ sơ trẻ...</p>
+          <p className="text-gray-500 font-normal">Đang tải dữ liệu hồ sơ trẻ...</p>
         </div>
       )}
 
       {errorMessage && (
-        <div className="bg-rose-50 border border-rose-100 rounded-xl p-6 flex gap-4 text-rose-800 text-sm font-bold items-center max-w-2xl mx-auto">
+        <div className="bg-rose-50 border border-rose-100 rounded-xl p-6 flex gap-4 text-rose-800 text-sm font-medium items-center max-w-2xl mx-auto">
           <AlertTriangle className="w-6 h-6 text-rose-500 shrink-0" />
           <span>{errorMessage}</span>
           <button 
@@ -263,10 +263,10 @@ export default function ParentDashboard() {
           <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
             <AlertTriangle className="w-8 h-8" />
           </div>
-          <h3 className="text-xl font-black text-slate-800">Chưa có hồ sơ bé nào</h3>
-          <p className="text-slate-500 text-sm font-bold leading-relaxed">
+          <h3 className="text-xl font-bold text-slate-800">Chưa có hồ sơ bé nào</h3>
+          <p className="text-slate-500 text-sm font-normal leading-relaxed">
             Hệ thống không tìm thấy hồ sơ trẻ em nào liên kết với tài khoản phụ huynh này. 
-            Vui lòng chuyển qua tab <strong>Hồ sơ của bé</strong> để tạo hồ sơ cho bé.
+            Vui lòng chuyển qua tab <span className="font-semibold text-slate-700">Hồ sơ của bé</span> để tạo hồ sơ cho bé.
           </p>
         </div>
       )}
@@ -292,15 +292,15 @@ export default function ParentDashboard() {
                 </div>
                 <div className="flex-1 space-y-4 text-center sm:text-left min-w-0">
                   <div>
-                    <h3 className="text-3xl font-black text-gray-900 truncate">
+                    <h3 className="text-2xl font-bold text-gray-900 truncate">
                       {selectedChild.fullName}{' '}
-                      <span className="text-xl font-medium text-gray-400 whitespace-nowrap">{selectedChild.age} tuổi</span>
+                      <span className="text-lg font-normal text-gray-400 whitespace-nowrap">{selectedChild.age} tuổi</span>
                     </h3>
                   </div>
-                  <div className="grid grid-cols-1 gap-1 text-sm text-gray-600 font-bold">
-                    <p className="truncate"><span className="text-gray-400">Mô-đun hiện tại:</span> {currentModule}</p>
-                    <p><span className="text-gray-400">Cấp độ VR:</span> {vrLevel}</p>
-                    <p><span className="text-gray-400">Tổng số phiên học VR:</span> {results.length}</p>
+                  <div className="grid grid-cols-1 gap-1 text-sm text-gray-600 font-normal">
+                    <p className="truncate"><span className="text-gray-400">Mô-đun hiện tại:</span> <span className="font-medium text-gray-800">{currentModule}</span></p>
+                    <p><span className="text-gray-400">Cấp độ VR:</span> <span className="font-medium text-gray-800">{vrLevel}</span></p>
+                    <p><span className="text-gray-400">Tổng số phiên học VR:</span> <span className="font-medium text-gray-800">{results.length}</span></p>
                   </div>
                 </div>
               </div>
@@ -348,7 +348,7 @@ export default function ParentDashboard() {
                         )}>
                           {hasData && <Flame className="w-5 h-5 fill-current animate-pulse" />}
                         </div>
-                        <span className="text-xs font-bold text-gray-400 uppercase">{day}</span>
+                        <span className="text-xs font-medium text-gray-400 uppercase">{day}</span>
                       </div>
                     );
                   })}
@@ -378,7 +378,7 @@ export default function ParentDashboard() {
                       dataKey="day" 
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{ fill: '#999', fontSize: 12, fontWeight: 600 }} 
+                      tick={{ fill: '#999', fontSize: 12, fontWeight: 500 }} 
                       dy={10}
                     />
                     <YAxis 
@@ -416,9 +416,9 @@ export default function ParentDashboard() {
 function StatCard({ label, value, subtext, color, textColor }: { label: string; value: string; subtext: string; color: string; textColor: string }) {
   return (
     <div className={cn("rounded-xl p-6 flex flex-col justify-center items-center text-center shadow-sm border border-transparent", color, textColor)}>
-      <p className="text-[10px] font-black opacity-80 uppercase tracking-widest mb-2">{label}</p>
-      <p className="text-2xl font-black">{value}</p>
-      {subtext && <p className="text-xs font-bold opacity-75 mt-1">{subtext}</p>}
+      <p className="text-[10px] font-medium opacity-80 uppercase tracking-widest mb-2">{label}</p>
+      <p className="text-2xl font-bold">{value}</p>
+      {subtext && <p className="text-xs font-normal opacity-75 mt-1">{subtext}</p>}
     </div>
   );
 }

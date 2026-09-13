@@ -468,7 +468,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
 
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-1">
         <div className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight leading-tight">
             Lớp Học <span className="text-[#4EACAF]">Của Tôi</span>
           </h1>
         </div>
@@ -490,13 +490,13 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
               <Activity className="mt-0.5 h-5 w-5 shrink-0 animate-pulse" />
             )}
             <div className="space-y-2">
-              <p className="font-semibold">
+              <p className="font-medium">
                 {errorMessage || 'Đang đồng bộ thêm kết quả luyện tập của học sinh...'}
               </p>
               {errorMessage && (
                 <button
                   onClick={() => setReloadSeed((value) => value + 1)}
-                  className="rounded-xl bg-white px-3 py-2 text-xs font-black uppercase tracking-wider text-rose-600 transition-colors hover:bg-rose-100"
+                  className="rounded-xl bg-white px-3 py-2 text-xs font-medium uppercase tracking-wider text-rose-600 transition-colors hover:bg-rose-100"
                 >
                   Tải lại dữ liệu
                 </button>
@@ -513,10 +513,10 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
               <GraduationCap className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-2xl font-black text-slate-800">
+              <p className="text-2xl font-bold text-slate-800">
                 {stats.totalClassesOwned}
               </p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
                 Tổng số lớp
               </p>
             </div>
@@ -529,10 +529,10 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
               <CheckCircle className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-2xl font-black text-slate-800">
+              <p className="text-2xl font-bold text-slate-800">
                 {stats.activeClassesOwned}
               </p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
                 Lớp đang hoạt động
               </p>
             </div>
@@ -545,10 +545,10 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
               <Baby className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-2xl font-black text-slate-800">
+              <p className="text-2xl font-bold text-slate-800">
                 {stats.uniqueChildrenCount}
               </p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
                 Học sinh đang quản lý
               </p>
             </div>
@@ -561,10 +561,10 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
               <TrendingUp className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-2xl font-black text-slate-800">
+              <p className="text-2xl font-bold text-slate-800">
                 {stats.totalResultsRecorded}
               </p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
                 Lượt kết quả ghi nhận
               </p>
             </div>
@@ -580,7 +580,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Tìm theo tên lớp, chương trình, học kỳ hoặc mã lớp"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-4 pr-10 text-sm font-semibold text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-4 pr-10 text-sm font-normal text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
             />
             {searchQuery && (
               <button
@@ -595,7 +595,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
           <select
             value={filterStatus}
             onChange={(event) => setFilterStatus(event.target.value)}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="Active">Đang hoạt động</option>
@@ -607,7 +607,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
           <select
             value={filterLanguage}
             onChange={(event) => setFilterLanguage(event.target.value)}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 outline-none transition-colors focus:border-[#4EACAF] focus:bg-white"
           >
             <option value="ALL">Tất cả ngôn ngữ</option>
             <option value="Tiếng Việt">Tiếng Việt</option>
@@ -618,10 +618,10 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
 
       {teacherClassesList.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm">
-          <p className="text-lg font-black text-slate-700">
+          <p className="text-lg font-bold text-slate-700">
             Không có lớp học nào phù hợp với bộ lọc hiện tại.
           </p>
-          <p className="mt-2 text-sm font-semibold text-slate-400">
+          <p className="mt-2 text-sm font-normal text-slate-400">
             Thử thay đổi từ khóa, trạng thái hoặc ngôn ngữ để hiển thị lại danh sách.
           </p>
         </div>
@@ -649,13 +649,13 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
               >
                 <div className="space-y-5 p-8">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-md bg-slate-100 px-3 py-1 text-[10px] font-mono font-black uppercase text-slate-500">
+                    <span className="rounded-md bg-slate-100 px-3 py-1 text-[10px] font-mono font-medium uppercase text-slate-500">
                       Mã lớp: {classroom.id}
                     </span>
 
                     <span
                       className={cn(
-                        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-wider',
+                        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-wider',
                         statusDetail.bg
                       )}
                     >
@@ -665,20 +665,20 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                   </div>
 
                   <div className="space-y-2">
-                    <h3 className="text-xl font-black leading-tight text-gray-900 transition-colors hover:text-[#4EACAF]">
+                    <h3 className="text-xl font-bold leading-tight text-gray-900 transition-colors hover:text-[#4EACAF]">
                       {classroom.className}
                     </h3>
-                    <p className="min-h-[40px] text-sm font-semibold text-gray-500 line-clamp-2">
+                    <p className="min-h-[40px] text-sm font-normal text-gray-500 line-clamp-2">
                       {classroom.description || 'Chưa có mô tả cho lớp học này.'}
                     </p>
                   </div>
 
                   <div className="space-y-2 rounded-2xl border border-yellow-50 bg-[#FDFCF5] p-4">
-                    <div className="flex items-center gap-2 text-xs font-black text-amber-600">
+                    <div className="flex items-center gap-2 text-xs font-medium text-amber-600">
                       <Sparkles className="h-4.5 w-4.5 text-[#FFA800]" />
                       Chương trình: "{classroom.programName}"
                     </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] font-bold text-gray-500">
+                    <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] font-normal text-gray-500">
                       <span className="flex items-center gap-1">
                         <Globe className="h-3.5 w-3.5 text-gray-400" />
                         Ngôn ngữ: {classroom.programLanguage}
@@ -691,39 +691,39 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
 
                   <div className="grid grid-cols-2 gap-4 border-t border-gray-50 pt-5">
                     <div className="space-y-1">
-                      <span className="block text-[9px] font-black uppercase tracking-wider text-gray-400">
+                      <span className="block text-[9px] font-medium uppercase tracking-wider text-gray-400">
                         Bắt đầu
                       </span>
-                      <span className="flex items-center gap-1.5 text-xs font-bold text-gray-600">
+                      <span className="flex items-center gap-1.5 text-xs font-normal text-gray-600">
                         <Calendar className="h-3.5 w-3.5 text-[#4EACAF]" />
                         {formatDate(classroom.startDate)}
                       </span>
                     </div>
 
                     <div className="space-y-1">
-                      <span className="block text-[9px] font-black uppercase tracking-wider text-gray-400">
+                      <span className="block text-[9px] font-medium uppercase tracking-wider text-gray-400">
                         Sĩ số
                       </span>
-                      <span className="flex items-center gap-1.5 text-xs font-extrabold text-gray-700">
+                      <span className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
                         <Baby className="h-3.5 w-3.5 text-[#FF8E8E]" />
                         {enrolledStudents.length} học sinh
                       </span>
                     </div>
 
                     <div className="space-y-1">
-                      <span className="block text-[9px] font-black uppercase tracking-wider text-gray-400">
+                      <span className="block text-[9px] font-medium uppercase tracking-wider text-gray-400">
                         Học kỳ
                       </span>
-                      <span className="text-xs font-bold text-gray-600">
+                      <span className="text-xs font-normal text-gray-600">
                         {classroom.semesterName}
                       </span>
                     </div>
 
                     <div className="space-y-1">
-                      <span className="block text-[9px] font-black uppercase tracking-wider text-gray-400">
+                      <span className="block text-[9px] font-medium uppercase tracking-wider text-gray-400">
                         Điểm trung bình
                       </span>
-                      <span className="text-xs font-extrabold text-gray-700">
+                      <span className="text-xs font-medium text-gray-700">
                         {averageScore}/100
                       </span>
                     </div>
@@ -740,7 +740,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                       setSelectedClass(classroom);
                       setModalType('DETAILS');
                     }}
-                    className="flex items-center justify-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs font-black text-gray-600 transition-all hover:bg-gray-100"
+                    className="flex items-center justify-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs font-medium text-gray-600 transition-all hover:bg-gray-100"
                   >
                     <Eye className="h-3.5 w-3.5" />
                     Xem chi tiết
@@ -752,7 +752,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                       setModalType('STUDENTS');
                       showToast(`Đang mở danh sách học sinh lớp ${classroom.className}.`);
                     }}
-                    className="flex items-center justify-center gap-1.5 rounded-xl bg-[#4EACAF]/10 px-3 py-2.5 text-xs font-black text-[#4EACAF] transition-all hover:bg-[#4EACAF] hover:text-white"
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-[#4EACAF]/10 px-3 py-2.5 text-xs font-medium text-[#4EACAF] transition-all hover:bg-[#4EACAF] hover:text-white"
                   >
                     <Users className="h-3.5 w-3.5" />
                     Xem học sinh
@@ -764,7 +764,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                       setModalType('PERFORMANCE');
                       showToast(`Đang tổng hợp kết quả cho lớp #${classroom.id}.`, 'info');
                     }}
-                    className="flex items-center justify-center gap-1.5 rounded-xl bg-indigo-50 px-3 py-2.5 text-xs font-black text-indigo-500 transition-all hover:bg-indigo-500 hover:text-white"
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-indigo-50 px-3 py-2.5 text-xs font-medium text-indigo-500 transition-all hover:bg-indigo-500 hover:text-white"
                   >
                     <TrendingUp className="h-3.5 w-3.5" />
                     Xem kết quả
@@ -775,7 +775,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                       setSelectedClass(classroom);
                       setModalType('REPORT');
                     }}
-                    className="col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-rose-50 px-3 py-2.5 text-xs font-black text-[#FF8E8E] transition-all hover:bg-[#FF8E8E] hover:text-white sm:col-span-1"
+                    className="col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-rose-50 px-3 py-2.5 text-xs font-medium text-[#FF8E8E] transition-all hover:bg-[#FF8E8E] hover:text-white sm:col-span-1"
                   >
                     <FileSpreadsheet className="h-3.5 w-3.5" />
                     Tạo báo cáo
@@ -798,13 +798,13 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
             >
               <div className="flex items-center justify-between border-b border-[#C5E1E3] bg-[#E2F2F3] px-8 py-6 text-gray-900">
                 <div className="space-y-1">
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#4EACAF] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#4EACAF] px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white">
                     {modalType === 'DETAILS' && 'Thông tin lớp học'}
                     {modalType === 'STUDENTS' && 'Danh sách học sinh'}
                     {modalType === 'PERFORMANCE' && 'Phân tích kết quả'}
                     {modalType === 'REPORT' && 'Xuất báo cáo'}
                   </span>
-                  <h2 className="text-xl font-black leading-tight">
+                  <h2 className="text-xl font-bold leading-tight">
                     {selectedClass.className}
                   </h2>
                 </div>
@@ -824,48 +824,48 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
               {modalType === 'DETAILS' && (
                 <div className="space-y-6 p-8 text-left">
                   <div className="space-y-2">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-gray-400">
+                    <h4 className="text-xs font-medium uppercase tracking-wider text-gray-400">
                       Mô tả lớp học
                     </h4>
-                    <p className="rounded-2xl border bg-slate-50 p-5 text-sm font-bold leading-relaxed text-gray-700">
+                    <p className="rounded-2xl border bg-slate-50 p-5 text-sm font-normal leading-relaxed text-gray-700">
                       {selectedClass.description || 'Chưa có mô tả chi tiết cho lớp học này.'}
                     </p>
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="rounded-xl border bg-[#FDFCF5] p-4.5">
-                      <span className="block text-[10px] font-bold uppercase text-gray-400">
+                      <span className="block text-[10px] font-medium uppercase text-gray-400">
                         Chương trình
                       </span>
-                      <strong className="text-[#264E50]">
+                      <span className="font-semibold text-[#264E50]">
                         {selectedClass.programName}
-                      </strong>
+                      </span>
                     </div>
 
                     <div className="rounded-xl border bg-[#FDFCF5] p-4.5">
-                      <span className="block text-[10px] font-bold uppercase text-gray-400">
+                      <span className="block text-[10px] font-medium uppercase text-gray-400">
                         Thời gian
                       </span>
-                      <span className="mt-1 block text-xs font-black text-gray-600">
+                      <span className="mt-1 block text-xs font-medium text-gray-600">
                         Từ {formatDate(selectedClass.startDate)} đến{' '}
                         {formatDate(selectedClass.endDate)}
                       </span>
                     </div>
 
                     <div className="rounded-xl border bg-[#FDFCF5] p-4.5">
-                      <span className="block text-[10px] font-bold uppercase text-gray-400">
+                      <span className="block text-[10px] font-medium uppercase text-gray-400">
                         Ngôn ngữ
                       </span>
-                      <strong className="text-[#FF8E8E]">
+                      <span className="font-semibold text-[#FF8E8E]">
                         {selectedClass.programLanguage}
-                      </strong>
+                      </span>
                     </div>
 
                     <div className="rounded-xl border bg-[#FDFCF5] p-4.5">
-                      <span className="block text-[10px] font-bold uppercase text-gray-400">
+                      <span className="block text-[10px] font-medium uppercase text-gray-400">
                         Học kỳ
                       </span>
-                      <span className="mt-1 block text-xs font-black text-gray-600">
+                      <span className="mt-1 block text-xs font-medium text-gray-600">
                         {selectedClass.semesterName}
                       </span>
                     </div>
@@ -875,13 +875,13 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
 
               {modalType === 'STUDENTS' && (
                 <div className="max-h-[50vh] space-y-4 overflow-y-auto p-8">
-                  <div className="flex items-center justify-between border-b pb-3 text-xs font-black uppercase text-gray-400">
+                  <div className="flex items-center justify-between border-b pb-3 text-xs font-medium uppercase text-gray-400">
                     <span>Học sinh ghi danh</span>
                     <span>Trạng thái và ngày vào lớp</span>
                   </div>
 
                   {selectedClassEnrollments.length === 0 ? (
-                    <p className="py-12 text-center text-sm font-semibold italic text-gray-400">
+                    <p className="py-12 text-center text-sm font-normal italic text-gray-400">
                       Không có học sinh nào đang ghi danh lớp này.
                     </p>
                   ) : (
@@ -895,20 +895,20 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                             <Baby className="h-5.5 w-5.5" />
                           </div>
                           <div>
-                            <span className="block text-sm font-extrabold text-gray-800">
+                            <span className="block text-sm font-medium text-gray-800">
                               {enrollment.childFullName}
                             </span>
-                            <span className="mt-1 inline-block rounded bg-[#4EACAF]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#4EACAF]">
+                            <span className="mt-1 inline-block rounded bg-[#4EACAF]/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#4EACAF]">
                               Mức tập: {enrollment.childLearningLevel}
                             </span>
                           </div>
                         </div>
 
                         <div className="text-right">
-                          <span className="block text-xs font-extrabold text-gray-500">
+                          <span className="block text-xs font-medium text-gray-500">
                             {enrollment.status}
                           </span>
-                          <span className="block text-[10px] font-medium text-gray-400">
+                          <span className="block text-[10px] font-normal text-gray-400">
                             {formatDate(enrollment.enrollmentDate)}
                           </span>
                         </div>
@@ -921,7 +921,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
               {modalType === 'PERFORMANCE' && (
                 <div className="max-h-[50vh] space-y-6 overflow-y-auto p-8 text-left">
                   {selectedClassEnrollments.length === 0 ? (
-                    <p className="py-12 text-center text-sm font-semibold italic text-gray-400">
+                    <p className="py-12 text-center text-sm font-normal italic text-gray-400">
                       Chưa có dữ liệu học sinh để tổng hợp kết quả.
                     </p>
                   ) : (
@@ -936,10 +936,10 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                           className="space-y-2 border-b border-gray-50 pb-4"
                         >
                           <div className="flex items-center justify-between text-xs">
-                            <span className="font-black text-gray-800">
+                            <span className="font-medium text-gray-800">
                               {enrollment.childFullName}
                             </span>
-                            <span className="font-black text-[#4EACAF]">
+                            <span className="font-semibold text-[#4EACAF]">
                               {performance.avgScore}/100 điểm trung bình
                             </span>
                           </div>
@@ -960,7 +960,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-between gap-3 text-[10px] font-bold text-gray-400">
+                          <div className="flex items-center justify-between gap-3 text-[10px] font-medium text-gray-400">
                             <span>
                               Hoàn thành: {performance.completionRate}% ·{' '}
                               {performance.totalAttempts} lần ghi nhận
@@ -983,7 +983,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                   </div>
 
                   <div className="mx-auto max-w-md space-y-2">
-                    <h4 className="text-base font-black text-gray-800">
+                    <h4 className="text-base font-bold text-gray-800">
                       Khởi tạo khung báo cáo lớp học
                     </h4>
                     <p className="text-xs text-gray-400">
@@ -992,20 +992,20 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                     </p>
                   </div>
 
-                  <div className="block rounded-2xl border border-yellow-100 bg-[#FFFDF5] p-4.5 text-left text-xs font-semibold text-gray-600">
-                    <strong className="mb-1 block text-[10px] font-extrabold uppercase text-gray-800">
+                  <div className="block rounded-2xl border border-yellow-100 bg-[#FFFDF5] p-4.5 text-left text-xs font-normal text-gray-600">
+                    <span className="mb-1 block text-[10px] font-medium uppercase text-gray-800">
                       Bao gồm:
-                    </strong>
+                    </span>
                     - Tổng quan lớp và chương trình.<br />
                     - Danh sách học sinh đang ghi danh.<br />
                     - Tổng hợp kết quả luyện tập theo học sinh.
                   </div>
 
                   <div className="rounded-2xl border bg-slate-50 p-4 text-left">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
                       Tổng quan nhanh
                     </p>
-                    <p className="mt-2 text-sm font-semibold text-slate-700">
+                    <p className="mt-2 text-sm font-normal text-slate-700">
                       {selectedClassEnrollments.length} học sinh ·{' '}
                       {selectedClassResults.length} kết quả ghi nhận
                     </p>
@@ -1013,7 +1013,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
 
                   {isGeneratingReport && (
                     <div className="space-y-2 animate-pulse">
-                      <div className="flex justify-between text-[11px] font-black uppercase tracking-wider text-[#4EACAF]">
+                      <div className="flex justify-between text-[11px] font-medium uppercase tracking-wider text-[#4EACAF]">
                         <span>Đang xử lý báo cáo...</span>
                         <span>{generationProgress}%</span>
                       </div>
@@ -1029,7 +1029,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                   {!isGeneratingReport && (
                     <button
                       onClick={executeSimulatedReportGeneration}
-                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#4EACAF] py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-sm transition-all hover:bg-[#4EACAF]/90"
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#4EACAF] py-3.5 text-xs font-medium uppercase tracking-wider text-white shadow-sm transition-all hover:bg-[#4EACAF]/90"
                     >
                       <FileDown className="h-4 w-4" />
                       Yêu cầu kết xuất
@@ -1046,7 +1046,7 @@ export default function TeacherClasses({ onNavigate }: TeacherClassesProps) {
                     setIsGeneratingReport(false);
                     setGenerationProgress(0);
                   }}
-                  className="rounded-2xl bg-[#264E50] px-5 py-2.5 text-xs font-black text-white transition-colors hover:bg-[#1E3B3D]"
+                  className="rounded-2xl bg-[#264E50] px-5 py-2.5 text-xs font-medium text-white transition-colors hover:bg-[#1E3B3D]"
                 >
                   Đóng lại
                 </button>

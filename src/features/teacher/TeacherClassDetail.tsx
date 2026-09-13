@@ -597,7 +597,7 @@ export default function TeacherClassDetail({
     return (
       <span
         className={cn(
-          'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border',
+          'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wider border',
           style.bg
         )}
       >
@@ -655,7 +655,7 @@ export default function TeacherClassDetail({
       <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
         <div className="flex items-center gap-3 text-slate-600">
           <Activity className="h-5 w-5 animate-pulse text-[#4EACAF]" />
-          <span className="font-semibold">
+          <span className="font-medium">
             Đang tải chi tiết lớp học của giáo viên từ classrooms, enrollments, child-profile
             và results...
           </span>
@@ -670,12 +670,12 @@ export default function TeacherClassDetail({
         <div className="flex items-start gap-3 text-rose-600">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
           <div className="space-y-3">
-            <p className="font-semibold">
+            <p className="font-medium">
               Không tìm thấy lớp học để hiển thị.
             </p>
             <button
               onClick={() => setReloadSeed((value) => value + 1)}
-              className="rounded-xl bg-[#264E50] px-4 py-2 text-xs font-black uppercase tracking-wider text-white transition-colors hover:bg-[#1E3B3D]"
+              className="rounded-xl bg-[#264E50] px-4 py-2 text-xs font-medium uppercase tracking-wider text-white transition-colors hover:bg-[#1E3B3D]"
             >
               Thử tải lại
             </button>
@@ -702,7 +702,7 @@ export default function TeacherClassDetail({
           >
             <div
               className={cn(
-                'flex items-center gap-4 rounded-3xl border-2 border-white px-6 py-4 text-sm font-bold leading-snug text-white shadow-xl backdrop-blur-md',
+                'flex items-center gap-4 rounded-3xl border-2 border-white px-6 py-4 text-sm font-medium leading-snug text-white shadow-xl backdrop-blur-md',
                 toastMessage.type === 'success'
                   ? 'bg-[#4EACAF]/95'
                   : toastMessage.type === 'info'
@@ -738,7 +738,7 @@ export default function TeacherClassDetail({
               onClick={() => {
                 if (onNavigate) onNavigate('TEACHER_CLASSES');
               }}
-              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#4EACAF] transition-colors hover:text-[#3e8c8f]"
+              className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-[#4EACAF] transition-colors hover:text-[#3e8c8f]"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               Trở lại danh sách lớp học
@@ -746,26 +746,26 @@ export default function TeacherClassDetail({
 
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded bg-[#4EACAF]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider leading-none text-[#4EACAF]">
+                <span className="rounded bg-[#4EACAF]/10 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider leading-none text-[#4EACAF]">
                   Lớp học: {activeClass.id}
                 </span>
                 {renderStatusBadge(classStatus)}
 
               </div>
 
-              <h1 className="text-xl font-black tracking-tight text-slate-800 md:text-25">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-800">
                 {activeClass.className}
               </h1>
 
               <p className="flex flex-wrap items-center gap-2 text-xs leading-relaxed text-slate-500 md:text-sm">
                 <BookOpen className="h-4 w-4 text-[#FF8E8E]" />
                 Chương trình:{' '}
-                <strong className="font-bold text-slate-700">
+                <span className="font-semibold text-slate-700">
                   {activeClass.programName}
-                </strong>
+                </span>
                 <span>({activeClass.programLanguage})</span>
               </p>
-              <p className="text-xs font-semibold text-slate-500">
+              <p className="text-xs font-normal text-slate-500">
                 Giáo viên phụ trách: {activeClass.teacherName}
               </p>
             </div>
@@ -779,7 +779,7 @@ export default function TeacherClassDetail({
                   setCurrentClassroomId(event.target.value);
                   showToast(`Đang chuyển sang lớp #${event.target.value}.`, 'info');
                 }}
-                className="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-xs font-bold uppercase text-slate-700 outline-none transition-colors hover:border-[#4EACAF]/20"
+                className="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-xs font-medium uppercase text-slate-700 outline-none transition-colors hover:border-[#4EACAF]/20"
               >
                 {classrooms.map((classroom) => (
                   <option key={classroom.id} value={String(classroom.id)}>
@@ -791,7 +791,7 @@ export default function TeacherClassDetail({
 
             <button
               onClick={() => triggerSimulation('REPORT', '')}
-              className="flex items-center justify-center gap-1.5 rounded-lg bg-[#4EACAF] px-4 py-2.5 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm transition-all hover:bg-[#3E8C8F]"
+              className="flex items-center justify-center gap-1.5 rounded-lg bg-[#4EACAF] px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-white shadow-sm transition-all hover:bg-[#3E8C8F]"
             >
               <FileSpreadsheet className="h-4 w-4" />
               Tạo báo cáo lớp
@@ -816,13 +816,13 @@ export default function TeacherClassDetail({
               <Activity className="mt-0.5 h-5 w-5 shrink-0 animate-pulse" />
             )}
             <div className="space-y-2">
-              <p className="font-semibold">
+              <p className="font-medium">
                 {errorMessage || 'Đang đồng bộ kết quả học tập của lớp...'}
               </p>
               {errorMessage && (
                 <button
                   onClick={() => setReloadSeed((value) => value + 1)}
-                  className="rounded-xl bg-white px-3 py-2 text-xs font-black uppercase tracking-wider text-rose-600 transition-colors hover:bg-rose-100"
+                  className="rounded-xl bg-white px-3 py-2 text-xs font-medium uppercase tracking-wider text-rose-600 transition-colors hover:bg-rose-100"
                 >
                   Tải lại dữ liệu
                 </button>
@@ -841,7 +841,7 @@ export default function TeacherClassDetail({
             <p className="text-lg font-bold leading-none text-slate-800">
               {summaryMetrics.totalKids} học sinh
             </p>
-            <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+            <p className="mt-1 text-[10px] font-medium uppercase tracking-wider text-slate-400">
               Sĩ số lớp học
             </p>
           </div>
@@ -855,7 +855,7 @@ export default function TeacherClassDetail({
             <p className="text-lg font-bold leading-none text-slate-800">
               {summaryMetrics.avgClassScore}/100
             </p>
-            <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+            <p className="mt-1 text-[10px] font-medium uppercase tracking-wider text-slate-400">
               Điểm trung bình lớp
             </p>
           </div>
@@ -869,7 +869,7 @@ export default function TeacherClassDetail({
             <p className="text-lg font-bold leading-none text-slate-800">
               {summaryMetrics.totalPracticeMinutes} phút
             </p>
-            <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+            <p className="mt-1 text-[10px] font-medium uppercase tracking-wider text-slate-400">
               Tổng thời gian luyện
             </p>
           </div>
@@ -883,7 +883,7 @@ export default function TeacherClassDetail({
             <p className="text-lg font-bold leading-none text-slate-800">
               {summaryMetrics.completionRate}%
             </p>
-            <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+            <p className="mt-1 text-[10px] font-medium uppercase tracking-wider text-slate-400">
               Tỷ lệ hoàn thành
             </p>
           </div>
@@ -899,7 +899,7 @@ export default function TeacherClassDetail({
               showToast(`Đang xem tab ${label.toLowerCase()}.`, 'info');
             }}
             className={cn(
-              'flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all',
+              'flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all',
               activeTab === tab
                 ? 'bg-[#4EACAF] text-white shadow-sm'
                 : 'text-slate-600 hover:bg-slate-50 hover:text-[#4EACAF]'
@@ -920,7 +920,7 @@ export default function TeacherClassDetail({
                 placeholder="Tìm học sinh theo tên hoặc id"
                 value={studentSearchQuery}
                 onChange={(event) => setStudentSearchQuery(event.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-4 pr-10 text-xs font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-4 pr-10 text-xs font-normal text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-[#4EACAF] focus:bg-white"
               />
               {studentSearchQuery && (
                 <button
@@ -936,7 +936,7 @@ export default function TeacherClassDetail({
               <select
                 value={selectedProgressFilter}
                 onChange={(event) => setSelectedProgressFilter(event.target.value)}
-                className="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-4 pr-10 text-xs font-bold uppercase text-slate-700"
+                className="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-4 pr-10 text-xs font-medium uppercase text-slate-700"
               >
                 <option value="ALL">Tiến độ (Tất cả)</option>
                 <option value="Improving">Đang tiến bộ</option>
@@ -952,7 +952,7 @@ export default function TeacherClassDetail({
               <h3 className="text-base font-bold text-slate-800">
                 Danh sách học sinh của lớp
               </h3>
-              <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              <p className="mt-1.5 text-[10px] font-medium uppercase tracking-wider text-slate-400">
                 Dữ liệu ghép từ enrollments và child-profile
               </p>
             </div>
@@ -960,7 +960,7 @@ export default function TeacherClassDetail({
             <div className="overflow-x-auto text-left">
               <table className="w-full border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <tr className="border-b border-slate-100 bg-slate-50 text-xs font-medium uppercase tracking-wider text-slate-500">
                     <th
                       onClick={() => handleSort('ChildId')}
                       className="px-4 py-3 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
@@ -1076,12 +1076,12 @@ export default function TeacherClassDetail({
                     <th className="px-4 py-3 text-right select-none">Tùy chọn</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 text-sm font-bold text-gray-700">
+                <tbody className="divide-y divide-gray-50 text-sm font-normal text-gray-700">
                   {sortedChildren.length === 0 ? (
                     <tr>
                       <td
                         colSpan={8}
-                        className="px-6 py-10 text-center text-sm font-semibold text-slate-400"
+                        className="px-6 py-10 text-center text-sm font-normal text-slate-400"
                       >
                         Không có học sinh nào phù hợp bộ lọc hiện tại.
                       </td>
@@ -1099,31 +1099,31 @@ export default function TeacherClassDetail({
                           key={child.ChildId}
                           className="transition-colors hover:bg-slate-50/50"
                         >
-                          <td className="px-6 py-5 font-mono text-xs font-black text-gray-400">
+                          <td className="px-6 py-5 font-mono text-xs font-medium text-gray-400">
                             {child.ChildId}
                           </td>
                           <td className="px-6 py-5">
-                            <span className="block text-sm font-extrabold text-gray-900 md:text-base">
+                            <span className="block text-sm font-medium text-gray-900 md:text-base">
                               {child.FullName}
                             </span>
-                            <span className="text-[10px] font-medium tracking-tight text-gray-400">
+                            <span className="text-[10px] font-normal tracking-tight text-gray-400">
                               Lớp: {activeClass.id}
                             </span>
                           </td>
-                          <td className="px-6 py-5 text-center font-mono font-black text-gray-500">
+                          <td className="px-6 py-5 text-center font-mono font-normal text-gray-500">
                             {child.Age > 0 ? `${child.Age}t` : '--'}
                           </td>
-                          <td className="px-6 py-5 text-center text-xs font-extrabold">
+                          <td className="px-6 py-5 text-center text-xs font-normal">
                             {child.Gender}
                           </td>
-                          <td className="px-6 py-5 text-xs font-black italic text-[#264E50]">
+                          <td className="px-6 py-5 text-xs font-medium italic text-[#264E50]">
                             {child.LearningLevel}
                           </td>
-                          <td className="px-6 py-5 text-xs font-bold text-gray-700">
+                          <td className="px-6 py-5 text-xs font-normal text-gray-700">
                             {child.ChildType ? (
                               <span
                                 className={cn(
-                                  'inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-widest whitespace-nowrap',
+                                  'inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-widest whitespace-nowrap',
                                   child.ChildType.includes('SSD')
                                     ? 'border-rose-100 bg-rose-50 text-rose-600'
                                     : 'border-teal-100 bg-teal-50 text-teal-600'
@@ -1132,7 +1132,7 @@ export default function TeacherClassDetail({
                                 {getChildTypeLabel(child.ChildType)}
                               </span>
                             ) : (
-                              <span className="text-gray-400 text-xs font-bold italic">
+                              <span className="text-gray-400 text-xs font-normal italic">
                                 Chưa phân loại
                               </span>
                             )}
@@ -1140,7 +1140,7 @@ export default function TeacherClassDetail({
                           <td className="px-6 py-5 text-center">
                             <span
                               className={cn(
-                                'text-base font-black italic',
+                                'text-base font-semibold italic',
                                 analysis.AverageScore >= 85
                                   ? 'text-[#34A853]'
                                   : analysis.AverageScore >= 60
@@ -1154,7 +1154,7 @@ export default function TeacherClassDetail({
                           <td className="px-6 py-5">
                             <span
                               className={cn(
-                                'rounded-full border px-3 py-1.5 text-xs font-bold uppercase tracking-wider',
+                                'rounded-full border px-3 py-1.5 text-xs font-medium uppercase tracking-wider',
                                 progressStyle.bg
                               )}
                             >
@@ -1207,10 +1207,10 @@ export default function TeacherClassDetail({
       {activeTab === 'RESULTS' && (
         <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
           <div className="border-b border-gray-50 bg-white/50 px-8 py-6">
-            <h3 className="text-2xl font-black italic leading-none text-gray-900">
+            <h3 className="text-xl font-bold leading-none text-gray-900">
               Kết quả luyện tập gần đây
             </h3>
-            <p className="mt-2 text-xs font-bold uppercase tracking-widest text-gray-400">
+            <p className="mt-2 text-xs font-medium uppercase tracking-widest text-gray-400">
               Dữ liệu tổng hợp từ results/by-child của từng học sinh trong lớp
             </p>
           </div>
@@ -1218,7 +1218,7 @@ export default function TeacherClassDetail({
           <div className="overflow-x-auto text-left">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="border-b border-gray-100 bg-[#FDFCF5]/60 text-xs font-extrabold uppercase tracking-widest text-[#555]">
+                <tr className="border-b border-gray-100 bg-[#FDFCF5]/60 text-xs font-medium uppercase tracking-widest text-[#555]">
                   <th className="px-8 py-5">Mã kết quả</th>
                   <th className="px-6 py-5">Học sinh</th>
                   <th className="px-6 py-5">Bài tập</th>
@@ -1229,12 +1229,12 @@ export default function TeacherClassDetail({
                   <th className="px-6 py-5">Ngày ghi nhận</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 text-sm font-bold text-gray-700">
+              <tbody className="divide-y divide-gray-50 text-sm font-normal text-gray-700">
                 {classResults.length === 0 ? (
                   <tr>
                     <td
                       colSpan={8}
-                      className="px-6 py-10 text-center text-sm font-semibold text-slate-400"
+                      className="px-6 py-10 text-center text-sm font-normal text-slate-400"
                     >
                       Chưa có kết quả nào cho lớp này.
                     </td>
@@ -1250,10 +1250,10 @@ export default function TeacherClassDetail({
                         key={result.ResultId}
                         className="transition-colors hover:bg-slate-50/50"
                       >
-                        <td className="px-8 py-5 font-mono text-xs font-black text-gray-400">
+                        <td className="px-8 py-5 font-mono text-xs font-medium text-gray-400">
                           {result.ResultId}
                         </td>
-                        <td className="px-6 py-5 font-extrabold text-gray-900">
+                        <td className="px-6 py-5 font-medium text-gray-900">
                           {child?.FullName ?? `Child #${result.ChildId}`}
                         </td>
                         <td className="px-6 py-5 font-mono text-xs text-gray-500">
@@ -1262,7 +1262,7 @@ export default function TeacherClassDetail({
                         <td className="px-6 py-5 text-center">
                           <span
                             className={cn(
-                              'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-wider',
+                              'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider',
                               result.CompletionStatus === 'Completed'
                                 ? 'bg-[#F2FAF4] text-[#34A853]'
                                 : 'bg-rose-50 text-rose-500'
@@ -1278,18 +1278,18 @@ export default function TeacherClassDetail({
                           {result.DurationSeconds}s
                         </td>
                         <td className="px-6 py-5 text-center">
-                          <strong
+                          <span
                             className={cn(
-                              'text-base italic',
+                              'text-base font-semibold italic',
                               result.Score >= 85
                                 ? 'text-[#4EACAF]'
                                 : 'text-rose-500'
                             )}
                           >
                             {result.Score}đ
-                          </strong>
+                          </span>
                         </td>
-                        <td className="px-6 py-5 text-xs font-medium text-gray-400">
+                        <td className="px-6 py-5 text-xs font-normal text-gray-400">
                           {result.CreatedAt || '--'}
                         </td>
                       </tr>
@@ -1305,7 +1305,7 @@ export default function TeacherClassDetail({
       {activeTab === 'ANALYSES' && (
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
           {childrenInClass.length === 0 ? (
-            <div className="rounded-xl border border-slate-100 bg-white p-8 text-sm font-semibold text-slate-400 shadow-sm">
+            <div className="rounded-xl border border-slate-100 bg-white p-8 text-sm font-normal text-slate-400 shadow-sm">
               Chưa có học sinh nào trong lớp để phân tích.
             </div>
           ) : (
@@ -1321,16 +1321,16 @@ export default function TeacherClassDetail({
                 >
                   <div className="flex items-start justify-between gap-4 border-b pb-4">
                     <div>
-                      <h4 className="text-lg font-black leading-none text-gray-800">
+                      <h4 className="text-lg font-bold leading-none text-gray-800">
                         {child.FullName}
                       </h4>
-                      <span className="mt-2 block text-[10px] font-extrabold tracking-wider text-gray-400">
+                      <span className="mt-2 block text-[10px] font-normal tracking-wider text-gray-400">
                         Trình độ: {child.LearningLevel}
                       </span>
                     </div>
                     <span
                       className={cn(
-                        'rounded-full border px-3.5 py-1.5 text-xs font-black uppercase tracking-wide',
+                        'rounded-full border px-3.5 py-1.5 text-xs font-medium uppercase tracking-wide',
                         statusStyle.bg
                       )}
                     >
@@ -1340,44 +1340,44 @@ export default function TeacherClassDetail({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="rounded-2xl bg-[#FDFCF5] p-3.5">
-                      <span className="block text-[9px] font-black uppercase tracking-wider text-[#4EACAF]">
+                      <span className="block text-[9px] font-medium uppercase tracking-wider text-[#4EACAF]">
                         Điểm trung bình
                       </span>
-                      <strong className="mt-1 block text-xl font-black text-gray-900">
+                      <span className="mt-1 block text-xl font-bold text-gray-900">
                         {analysis.AverageScore} điểm
-                      </strong>
+                      </span>
                     </div>
                     <div className="rounded-2xl bg-[#FFFDF5] p-3.5">
-                      <span className="block text-[9px] font-black uppercase tracking-wider text-[#FF8E8E]">
+                      <span className="block text-[9px] font-medium uppercase tracking-wider text-[#FF8E8E]">
                         Hoàn thành
                       </span>
-                      <strong className="mt-1 block text-xl font-black text-gray-900">
+                      <span className="mt-1 block text-xl font-bold text-gray-900">
                         {analysis.CompletionRate}%
-                      </strong>
+                      </span>
                     </div>
                     <div className="rounded-2xl bg-slate-50 p-3.5">
-                      <span className="block text-[9px] font-black uppercase tracking-wider text-slate-500">
+                      <span className="block text-[9px] font-medium uppercase tracking-wider text-slate-500">
                         Tổng luyện tập
                       </span>
-                      <strong className="mt-1 block text-sm font-black text-gray-700">
+                      <span className="mt-1 block text-sm font-semibold text-gray-700">
                         {analysis.TotalPracticeMinutes} phút
-                      </strong>
+                      </span>
                     </div>
                     <div className="rounded-2xl bg-slate-50 p-3.5">
-                      <span className="block text-[9px] font-black uppercase tracking-wider text-slate-500">
+                      <span className="block text-[9px] font-medium uppercase tracking-wider text-slate-500">
                         Số kết quả
                       </span>
-                      <strong className="mt-1 block text-sm font-black text-gray-700">
+                      <span className="mt-1 block text-sm font-semibold text-gray-700">
                         {(resultsByChildId[child.ChildId] ?? []).length} lần luyện
-                      </strong>
+                      </span>
                     </div>
                   </div>
 
                   <div className="space-y-1.5 pt-2">
-                    <span className="block text-[10px] font-black uppercase tracking-wider text-gray-400">
+                    <span className="block text-[10px] font-medium uppercase tracking-wider text-gray-400">
                       Đề xuất hỗ trợ:
                     </span>
-                    <p className="rounded-2xl border border-emerald-100/30 bg-emerald-50/50 p-3.5 text-xs font-bold leading-relaxed text-[#264E50]/90">
+                    <p className="rounded-2xl border border-emerald-100/30 bg-emerald-50/50 p-3.5 text-xs font-normal leading-relaxed text-[#264E50]/90">
                       "{analysis.Recommendation}"
                     </p>
                   </div>
@@ -1391,40 +1391,40 @@ export default function TeacherClassDetail({
       {activeTab === 'PROGRAM' && (
         <div className="space-y-4 rounded-xl border border-gray-100 bg-white p-8 shadow-sm md:p-10">
           <div className="max-w-2xl space-y-4">
-            <h3 className="text-3xl font-black leading-none tracking-tight text-gray-900">
+            <h3 className="text-2xl font-bold leading-none tracking-tight text-gray-900">
               {activeClass.programName}
             </h3>
-            <p className="text-sm font-semibold leading-relaxed text-gray-500">
+            <p className="text-sm font-normal leading-relaxed text-gray-500">
               {activeClass.description || 'Chưa có mô tả chi tiết cho lớp học này.'}
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 pt-4 sm:grid-cols-3">
             <div className="space-y-1 rounded-2xl border bg-[#FDFCF5] p-5">
-              <span className="block text-[9px] font-black uppercase tracking-wider text-gray-400">
+              <span className="block text-[9px] font-medium uppercase tracking-wider text-gray-400">
                 Độ tuổi mục tiêu
               </span>
-              <strong className="text-base font-black text-gray-800">
+              <span className="text-base font-semibold text-gray-800">
                 {activeClass.targetAgeFrom} - {activeClass.targetAgeTo} tuổi
-              </strong>
+              </span>
             </div>
 
             <div className="space-y-1 rounded-2xl border bg-[#FDFCF5] p-5">
-              <span className="block text-[9px] font-black uppercase tracking-wider text-gray-400">
+              <span className="block text-[9px] font-medium uppercase tracking-wider text-gray-400">
                 Ngôn ngữ
               </span>
-              <strong className="text-base font-black text-[#4EACAF]">
+              <span className="text-base font-semibold text-[#4EACAF]">
                 {activeClass.programLanguage}
-              </strong>
+              </span>
             </div>
 
             <div className="space-y-1 rounded-2xl border bg-[#FDFCF5] p-5">
-              <span className="block text-[9px] font-black uppercase tracking-wider text-gray-400">
+              <span className="block text-[9px] font-medium uppercase tracking-wider text-gray-400">
                 Học kỳ
               </span>
-              <strong className="text-base font-black text-indigo-500">
+              <span className="text-base font-semibold text-indigo-500">
                 {activeClass.semesterName}
-              </strong>
+              </span>
             </div>
           </div>
 
@@ -1432,10 +1432,10 @@ export default function TeacherClassDetail({
             <div className="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
               <Calendar className="mt-0.5 h-5 w-5 shrink-0 text-[#4EACAF]" />
               <div>
-                <p className="text-xs font-black uppercase tracking-wider text-slate-500">
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
                   Thời gian lớp học
                 </p>
-                <p className="mt-1 text-sm font-semibold text-slate-700">
+                <p className="mt-1 text-sm font-normal text-slate-700">
                   Từ {formatDate(activeClass.startDate)} đến{' '}
                   {formatDate(activeClass.endDate)}
                 </p>
@@ -1445,10 +1445,10 @@ export default function TeacherClassDetail({
             <div className="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
               <GraduationCap className="mt-0.5 h-5 w-5 shrink-0 text-[#FF8E8E]" />
               <div>
-                <p className="text-xs font-black uppercase tracking-wider text-slate-500">
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
                   Tổng quan lớp
                 </p>
-                <p className="mt-1 text-sm font-semibold text-slate-700">
+                <p className="mt-1 text-sm font-normal text-slate-700">
                   {activeClass.enrollmentCount} học sinh, giáo viên{' '}
                   {activeClass.teacherName}
                 </p>
@@ -1458,10 +1458,10 @@ export default function TeacherClassDetail({
             <div className="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
               <Info className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
               <div>
-                <p className="text-xs font-black uppercase tracking-wider text-slate-500">
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
                   Trạng thái đồng bộ
                 </p>
-                <p className="mt-1 text-sm font-semibold text-slate-700">
+                <p className="mt-1 text-sm font-normal text-slate-700">
                   Chi tiết lớp học đang dùng classrooms + enrollments + child-profile +
                   results.
                 </p>
@@ -1471,10 +1471,10 @@ export default function TeacherClassDetail({
             <div className="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
               <ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-indigo-500" />
               <div>
-                <p className="text-xs font-black uppercase tracking-wider text-slate-500">
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
                   Lưu ý flow
                 </p>
-                <p className="mt-1 text-sm font-semibold text-slate-700">
+                <p className="mt-1 text-sm font-normal text-slate-700">
                   Nếu truy cập bằng ID giả lập cũ, trang sẽ tự chuyển hướng sang lớp
                   hợp lệ đầu tiên từ API.
                 </p>

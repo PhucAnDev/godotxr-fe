@@ -1534,7 +1534,7 @@ export default function ProgressAnalysis() {
     };
     const style = styler[level] || styler.Stable;
     return (
-      <span className={cn("inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border", style.bg)}>
+      <span className={cn("inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wider border", style.bg)}>
         <span className={cn("w-1.5 h-1.5 rounded-full animate-ping", style.dot)} />
         {style.label}
       </span>
@@ -1597,7 +1597,7 @@ export default function ProgressAnalysis() {
 
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-1 relative z-20">
         <div className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight leading-tight">
             Phân Tích <span className="text-[#4EACAF]">Tiến Độ</span>
           </h1>
         </div>
@@ -1608,7 +1608,7 @@ export default function ProgressAnalysis() {
             <Baby className="w-5 h-5" />
           </div>
           <div className="space-y-1">
-            <h4 className="font-bold text-[10px] text-slate-400 uppercase tracking-wider leading-none">Học sinh rèn luyện:</h4>
+            <h4 className="font-medium text-[10px] text-slate-400 uppercase tracking-wider leading-none">Học sinh rèn luyện:</h4>
             <CustomSelect
               value={selectedChildId}
               onChange={(val) => {
@@ -1623,7 +1623,7 @@ export default function ProgressAnalysis() {
                   avatarUrl: resolveAvatarUrl(kd.Avatar, kd.FullName, 'bottts')
                 }))
               ]}
-              className="min-w-[240px] font-black"
+              className="min-w-[240px] font-medium"
             />
           </div>
         </div>
@@ -1639,8 +1639,8 @@ export default function ProgressAnalysis() {
             <Activity className="w-5 h-5 text-[#4EACAF]" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-800 leading-none">{metrics.totalEx}</p>
-            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Tổng bài tập</p>
+            <p className="text-2xl font-bold text-slate-800 leading-none">{metrics.totalEx}</p>
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mt-1.5">Tổng bài tập</p>
           </div>
         </div>
 
@@ -1650,10 +1650,10 @@ export default function ProgressAnalysis() {
             <Clock className="w-5 h-5 text-[#FF8E8E]" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-800 leading-none">
+            <p className="text-2xl font-bold text-slate-800 leading-none">
               {metrics.practiceTime} m
             </p>
-            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Thời lượng tập VR</p>
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mt-1.5">Thời lượng tập VR</p>
           </div>
         </div>
 
@@ -1663,10 +1663,10 @@ export default function ProgressAnalysis() {
             <Award className="w-5 h-5 text-indigo-500" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-800 leading-none">
+            <p className="text-2xl font-bold text-slate-800 leading-none">
               {metrics.avgScore}/100
             </p>
-            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Điểm bình quân</p>
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mt-1.5">Điểm bình quân</p>
           </div>
         </div>
 
@@ -1676,10 +1676,10 @@ export default function ProgressAnalysis() {
             <BookOpen className="w-5 h-5 text-emerald-600" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-800 leading-none">
-              {vocabularyAnalysis.totalWords} <span className="text-xs font-bold text-slate-400">từ</span>
+            <p className="text-2xl font-bold text-slate-800 leading-none">
+              {vocabularyAnalysis.totalWords} <span className="text-xs font-medium text-slate-400">từ</span>
             </p>
-            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Vốn từ đã học</p>
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mt-1.5">Vốn từ đã học</p>
           </div>
         </div>
 
@@ -1689,12 +1689,12 @@ export default function ProgressAnalysis() {
             <Mic className="w-5 h-5 text-[#20D0D4]" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-800 leading-none flex items-center">
+            <p className="text-2xl font-bold text-slate-800 leading-none flex items-center">
               <span className="text-emerald-600">{vocabularyAnalysis.totalCorrect}</span>
               <span className="text-slate-300 mx-1 text-lg font-normal">/</span>
               <span className="text-rose-500">{vocabularyAnalysis.totalWrong}</span>
             </p>
-            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Nói đúng / sai</p>
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mt-1.5">Nói đúng / sai</p>
           </div>
         </div>
 
@@ -1712,8 +1712,8 @@ export default function ProgressAnalysis() {
                 <Filter className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="font-extrabold text-sm leading-tight text-slate-800">Bộ lọc Thống kê Biểu đồ</h4>
-                <p className="text-[11px] text-slate-400 font-medium">Áp dụng bộ lọc bài học và thời gian cho cả 2 biểu đồ bên dưới</p>
+                <h4 className="font-bold text-sm leading-tight text-slate-800">Bộ lọc Thống kê Biểu đồ</h4>
+                <p className="text-[11px] text-slate-400 font-normal">Áp dụng bộ lọc bài học và thời gian cho cả 2 biểu đồ bên dưới</p>
               </div>
             </div>
 
@@ -1724,7 +1724,7 @@ export default function ProgressAnalysis() {
                 <select
                   value={speechSelectedLessonId}
                   onChange={(e) => setSpeechSelectedLessonId(e.target.value)}
-                  className="bg-transparent text-xs font-bold text-slate-700 outline-none w-full cursor-pointer"
+                  className="bg-transparent text-xs font-medium text-slate-700 outline-none w-full cursor-pointer"
                 >
                   <option value="ALL">Tất cả bài học</option>
                   {allLessons.map((l) => (
@@ -1741,7 +1741,7 @@ export default function ProgressAnalysis() {
                   type="button"
                   onClick={() => setSpeechTimeframe('week')}
                   className={cn(
-                    "px-3 py-1.5 text-xs font-bold rounded-md transition-all text-center",
+                    "px-3 py-1.5 text-xs font-medium rounded-md transition-all text-center",
                     speechTimeframe === 'week' ? "bg-white text-[#20D0D4] shadow-xs" : "text-slate-500 hover:text-slate-800"
                   )}
                 >
@@ -1751,7 +1751,7 @@ export default function ProgressAnalysis() {
                   type="button"
                   onClick={() => setSpeechTimeframe('month')}
                   className={cn(
-                    "px-3 py-1.5 text-xs font-bold rounded-md transition-all text-center",
+                    "px-3 py-1.5 text-xs font-medium rounded-md transition-all text-center",
                     speechTimeframe === 'month' ? "bg-white text-[#20D0D4] shadow-xs" : "text-slate-500 hover:text-slate-800"
                   )}
                 >
@@ -1761,7 +1761,7 @@ export default function ProgressAnalysis() {
                   type="button"
                   onClick={() => setSpeechTimeframe('semester')}
                   className={cn(
-                    "px-3 py-1.5 text-xs font-bold rounded-md transition-all text-center",
+                    "px-3 py-1.5 text-xs font-medium rounded-md transition-all text-center",
                     speechTimeframe === 'semester' ? "bg-white text-[#20D0D4] shadow-xs" : "text-slate-500 hover:text-slate-800"
                   )}
                 >
@@ -1773,14 +1773,14 @@ export default function ProgressAnalysis() {
 
           {/* Sub-Filter Toolbar (Dedicated fixed sub-bar so top bar never jitters) */}
           <div className="px-4 py-2 bg-slate-50/80 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 min-h-[42px]">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+            <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
               <Calendar className="w-3.5 h-3.5 text-[#20D0D4]" />
               <span>Phạm vi thời gian chi tiết:</span>
             </div>
 
             <div className="flex items-center gap-2">
               {speechTimeframe === 'week' && (
-                <span className="text-xs font-bold text-slate-600 bg-white px-3 py-1 rounded-md border border-slate-200/80 shadow-2xs">
+                <span className="text-xs font-medium text-slate-600 bg-white px-3 py-1 rounded-md border border-slate-200/80 shadow-2xs">
                   7 ngày trong tuần hiện tại (Thứ 2 - Chủ Nhật)
                 </span>
               )}
@@ -1791,7 +1791,7 @@ export default function ProgressAnalysis() {
                   <select
                     value={speechMonth}
                     onChange={(e) => setSpeechMonth(Number(e.target.value))}
-                    className="bg-transparent font-extrabold text-xs text-[#20D0D4] outline-none cursor-pointer"
+                    className="bg-transparent font-medium text-xs text-[#20D0D4] outline-none cursor-pointer"
                   >
                     {[
                       'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4',
@@ -1814,7 +1814,7 @@ export default function ProgressAnalysis() {
                       type="button"
                       onClick={() => setSpeechSemester(String(sem.id))}
                       className={cn(
-                        "px-2.5 py-1 rounded-md text-xs font-bold transition-all border",
+                        "px-2.5 py-1 rounded-md text-xs font-medium transition-all border",
                         speechSemester === String(sem.id)
                           ? "bg-[#20D0D4] text-white border-[#20D0D4] shadow-2xs"
                           : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
@@ -1828,7 +1828,7 @@ export default function ProgressAnalysis() {
                     type="button"
                     onClick={() => setSpeechSemester('HK1')}
                     className={cn(
-                      "px-2.5 py-1 rounded-md text-xs font-bold transition-all border",
+                      "px-2.5 py-1 rounded-md text-xs font-medium transition-all border",
                       speechSemester === 'HK1'
                         ? "bg-[#20D0D4] text-white border-[#20D0D4] shadow-2xs"
                         : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
@@ -1840,7 +1840,7 @@ export default function ProgressAnalysis() {
                     type="button"
                     onClick={() => setSpeechSemester('HK2')}
                     className={cn(
-                      "px-2.5 py-1 rounded-md text-xs font-bold transition-all border",
+                      "px-2.5 py-1 rounded-md text-xs font-medium transition-all border",
                       speechSemester === 'HK2'
                         ? "bg-[#20D0D4] text-white border-[#20D0D4] shadow-2xs"
                         : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
@@ -1852,7 +1852,7 @@ export default function ProgressAnalysis() {
                     type="button"
                     onClick={() => setSpeechSemester('ALL_YEAR')}
                     className={cn(
-                      "px-2.5 py-1 rounded-md text-xs font-bold transition-all border",
+                      "px-2.5 py-1 rounded-md text-xs font-medium transition-all border",
                       speechSemester === 'ALL_YEAR'
                         ? "bg-[#20D0D4] text-white border-[#20D0D4] shadow-2xs"
                         : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
@@ -1877,11 +1877,11 @@ export default function ProgressAnalysis() {
                   <Activity className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-slate-800 text-base leading-tight">Điểm số & Thời lượng rèn luyện</h3>
-                  <p className="text-xs text-slate-400 font-medium">Thống kê điểm & thời gian VR theo bộ lọc trên</p>
+                  <h3 className="font-bold text-slate-800 text-base leading-tight">Điểm số & Thời lượng rèn luyện</h3>
+                  <p className="text-xs text-slate-400 font-normal">Thống kê điểm & thời gian VR theo bộ lọc trên</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 text-xs font-bold">
+              <div className="flex items-center gap-3 text-xs font-medium">
                 <div className="flex items-center gap-1.5 text-[#4EACAF]">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#4EACAF] inline-block" />
                   <span>Thời lượng (phút)</span>
@@ -1897,11 +1897,11 @@ export default function ProgressAnalysis() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={vrResultsChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12, fontWeight: 700 }} />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12, fontWeight: 500 }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12 }} />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#1E293B', borderRadius: '12px', color: '#fff', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2)' }}
-                    labelStyle={{ fontWeight: 800, color: '#94A3B8' }}
+                    labelStyle={{ fontWeight: 600, color: '#94A3B8' }}
                     labelFormatter={(label, items) => {
                       const item = items?.[0]?.payload;
                       return item ? `${item.name} (${label})` : label;
@@ -1923,11 +1923,11 @@ export default function ProgressAnalysis() {
                   <TrendingUp className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-slate-800 text-base leading-tight">Hoạt động luyện tập phát âm</h3>
-                  <p className="text-xs text-slate-400 font-medium">Tỉ lệ chính xác âm lời nói theo bộ lọc trên</p>
+                  <h3 className="font-bold text-slate-800 text-base leading-tight">Hoạt động luyện tập phát âm</h3>
+                  <p className="text-xs text-slate-400 font-normal">Tỉ lệ chính xác âm lời nói theo bộ lọc trên</p>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 text-xs font-bold text-[#20D0D4]">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-[#20D0D4]">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#20D0D4] inline-block animate-pulse" />
                 <span>Độ chính xác (%)</span>
               </div>
@@ -1982,14 +1982,14 @@ export default function ProgressAnalysis() {
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-extrabold text-slate-800 text-base sm:text-lg leading-tight tracking-tight whitespace-nowrap">
+                <h3 className="font-bold text-slate-800 text-base sm:text-lg leading-tight tracking-tight whitespace-nowrap">
                   Phân tích Vốn Từ Vựng &amp; Luyện Phát Âm của Trẻ
                 </h3>
-                <span className="bg-emerald-50 text-emerald-700 text-[11px] font-black px-2 py-0.5 rounded-full border border-emerald-200 whitespace-nowrap shrink-0">
+                <span className="bg-emerald-50 text-emerald-700 text-[11px] font-medium px-2 py-0.5 rounded-full border border-emerald-200 whitespace-nowrap shrink-0">
                   {vocabularyAnalysis.totalWords} từ vựng
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-medium mt-0.5 whitespace-nowrap truncate">
+              <p className="text-xs text-slate-400 font-normal mt-0.5 whitespace-nowrap truncate">
                 Chi tiết các từ vựng bé đã rèn luyện, số lần nói đúng/sai và phân tích lỗi phát âm
               </p>
             </div>
@@ -2002,9 +2002,9 @@ export default function ProgressAnalysis() {
                 type="button"
                 onClick={() => setVocabTimeScope('ALL_TIME')}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap text-center",
+                  "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap text-center",
                   vocabTimeScope === 'ALL_TIME'
-                    ? "bg-white text-slate-800 shadow-xs font-black"
+                    ? "bg-white text-slate-800 shadow-xs font-semibold"
                     : "text-slate-500 hover:text-slate-800"
                 )}
               >
@@ -2014,9 +2014,9 @@ export default function ProgressAnalysis() {
                 type="button"
                 onClick={() => setVocabTimeScope('FILTERED')}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap text-center",
+                  "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap text-center",
                   vocabTimeScope === 'FILTERED'
-                    ? "bg-white text-slate-800 shadow-xs font-black"
+                    ? "bg-white text-slate-800 shadow-xs font-semibold"
                     : "text-slate-500 hover:text-slate-800"
                 )}
               >
@@ -2024,9 +2024,9 @@ export default function ProgressAnalysis() {
               </button>
             </div>
 
-            <div className="flex items-center gap-1.5 text-xs font-bold bg-cyan-50/70 text-cyan-800 px-3 py-1.5 rounded-xl border border-cyan-100 shrink-0 whitespace-nowrap">
+            <div className="flex items-center gap-1.5 text-xs font-medium bg-cyan-50/70 text-cyan-800 px-3 py-1.5 rounded-xl border border-cyan-100 shrink-0 whitespace-nowrap">
               <Mic className="w-3.5 h-3.5 text-[#20D0D4] shrink-0" />
-              <span>Chính xác TB: <strong className="font-black text-cyan-900">{vocabularyAnalysis.overallSpokenAccuracy}%</strong> ({vocabularyAnalysis.totalCorrect} đúng / {vocabularyAnalysis.totalWrong} sai)</span>
+              <span>Chính xác TB: <span className="font-semibold text-cyan-900">{vocabularyAnalysis.overallSpokenAccuracy}%</span> ({vocabularyAnalysis.totalCorrect} đúng / {vocabularyAnalysis.totalWrong} sai)</span>
             </div>
           </div>
         </div>
@@ -2044,13 +2044,13 @@ export default function ProgressAnalysis() {
             )}
           >
             <div className="min-w-0">
-              <p className={cn("text-[11px] font-bold uppercase tracking-wider whitespace-nowrap truncate", vocabStatusFilter === 'ALL' ? "text-slate-300" : "text-slate-400")}>
+              <p className={cn("text-[11px] font-medium uppercase tracking-wider whitespace-nowrap truncate", vocabStatusFilter === 'ALL' ? "text-slate-300" : "text-slate-400")}>
                 Tất cả từ đã học
               </p>
               <div className="flex items-baseline gap-1.5 mt-0.5 whitespace-nowrap">
-                <span className="text-lg font-black leading-tight">{vocabularyAnalysis.totalWords}</span>
+                <span className="text-lg font-bold leading-tight">{vocabularyAnalysis.totalWords}</span>
                 {vocabTimeScope === 'FILTERED' && (
-                  <span className={cn("text-[10px] font-bold whitespace-nowrap", vocabStatusFilter === 'ALL' ? "text-slate-300" : "text-slate-400")}>
+                  <span className={cn("text-[10px] font-medium whitespace-nowrap", vocabStatusFilter === 'ALL' ? "text-slate-300" : "text-slate-400")}>
                     ({vocabularyAnalysis.timeframePracticedWords} có lượt)
                   </span>
                 )}
@@ -2070,10 +2070,10 @@ export default function ProgressAnalysis() {
             )}
           >
             <div className="min-w-0">
-              <p className={cn("text-[11px] font-bold uppercase tracking-wider whitespace-nowrap truncate", vocabStatusFilter === 'MASTERED' ? "text-emerald-100" : "text-emerald-600")}>
+              <p className={cn("text-[11px] font-medium uppercase tracking-wider whitespace-nowrap truncate", vocabStatusFilter === 'MASTERED' ? "text-emerald-100" : "text-emerald-600")}>
                 Đã thành thạo (&ge;80%)
               </p>
-              <p className="text-lg font-black leading-tight mt-0.5">{vocabularyAnalysis.masteredCount}</p>
+              <p className="text-lg font-bold leading-tight mt-0.5">{vocabularyAnalysis.masteredCount}</p>
             </div>
             <CheckCircle2 className={cn("w-4 h-4 shrink-0 ml-1", vocabStatusFilter === 'MASTERED' ? "text-emerald-100" : "text-emerald-600")} />
           </button>
@@ -2089,10 +2089,10 @@ export default function ProgressAnalysis() {
             )}
           >
             <div className="min-w-0">
-              <p className={cn("text-[11px] font-bold uppercase tracking-wider whitespace-nowrap truncate", vocabStatusFilter === 'PRACTICING' ? "text-cyan-100" : "text-cyan-600")}>
+              <p className={cn("text-[11px] font-medium uppercase tracking-wider whitespace-nowrap truncate", vocabStatusFilter === 'PRACTICING' ? "text-cyan-100" : "text-cyan-600")}>
                 Đang rèn luyện (50-79%)
               </p>
-              <p className="text-lg font-black leading-tight mt-0.5">{vocabularyAnalysis.practicingCount}</p>
+              <p className="text-lg font-bold leading-tight mt-0.5">{vocabularyAnalysis.practicingCount}</p>
             </div>
             <RefreshCw className={cn("w-4 h-4 shrink-0 ml-1", vocabStatusFilter === 'PRACTICING' ? "text-cyan-100" : "text-cyan-600")} />
           </button>
@@ -2108,10 +2108,10 @@ export default function ProgressAnalysis() {
             )}
           >
             <div className="min-w-0">
-              <p className={cn("text-[11px] font-bold uppercase tracking-wider whitespace-nowrap truncate", vocabStatusFilter === 'NEEDS_HELP' ? "text-rose-100" : "text-rose-600")}>
+              <p className={cn("text-[11px] font-medium uppercase tracking-wider whitespace-nowrap truncate", vocabStatusFilter === 'NEEDS_HELP' ? "text-rose-100" : "text-rose-600")}>
                 Cần chú ý / Sai (&lt;50%)
               </p>
-              <p className="text-lg font-black leading-tight mt-0.5">{vocabularyAnalysis.needsHelpCount}</p>
+              <p className="text-lg font-bold leading-tight mt-0.5">{vocabularyAnalysis.needsHelpCount}</p>
             </div>
             <AlertTriangle className={cn("w-4 h-4 shrink-0 ml-1", vocabStatusFilter === 'NEEDS_HELP' ? "text-rose-100" : "text-rose-600")} />
           </button>
@@ -2125,7 +2125,7 @@ export default function ProgressAnalysis() {
               placeholder="Tìm nhanh từ vựng (ví dụ: quả táo, bánh quy, xúc xích, cần câu...)"
               value={vocabSearchQuery}
               onChange={(e) => setVocabSearchQuery(e.target.value)}
-              className="w-full pl-3.5 pr-8 py-2 text-xs font-semibold rounded-xl border border-slate-200/80 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all placeholder:text-slate-400"
+              className="w-full pl-3.5 pr-8 py-2 text-xs font-normal rounded-xl border border-slate-200/80 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all placeholder:text-slate-400"
             />
             {vocabSearchQuery && (
               <button
@@ -2139,7 +2139,7 @@ export default function ProgressAnalysis() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs font-bold text-slate-400">Sắp xếp:</span>
+            <span className="text-xs font-medium text-slate-400">Sắp xếp:</span>
             <CustomSelect
               value={vocabSortBy}
               onChange={(val) => setVocabSortBy(val as any)}
@@ -2149,7 +2149,7 @@ export default function ProgressAnalysis() {
                 { value: 'LOWEST_ACCURACY', label: 'Cần rèn luyện nhất' },
                 { value: 'RECENT', label: 'Mới học gần đây' }
               ]}
-              className="min-w-[170px] text-xs font-bold"
+              className="min-w-[170px] text-xs font-medium"
             />
           </div>
         </div>
@@ -2158,7 +2158,7 @@ export default function ProgressAnalysis() {
         {filteredVocabularyItems.length === 0 ? (
           <div className="py-12 px-4 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 space-y-2">
             <BookOpen className="w-8 h-8 text-slate-300 mx-auto" />
-            <p className="text-sm font-bold text-slate-600">
+            <p className="text-sm font-medium text-slate-600">
               {vocabSearchQuery
                 ? `Không tìm thấy từ vựng nào khớp với "${vocabSearchQuery}"`
                 : 'Chưa có dữ liệu từ vựng nào phù hợp với bộ lọc hiện tại'}
@@ -2190,10 +2190,10 @@ export default function ProgressAnalysis() {
                           <Volume2 className="w-4 h-4 text-slate-600" />
                         </div>
                         <div>
-                          <h4 className="font-black text-slate-900 text-base leading-tight tracking-tight capitalize">
+                          <h4 className="font-semibold text-slate-900 text-base leading-tight tracking-tight capitalize">
                             {item.word}
                           </h4>
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 mt-0.5">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-normal text-slate-500 mt-0.5">
                             <BookOpen className="w-3 h-3 text-teal-600" />
                             {item.lessonName}
                           </span>
@@ -2203,22 +2203,22 @@ export default function ProgressAnalysis() {
 
                     <div className="shrink-0">
                       {isNotPracticed ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200">
                           <Clock className="w-3.5 h-3.5 text-slate-400" />
                           Chưa luyện mốc này
                         </span>
                       ) : isMastered ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                           Đã thành thạo
                         </span>
                       ) : isNeedsHelp ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200">
                           <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
                           Cần chú ý
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-cyan-50 text-cyan-700 border border-cyan-200">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium uppercase tracking-wider bg-cyan-50 text-cyan-700 border border-cyan-200">
                           <RefreshCw className="w-3.5 h-3.5 text-cyan-600" />
                           Đang rèn luyện
                         </span>
@@ -2229,19 +2229,19 @@ export default function ProgressAnalysis() {
                   {/* Accuracy Bar & Numerical Counts */}
                   <div className="space-y-1.5 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
                     <div className="flex items-center justify-between text-xs gap-2 flex-wrap sm:flex-nowrap">
-                      <span className="font-bold text-slate-600 whitespace-nowrap shrink-0">
-                        Độ chính xác: <strong className={cn("text-sm font-black", isNotPracticed ? "text-slate-400" : isMastered ? "text-emerald-700" : isNeedsHelp ? "text-rose-600" : "text-cyan-700")}>{isNotPracticed ? '0%' : `${item.accuracyRate}%`}</strong>
+                      <span className="font-medium text-slate-600 whitespace-nowrap shrink-0">
+                        Độ chính xác: <span className={cn("text-sm font-semibold", isNotPracticed ? "text-slate-400" : isMastered ? "text-emerald-700" : isNeedsHelp ? "text-rose-600" : "text-cyan-700")}>{isNotPracticed ? '0%' : `${item.accuracyRate}%`}</span>
                       </span>
-                      <div className="flex items-center gap-1.5 text-[11px] font-bold shrink-0 whitespace-nowrap">
-                        <span className="text-slate-500 font-medium whitespace-nowrap">Tổng: {item.totalAttempts} lượt</span>
-                        <span className={cn("px-1.5 py-0.5 rounded font-black whitespace-nowrap", isNotPracticed ? "text-slate-400 bg-slate-100" : "text-emerald-700 bg-emerald-100/70")}>
+                      <div className="flex items-center gap-1.5 text-[11px] font-medium shrink-0 whitespace-nowrap">
+                        <span className="text-slate-500 whitespace-nowrap">Tổng: {item.totalAttempts} lượt</span>
+                        <span className={cn("px-1.5 py-0.5 rounded whitespace-nowrap", isNotPracticed ? "text-slate-400 bg-slate-100" : "text-emerald-700 bg-emerald-100/70 font-medium")}>
                           {item.correctCount} đúng
                         </span>
-                        <span className={cn("px-1.5 py-0.5 rounded font-black whitespace-nowrap", isNotPracticed ? "text-slate-400 bg-slate-100" : "text-rose-700 bg-rose-100/70")}>
+                        <span className={cn("px-1.5 py-0.5 rounded whitespace-nowrap", isNotPracticed ? "text-slate-400 bg-slate-100" : "text-rose-700 bg-rose-100/70 font-medium")}>
                           {item.wrongCount} sai
                         </span>
                         {item.avgSpeechScore !== undefined && (
-                          <span className="text-indigo-700 bg-indigo-100/70 px-1.5 py-0.5 rounded font-black whitespace-nowrap">
+                          <span className="text-indigo-700 bg-indigo-100/70 px-1.5 py-0.5 rounded whitespace-nowrap font-medium">
                             AI: {item.avgSpeechScore}đ
                           </span>
                         )}
@@ -2265,11 +2265,11 @@ export default function ProgressAnalysis() {
                     <div className="bg-[#F2FAF4] border border-emerald-100/80 rounded-xl p-3 flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between pb-1.5 border-b border-emerald-100 mb-2 gap-2">
-                          <div className="flex items-center gap-1.5 text-emerald-800 text-xs font-black min-w-0 truncate">
+                          <div className="flex items-center gap-1.5 text-emerald-800 text-xs font-medium min-w-0 truncate">
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                             <span className="truncate">Lúc nói đúng ({item.correctCount} lần)</span>
                           </div>
-                          <span className="text-[10px] font-black text-emerald-700 uppercase bg-emerald-100/70 px-1.5 py-0.5 rounded shrink-0 whitespace-nowrap">
+                          <span className="text-[10px] font-medium text-emerald-700 uppercase bg-emerald-100/70 px-1.5 py-0.5 rounded shrink-0 whitespace-nowrap">
                             Chuẩn
                           </span>
                         </div>
@@ -2282,11 +2282,11 @@ export default function ProgressAnalysis() {
                                   key={exIdx}
                                   className="bg-white/95 px-2.5 py-1.5 rounded-lg border border-emerald-200/70 text-xs flex items-center justify-between shadow-2xs gap-2"
                                 >
-                                  <span className="text-slate-700 font-medium truncate mr-1">
-                                    trẻ nói: <strong className="text-emerald-700 font-extrabold">&ldquo;{ex.spokenText}&rdquo;</strong>
+                                  <span className="text-slate-700 font-normal truncate mr-1">
+                                    trẻ nói: <span className="text-emerald-700 font-medium">&ldquo;{ex.spokenText}&rdquo;</span>
                                   </span>
                                   {ex.timeSeconds > 0 && (
-                                    <span className="text-[10px] text-slate-400 font-medium shrink-0 whitespace-nowrap">
+                                    <span className="text-[10px] text-slate-400 font-normal shrink-0 whitespace-nowrap">
                                       [{ex.timeSeconds}s]
                                     </span>
                                   )}
@@ -2294,7 +2294,7 @@ export default function ProgressAnalysis() {
                               ))}
                             </div>
                           ) : (
-                            <div className="text-center text-xs text-slate-400 italic">
+                            <div className="text-center text-xs text-slate-400 italic font-normal">
                               {isNotPracticed
                                 ? "Chưa có lượt phát âm trong mốc này"
                                 : "Chưa có lượt phát âm đúng nào"}
@@ -2308,11 +2308,11 @@ export default function ProgressAnalysis() {
                     <div className="bg-[#FFF2F2] border border-rose-100/80 rounded-xl p-3 flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between pb-1.5 border-b border-rose-100 mb-2">
-                          <div className="flex items-center gap-1.5 text-rose-800 text-xs font-black">
+                          <div className="flex items-center gap-1.5 text-rose-800 text-xs font-medium">
                             <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
                             <span>Lúc nói sai &amp; lỗi ({item.wrongCount} lần)</span>
                           </div>
-                          <span className="text-[10px] font-black text-rose-700 uppercase bg-rose-100/70 px-1.5 py-0.5 rounded">
+                          <span className="text-[10px] font-medium text-rose-700 uppercase bg-rose-100/70 px-1.5 py-0.5 rounded">
                             Cần sửa
                           </span>
                         </div>
@@ -2325,17 +2325,17 @@ export default function ProgressAnalysis() {
                                   key={exIdx}
                                   className="bg-white/95 px-2.5 py-1.5 rounded-lg border border-rose-200/70 text-xs flex items-center justify-between shadow-2xs"
                                 >
-                                  <span className="text-slate-700 font-medium truncate mr-1">
-                                    trẻ nói: <strong className="text-rose-700 font-extrabold">&ldquo;{ex.spokenText}&rdquo;</strong>
+                                  <span className="text-slate-700 font-normal truncate mr-1">
+                                    trẻ nói: <span className="text-rose-700 font-medium">&ldquo;{ex.spokenText}&rdquo;</span>
                                   </span>
                                   <div className="flex items-center gap-1 shrink-0">
                                     {ex.errorType && (
-                                      <span className="text-[9px] font-bold bg-amber-50 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200">
+                                      <span className="text-[9px] font-medium bg-amber-50 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200">
                                         {ex.errorType === 'Mispronunciation' ? 'Sai âm' : ex.errorType === 'Omission' ? 'Thiếu âm' : ex.errorType}
                                       </span>
                                     )}
                                     {ex.timeSeconds > 0 && (
-                                      <span className="text-[10px] text-slate-400 font-medium">
+                                      <span className="text-[10px] text-slate-400 font-normal">
                                         [{ex.timeSeconds}s]
                                       </span>
                                     )}
@@ -2344,7 +2344,7 @@ export default function ProgressAnalysis() {
                               ))}
                             </div>
                           ) : (
-                            <div className={cn("text-center text-xs italic flex items-center justify-center gap-1", isNotPracticed ? "text-slate-400" : "text-emerald-600 font-semibold")}>
+                            <div className={cn("text-center text-xs italic flex items-center justify-center gap-1 font-normal", isNotPracticed ? "text-slate-400" : "text-emerald-600 font-medium")}>
                               {isNotPracticed ? (
                                 "Chưa có lượt phát âm trong mốc này"
                               ) : (
@@ -2362,15 +2362,15 @@ export default function ProgressAnalysis() {
 
                   {/* Card Footer: Timestamp and Teacher Advice */}
                   <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                    <span>Lần tập: <strong className="text-slate-600">{isNotPracticed ? `Toàn kỳ: ${formatVocabDate(item.allTimeLastPracticed)}` : formatVocabDate(item.lastPracticed)}</strong></span>
+                    <span>Lần tập: <span className="text-slate-600 font-medium">{isNotPracticed ? `Toàn kỳ: ${formatVocabDate(item.allTimeLastPracticed)}` : formatVocabDate(item.lastPracticed)}</span></span>
                     <span className={cn("font-medium", isNotPracticed ? "text-slate-400" : isMastered ? "text-emerald-600" : isNeedsHelp ? "text-rose-500" : "text-cyan-600")}>
                       {isNotPracticed
                         ? "Chưa rèn luyện mốc này"
                         : isMastered
-                        ? "⭐ Bé đã ghi nhớ tốt"
-                        : isNeedsHelp
-                        ? "⚠️ Nhắc bé phát âm chậm và rõ từ"
-                        : "🔄 Đang quen dần, cần duy trì"}
+                          ? "⭐ Bé đã ghi nhớ tốt"
+                          : isNeedsHelp
+                            ? "⚠️ Nhắc bé phát âm chậm và rõ từ"
+                            : "🔄 Đang quen dần, cần duy trì"}
                     </span>
                   </div>
                 </div>
@@ -2440,14 +2440,14 @@ export default function ProgressAnalysis() {
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto border-4 border-dashed border-gray-100">
               <ShieldAlert className="w-8 h-8 text-gray-300 animate-pulse" />
             </div>
-            <p className="text-xl font-black text-gray-700">Không tìm thấy phân tích tiến bộ của dải dữ liệu được chọn!</p>
-            <p className="text-xs text-gray-400 max-w-sm mx-auto">Vui lòng điều hòa lại bộ lọc góc nhìn giảng dạy hoặc chọn học sinh khác trên thanh công cụ.</p>
+            <p className="text-base font-bold text-gray-700">Không tìm thấy phân tích tiến bộ của dải dữ liệu được chọn!</p>
+            <p className="text-xs text-gray-400 max-w-sm mx-auto font-normal">Vui lòng điều hòa lại bộ lọc góc nhìn giảng dạy hoặc chọn học sinh khác trên thanh công cụ.</p>
           </div>
         ) : (
           <div className="overflow-x-auto text-left">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-[#FDFCF5]/60 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
+                <tr className="bg-[#FDFCF5]/60 border-b border-gray-100 text-[#555] font-medium text-xs uppercase tracking-wider">
                   <th
                     onClick={() => handleSort('AnalysisId')}
                     className="py-5 px-10 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
@@ -2536,7 +2536,7 @@ export default function ProgressAnalysis() {
                   <th className="py-5 px-10 text-right select-none">Tùy chọn</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 font-bold text-sm text-gray-700">
+              <tbody className="divide-y divide-gray-50 text-sm text-gray-700">
                 {sortedAnalysesList.map((anItem) => {
                   const subChild = getChildDetails(anItem.ChildId);
                   const completionPercentage = anItem.TotalExercises > 0 ? Math.round((anItem.CompletedExercises / anItem.TotalExercises) * 100) : 0;
@@ -2545,7 +2545,7 @@ export default function ProgressAnalysis() {
                     <tr key={anItem.AnalysisId} className="hover:bg-slate-50/50 transition-colors">
 
                       {/* Analysis ID */}
-                      <td className="py-5 px-10 font-mono text-gray-400 text-xs font-black">
+                      <td className="py-5 px-10 font-mono text-gray-400 text-xs font-normal">
                         {anItem.AnalysisId}
                       </td>
 
@@ -2558,10 +2558,10 @@ export default function ProgressAnalysis() {
                             className="w-9 h-9 rounded-full object-cover border border-slate-200 shrink-0 shadow-xs"
                           />
                           <div>
-                            <div className="text-gray-900 font-extrabold text-sm md:text-base leading-none">
+                            <div className="text-gray-900 font-semibold text-sm md:text-base leading-none">
                               {subChild.FullName}
                             </div>
-                            <span className="text-[10px] text-gray-400 tracking-tight font-medium">
+                            <span className="text-[10px] text-gray-400 tracking-tight font-normal">
                               Tuổi: {subChild.Age} | Trình độ: {subChild.LearningLevel}
                             </span>
                           </div>
@@ -2574,7 +2574,7 @@ export default function ProgressAnalysis() {
                       </td>
 
                       {/* Completed Exercises */}
-                      <td className="py-5 px-6 text-center font-mono text-emerald-600">
+                      <td className="py-5 px-6 text-center font-mono text-emerald-600 font-medium">
                         {anItem.TotalExercises > 0 ? `${anItem.CompletedExercises} ải` : '--'}
                       </td>
 
@@ -2582,13 +2582,13 @@ export default function ProgressAnalysis() {
                       <td className="py-5 px-6 text-center">
                         {anItem.TotalExercises > 0 ? (
                           <div className="space-y-1 inline-block">
-                            <span className="text-xs font-black text-gray-700">{completionPercentage}%</span>
+                            <span className="text-xs font-medium text-gray-700">{completionPercentage}%</span>
                             <div className="w-16 h-1 bg-gray-100 rounded-full overflow-hidden">
                               <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${completionPercentage}%` }} />
                             </div>
                           </div>
                         ) : (
-                          <span className="text-xs font-bold text-gray-400">--</span>
+                          <span className="text-xs font-normal text-gray-400">--</span>
                         )}
                       </td>
 
@@ -2596,13 +2596,13 @@ export default function ProgressAnalysis() {
                       <td className="py-5 px-6 text-center">
                         {anItem.TotalExercises > 0 ? (
                           <span className={cn(
-                            "font-black text-base italic",
+                            "font-semibold text-base",
                             anItem.AverageScore >= 85 ? 'text-[#34A853]' : anItem.AverageScore >= 60 ? 'text-[#20D0D4]' : 'text-[#FF8E8E]'
                           )}>
                             {anItem.AverageScore} đ
                           </span>
                         ) : (
-                          <span className="text-xs font-bold text-gray-400">--</span>
+                          <span className="text-xs font-normal text-gray-400">--</span>
                         )}
                       </td>
 
@@ -2672,11 +2672,11 @@ export default function ProgressAnalysis() {
               {/* Modal header */}
               <div className="bg-[#E2F2F3] px-8 py-6 flex items-center justify-between border-b border-[#C5E1E3] text-gray-900">
                 <div className="space-y-1">
-                  <div className="inline-flex items-center gap-1.5 bg-[#4EACAF] text-white px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider">
+                  <div className="inline-flex items-center gap-1.5 bg-[#4EACAF] text-white px-2.5 py-0.5 rounded-lg text-[10px] font-medium uppercase tracking-wider">
                     <BrainCircuit className="w-3 h-3 animate-ping" />
                     Phân tích tiến độ học tập sư phạm
                   </div>
-                  <h2 className="text-xl md:text-2xl font-black italic tracking-tight flex items-center gap-2">
+                  <h2 className="text-xl md:text-2xl font-bold tracking-tight flex items-center gap-2">
                     Tổng duyệt kiểm tra tiến trình #{selectedAnalysis.AnalysisId}
                   </h2>
                 </div>
@@ -2698,11 +2698,11 @@ export default function ProgressAnalysis() {
                       <Baby className="w-6 h-6" />
                     </div>
                     <div>
-                      <h4 className="font-exrabold text-xs text-gray-400 uppercase tracking-widest">Hồ sơ học sinh:</h4>
-                      <p className="text-base font-black text-gray-800 leading-tight">
+                      <h4 className="font-medium text-xs text-gray-400 uppercase tracking-wider">Hồ sơ học sinh:</h4>
+                      <p className="text-base font-semibold text-gray-800 leading-tight">
                         {getChildDetails(selectedAnalysis.ChildId).FullName}
                       </p>
-                      <p className="text-xs font-bold text-gray-400 mt-0.5">
+                      <p className="text-xs font-normal text-gray-400 mt-0.5">
                         Tuổi: {getChildDetails(selectedAnalysis.ChildId).Age} | Cấp học: {getChildDetails(selectedAnalysis.ChildId).LearningLevel}
                       </p>
                     </div>
@@ -2717,30 +2717,30 @@ export default function ProgressAnalysis() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
 
                   <div className="bg-slate-50 p-4 rounded-2xl">
-                    <span className="text-[10px] text-gray-450 block uppercase font-black tracking-wider mb-1">Mục bài thi cử</span>
-                    <strong className="text-slate-800 font-black text-lg">{selectedAnalysis.TotalExercises} bài</strong>
+                    <span className="text-[10px] text-gray-450 block uppercase font-medium tracking-wider mb-1">Mục bài thi cử</span>
+                    <span className="text-slate-800 font-semibold text-lg">{selectedAnalysis.TotalExercises} bài</span>
                   </div>
 
                   <div className="bg-slate-50 p-4 rounded-2xl">
-                    <span className="text-[10px] text-gray-450 block uppercase font-black tracking-wider mb-1">Đã hoàn thành đạt</span>
-                    <strong className="text-emerald-650 font-black text-lg">{selectedAnalysis.CompletedExercises} bài</strong>
+                    <span className="text-[10px] text-gray-450 block uppercase font-medium tracking-wider mb-1">Đã hoàn thành đạt</span>
+                    <span className="text-emerald-650 font-semibold text-lg">{selectedAnalysis.CompletedExercises} bài</span>
                   </div>
 
                   <div className="bg-slate-50 p-4 rounded-2xl">
-                    <span className="text-[10px] text-gray-450 block uppercase font-black tracking-wider mb-1">Thời lượng tích dồn</span>
-                    <strong className="text-slate-800 font-black text-lg">{selectedAnalysis.TotalPracticeTime} Phút</strong>
+                    <span className="text-[10px] text-gray-450 block uppercase font-medium tracking-wider mb-1">Thời lượng tích dồn</span>
+                    <span className="text-slate-800 font-semibold text-lg">{selectedAnalysis.TotalPracticeTime} Phút</span>
                   </div>
 
                   <div className="bg-slate-50 p-4 rounded-2xl">
-                    <span className="text-[10px] text-gray-450 block uppercase font-black tracking-wider mb-1">Dải điểm kiểm định</span>
-                    <strong className="text-slate-800 font-black text-lg">{selectedAnalysis.AverageScore}/100đ</strong>
+                    <span className="text-[10px] text-gray-450 block uppercase font-medium tracking-wider mb-1">Dải điểm kiểm định</span>
+                    <span className="text-slate-800 font-semibold text-lg">{selectedAnalysis.AverageScore}/100đ</span>
                   </div>
 
                 </div>
 
                 {/* Phân tích tiến độ theo bài học */}
                 <div className="space-y-4 pt-4 border-t border-slate-100">
-                  <h4 className="text-sm font-bold text-slate-850 uppercase tracking-wider flex items-center gap-1.5">
+                  <h4 className="text-sm font-semibold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                     <TrendingUp className="w-4 h-4 text-[#4EACAF]" />
                     Phân tích tiến bộ chi tiết theo bài học
                   </h4>
@@ -2748,12 +2748,12 @@ export default function ProgressAnalysis() {
                   {loadingProgressDetails ? (
                     <div className="py-8 text-center">
                       <Activity className="w-6 h-6 text-[#4EACAF] animate-spin mx-auto mb-2" />
-                      <p className="text-xs font-semibold text-slate-500">Đang phân tích dữ liệu so sánh tiến trình...</p>
+                      <p className="text-xs font-medium text-slate-500">Đang phân tích dữ liệu so sánh tiến trình...</p>
                     </div>
                   ) : lessonProgressList.length === 0 ? (
                     <div className="py-8 text-center text-slate-450 border border-dashed border-slate-200 rounded-2xl">
                       <Info className="w-6 h-6 mx-auto mb-1.5 opacity-55 text-slate-400" />
-                      <p className="text-xs font-semibold">Chưa có bài học nào được luyện tập từ 2 lần trở lên để đánh giá tiến bộ.</p>
+                      <p className="text-xs font-normal">Chưa có bài học nào được luyện tập từ 2 lần trở lên để đánh giá tiến bộ.</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -2766,11 +2766,11 @@ export default function ProgressAnalysis() {
                             {/* Card Header */}
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/50 pb-3">
                               <div className="space-y-1">
-                                <h5 className="font-extrabold text-sm text-slate-800 flex items-center gap-1.5">
+                                <h5 className="font-semibold text-sm text-slate-800 flex items-center gap-1.5">
                                   <Award className="w-4 h-4 text-[#4EACAF]" />
                                   {progress.lessonName}
                                 </h5>
-                                <span className="text-[10.5px] font-bold text-slate-400 block">
+                                <span className="text-[10.5px] font-normal text-slate-400 block">
                                   Tổng số: {progress.totalAttempts} lượt thực hành
                                 </span>
                               </div>
@@ -2778,27 +2778,27 @@ export default function ProgressAnalysis() {
                               {/* Progress status tag */}
                               <div className="self-start sm:self-auto">
                                 {progress.status === 'improving' && (
-                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full text-xs font-black uppercase tracking-wider">
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full text-xs font-medium uppercase tracking-wider">
                                     🚀 Tiến bộ vượt bậc
                                   </span>
                                 )}
                                 {progress.status === 'accuracy_up' && (
-                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-full text-xs font-black uppercase tracking-wider">
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-full text-xs font-medium uppercase tracking-wider">
                                     📈 Tăng chính xác
                                   </span>
                                 )}
                                 {progress.status === 'speed_up' && (
-                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 border border-amber-100 rounded-full text-xs font-black uppercase tracking-wider">
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 border border-amber-100 rounded-full text-xs font-medium uppercase tracking-wider">
                                     ⚡ Tăng tốc độ
                                   </span>
                                 )}
                                 {progress.status === 'needs_practice' && (
-                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 text-rose-700 border border-rose-100 rounded-full text-xs font-black uppercase tracking-wider">
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 text-rose-700 border border-rose-100 rounded-full text-xs font-medium uppercase tracking-wider">
                                     ⚠️ Cần ôn tập thêm
                                   </span>
                                 )}
                                 {progress.status === 'stable' && (
-                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-105 text-slate-700 border border-slate-200 rounded-full text-xs font-black uppercase tracking-wider">
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-105 text-slate-700 border border-slate-200 rounded-full text-xs font-medium uppercase tracking-wider">
                                     🟢 Duy trì ổn định
                                   </span>
                                 )}
@@ -2810,13 +2810,13 @@ export default function ProgressAnalysis() {
                               {/* Score Comparison */}
                               <div className="bg-white p-3 rounded-2xl border border-slate-100 flex items-center justify-between">
                                 <div className="space-y-0.5">
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm số</span>
-                                  <div className="text-xs font-bold text-slate-750">
+                                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Điểm số</span>
+                                  <div className="text-xs font-medium text-slate-750">
                                     {progress.firstAttempt.score}đ → {progress.latestAttempt.score}đ
                                   </div>
                                 </div>
                                 <span className={cn(
-                                  "text-xs font-black flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg",
+                                  "text-xs font-medium flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg",
                                   progress.metrics.scoreDiff > 0
                                     ? "bg-emerald-50 text-emerald-600"
                                     : progress.metrics.scoreDiff < 0
@@ -2832,13 +2832,13 @@ export default function ProgressAnalysis() {
                               {/* Duration Comparison */}
                               <div className="bg-white p-3 rounded-2xl border border-slate-100 flex items-center justify-between">
                                 <div className="space-y-0.5">
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Thời lượng</span>
-                                  <div className="text-xs font-bold text-slate-750">
+                                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Thời lượng</span>
+                                  <div className="text-xs font-medium text-slate-750">
                                     {progress.firstAttempt.durationSeconds}s → {progress.latestAttempt.durationSeconds}s
                                   </div>
                                 </div>
                                 <span className={cn(
-                                  "text-xs font-black flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg",
+                                  "text-xs font-medium flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg",
                                   progress.metrics.durationDiff > 0
                                     ? "bg-emerald-50 text-emerald-600"
                                     : progress.metrics.durationDiff < 0
@@ -2854,13 +2854,13 @@ export default function ProgressAnalysis() {
                               {/* Accuracy Comparison */}
                               <div className="bg-white p-3 rounded-2xl border border-slate-100 flex items-center justify-between">
                                 <div className="space-y-0.5">
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lỗi phát âm</span>
-                                  <div className="text-xs font-bold text-slate-750">
+                                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Lỗi phát âm</span>
+                                  <div className="text-xs font-medium text-slate-750">
                                     {progress.firstAttempt.errorCount} lỗi → {progress.latestAttempt.errorCount} lỗi
                                   </div>
                                 </div>
                                 <span className={cn(
-                                  "text-xs font-black flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg",
+                                  "text-xs font-medium flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg",
                                   progress.metrics.errorDiff > 0
                                     ? "bg-emerald-50 text-emerald-600"
                                     : progress.metrics.errorDiff < 0
@@ -2875,7 +2875,7 @@ export default function ProgressAnalysis() {
                             </div>
 
                             {/* Educational Explanation Box */}
-                            <div className="bg-white/80 p-3.5 rounded-2xl border border-slate-200/50 text-xs text-slate-600 leading-relaxed font-semibold italic flex items-start gap-2">
+                            <div className="bg-white/80 p-3.5 rounded-2xl border border-slate-200/50 text-xs text-slate-600 leading-relaxed font-normal flex items-start gap-2">
                               <Info className="w-4 h-4 text-[#4EACAF] shrink-0 mt-0.5" />
                               <span>{progress.description}</span>
                             </div>
@@ -2890,7 +2890,7 @@ export default function ProgressAnalysis() {
 
               {/* Modal footer controls with action triggers conforms to strict UI guidelines */}
               <div className="bg-gray-50 px-8 py-5 flex items-center justify-between border-t border-gray-100">
-                <span className="text-[10px] text-gray-400 font-bold italic">
+                <span className="text-[10px] text-gray-400 font-normal italic">
                   Cập nhật sau cùng lúc: {selectedAnalysis.LastAnalyzedAt}
                 </span>
 
@@ -2899,14 +2899,14 @@ export default function ProgressAnalysis() {
                     onClick={() => {
                       handleSimulateReportExport(selectedAnalysis.ChildId, selectedAnalysis.AnalysisId);
                     }}
-                    className="px-4.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black transition-colors flex items-center gap-1.5"
+                    className="px-4.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-medium transition-colors flex items-center gap-1.5"
                   >
                     <Download className="w-4 h-4" />
                     Báo cáo gốc PDF
                   </button>
                   <button
                     onClick={() => setIsDetailOpen(false)}
-                    className="px-4.5 py-2.5 bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white rounded-2xl text-xs font-black transition-colors"
+                    className="px-4.5 py-2.5 bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white rounded-2xl text-xs font-medium transition-colors"
                   >
                     Đóng cửa sổ
                   </button>

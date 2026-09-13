@@ -1182,7 +1182,7 @@ export default function LearningResultManagement() {
 
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-1">
         <div className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight leading-tight">
             Kết Quả <span className="text-[#FF8E8E]">Luyện Tập</span>
           </h1>
         </div>
@@ -1192,7 +1192,7 @@ export default function LearningResultManagement() {
             <UserSquare2 className="w-5 h-5" />
           </div>
           <div className="space-y-1">
-            <h4 className="font-bold text-[10px] text-slate-400 uppercase tracking-wider leading-none">Học viên rèn luyện:</h4>
+            <h4 className="font-medium text-[10px] text-slate-400 uppercase tracking-wider leading-none">Học viên rèn luyện:</h4>
             <CustomSelect
               value={filterChildId}
               onChange={(val) => setFilterChildId(val)}
@@ -1203,7 +1203,7 @@ export default function LearningResultManagement() {
                   label: `👶 ${kd.FullName} (${kd.Age}t) - ${kd.LearningLevel}`
                 }))
               ]}
-              className="min-w-[240px] font-black"
+              className="min-w-[240px] font-medium"
             />
           </div>
         </div>
@@ -1216,8 +1216,8 @@ export default function LearningResultManagement() {
             <Activity className="w-5 h-5 text-[#4EACAF]" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-800 leading-none">{totalAttempts}</p>
-            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Tổng lượt luyện</p>
+            <p className="text-2xl font-bold text-slate-800 leading-none">{totalAttempts}</p>
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mt-1.5">Tổng lượt luyện</p>
           </div>
         </div>
 
@@ -1226,8 +1226,8 @@ export default function LearningResultManagement() {
             <Clock className="w-5 h-5 text-[#FF8E8E]" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-800 leading-none">{formattedTotalMinutes} phút</p>
-            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Tổng giờ tương tác</p>
+            <p className="text-2xl font-bold text-slate-800 leading-none">{formattedTotalMinutes} phút</p>
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mt-1.5">Tổng giờ tương tác</p>
           </div>
         </div>
 
@@ -1236,8 +1236,8 @@ export default function LearningResultManagement() {
             <ThumbsUp className="w-5 h-5 text-indigo-500" />
           </div>
           <div>
-            <p className="text-2xl font-black text-emerald-600 leading-none">{completionRate}%</p>
-            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">Tỷ lệ hoàn thành</p>
+            <p className="text-2xl font-bold text-emerald-600 leading-none">{completionRate}%</p>
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mt-1.5">Tỷ lệ hoàn thành</p>
           </div>
         </div>
 
@@ -1247,17 +1247,17 @@ export default function LearningResultManagement() {
           </div>
           <div className="min-w-0">
             <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-black text-slate-800 leading-none">
+              <span className="text-2xl font-bold text-slate-800 leading-none">
                 {overallWordTotals.total}
               </span>
-              <span className="text-xs font-semibold text-slate-400">từ đã luyện</span>
+              <span className="text-xs font-normal text-slate-400">từ đã luyện</span>
             </div>
-            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1">Tổng từ đúng / sai</p>
-            <div className="text-xs font-bold mt-1.5 flex items-center gap-1.5 flex-wrap">
-              <span className="text-emerald-600 font-extrabold">✓ {overallWordTotals.correct} đúng</span>
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mt-1">Tổng từ đúng / sai</p>
+            <div className="text-xs font-medium mt-1.5 flex items-center gap-1.5 flex-wrap">
+              <span className="text-emerald-600 font-medium">✓ {overallWordTotals.correct} đúng</span>
               <span className="text-slate-300">|</span>
-              <span className="text-rose-500 font-extrabold">✕ {overallWordTotals.wrong} sai</span>
-              <span className="text-[10px] bg-emerald-100/70 text-emerald-800 px-1.5 py-0.2 rounded-full font-extrabold ml-0.5">
+              <span className="text-rose-500 font-medium">✕ {overallWordTotals.wrong} sai</span>
+              <span className="text-[10px] bg-emerald-100/70 text-emerald-800 px-1.5 py-0.2 rounded-full font-medium ml-0.5">
                 {overallWordTotals.accuracyRate}%
               </span>
             </div>
@@ -1266,7 +1266,7 @@ export default function LearningResultManagement() {
       </div>
 
       {apiError && (
-        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-100 text-sm font-semibold text-rose-700">
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-100 text-sm font-medium text-rose-700">
           {apiError}
         </div>
       )}
@@ -1284,7 +1284,7 @@ export default function LearningResultManagement() {
                   type="button"
                   onClick={() => setLeftPanelTab('RESULTS')}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5",
+                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5",
                     leftPanelTab === 'RESULTS'
                       ? "bg-white text-slate-800 shadow-xs"
                       : "text-slate-500 hover:text-slate-800"
@@ -1293,7 +1293,7 @@ export default function LearningResultManagement() {
                   <FileText className="w-3.5 h-3.5" />
                   <span>Lịch sử luyện tập</span>
                   <span className={cn(
-                    "text-[10px] px-1.5 py-0.2 rounded-full font-bold",
+                    "text-[10px] px-1.5 py-0.2 rounded-full font-medium",
                     leftPanelTab === 'RESULTS' ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-600"
                   )}>
                     {filteredResults.length}
@@ -1304,7 +1304,7 @@ export default function LearningResultManagement() {
                   type="button"
                   onClick={() => setLeftPanelTab('VOCABULARY')}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5",
+                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5",
                     leftPanelTab === 'VOCABULARY'
                       ? "bg-[#4EACAF] text-white shadow-xs"
                       : "text-slate-500 hover:text-[#4EACAF]"
@@ -1313,7 +1313,7 @@ export default function LearningResultManagement() {
                   <BookOpen className="w-3.5 h-3.5" />
                   <span>Thống kê từ vựng</span>
                   <span className={cn(
-                    "text-[10px] px-1.5 py-0.2 rounded-full font-bold",
+                    "text-[10px] px-1.5 py-0.2 rounded-full font-medium",
                     leftPanelTab === 'VOCABULARY' ? "bg-white/25 text-white" : "bg-teal-100 text-[#4EACAF]"
                   )}>
                     {cumulativeWordStats.length}
@@ -1332,7 +1332,7 @@ export default function LearningResultManagement() {
                       placeholder="Tìm theo học sinh, bài tập, Session ID..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-4 pr-4 py-2.5 rounded-xl border border-slate-200 outline-none text-xs font-semibold focus:border-[#4EACAF] transition-colors"
+                      className="w-full pl-4 pr-4 py-2.5 rounded-xl border border-slate-200 outline-none text-xs font-normal focus:border-[#4EACAF] transition-colors"
                     />
                   </div>
 
@@ -1366,12 +1366,12 @@ export default function LearningResultManagement() {
                 {isApiLoading ? (
                   <div className="py-12 text-center">
                     <Activity className="w-8 h-8 text-[#4EACAF] animate-spin mx-auto mb-2" />
-                    <p className="text-sm font-semibold text-slate-500">Đang tải danh sách kết quả...</p>
+                    <p className="text-sm font-normal text-slate-500">Đang tải danh sách kết quả...</p>
                   </div>
                 ) : filteredResults.length === 0 ? (
                   <div className="py-12 text-center text-slate-400">
                     <VolumeX className="w-12 h-12 mx-auto mb-3 opacity-40" />
-                    <p className="font-semibold text-sm">Không tìm thấy lượt luyện tập phù hợp.</p>
+                    <p className="font-normal text-sm">Không tìm thấy lượt luyện tập phù hợp.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -1394,17 +1394,17 @@ export default function LearningResultManagement() {
                           <div className="flex items-start justify-between gap-3">
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
-                                <p className="font-bold text-slate-800 text-sm">{child?.FullName || `Bé (ID: ${res.ChildId})`}</p>
-                                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
+                                <p className="font-semibold text-slate-800 text-sm">{child?.FullName || `Bé (ID: ${res.ChildId})`}</p>
+                                <span className="text-[10px] font-mono font-normal px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
                                   Session #{res.SessionId || res.ResultId}
                                 </span>
                               </div>
-                              <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+                              <p className="text-xs text-slate-400 font-normal leading-relaxed">
                                 {lesson?.lessonName || 'Bài tập tự do'}
                               </p>
                             </div>
                             <span className={cn(
-                              "text-[9px] px-2 py-0.5 rounded font-extrabold uppercase shrink-0 tracking-wider",
+                              "text-[9px] px-2 py-0.5 rounded font-medium uppercase shrink-0 tracking-wider",
                               res.CompletionStatus === 'Completed'
                                 ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
                                 : "bg-amber-50 text-amber-700 border border-amber-100"
@@ -1413,7 +1413,7 @@ export default function LearningResultManagement() {
                             </span>
                           </div>
 
-                          <div className="flex items-center justify-between border-t border-slate-100/60 pt-3 text-[11px] font-bold text-slate-500">
+                          <div className="flex items-center justify-between border-t border-slate-100/60 pt-3 text-[11px] font-medium text-slate-500">
                             <div className="flex items-center gap-1">
                               <Clock className="w-3.5 h-3.5 text-slate-400" />
                               <span>{res.DurationSeconds}s</span>
@@ -1451,7 +1451,7 @@ export default function LearningResultManagement() {
                       placeholder="Tìm kiếm từ vựng (ví dụ: con cá, cần câu...)"
                       value={vocabSearchQuery}
                       onChange={(e) => setVocabSearchQuery(e.target.value)}
-                      className="w-full pl-4 pr-8 py-2.5 rounded-xl border border-slate-200 outline-none text-xs font-semibold focus:border-[#4EACAF] transition-colors"
+                      className="w-full pl-4 pr-8 py-2.5 rounded-xl border border-slate-200 outline-none text-xs font-normal focus:border-[#4EACAF] transition-colors"
                     />
                     {vocabSearchQuery && (
                       <button
@@ -1469,7 +1469,7 @@ export default function LearningResultManagement() {
                       type="button"
                       onClick={() => setVocabFilterStatus('ALL')}
                       className={cn(
-                        "px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1 text-[11px] border",
+                        "px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1 text-[11px] border",
                         vocabFilterStatus === 'ALL'
                           ? "bg-slate-800 text-white border-slate-800"
                           : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
@@ -1482,7 +1482,7 @@ export default function LearningResultManagement() {
                       type="button"
                       onClick={() => setVocabFilterStatus('HAS_ERROR')}
                       className={cn(
-                        "px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1 text-[11px] border",
+                        "px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1 text-[11px] border",
                         vocabFilterStatus === 'HAS_ERROR'
                           ? "bg-rose-600 text-white border-rose-600"
                           : "bg-white text-rose-700 border-rose-200 hover:bg-rose-50"
@@ -1497,7 +1497,7 @@ export default function LearningResultManagement() {
                       type="button"
                       onClick={() => setVocabFilterStatus('ALL_CORRECT')}
                       className={cn(
-                        "px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1 text-[11px] border",
+                        "px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1 text-[11px] border",
                         vocabFilterStatus === 'ALL_CORRECT'
                           ? "bg-emerald-600 text-white border-emerald-600"
                           : "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50"
@@ -1515,7 +1515,7 @@ export default function LearningResultManagement() {
                 {filteredVocabStats.length === 0 ? (
                   <div className="py-12 text-center text-slate-400">
                     <VolumeX className="w-12 h-12 mx-auto mb-3 opacity-40" />
-                    <p className="font-semibold text-sm">Không tìm thấy từ vựng nào phù hợp.</p>
+                    <p className="font-normal text-sm">Không tìm thấy từ vựng nào phù hợp.</p>
                   </div>
                 ) : (
                   <div className="space-y-2.5 max-h-[600px] overflow-y-auto pr-1">
@@ -1527,13 +1527,13 @@ export default function LearningResultManagement() {
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Từ vựng</span>
-                              <h4 className="text-sm font-extrabold text-slate-850 capitalize">
+                              <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Từ vựng</span>
+                              <h4 className="text-sm font-semibold text-slate-800 capitalize">
                                 {item.word}
                               </h4>
                             </div>
                             <span className={cn(
-                              "text-[10px] font-extrabold px-2 py-0.5 rounded-full",
+                              "text-[10px] font-medium px-2 py-0.5 rounded-full",
                               item.accuracyRate >= 80 ? "bg-emerald-100 text-emerald-800" :
                               item.accuracyRate >= 50 ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800"
                             )}>
@@ -1543,13 +1543,13 @@ export default function LearningResultManagement() {
 
                           {/* Đúng / Sai / Tổng số lần */}
                           <div className="flex items-center gap-2 text-xs flex-wrap">
-                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/70 px-2 py-0.5 rounded-md font-bold">
+                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/70 px-2 py-0.5 rounded-md font-medium">
                               ✓ Đúng: {item.correctCount} lần
                             </span>
-                            <span className="bg-rose-50 text-rose-700 border border-rose-200/70 px-2 py-0.5 rounded-md font-bold">
+                            <span className="bg-rose-50 text-rose-700 border border-rose-200/70 px-2 py-0.5 rounded-md font-medium">
                               ✕ Sai: {item.wrongCount} lần
                             </span>
-                            <span className="text-[11px] text-slate-400 font-semibold ml-auto">
+                            <span className="text-[11px] text-slate-400 font-normal ml-auto">
                               Tổng luyện: {item.totalCount} lần
                             </span>
                           </div>
@@ -1569,7 +1569,7 @@ export default function LearningResultManagement() {
                           {/* Mistakes details */}
                           {item.mistakes.length > 0 && (
                             <div className="text-[11px] text-rose-700 bg-rose-50/70 p-2 rounded-lg border border-rose-100 leading-snug">
-                              <span className="font-bold">Các lần nói sai: </span>
+                              <span className="font-medium">Các lần nói sai: </span>
                               {item.mistakes.map(m => `"${m.spokenText}"`).join(', ')}
                             </div>
                           )}
@@ -1582,7 +1582,7 @@ export default function LearningResultManagement() {
                                 setLeftPanelTab('RESULTS');
                                 setSearchQuery(item.word);
                               }}
-                              className="text-[11px] font-bold text-[#4EACAF] hover:text-[#3D8C8F] flex items-center gap-1 cursor-pointer transition-colors"
+                              className="text-[11px] font-medium text-[#4EACAF] hover:text-[#3D8C8F] flex items-center gap-1 cursor-pointer transition-colors"
                             >
                               <span>Xem các lượt luyện từ này</span>
                               <ArrowRight className="w-3 h-3" />
@@ -1607,14 +1607,14 @@ export default function LearningResultManagement() {
               <div className="flex items-start justify-between border-b border-slate-100 pb-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold px-2.5 py-0.5 bg-slate-100 text-slate-650 rounded">
+                    <span className="text-xs font-mono font-medium px-2.5 py-0.5 bg-slate-100 text-slate-650 rounded">
                       Session #{selectedResult.SessionId || selectedResult.ResultId}
                     </span>
-                    <span className="text-xs text-slate-400 font-medium">
-                      Học sinh: <span className="text-slate-600 font-normal">{getChildDetailInfo(selectedResult.ChildId)?.FullName}</span>
+                    <span className="text-xs text-slate-400 font-normal">
+                      Học sinh: <span className="text-slate-600 font-medium">{getChildDetailInfo(selectedResult.ChildId)?.FullName}</span>
                     </span>
                   </div>
-                  <h3 className="text-lg font-black text-slate-800 mt-2">
+                  <h3 className="text-lg font-bold text-slate-800 mt-2">
                     {lessons.find(l => String(l.id) === selectedResult.LessonId)?.lessonName || 'Bài tập tự do'}
                   </h3>
                 </div>
@@ -1629,23 +1629,23 @@ export default function LearningResultManagement() {
               {/* Statistics Quick Info */}
               <div className="grid grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                 <div className="text-center">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Thời lượng</span>
-                  <span className="text-base font-extrabold text-slate-800 mt-1 block">{selectedResult.DurationSeconds} giây</span>
+                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Thời lượng</span>
+                  <span className="text-base font-bold text-slate-800 mt-1 block">{selectedResult.DurationSeconds} giây</span>
                 </div>
                 <div className="text-center border-x border-slate-200">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Điểm số</span>
-                  <span className="text-base font-extrabold text-indigo-600 mt-1 block">
+                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Điểm số</span>
+                  <span className="text-base font-bold text-indigo-600 mt-1 block">
                     {selectedResult.Score}/{lessons.find(l => String(l.id) === selectedResult.LessonId)?.maxScore ?? 95}
                   </span>
                 </div>
                 <div className="text-center">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tổng từ đúng / sai</span>
-                  <div className="text-xs font-bold mt-1.5 flex items-center justify-center gap-1.5">
-                    <span className="text-emerald-600 font-extrabold">Đúng: {sessionCorrectWords} từ</span>
+                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Tổng từ đúng / sai</span>
+                  <div className="text-xs font-medium mt-1.5 flex items-center justify-center gap-1.5">
+                    <span className="text-emerald-600 font-medium">Đúng: {sessionCorrectWords} từ</span>
                     <span className="text-slate-300">|</span>
-                    <span className="text-rose-500 font-extrabold">Sai: {sessionWrongWords} từ</span>
+                    <span className="text-rose-500 font-medium">Sai: {sessionWrongWords} từ</span>
                   </div>
-                  <span className="text-[10px] font-semibold text-slate-400 block mt-0.5">
+                  <span className="text-[10px] font-normal text-slate-400 block mt-0.5">
                     (Tổng {sessionTotalWords} từ · {sessionAccuracy}% chuẩn)
                   </span>
                 </div>
@@ -1654,18 +1654,18 @@ export default function LearningResultManagement() {
               {/* Thống kê chi tiết theo từng từ trong phiên */}
               <div className="space-y-3 bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <h4 className="text-sm font-bold text-slate-850 flex items-center gap-2">
+                  <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-[#4EACAF]" />
                     <span>Thống kê theo từng từ trong phiên</span>
-                    <span className="text-xs bg-teal-50 text-[#4EACAF] border border-teal-100 px-2 py-0.5 rounded-full font-bold">
+                    <span className="text-xs bg-teal-50 text-[#4EACAF] border border-teal-100 px-2 py-0.5 rounded-full font-medium">
                       {sessionWordStats.length} từ
                     </span>
                   </h4>
-                  <div className="text-xs font-semibold flex items-center gap-1.5">
-                    <span className="text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md font-bold">
+                  <div className="text-xs font-medium flex items-center gap-1.5">
+                    <span className="text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md font-medium">
                       ✓ Đúng: {sessionCorrectWords}
                     </span>
-                    <span className="text-rose-700 bg-rose-50 border border-rose-200/60 px-2 py-0.5 rounded-md font-bold">
+                    <span className="text-rose-700 bg-rose-50 border border-rose-200/60 px-2 py-0.5 rounded-md font-medium">
                       ✕ Sai: {sessionWrongWords}
                     </span>
                   </div>
@@ -1691,13 +1691,13 @@ export default function LearningResultManagement() {
                         >
                           <div className="flex items-start justify-between gap-2 min-h-[44px]">
                             <div>
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Từ vựng</span>
-                              <span className="text-sm font-extrabold text-slate-800 capitalize leading-snug line-clamp-2">
+                              <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Từ vựng</span>
+                              <span className="text-sm font-semibold text-slate-800 capitalize leading-snug line-clamp-2">
                                 {item.word}
                               </span>
                             </div>
                             <span className={cn(
-                              "text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0",
+                              "text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0",
                               item.accuracyRate >= 80 ? "bg-emerald-100 text-emerald-800" :
                               item.accuracyRate >= 50 ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800"
                             )}>
@@ -1707,15 +1707,15 @@ export default function LearningResultManagement() {
 
                           {/* Chi tiết đúng bao nhiêu lần, sai bao nhiêu lần */}
                           <div className="flex items-center gap-1.5 text-xs flex-wrap">
-                            <div className="flex items-center gap-1 bg-emerald-100/80 text-emerald-900 px-2 py-0.5 rounded-md font-bold">
+                            <div className="flex items-center gap-1 bg-emerald-100/80 text-emerald-900 px-2 py-0.5 rounded-md font-medium">
                               <span>✓ Đúng:</span>
                               <span>{item.correctCount} lần</span>
                             </div>
-                            <div className="flex items-center gap-1 bg-rose-100/80 text-rose-900 px-2 py-0.5 rounded-md font-bold">
+                            <div className="flex items-center gap-1 bg-rose-100/80 text-rose-900 px-2 py-0.5 rounded-md font-medium">
                               <span>✕ Sai:</span>
                               <span>{item.wrongCount} lần</span>
                             </div>
-                            <span className="text-[11px] text-slate-400 font-semibold ml-auto">
+                            <span className="text-[11px] text-slate-400 font-normal ml-auto">
                               Tổng: {item.totalCount} lần
                             </span>
                           </div>
@@ -1737,7 +1737,7 @@ export default function LearningResultManagement() {
                             {/* Ghi chú khi trẻ phát âm đúng */}
                             {item.correctCount > 0 ? (
                               <div className="text-[11px] text-emerald-700 bg-white/90 p-2 rounded-lg border border-emerald-200 leading-snug">
-                                <span className="font-bold">Lúc nói đúng: </span>
+                                <span className="font-medium">Lúc nói đúng: </span>
                                 {item.attempts.some(a => a.isCorrect)
                                   ? item.attempts
                                       .filter(a => a.isCorrect)
@@ -1747,14 +1747,14 @@ export default function LearningResultManagement() {
                               </div>
                             ) : (
                               <div className="text-[11px] text-slate-400 bg-slate-50/70 p-2 rounded-lg border border-dashed border-slate-200 leading-snug">
-                                <span className="font-semibold text-slate-500">Lúc nói đúng: </span>Chưa có lần nào đúng
+                                <span className="font-medium text-slate-500">Lúc nói đúng: </span>Chưa có lần nào đúng
                               </div>
                             )}
 
                             {/* Ghi chú khi trẻ phát âm sai */}
                             {item.wrongCount > 0 ? (
                               <div className="text-[11px] text-rose-700 bg-white/90 p-2 rounded-lg border border-rose-200 leading-snug">
-                                <span className="font-bold">Lúc nói sai: </span>
+                                <span className="font-medium">Lúc nói sai: </span>
                                 {item.attempts.some(a => !a.isCorrect && a.spokenText)
                                   ? item.attempts
                                       .filter(a => !a.isCorrect && a.spokenText)
@@ -1764,7 +1764,7 @@ export default function LearningResultManagement() {
                               </div>
                             ) : (
                               <div className="text-[11px] text-emerald-700 bg-emerald-50/50 p-2 rounded-lg border border-dashed border-emerald-200/80 leading-snug">
-                                <span className="font-bold text-emerald-800">Lúc nói sai: </span>Không có lần nào sai (Bé nói chuẩn 100%)
+                                <span className="font-medium text-emerald-800">Lúc nói sai: </span>Không có lần nào sai (Bé nói chuẩn 100%)
                               </div>
                             )}
                           </div>
@@ -1782,7 +1782,7 @@ export default function LearningResultManagement() {
               {/* Comments feedback text section */}
               {canEditFeedback && (
                 <div className="space-y-3 bg-[#FFFDF5] p-4.5 rounded-2xl border border-yellow-100">
-                  <h4 className="text-sm font-bold text-slate-850 flex items-center gap-1.5">
+                  <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
                     <MessageCircle className="w-4 h-4 text-amber-500" />
                     Nhận xét & Hướng dẫn từ giáo viên
                   </h4>
@@ -1791,13 +1791,13 @@ export default function LearningResultManagement() {
                     placeholder="Viết hướng dẫn khẩu hình, các từ bé cần luyện thêm ở nhà hoặc nhận xét chung..."
                     value={feedbackInput}
                     onChange={(e) => setFeedbackInput(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-slate-200 outline-none text-sm font-medium placeholder-slate-400 bg-white focus:border-[#4EACAF] transition-colors resize-none"
+                    className="w-full p-3 rounded-xl border border-slate-200 outline-none text-sm font-normal placeholder-slate-400 bg-white focus:border-[#4EACAF] transition-colors resize-none"
                   />
                   <div className="flex justify-end">
                     <button
                       disabled={savingFeedback}
                       onClick={handleSaveFeedback}
-                      className="px-5 py-2.5 bg-[#4EACAF] hover:bg-[#3D8C8F] text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                      className="px-5 py-2.5 bg-[#4EACAF] hover:bg-[#3D8C8F] text-white rounded-xl text-xs font-medium transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
                     >
                       {savingFeedback ? (
                         <Activity className="w-3.5 h-3.5 animate-spin" />
@@ -1813,11 +1813,11 @@ export default function LearningResultManagement() {
               {/* Display feedback text to parent */}
               {currentRoleView === 'PARENT' && (
                 <div className="space-y-3 bg-[#FFFDF5] p-4.5 rounded-2xl border border-yellow-100">
-                  <h4 className="text-sm font-bold text-slate-855 flex items-center gap-1.5">
+                  <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
                     <MessageCircle className="w-4 h-4 text-amber-500" />
                     Nhận xét & Hướng dẫn từ giáo viên
                   </h4>
-                  <div className="p-3 bg-white rounded-xl border border-slate-200/60 text-sm font-medium text-slate-700 leading-relaxed min-h-[60px] whitespace-pre-wrap">
+                  <div className="p-3 bg-white rounded-xl border border-slate-200/60 text-sm font-normal text-slate-700 leading-relaxed min-h-[60px] whitespace-pre-wrap">
                     {selectedResult.FeedbackText ? (
                       selectedResult.FeedbackText
                     ) : (
@@ -1829,7 +1829,7 @@ export default function LearningResultManagement() {
 
               {/* Interaction Log Section */}
               <div className="space-y-2.5">
-                <h4 className="text-sm font-bold text-slate-850 flex items-center gap-1.5">
+                <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
                   <FileText className="w-4 h-4 text-[#4EACAF]" />
                   Nhật ký tương tác (Interaction Log)
                 </h4>
@@ -1852,11 +1852,11 @@ export default function LearningResultManagement() {
               <div className="space-y-4 pt-4 border-t border-slate-100">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                    <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wider flex items-center gap-2">
                       <Filter className="w-4 h-4 text-[#4EACAF]" />
                       <span>Danh sách các file âm thanh ghi âm</span>
                     </h4>
-                    <span className="text-xs bg-[#4EACAF]/10 text-[#4EACAF] px-2.5 py-0.5 rounded-full font-bold">
+                    <span className="text-xs bg-[#4EACAF]/10 text-[#4EACAF] px-2.5 py-0.5 rounded-full font-medium">
                       {filteredChunks.length} / {chunks.length} đoạn
                     </span>
                   </div>
@@ -1864,7 +1864,7 @@ export default function LearningResultManagement() {
                     <button
                       type="button"
                       onClick={() => { setChunkSearchQuery(''); setChunkStatusFilter('ALL'); }}
-                      className="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer self-start sm:self-auto flex items-center gap-1"
+                      className="text-xs font-medium text-slate-500 hover:text-slate-800 transition-colors cursor-pointer self-start sm:self-auto flex items-center gap-1"
                     >
                       <X className="w-3.5 h-3.5" />
                       <span>Đặt lại bộ lọc</span>
@@ -1882,7 +1882,7 @@ export default function LearningResultManagement() {
                         value={chunkSearchQuery}
                         onChange={(e) => setChunkSearchQuery(e.target.value)}
                         placeholder="Tìm theo từ chuẩn, từ trẻ nói, mốc giây [..s] hoặc số thứ tự đoạn..."
-                        className="w-full px-3.5 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold placeholder:text-slate-400 focus:outline-none focus:border-[#4EACAF] focus:ring-2 focus:ring-[#4EACAF]/15 transition-all text-slate-800"
+                        className="w-full px-3.5 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-xs font-normal placeholder:text-slate-400 focus:outline-none focus:border-[#4EACAF] focus:ring-2 focus:ring-[#4EACAF]/15 transition-all text-slate-800"
                       />
                       {chunkSearchQuery && (
                         <button
@@ -1901,7 +1901,7 @@ export default function LearningResultManagement() {
                         type="button"
                         onClick={() => setChunkStatusFilter('ALL')}
                         className={cn(
-                          "px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 border",
+                          "px-3 py-1.5 rounded-xl font-medium transition-all cursor-pointer flex items-center gap-1.5 border",
                           chunkStatusFilter === 'ALL'
                             ? "bg-slate-800 text-white border-slate-800 shadow-xs"
                             : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100/70"
@@ -1920,7 +1920,7 @@ export default function LearningResultManagement() {
                         type="button"
                         onClick={() => setChunkStatusFilter('CORRECT')}
                         className={cn(
-                          "px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 border",
+                          "px-3 py-1.5 rounded-xl font-medium transition-all cursor-pointer flex items-center gap-1.5 border",
                           chunkStatusFilter === 'CORRECT'
                             ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
                             : "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50/70"
@@ -1928,7 +1928,7 @@ export default function LearningResultManagement() {
                       >
                         <span>✓ Phát âm đúng</span>
                         <span className={cn(
-                          "text-[10px] px-1.5 py-0.2 rounded-full font-extrabold",
+                          "text-[10px] px-1.5 py-0.2 rounded-full font-medium",
                           chunkStatusFilter === 'CORRECT' ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-800"
                         )}>
                           {chunkStats.correctCount}
@@ -1939,7 +1939,7 @@ export default function LearningResultManagement() {
                         type="button"
                         onClick={() => setChunkStatusFilter('WRONG')}
                         className={cn(
-                          "px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 border",
+                          "px-3 py-1.5 rounded-xl font-medium transition-all cursor-pointer flex items-center gap-1.5 border",
                           chunkStatusFilter === 'WRONG'
                             ? "bg-rose-600 text-white border-rose-600 shadow-xs"
                             : "bg-white text-rose-700 border-rose-200 hover:bg-rose-50/70"
@@ -1947,7 +1947,7 @@ export default function LearningResultManagement() {
                       >
                         <span>✕ Phát âm sai</span>
                         <span className={cn(
-                          "text-[10px] px-1.5 py-0.2 rounded-full font-extrabold",
+                          "text-[10px] px-1.5 py-0.2 rounded-full font-medium",
                           chunkStatusFilter === 'WRONG' ? "bg-white/20 text-white" : "bg-rose-100 text-rose-800"
                         )}>
                           {chunkStats.wrongCount}
@@ -1959,7 +1959,7 @@ export default function LearningResultManagement() {
                           type="button"
                           onClick={() => setChunkStatusFilter('SILENT')}
                           className={cn(
-                            "px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 border",
+                            "px-3 py-1.5 rounded-xl font-medium transition-all cursor-pointer flex items-center gap-1.5 border",
                             chunkStatusFilter === 'SILENT'
                               ? "bg-amber-600 text-white border-amber-600 shadow-xs"
                               : "bg-white text-amber-700 border-amber-200 hover:bg-amber-50/70"
@@ -1967,7 +1967,7 @@ export default function LearningResultManagement() {
                         >
                           <span>Im lặng / Chưa rõ</span>
                           <span className={cn(
-                            "text-[10px] px-1.5 py-0.2 rounded-full font-extrabold",
+                            "text-[10px] px-1.5 py-0.2 rounded-full font-medium",
                             chunkStatusFilter === 'SILENT' ? "bg-white/20 text-white" : "bg-amber-100 text-amber-800"
                           )}>
                             {chunkStats.silentCount}
@@ -1979,7 +1979,7 @@ export default function LearningResultManagement() {
                         type="button"
                         onClick={() => setChunkStatusFilter('ASSESSED')}
                         className={cn(
-                          "px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 border",
+                          "px-3 py-1.5 rounded-xl font-medium transition-all cursor-pointer flex items-center gap-1.5 border",
                           chunkStatusFilter === 'ASSESSED'
                             ? "bg-[#4EACAF] text-white border-[#4EACAF] shadow-xs"
                             : "bg-white text-[#3D8C8F] border-[#4EACAF]/30 hover:bg-[#4EACAF]/10"
@@ -1988,7 +1988,7 @@ export default function LearningResultManagement() {
                         <Sparkles className="w-3 h-3" />
                         <span>Đã đánh giá AI</span>
                         <span className={cn(
-                          "text-[10px] px-1.5 py-0.2 rounded-full font-extrabold",
+                          "text-[10px] px-1.5 py-0.2 rounded-full font-medium",
                           chunkStatusFilter === 'ASSESSED' ? "bg-white/20 text-white" : "bg-[#4EACAF]/15 text-[#3D8C8F]"
                         )}>
                           {chunkStats.assessedCount}
@@ -2001,21 +2001,21 @@ export default function LearningResultManagement() {
                 {loadingChunks ? (
                   <div className="py-12 text-center">
                     <Activity className="w-8 h-8 text-[#4EACAF] animate-spin mx-auto mb-2" />
-                    <p className="text-xs font-semibold text-slate-500">Đang quét danh sách đoạn âm thanh...</p>
+                    <p className="text-xs font-normal text-slate-500">Đang quét danh sách đoạn âm thanh...</p>
                   </div>
                 ) : chunks.length === 0 ? (
                   <div className="py-8 text-center text-slate-400 border-2 border-dashed border-slate-100 rounded-2xl">
                     <VolumeX className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-xs font-semibold">Không quét thấy file audio chunk tương ứng trong session này.</p>
+                    <p className="text-xs font-normal">Không quét thấy file audio chunk tương ứng trong session này.</p>
                   </div>
                 ) : filteredChunks.length === 0 ? (
                   <div className="py-8 text-center text-slate-400 border-2 border-dashed border-slate-100 rounded-2xl space-y-2">
                     <Search className="w-8 h-8 mx-auto text-slate-300" />
-                    <p className="text-xs font-semibold text-slate-600">Không tìm thấy đoạn âm thanh nào phù hợp với bộ lọc.</p>
+                    <p className="text-xs font-normal text-slate-600">Không tìm thấy đoạn âm thanh nào phù hợp với bộ lọc.</p>
                     <button
                       type="button"
                       onClick={() => { setChunkSearchQuery(''); setChunkStatusFilter('ALL'); }}
-                      className="text-xs font-bold text-[#4EACAF] hover:underline cursor-pointer"
+                      className="text-xs font-medium text-[#4EACAF] hover:underline cursor-pointer"
                     >
                       Xóa bộ lọc
                     </button>
@@ -2039,7 +2039,7 @@ export default function LearningResultManagement() {
                               <div className="p-2 bg-[#4EACAF]/10 text-[#4EACAF] rounded-lg">
                                 <FileAudio className="w-4 h-4" />
                               </div>
-                              <div className="text-sm font-bold text-slate-800">
+                              <div className="text-sm font-semibold text-slate-800">
                                 {event
                                   ? `Đoạn âm thanh giây: [${event.timeSeconds}s]`
                                   : `Đoạn âm thanh #${cIndex + 1}`
@@ -2047,7 +2047,7 @@ export default function LearningResultManagement() {
                               </div>
                               {event && event.isCorrect !== undefined && (
                                 <span className={cn(
-                                  "text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border flex items-center gap-1 ml-1",
+                                  "text-[10px] font-medium uppercase tracking-wider px-2.5 py-0.5 rounded-full border flex items-center gap-1 ml-1",
                                   event.isCorrect
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                     : "bg-rose-50 text-rose-700 border-rose-200"
@@ -2063,7 +2063,7 @@ export default function LearningResultManagement() {
                               onClick={() => handlePlayChunk(chunk.chunkUrl, cIndex)}
                               title={isSilentOrUnclear ? "Audio không khả dụng do trẻ im lặng hoặc không nghe rõ" : undefined}
                               className={cn(
-                                "flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm border self-start sm:self-auto",
+                                "flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all shadow-sm border self-start sm:self-auto",
                                 isSilentOrUnclear
                                   ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60"
                                   : loadingAudioIndex === cIndex
@@ -2102,13 +2102,13 @@ export default function LearningResultManagement() {
                             {currentRoleView !== 'PARENT' ? (
                               <div className="space-y-2">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs font-bold text-slate-500">Từ/Câu kỳ vọng:</span>
+                                  <span className="text-xs font-medium text-slate-500">Từ/Câu kỳ vọng:</span>
                                   <input
                                     type="text"
                                     placeholder="Nhập từ chuẩn bé phải phát âm..."
                                     value={referenceTexts[cIndex] || ''}
                                     onChange={(e) => setReferenceTexts(prev => ({ ...prev, [cIndex]: e.target.value }))}
-                                    className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 outline-none text-xs font-semibold placeholder-slate-400 focus:border-[#4EACAF]"
+                                    className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 outline-none text-xs font-normal placeholder-slate-400 focus:border-[#4EACAF]"
                                   />
                                   <button
                                     type="button"
@@ -2116,7 +2116,7 @@ export default function LearningResultManagement() {
                                     onClick={() => handleAssessChunk(cIndex)}
                                     title={isSilentOrUnclear ? "Không hỗ trợ AI đánh giá khi trẻ im lặng hoặc không nghe rõ" : undefined}
                                     className={cn(
-                                      "px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shrink-0",
+                                      "px-4 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 shrink-0",
                                       isSilentOrUnclear
                                         ? "bg-slate-200 text-slate-400 border border-slate-300 cursor-not-allowed opacity-70"
                                         : "bg-[#4EACAF] hover:bg-[#3D8C8F] disabled:bg-slate-350 text-white cursor-pointer"
@@ -2133,7 +2133,7 @@ export default function LearningResultManagement() {
                                     type="button"
                                     onClick={() => handleOpenManualScore(cIndex)}
                                     title="Giáo viên nhập / điều chỉnh 4 thông số điểm"
-                                    className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 cursor-pointer shadow-sm hover:shadow"
+                                    className="px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 cursor-pointer shadow-sm hover:shadow"
                                   >
                                     <Edit3 className="w-3.5 h-3.5 text-amber-600" />
                                     Nhập điểm
@@ -2142,9 +2142,9 @@ export default function LearningResultManagement() {
                                 {event && event.spokenText && (
                                   <div className="space-y-1">
                                     <div className="flex items-center gap-2 text-xs">
-                                      <span className="font-bold text-slate-500">Trẻ thực tế nói:</span>
+                                      <span className="font-medium text-slate-500">Trẻ thực tế nói:</span>
                                       <span className={cn(
-                                        "font-bold italic px-2.5 py-0.5 rounded-lg border",
+                                        "font-medium italic px-2.5 py-0.5 rounded-lg border",
                                         isSilentOrUnclear
                                           ? "bg-amber-50 text-amber-800 border-amber-200"
                                           : event.isCorrect ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
@@ -2153,7 +2153,7 @@ export default function LearningResultManagement() {
                                       </span>
                                     </div>
                                     {isSilentOrUnclear && (
-                                      <p className="text-[11px] font-semibold text-amber-700 bg-amber-50/80 px-2.5 py-1 rounded-lg border border-amber-200/60 flex items-center gap-1.5 mt-1">
+                                      <p className="text-[11px] font-normal text-amber-700 bg-amber-50/80 px-2.5 py-1 rounded-lg border border-amber-200/60 flex items-center gap-1.5 mt-1">
                                         <ShieldAlert className="w-3.5 h-3.5 shrink-0 text-amber-600" />
                                         <span>Trẻ im lặng hoặc phát âm không nghe rõ: Hệ thống không ghi nhận được file âm thanh để phát lại và AI không có dữ liệu đầu vào để thẩm âm.</span>
                                       </p>
@@ -2165,8 +2165,8 @@ export default function LearningResultManagement() {
                               <div className="space-y-2">
                                 {referenceTexts[cIndex] && (
                                   <div className="flex items-center gap-2">
-                                    <span className="text-xs font-bold text-slate-500">Từ/Câu kỳ vọng:</span>
-                                    <span className="text-xs font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-xl">
+                                    <span className="text-xs font-medium text-slate-500">Từ/Câu kỳ vọng:</span>
+                                    <span className="text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-xl">
                                       "{referenceTexts[cIndex]}"
                                     </span>
                                   </div>
@@ -2174,9 +2174,9 @@ export default function LearningResultManagement() {
                                 {event && event.spokenText && (
                                   <div className="space-y-1">
                                     <div className="flex items-center gap-2 text-xs">
-                                      <span className="font-bold text-slate-500">Trẻ thực tế nói:</span>
+                                      <span className="font-medium text-slate-500">Trẻ thực tế nói:</span>
                                       <span className={cn(
-                                        "font-bold italic px-3 py-1 rounded-xl border",
+                                        "font-medium italic px-3 py-1 rounded-xl border",
                                         isSilentOrUnclear
                                           ? "bg-amber-50 text-amber-800 border-amber-200"
                                           : event.isCorrect ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
@@ -2185,7 +2185,7 @@ export default function LearningResultManagement() {
                                       </span>
                                     </div>
                                     {isSilentOrUnclear && (
-                                      <p className="text-[11px] font-semibold text-amber-700 bg-amber-50/80 px-2.5 py-1 rounded-lg border border-amber-200/60 flex items-center gap-1.5 mt-1">
+                                      <p className="text-[11px] font-normal text-amber-700 bg-amber-50/80 px-2.5 py-1 rounded-lg border border-amber-200/60 flex items-center gap-1.5 mt-1">
                                         <ShieldAlert className="w-3.5 h-3.5 shrink-0 text-amber-600" />
                                         <span>Trẻ im lặng hoặc không nghe rõ: Không có audio ghi âm & Đánh giá AI.</span>
                                       </p>
@@ -2224,14 +2224,14 @@ export default function LearningResultManagement() {
                                 <div className="p-4 bg-white border border-slate-200/85 rounded-xl space-y-3 animate-in fade-in duration-300">
                                   {currentRoleView !== 'PARENT' && (
                                     <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                                      <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 flex items-center gap-1">
                                         <Activity className="w-3.5 h-3.5 text-[#4EACAF]" />
                                         4 Thông số thẩm âm:
                                       </span>
                                       <button
                                         type="button"
                                         onClick={() => handleOpenManualScore(cIndex)}
-                                        className="text-xs font-bold text-[#4EACAF] hover:text-[#388285] bg-[#4EACAF]/10 hover:bg-[#4EACAF]/20 border border-[#4EACAF]/25 px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                                        className="text-xs font-medium text-[#4EACAF] hover:text-[#388285] bg-[#4EACAF]/10 hover:bg-[#4EACAF]/20 border border-[#4EACAF]/25 px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
                                       >
                                         <Edit3 className="w-3.5 h-3.5" />
                                         Chỉnh sửa 4 thông số
@@ -2247,8 +2247,8 @@ export default function LearningResultManagement() {
                                       )}
                                       title={currentRoleView !== 'PARENT' ? "Nhấp để giáo viên điều chỉnh 4 thông số" : undefined}
                                     >
-                                      <div className="text-xs font-bold text-slate-450">Độ chính xác</div>
-                                      <div className="text-sm font-black text-emerald-600 mt-0.5">
+                                      <div className="text-xs font-medium text-slate-500">Độ chính xác</div>
+                                      <div className="text-sm font-semibold text-emerald-600 mt-0.5">
                                         {accuracyVal}%
                                       </div>
                                     </div>
@@ -2260,8 +2260,8 @@ export default function LearningResultManagement() {
                                       )}
                                       title={currentRoleView !== 'PARENT' ? "Nhấp để giáo viên điều chỉnh 4 thông số" : undefined}
                                     >
-                                      <div className="text-xs font-bold text-slate-450">Phát âm</div>
-                                      <div className="text-sm font-black text-indigo-600 mt-0.5">
+                                      <div className="text-xs font-medium text-slate-500">Phát âm</div>
+                                      <div className="text-sm font-semibold text-indigo-600 mt-0.5">
                                         {pronVal}%
                                       </div>
                                     </div>
@@ -2273,8 +2273,8 @@ export default function LearningResultManagement() {
                                       )}
                                       title={currentRoleView !== 'PARENT' ? "Nhấp để giáo viên điều chỉnh 4 thông số" : undefined}
                                     >
-                                      <div className="text-xs font-bold text-slate-450">Trôi chảy</div>
-                                      <div className="text-sm font-black text-purple-600 mt-0.5">
+                                      <div className="text-xs font-medium text-slate-500">Trôi chảy</div>
+                                      <div className="text-sm font-semibold text-purple-600 mt-0.5">
                                         {fluencyVal}%
                                       </div>
                                     </div>
@@ -2286,15 +2286,15 @@ export default function LearningResultManagement() {
                                       )}
                                       title={currentRoleView !== 'PARENT' ? "Nhấp để giáo viên điều chỉnh 4 thông số" : undefined}
                                     >
-                                      <div className="text-xs font-bold text-slate-450">Hoàn thành</div>
-                                      <div className="text-sm font-black text-teal-600 mt-0.5">
+                                      <div className="text-xs font-medium text-slate-500">Hoàn thành</div>
+                                      <div className="text-sm font-semibold text-teal-600 mt-0.5">
                                         {completenessVal}%
                                       </div>
                                     </div>
                                   </div>
 
                                   <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                                    <div className="text-xs font-bold text-slate-400">Chi tiết phát âm cụm từ của AI:</div>
+                                    <div className="text-xs font-medium text-slate-400">Chi tiết phát âm cụm từ của AI:</div>
                                     <div className="flex flex-wrap gap-2">
                                       {(assessment.words || assessment.Words || []).map((wObj: any, wIdx: number) => {
                                         const wordText = wObj.word || wObj.Word;
@@ -2310,7 +2310,7 @@ export default function LearningResultManagement() {
                                           <div
                                             key={wIdx}
                                             className={cn(
-                                              "px-2.5 py-1 rounded-lg border font-bold text-xs flex items-center gap-1.5 shadow-sm",
+                                              "px-2.5 py-1 rounded-lg border font-medium text-xs flex items-center gap-1.5 shadow-sm",
                                               isCorrect
                                                 ? "bg-emerald-50 text-emerald-700 border-emerald-100"
                                                 : isMedium
@@ -2373,7 +2373,7 @@ export default function LearningResultManagement() {
                       Chấm điểm đoạn #{scoringChunkIndex + 1}
                     </h3>
                     <p className="text-[11px] text-slate-500 font-medium">
-                      Từ kỳ vọng: <span className="font-bold text-[#4EACAF]">"{referenceTexts[scoringChunkIndex] || parsedEvents[scoringChunkIndex]?.text || 'N/A'}"</span>
+                      Từ kỳ vọng: <span className="font-semibold text-[#4EACAF]">"{referenceTexts[scoringChunkIndex] || parsedEvents[scoringChunkIndex]?.text || 'N/A'}"</span>
                     </p>
                   </div>
                 </div>
@@ -2390,12 +2390,12 @@ export default function LearningResultManagement() {
               <div className="p-6 space-y-4">
                 {/* Accuracy */}
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-bold text-slate-700">
+                  <div className="flex justify-between text-xs font-medium text-slate-700">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                       Độ chính xác
                     </span>
-                    <span className="text-emerald-600 font-black text-sm">{manualScores.accuracy}%</span>
+                    <span className="text-emerald-600 font-semibold text-sm">{manualScores.accuracy}%</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <input
@@ -2413,19 +2413,19 @@ export default function LearningResultManagement() {
                       max="100"
                       value={manualScores.accuracy}
                       onChange={(e) => setManualScores(prev => ({ ...prev, accuracy: Math.min(100, Math.max(0, Number(e.target.value))) }))}
-                      className="w-16 px-2 py-1 text-xs font-bold text-center border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+                      className="w-16 px-2 py-1 text-xs font-medium text-center border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
                     />
                   </div>
                 </div>
 
                 {/* Pronunciation */}
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-bold text-slate-700">
+                  <div className="flex justify-between text-xs font-medium text-slate-700">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
                       Phát âm
                     </span>
-                    <span className="text-indigo-600 font-black text-sm">{manualScores.pronunciation}%</span>
+                    <span className="text-indigo-600 font-semibold text-sm">{manualScores.pronunciation}%</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <input
@@ -2443,19 +2443,19 @@ export default function LearningResultManagement() {
                       max="100"
                       value={manualScores.pronunciation}
                       onChange={(e) => setManualScores(prev => ({ ...prev, pronunciation: Math.min(100, Math.max(0, Number(e.target.value))) }))}
-                      className="w-16 px-2 py-1 text-xs font-bold text-center border border-slate-200 rounded-lg focus:border-indigo-500 outline-none"
+                      className="w-16 px-2 py-1 text-xs font-medium text-center border border-slate-200 rounded-lg focus:border-indigo-500 outline-none"
                     />
                   </div>
                 </div>
 
                 {/* Fluency */}
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-bold text-slate-700">
+                  <div className="flex justify-between text-xs font-medium text-slate-700">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
                       Trôi chảy
                     </span>
-                    <span className="text-purple-600 font-black text-sm">{manualScores.fluency}%</span>
+                    <span className="text-purple-600 font-semibold text-sm">{manualScores.fluency}%</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <input
@@ -2473,19 +2473,19 @@ export default function LearningResultManagement() {
                       max="100"
                       value={manualScores.fluency}
                       onChange={(e) => setManualScores(prev => ({ ...prev, fluency: Math.min(100, Math.max(0, Number(e.target.value))) }))}
-                      className="w-16 px-2 py-1 text-xs font-bold text-center border border-slate-200 rounded-lg focus:border-purple-500 outline-none"
+                      className="w-16 px-2 py-1 text-xs font-medium text-center border border-slate-200 rounded-lg focus:border-purple-500 outline-none"
                     />
                   </div>
                 </div>
 
                 {/* Completeness */}
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-bold text-slate-700">
+                  <div className="flex justify-between text-xs font-medium text-slate-700">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2.5 h-2.5 rounded-full bg-teal-500" />
                       Hoàn thành
                     </span>
-                    <span className="text-teal-600 font-black text-sm">{manualScores.completeness}%</span>
+                    <span className="text-teal-600 font-semibold text-sm">{manualScores.completeness}%</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <input
@@ -2503,7 +2503,7 @@ export default function LearningResultManagement() {
                       max="100"
                       value={manualScores.completeness}
                       onChange={(e) => setManualScores(prev => ({ ...prev, completeness: Math.min(100, Math.max(0, Number(e.target.value))) }))}
-                      className="w-16 px-2 py-1 text-xs font-bold text-center border border-slate-200 rounded-lg focus:border-teal-500 outline-none"
+                      className="w-16 px-2 py-1 text-xs font-medium text-center border border-slate-200 rounded-lg focus:border-teal-500 outline-none"
                     />
                   </div>
                 </div>
@@ -2515,28 +2515,28 @@ export default function LearningResultManagement() {
                     <button
                       type="button"
                       onClick={() => setManualScores({ accuracy: 100, pronunciation: 100, fluency: 100, completeness: 100 })}
-                      className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100 transition-colors cursor-pointer"
+                      className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-medium hover:bg-emerald-100 transition-colors cursor-pointer"
                     >
                       100%
                     </button>
                     <button
                       type="button"
                       onClick={() => setManualScores({ accuracy: 90, pronunciation: 90, fluency: 85, completeness: 100 })}
-                      className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold hover:bg-indigo-100 transition-colors cursor-pointer"
+                      className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-medium hover:bg-indigo-100 transition-colors cursor-pointer"
                     >
                       90%
                     </button>
                     <button
                       type="button"
                       onClick={() => setManualScores({ accuracy: 75, pronunciation: 70, fluency: 70, completeness: 80 })}
-                      className="px-2 py-0.5 rounded bg-amber-50 text-amber-700 font-bold hover:bg-amber-100 transition-colors cursor-pointer"
+                      className="px-2 py-0.5 rounded bg-amber-50 text-amber-700 font-medium hover:bg-amber-100 transition-colors cursor-pointer"
                     >
                       75%
                     </button>
                     <button
                       type="button"
                       onClick={() => setManualScores({ accuracy: 50, pronunciation: 50, fluency: 40, completeness: 50 })}
-                      className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 font-bold hover:bg-rose-100 transition-colors cursor-pointer"
+                      className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 font-medium hover:bg-rose-100 transition-colors cursor-pointer"
                     >
                       50%
                     </button>
@@ -2549,7 +2549,7 @@ export default function LearningResultManagement() {
                 <button
                   type="button"
                   onClick={() => setScoringChunkIndex(null)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
                 >
                   Hủy
                 </button>
@@ -2557,7 +2557,7 @@ export default function LearningResultManagement() {
                   type="button"
                   disabled={isSavingManualScore}
                   onClick={handleSaveManualScore}
-                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#4EACAF] hover:bg-[#3D8C8F] transition-all flex items-center gap-1.5 shadow-md shadow-[#4EACAF]/20 disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2 rounded-xl text-xs font-medium text-white bg-[#4EACAF] hover:bg-[#3D8C8F] transition-all flex items-center gap-1.5 shadow-md shadow-[#4EACAF]/20 disabled:opacity-50 cursor-pointer"
                 >
                   {isSavingManualScore ? (
                     <Activity className="w-3.5 h-3.5 animate-spin" />

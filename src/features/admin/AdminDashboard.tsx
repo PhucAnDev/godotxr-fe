@@ -125,14 +125,14 @@ export default function AdminDashboard() {
     <div className="space-y-4 pb-24 relative">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-1">
         <div className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight leading-tight">
             Bảng điều khiển <span className="text-[#4EACAF]">Hệ thống</span>
           </h1>
         </div>
 
         <button
           onClick={() => navigate('/admin/users')}
-          className="bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-bold py-4 px-8 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[#4EACAF]/20 transition-all hover:scale-105 active:scale-95 shrink-0 cursor-pointer"
+          className="bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-medium py-4 px-8 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-[#4EACAF]/20 transition-all hover:scale-105 active:scale-95 shrink-0 cursor-pointer"
         >
           <Users className="w-5 h-5" strokeWidth={2} />
           Quản lý người dùng
@@ -172,30 +172,30 @@ export default function AdminDashboard() {
         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h3 className="text-lg font-bold text-slate-800 leading-none">Hoạt động rèn luyện gần đây</h3>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1.5">
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mt-1.5">
               Danh sách chi tiết kết quả luyện tập của học sinh đồng bộ từ thiết bị VR
             </p>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-[#4EACAF] rounded-full animate-pulse" />
-            <span className="text-xs text-[#4EACAF] font-bold uppercase tracking-wider">Hệ thống đồng bộ</span>
+            <span className="text-xs text-[#4EACAF] font-medium uppercase tracking-wider">Hệ thống đồng bộ</span>
           </div>
         </div>
 
         <div className="overflow-x-auto">
           {isLoading ? (
             <div className="py-20 flex flex-col items-center gap-4 text-slate-400">
-              <span className="text-sm font-bold animate-pulse">Đang tải danh sách hoạt động...</span>
+              <span className="text-sm font-medium animate-pulse">Đang tải danh sách hoạt động...</span>
             </div>
           ) : recentActivities.length === 0 ? (
             <div className="py-16 text-center space-y-4">
-              <p className="text-base font-bold text-slate-700">Chưa ghi nhận hoạt động rèn luyện nào!</p>
+              <p className="text-base font-semibold text-slate-700">Chưa ghi nhận hoạt động rèn luyện nào!</p>
               <p className="text-slate-400 text-xs">Hãy để học sinh hoàn thành bài tập VR để cập nhật bảng nhật ký này.</p>
             </div>
           ) : (
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-500 font-bold text-xs uppercase tracking-wider">
+                <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-500 font-medium text-xs uppercase tracking-wider">
                   <th className="py-4 px-6">Thời gian</th>
                   <th className="py-4 px-6">Học sinh</th>
                   <th className="py-4 px-6">Hành động</th>
@@ -203,19 +203,19 @@ export default function AdminDashboard() {
                   <th className="py-4 px-6 text-right">Trạng thái</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-sm text-slate-750">
+              <tbody className="divide-y divide-slate-100 font-normal text-sm text-slate-750">
                 {recentActivities.map((act, idx) => (
                   <tr key={idx} className="hover:bg-slate-50/40 transition-colors">
                     {/* Time */}
-                    <td className="py-4 px-6 font-mono text-slate-400 font-bold text-xs">
+                    <td className="py-4 px-6 font-mono text-slate-400 font-normal text-xs">
                       {act.time}
                     </td>
                     {/* Student */}
-                    <td className="py-4 px-6 font-bold text-slate-800 text-sm">
+                    <td className="py-4 px-6 font-medium text-slate-800 text-sm">
                       {act.user}
                     </td>
                     {/* Action */}
-                    <td className="py-4 px-6 text-slate-600 font-medium text-sm">
+                    <td className="py-4 px-6 text-slate-600 font-normal text-sm">
                       {act.action}
                     </td>
                     {/* Target details */}
@@ -226,7 +226,7 @@ export default function AdminDashboard() {
                     </td>
                     {/* Status badge */}
                     <td className="py-4 px-6 text-right">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wide">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wide">
                         Đã đồng bộ
                       </span>
                     </td>
@@ -241,7 +241,7 @@ export default function AdminDashboard() {
       {/* Decorative Quote */}
       <div className="flex items-center justify-center gap-4 bg-orange-50/40 p-6 rounded-xl border-2 border-orange-100 max-w-lg mx-auto">
         <Smile className="w-10 h-10 text-orange-400 fill-current shrink-0 animate-pulse" />
-        <p className="text-gray-500 font-bold text-xs md:text-sm italic leading-snug">
+        <p className="text-gray-500 font-normal text-xs md:text-sm italic leading-snug">
           "Trẻ em nhận được sự hỗ trợ ngôn ngữ can thiệp sớm tốt nhất nhờ quy trình phối hợp khép kín giữa giáo viên đặc biệt và cha mẹ yêu thương."
         </p>
       </div>
@@ -270,10 +270,10 @@ function StatItem({
         {icon}
       </div>
       <div>
-        <p className="text-2xl font-black text-slate-800 leading-none">
+        <p className="text-2xl font-bold text-slate-800 leading-none">
           {value.toLocaleString()}
         </p>
-        <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1.5">{title}</p>
+        <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mt-1.5">{title}</p>
         {subtitle && <p className="text-[10px] text-slate-400 font-medium mt-1 leading-none">{subtitle}</p>}
       </div>
     </div>

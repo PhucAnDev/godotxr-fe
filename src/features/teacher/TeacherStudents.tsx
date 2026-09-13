@@ -396,7 +396,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
       <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
         <div className="flex items-center gap-3 text-slate-600">
           <TrendingUp className="h-5 w-5 animate-pulse text-[#4EACAF]" />
-          <span className="font-semibold">
+          <span className="font-medium">
             Đang tải danh sách học sinh từ hệ thống...
           </span>
         </div>
@@ -408,7 +408,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
     <div className="space-y-4" id="teacher-students-container">
       <div className="flex flex-col justify-between gap-4 py-1 md:flex-row md:items-center">
         <div className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight leading-tight">
             Quản Lý <span className="text-[#4EACAF]">Học Viên</span>
           </h1>
         </div>
@@ -419,10 +419,10 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
               <Award className="h-6 w-6" />
             </div>
             <div>
-              <div className="text-2xl font-black text-gray-900">
+              <div className="text-2xl font-bold text-gray-900">
                 {stats.total}
               </div>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+              <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
                 Tổng học viên
               </div>
             </div>
@@ -435,10 +435,10 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
             <div className="space-y-2">
-              <p className="font-semibold">{errorMessage}</p>
+              <p className="font-medium">{errorMessage}</p>
               <button
                 onClick={() => setReloadSeed((value) => value + 1)}
-                className="rounded-xl bg-white px-3 py-2 text-xs font-black uppercase tracking-wider text-rose-600 transition-colors hover:bg-rose-100"
+                className="rounded-xl bg-white px-3 py-2 text-xs font-medium uppercase tracking-wider text-rose-600 transition-colors hover:bg-rose-100"
               >
                 Tải lại dữ liệu
               </button>
@@ -456,10 +456,10 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
             <GraduationCap className="h-8 w-8" />
           </div>
           <div>
-            <h4 className="text-2xl font-black text-gray-900">
+            <h4 className="text-2xl font-bold text-gray-900">
               {stats.total} Học sinh
             </h4>
-            <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
+            <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
               Lớp tôi phụ trách
             </p>
           </div>
@@ -473,10 +473,10 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
             <TrendingUp className="h-8 w-8" />
           </div>
           <div>
-            <h4 className="text-2xl font-black text-gray-900">
+            <h4 className="text-2xl font-bold text-gray-900">
               {stats.averageAge} Tuổi
             </h4>
-            <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
+            <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
               Độ tuổi trung bình
             </p>
           </div>
@@ -490,8 +490,8 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
             <Sparkles className="h-8 w-8" />
           </div>
           <div>
-            <h4 className="text-2xl font-black text-gray-900">{stats.boys} Bé trai</h4>
-            <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
+            <h4 className="text-2xl font-bold text-gray-900">{stats.boys} Bé trai</h4>
+            <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
               Giới tính nam
             </p>
           </div>
@@ -505,8 +505,8 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
             <Heart className="h-8 w-8" />
           </div>
           <div>
-            <h4 className="text-2xl font-black text-gray-900">{stats.girls} Bé gái</h4>
-            <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
+            <h4 className="text-2xl font-bold text-gray-900">{stats.girls} Bé gái</h4>
+            <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
               Giới tính nữ
             </p>
           </div>
@@ -520,7 +520,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
             placeholder="Tìm theo tên học sinh, ID, trình độ hoặc tên phụ huynh..."
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            className="w-full rounded-[20px] border-2 border-slate-50 bg-slate-50 py-4 pl-5 pr-5 text-sm font-bold text-gray-800 outline-none transition-all placeholder:text-gray-400 focus:border-[#4EACAF] focus:bg-white"
+            className="w-full rounded-[20px] border-2 border-slate-50 bg-slate-50 py-4 pl-5 pr-5 text-sm font-normal text-gray-800 outline-none transition-all placeholder:text-gray-400 focus:border-[#4EACAF] focus:bg-white"
           />
         </div>
 
@@ -531,7 +531,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                 key={gender}
                 onClick={() => setSelectedGender(gender)}
                 className={cn(
-                  'cursor-pointer rounded-xl px-4 py-2 text-xs font-black transition-all',
+                  'cursor-pointer rounded-xl px-4 py-2 text-xs font-medium transition-all',
                   selectedGender === gender
                     ? 'bg-[#4EACAF] text-white shadow-md shadow-[#4EACAF]/20'
                     : 'text-gray-500 hover:bg-slate-100/60 hover:text-gray-800'
@@ -553,7 +553,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
             <select
               value={selectedLevel}
               onChange={(event) => setSelectedLevel(event.target.value)}
-              className="rounded-xl bg-transparent px-2 py-2 text-xs font-black text-slate-700 outline-none"
+              className="rounded-xl bg-transparent px-2 py-2 text-xs font-medium text-slate-700 outline-none"
             >
               {levelOptions.map((level) => (
                 <option key={level} value={level}>
@@ -571,7 +571,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
           <h3 className="mb-2 text-xl font-bold text-slate-800">
             Không tìm thấy thông tin phù hợp
           </h3>
-          <p className="mx-auto max-w-sm text-sm font-bold text-slate-400">
+          <p className="mx-auto max-w-sm text-sm font-normal text-slate-400">
             Hệ thống không tìm thấy học viên nào khớp với bộ lọc hoặc từ khóa tìm
             kiếm của bạn.
           </p>
@@ -592,25 +592,25 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                 >
                   <div className="space-y-6">
                     <div className="flex flex-wrap items-center justify-between gap-2.5">
-                      <span className="rounded-full border border-slate-100 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase italic tracking-wider text-gray-400">
+                      <span className="rounded-full border border-slate-100 bg-slate-50 px-2.5 py-1 text-[10px] font-medium uppercase italic tracking-wider text-gray-400">
                         {child.ChildId}
                       </span>
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="rounded-full border border-[#4EACAF]/10 bg-[#4EACAF]/10 px-2.5 py-1 text-[10px] font-bold text-[#4EACAF]">
+                        <span className="rounded-full border border-[#4EACAF]/10 bg-[#4EACAF]/10 px-2.5 py-1 text-[10px] font-medium text-[#4EACAF]">
                           {child.LearningLevel}
                         </span>
                         {child.ProgressLevel === 'Improving' && (
-                          <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-600">
+                          <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-medium text-emerald-600">
                             Đang tiến bộ
                           </span>
                         )}
                         {child.ProgressLevel === 'Stable' && (
-                          <span className="rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-[10px] font-bold text-indigo-600">
+                          <span className="rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-[10px] font-medium text-indigo-600">
                             Ổn định
                           </span>
                         )}
                         {child.ProgressLevel === 'Need Support' && (
-                          <span className="flex items-center gap-1 rounded-full border border-rose-100 bg-rose-50 px-2.5 py-1 text-[10px] font-bold text-rose-600">
+                          <span className="flex items-center gap-1 rounded-full border border-rose-100 bg-rose-50 px-2.5 py-1 text-[10px] font-medium text-rose-600">
                             <AlertCircle className="h-3.5 w-3.5" /> Cần hỗ trợ
                           </span>
                         )}
@@ -646,21 +646,21 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                       </div>
 
                       <div className="space-y-1 text-left">
-                        <h3 className="text-2xl font-black tracking-tight text-gray-900 transition-colors hover:text-[#4EACAF]">
+                        <h3 className="text-xl font-bold tracking-tight text-gray-900 transition-colors hover:text-[#4EACAF]">
                           {child.FullName}
                         </h3>
-                        <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-slate-500">
+                        <div className="flex flex-wrap items-center gap-3 text-xs font-normal text-slate-500">
                           <span>
-                            Tuổi: <strong className="text-slate-800">{child.Age}</strong>
+                            Tuổi: <span className="font-medium text-slate-800">{child.Age}</span>
                           </span>
                           <div className="h-1.5 w-1.5 rounded-full bg-slate-300" />
                           <span>
-                            Phân loại: <strong className="text-slate-800">{getChildTypeLabel(child.ChildType)}</strong>
+                            Phân loại: <span className="font-medium text-slate-800">{getChildTypeLabel(child.ChildType)}</span>
                           </span>
                           <div className="h-1.5 w-1.5 rounded-full bg-slate-300" />
                           <span className="flex items-center gap-1">
                             Trạng thái:
-                            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 font-extrabold text-emerald-600">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 font-medium text-emerald-600">
                               <CheckCircle2 className="h-3 w-3" />
                               {child.Status === 'Active' ? 'Tích cực' : 'Tạm dừng'}
                             </span>
@@ -671,11 +671,11 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
 
                     {parent && (
                       <div className="space-y-2 rounded-2xl border border-orange-100/50 bg-orange-50/50 p-4 text-xs">
-                        <div className="flex items-center gap-2 font-black text-slate-700">
+                        <div className="flex items-center gap-2 font-medium text-slate-700">
                           <Heart className="h-4 w-4 fill-orange-400 text-orange-400" />
                           <span>Phụ huynh: {parent.FullName}</span>
                         </div>
-                        <div className="grid grid-cols-1 gap-2 font-bold text-[#777] sm:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-2 font-normal text-[#777] sm:grid-cols-2">
                           <div className="flex items-center gap-2">
                             <Phone className="h-3.5 w-3.5 text-slate-400" />
                             <span>{parent.PhoneNumber}</span>
@@ -689,14 +689,14 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                     )}
 
                     {child.Note && (
-                      <p className="border-l-2 border-slate-200 pl-3 text-xs font-medium italic leading-relaxed text-slate-500">
+                      <p className="border-l-2 border-slate-200 pl-3 text-xs font-normal italic leading-relaxed text-slate-500">
                         "{child.Note}"
                       </p>
                     )}
                   </div>
 
                   <div className="mt-6 flex items-center justify-between border-t border-gray-50 pt-6">
-                    <span className="text-[11px] font-bold uppercase text-gray-400">
+                    <span className="text-[11px] font-normal uppercase text-gray-400">
                       Cập nhật: {child.UpdatedAt || child.CreatedAt}
                     </span>
 
@@ -706,7 +706,7 @@ export default function TeacherStudents({ onNavigate }: TeacherStudentsProps) {
                       onClick={() =>
                         onNavigate(`TEACHER_STUDENT_DETAIL:${child.ChildId}`)
                       }
-                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-2xl bg-[#4EACAF] px-5 py-3 text-xs font-black text-white shadow-md shadow-[#4EACAF]/10 transition-all hover:bg-[#5ec4c7] hover:shadow-lg"
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-2xl bg-[#4EACAF] px-5 py-3 text-xs font-medium text-white shadow-md shadow-[#4EACAF]/10 transition-all hover:bg-[#5ec4c7] hover:shadow-lg"
                     >
                       Xem chi tiết học bạ
                       <ChevronRight className="h-4 w-4" />
