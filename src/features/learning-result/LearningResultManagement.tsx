@@ -18,7 +18,6 @@ import {
   UserSquare2,
   Sparkles,
   ShieldAlert,
-  ArrowRight,
   User,
   MessageCircle,
   VolumeX,
@@ -27,7 +26,6 @@ import {
   FileText,
   Edit3,
   Filter,
-  BookOpen,
   BarChart2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -312,10 +310,6 @@ export default function LearningResultManagement() {
   const [chunkStatusFilter, setChunkStatusFilter] = useState<'ALL' | 'CORRECT' | 'WRONG' | 'SILENT' | 'ASSESSED'>('ALL');
   const [chunkSearchQuery, setChunkSearchQuery] = useState('');
 
-  // Left Panel Tab State: results list vs cumulative vocabulary stats
-  const [leftPanelTab, setLeftPanelTab] = useState<'RESULTS' | 'VOCABULARY'>('RESULTS');
-  const [vocabSearchQuery, setVocabSearchQuery] = useState('');
-  const [vocabFilterStatus, setVocabFilterStatus] = useState<'ALL' | 'HAS_ERROR' | 'ALL_CORRECT'>('ALL');
   const [feedbackInput, setFeedbackInput] = useState('');
   const [savingFeedback, setSavingFeedback] = useState(false);
   const [scoringChunkIndex, setScoringChunkIndex] = useState<number | null>(null);
@@ -595,79 +589,6 @@ export default function LearningResultManagement() {
     const accuracyRate = total > 0 ? Math.round((correct / total) * 100) : 0;
     return { correct, wrong, total, accuracyRate };
   }, [filteredResultsForStats]);
-
-  // Cumulative word-level stats across all sessions for the student/all students
-  const cumulativeWordStats = useMemo(() => {
-    const map = new Map<string, {
-      word: string;
-      correctCount: number;
-      wrongCount: number;
-      totalCount: number;
-      accuracyRate: number;
-      lastPracticed?: string;
-      mistakes: Array<{ spokenText: string; timeSeconds: number; sessionDate?: string }>;
-    }>();
-
-    filteredResultsForStats.forEach((res) => {
-      if (!res.InteractionLog) return;
-      const events = parseInteractionLog(res.InteractionLog);
-      const dateStr = res.CompletedAt || res.StartedAt || '';
-
-      events.forEach((ev) => {
-        const w = cleanSpeechText(ev.text);
-        if (!w) return;
-        const key = w.toLowerCase().trim();
-
-        const existing = map.get(key) || {
-          word: w,
-          correctCount: 0,
-          wrongCount: 0,
-          totalCount: 0,
-          accuracyRate: 0,
-          lastPracticed: dateStr,
-          mistakes: [],
-        };
-
-        if (ev.isCorrect === true) {
-          existing.correctCount++;
-        } else if (ev.isCorrect === false) {
-          existing.wrongCount++;
-          if (ev.spokenText && ev.spokenText.toLowerCase() !== key && existing.mistakes.length < 5) {
-            existing.mistakes.push({
-              spokenText: ev.spokenText,
-              timeSeconds: ev.timeSeconds,
-              sessionDate: dateStr,
-            });
-          }
-        }
-
-        existing.totalCount = existing.correctCount + existing.wrongCount;
-        existing.accuracyRate = existing.totalCount > 0
-          ? Math.round((existing.correctCount / existing.totalCount) * 100)
-          : 0;
-
-        if (dateStr && (!existing.lastPracticed || dateStr > existing.lastPracticed)) {
-          existing.lastPracticed = dateStr;
-        }
-
-        map.set(key, existing);
-      });
-    });
-
-    return Array.from(map.values()).sort((a, b) => b.totalCount - a.totalCount);
-  }, [filteredResultsForStats]);
-
-  const filteredVocabStats = useMemo(() => {
-    return cumulativeWordStats.filter((item) => {
-      if (vocabSearchQuery.trim()) {
-        const q = vocabSearchQuery.toLowerCase().trim();
-        if (!item.word.toLowerCase().includes(q)) return false;
-      }
-      if (vocabFilterStatus === 'HAS_ERROR' && item.wrongCount === 0) return false;
-      if (vocabFilterStatus === 'ALL_CORRECT' && item.wrongCount > 0) return false;
-      return true;
-    });
-  }, [cumulativeWordStats, vocabSearchQuery, vocabFilterStatus]);
 
   // Session-level stats for the currently selected session
   const sessionWordStats = useMemo(() => {
@@ -1277,322 +1198,129 @@ export default function LearningResultManagement() {
         {/* Left Side: Results List */}
         <div className="lg:col-span-5 space-y-4">
           <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
-            {/* Header with Tabs */}
+            {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setLeftPanelTab('RESULTS')}
-                  className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5",
-                    leftPanelTab === 'RESULTS'
-                      ? "bg-white text-slate-800 shadow-xs"
-                      : "text-slate-500 hover:text-slate-800"
-                  )}
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>Lịch sử luyện tập</span>
-                  <span className={cn(
-                    "text-[10px] px-1.5 py-0.2 rounded-full font-medium",
-                    leftPanelTab === 'RESULTS' ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-600"
-                  )}>
-                    {filteredResults.length}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setLeftPanelTab('VOCABULARY')}
-                  className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5",
-                    leftPanelTab === 'VOCABULARY'
-                      ? "bg-[#4EACAF] text-white shadow-xs"
-                      : "text-slate-500 hover:text-[#4EACAF]"
-                  )}
-                >
-                  <BookOpen className="w-3.5 h-3.5" />
-                  <span>Thống kê từ vựng</span>
-                  <span className={cn(
-                    "text-[10px] px-1.5 py-0.2 rounded-full font-medium",
-                    leftPanelTab === 'VOCABULARY' ? "bg-white/25 text-white" : "bg-teal-100 text-[#4EACAF]"
-                  )}>
-                    {cumulativeWordStats.length}
-                  </span>
-                </button>
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[#4EACAF]" />
+                <h3 className="font-semibold text-slate-800 text-sm">Lịch sử luyện tập</h3>
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-slate-100 text-slate-600">
+                  {filteredResults.length}
+                </span>
               </div>
             </div>
 
-            {leftPanelTab === 'RESULTS' ? (
-              <>
-                {/* Filters Subsystem */}
-                <div className="space-y-3">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Tìm theo học sinh, bài tập, Session ID..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-4 pr-4 py-2.5 rounded-xl border border-slate-200 outline-none text-xs font-normal focus:border-[#4EACAF] transition-colors"
-                    />
-                  </div>
+            {/* Filters Subsystem */}
+            <div className="space-y-3">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Tìm theo học sinh, bài tập, Session ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-4 pr-4 py-2.5 rounded-xl border border-slate-200 outline-none text-xs font-normal focus:border-[#4EACAF] transition-colors"
+                />
+              </div>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <CustomSelect
-                      value={filterStatus}
-                      onChange={setFilterStatus}
-                      options={[
-                        { value: 'ALL', label: 'Tất cả trạng thái' },
-                        { value: 'Completed', label: 'Đã hoàn thành' },
-                        { value: 'InComplete', label: 'Chưa hoàn thành' }
-                      ]}
-                      className="w-full"
-                    />
+              <div className="grid grid-cols-2 gap-2">
+                <CustomSelect
+                  value={filterStatus}
+                  onChange={setFilterStatus}
+                  options={[
+                    { value: 'ALL', label: 'Tất cả trạng thái' },
+                    { value: 'Completed', label: 'Đã hoàn thành' },
+                    { value: 'InComplete', label: 'Chưa hoàn thành' }
+                  ]}
+                  className="w-full"
+                />
 
-                    <CustomSelect
-                      value={filterDateRange}
-                      onChange={setFilterDateRange}
-                      options={[
-                        { value: 'ALL', label: 'Tất cả thời gian' },
-                        { value: 'TODAY', label: 'Hôm nay' },
-                        { value: 'WEEK', label: '7 ngày qua' },
-                        { value: 'MONTH', label: '30 ngày qua' }
-                      ]}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
+                <CustomSelect
+                  value={filterDateRange}
+                  onChange={setFilterDateRange}
+                  options={[
+                    { value: 'ALL', label: 'Tất cả thời gian' },
+                    { value: 'TODAY', label: 'Hôm nay' },
+                    { value: 'WEEK', label: '7 ngày qua' },
+                    { value: 'MONTH', label: '30 ngày qua' }
+                  ]}
+                  className="w-full"
+                />
+              </div>
+            </div>
 
-                {/* Results Items List */}
-                {isApiLoading ? (
-                  <div className="py-12 text-center">
-                    <Activity className="w-8 h-8 text-[#4EACAF] animate-spin mx-auto mb-2" />
-                    <p className="text-sm font-normal text-slate-500">Đang tải danh sách kết quả...</p>
-                  </div>
-                ) : filteredResults.length === 0 ? (
-                  <div className="py-12 text-center text-slate-400">
-                    <VolumeX className="w-12 h-12 mx-auto mb-3 opacity-40" />
-                    <p className="font-normal text-sm">Không tìm thấy lượt luyện tập phù hợp.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {paginatedResults.map((res) => {
-                      const isSelected = selectedResult?.ResultId === res.ResultId;
-                      const child = getChildDetailInfo(res.ChildId);
-                      const lesson = lessons.find(l => String(l.id) === res.LessonId);
-
-                      return (
-                        <div
-                          key={res.ResultId}
-                          onClick={() => handleSelectResult(res)}
-                          className={cn(
-                            "rounded-2xl border p-4.5 transition-all cursor-pointer space-y-3",
-                            isSelected
-                              ? "border-[#4EACAF] bg-[#4EACAF]/5 shadow-sm"
-                              : "border-slate-100 hover:border-slate-200 bg-white"
-                          )}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <p className="font-semibold text-slate-800 text-sm">{child?.FullName || `Bé (ID: ${res.ChildId})`}</p>
-                                <span className="text-[10px] font-mono font-normal px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
-                                  Session #{res.SessionId || res.ResultId}
-                                </span>
-                              </div>
-                              <p className="text-xs text-slate-400 font-normal leading-relaxed">
-                                {lesson?.lessonName || 'Bài tập tự do'}
-                              </p>
-                            </div>
-                            <span className={cn(
-                              "text-[9px] px-2 py-0.5 rounded font-medium uppercase shrink-0 tracking-wider",
-                              res.CompletionStatus === 'Completed'
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                                : "bg-amber-50 text-amber-700 border border-amber-100"
-                            )}>
-                              {res.CompletionStatus === 'Completed' ? 'Đạt' : 'Chưa hoàn thành'}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between border-t border-slate-100/60 pt-3 text-[11px] font-medium text-slate-500">
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-3.5 h-3.5 text-slate-400" />
-                              <span>{res.DurationSeconds}s</span>
-                              <span className="text-slate-300">|</span>
-                              <span className="text-[#4EACAF]">Điểm: {res.Score}/{lessons.find(l => String(l.id) === res.LessonId)?.maxScore ?? 95}</span>
-                            </div>
-                            <span className="text-slate-400">{formatDateDMY(res.CompletedAt)}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    <Pagination
-                      currentPage={currentPage}
-                      totalItems={filteredResults.length}
-                      pageSize={pageSize}
-                      onPageChange={setCurrentPage}
-                      onPageSizeChange={(size) => {
-                        setPageSize(size);
-                        setCurrentPage(1);
-                      }}
-                      itemLabel="lượt luyện"
-                    />
-                  </div>
-                )}
-              </>
+            {/* Results Items List */}
+            {isApiLoading ? (
+              <div className="py-12 text-center">
+                <Activity className="w-8 h-8 text-[#4EACAF] animate-spin mx-auto mb-2" />
+                <p className="text-sm font-normal text-slate-500">Đang tải danh sách kết quả...</p>
+              </div>
+            ) : filteredResults.length === 0 ? (
+              <div className="py-12 text-center text-slate-400">
+                <VolumeX className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                <p className="font-normal text-sm">Không tìm thấy lượt luyện tập phù hợp.</p>
+              </div>
             ) : (
-              /* Cumulative Vocabulary Tab */
               <div className="space-y-3">
-                {/* Search & Filter for Vocabulary */}
-                <div className="space-y-2.5">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Tìm kiếm từ vựng (ví dụ: con cá, cần câu...)"
-                      value={vocabSearchQuery}
-                      onChange={(e) => setVocabSearchQuery(e.target.value)}
-                      className="w-full pl-4 pr-8 py-2.5 rounded-xl border border-slate-200 outline-none text-xs font-normal focus:border-[#4EACAF] transition-colors"
-                    />
-                    {vocabSearchQuery && (
-                      <button
-                        type="button"
-                        onClick={() => setVocabSearchQuery('')}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
+                {paginatedResults.map((res) => {
+                  const isSelected = selectedResult?.ResultId === res.ResultId;
+                  const child = getChildDetailInfo(res.ChildId);
+                  const lesson = lessons.find(l => String(l.id) === res.LessonId);
 
-                  <div className="flex items-center gap-1.5 flex-wrap text-xs">
-                    <button
-                      type="button"
-                      onClick={() => setVocabFilterStatus('ALL')}
+                  return (
+                    <div
+                      key={res.ResultId}
+                      onClick={() => handleSelectResult(res)}
                       className={cn(
-                        "px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1 text-[11px] border",
-                        vocabFilterStatus === 'ALL'
-                          ? "bg-slate-800 text-white border-slate-800"
-                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                        "rounded-2xl border p-4.5 transition-all cursor-pointer space-y-3",
+                        isSelected
+                          ? "border-[#4EACAF] bg-[#4EACAF]/5 shadow-sm"
+                          : "border-slate-100 hover:border-slate-200 bg-white"
                       )}
                     >
-                      <span>Tất cả</span>
-                      <span className="text-[10px] opacity-75">({cumulativeWordStats.length})</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setVocabFilterStatus('HAS_ERROR')}
-                      className={cn(
-                        "px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1 text-[11px] border",
-                        vocabFilterStatus === 'HAS_ERROR'
-                          ? "bg-rose-600 text-white border-rose-600"
-                          : "bg-white text-rose-700 border-rose-200 hover:bg-rose-50"
-                      )}
-                    >
-                      <span>✕ Có phát âm sai</span>
-                      <span className="text-[10px] opacity-75">
-                        ({cumulativeWordStats.filter(w => w.wrongCount > 0).length})
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setVocabFilterStatus('ALL_CORRECT')}
-                      className={cn(
-                        "px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1 text-[11px] border",
-                        vocabFilterStatus === 'ALL_CORRECT'
-                          ? "bg-emerald-600 text-white border-emerald-600"
-                          : "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50"
-                      )}
-                    >
-                      <span>✓ Đúng 100%</span>
-                      <span className="text-[10px] opacity-75">
-                        ({cumulativeWordStats.filter(w => w.wrongCount === 0).length})
-                      </span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Vocabulary Items List */}
-                {filteredVocabStats.length === 0 ? (
-                  <div className="py-12 text-center text-slate-400">
-                    <VolumeX className="w-12 h-12 mx-auto mb-3 opacity-40" />
-                    <p className="font-normal text-sm">Không tìm thấy từ vựng nào phù hợp.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2.5 max-h-[600px] overflow-y-auto pr-1">
-                    {filteredVocabStats.map((item) => {
-                      return (
-                        <div
-                          key={item.word}
-                          className="rounded-2xl border border-slate-200/80 bg-white p-4 space-y-2.5 hover:border-slate-300 transition-all shadow-xs"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Từ vựng</span>
-                              <h4 className="text-sm font-semibold text-slate-800 capitalize">
-                                {item.word}
-                              </h4>
-                            </div>
-                            <span className={cn(
-                              "text-[10px] font-medium px-2 py-0.5 rounded-full",
-                              item.accuracyRate >= 80 ? "bg-emerald-100 text-emerald-800" :
-                              item.accuracyRate >= 50 ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800"
-                            )}>
-                              {item.accuracyRate}% đúng
-                            </span>
-                          </div>
-
-                          {/* Đúng / Sai / Tổng số lần */}
-                          <div className="flex items-center gap-2 text-xs flex-wrap">
-                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/70 px-2 py-0.5 rounded-md font-medium">
-                              ✓ Đúng: {item.correctCount} lần
-                            </span>
-                            <span className="bg-rose-50 text-rose-700 border border-rose-200/70 px-2 py-0.5 rounded-md font-medium">
-                              ✕ Sai: {item.wrongCount} lần
-                            </span>
-                            <span className="text-[11px] text-slate-400 font-normal ml-auto">
-                              Tổng luyện: {item.totalCount} lần
-                            </span>
-                          </div>
-
-                          {/* Progress bar */}
-                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden flex">
-                            <div
-                              className="bg-emerald-500 h-full transition-all duration-500"
-                              style={{ width: `${item.accuracyRate}%` }}
-                            />
-                            <div
-                              className="bg-rose-500 h-full transition-all duration-500"
-                              style={{ width: `${100 - item.accuracyRate}%` }}
-                            />
-                          </div>
-
-                          {/* Mistakes details */}
-                          {item.mistakes.length > 0 && (
-                            <div className="text-[11px] text-rose-700 bg-rose-50/70 p-2 rounded-lg border border-rose-100 leading-snug">
-                              <span className="font-medium">Các lần nói sai: </span>
-                              {item.mistakes.map(m => `"${m.spokenText}"`).join(', ')}
-                            </div>
-                          )}
-
-                          {/* Quick action to filter results */}
-                          <div className="flex justify-end pt-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setLeftPanelTab('RESULTS');
-                                setSearchQuery(item.word);
-                              }}
-                              className="text-[11px] font-medium text-[#4EACAF] hover:text-[#3D8C8F] flex items-center gap-1 cursor-pointer transition-colors"
-                            >
-                              <span>Xem các lượt luyện từ này</span>
-                              <ArrowRight className="w-3 h-3" />
-                            </button>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <h4 className="font-semibold text-slate-800 text-sm font-mono">
+                            Session #{res.SessionId || res.ResultId}
+                          </h4>
+                          <div className="flex items-center gap-1.5 text-xs text-slate-500 font-normal">
+                            <span className="font-medium text-slate-700">{child?.FullName || `Bé (ID: ${res.ChildId})`}</span>
+                            <span className="text-slate-300">•</span>
+                            <span className="text-slate-400 truncate">{lesson?.lessonName || 'Bài tập tự do'}</span>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        <span className={cn(
+                          "text-[9px] px-2 py-0.5 rounded font-medium uppercase shrink-0 tracking-wider",
+                          res.CompletionStatus === 'Completed'
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                            : "bg-amber-50 text-amber-700 border border-amber-100"
+                        )}>
+                          {res.CompletionStatus === 'Completed' ? 'Đạt' : 'Chưa hoàn thành'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between border-t border-slate-100/60 pt-3 text-[11px] font-medium text-slate-500">
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{res.DurationSeconds}s</span>
+                          <span className="text-slate-300">|</span>
+                          <span className="text-[#4EACAF]">Điểm: {res.Score}/{lessons.find(l => String(l.id) === res.LessonId)?.maxScore ?? 95}</span>
+                        </div>
+                        <span className="text-slate-400">{formatDateDMY(res.CompletedAt)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={filteredResults.length}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setCurrentPage(1);
+                  }}
+                  itemLabel="lượt luyện"
+                />
               </div>
             )}
           </div>
@@ -1606,17 +1334,18 @@ export default function LearningResultManagement() {
               {/* Header Info */}
               <div className="flex items-start justify-between border-b border-slate-100 pb-4">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-medium px-2.5 py-0.5 bg-slate-100 text-slate-650 rounded">
-                      Session #{selectedResult.SessionId || selectedResult.ResultId}
+                  <h3 className="text-lg font-bold text-slate-800 font-mono">
+                    Session #{selectedResult.SessionId || selectedResult.ResultId}
+                  </h3>
+                  <div className="flex items-center gap-2 text-xs text-slate-500 font-normal mt-1">
+                    <span className="font-medium text-slate-700">
+                      Học sinh: {getChildDetailInfo(selectedResult.ChildId)?.FullName || `Bé (ID: ${selectedResult.ChildId})`}
                     </span>
-                    <span className="text-xs text-slate-400 font-normal">
-                      Học sinh: <span className="text-slate-600 font-medium">{getChildDetailInfo(selectedResult.ChildId)?.FullName}</span>
+                    <span className="text-slate-300">•</span>
+                    <span className="text-slate-500">
+                      {lessons.find(l => String(l.id) === selectedResult.LessonId)?.lessonName || 'Bài tập tự do'}
                     </span>
                   </div>
-                  <h3 className="text-lg font-bold text-slate-800 mt-2">
-                    {lessons.find(l => String(l.id) === selectedResult.LessonId)?.lessonName || 'Bài tập tự do'}
-                  </h3>
                 </div>
                 <button
                   onClick={() => setSelectedResult(null)}
