@@ -192,7 +192,7 @@ export default function LoginView({
                       placeholder="••••••••"
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
-                      className="w-full pl-14 pr-14 py-4 rounded-2xl bg-[#FFFDF5]/50 border-2 border-[#F2ECD8]/50 focus:border-[#4EACAF] focus:bg-white focus:ring-4 focus:ring-[#4EACAF]/5 transition-all outline-none font-bold text-sm text-gray-900 placeholder:text-gray-300"
+                      className="w-full pl-14 pr-14 py-4 rounded-2xl bg-[#FFFDF5]/50 border-2 border-[#F2ECD8]/50 focus:border-[#4EACAF] focus:bg-white focus:ring-4 focus:ring-[#4EACAF]/5 transition-all outline-none font-bold text-sm text-gray-900 placeholder:text-gray-300 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
                       required
                     />
                     <button

@@ -6,6 +6,14 @@
   --font-mono: "JetBrains Mono", monospace;
 }
 
+/* Disable browser native password reveal and clear buttons (Microsoft Edge, etc.) */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 /* Custom global styles to satisfy the GodotXR specifications */
 
 /* Dynamic style tuning depending on active portal */

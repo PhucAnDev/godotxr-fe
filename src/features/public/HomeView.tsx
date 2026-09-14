@@ -152,15 +152,6 @@ export default function HomeView({
               >
                 Bắt đầu ngay <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
               </motion.button>
-              
-              <motion.button 
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={onLogin}
-                className="px-8 py-4 border-[3px] border-[#F2ECD8] hover:border-[#FF8E8E] text-gray-800 text-base font-black rounded-full bg-white/60 backdrop-blur-md transition-all shadow-md cursor-pointer"
-              >
-                Đăng nhập Dashboard
-              </motion.button>
             </div>
 
             {/* Chips block: clarifying child vs parents right in Hero fold */}
@@ -549,8 +540,8 @@ export default function HomeView({
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_#4EACAF1a_0%,_transparent_60%)] pointer-events-none" />
           
           <div className="relative z-10 space-y-6 max-w-3xl mx-auto">
-            <h3 className="text-2xl md:text-4xl font-extrabold tracking-tight italic">
-              Sẵn sàng đồng hành cùng trẻ <br /> trong <span className="text-[#FFD93D] underline decoration-wavy">hành trình luyện nói?</span>
+            <h3 className="text-2xl md:text-4xl font-extrabold tracking-tight">
+              Sẵn sàng đồng hành cùng trẻ <br /> trong <span className="text-[#FFD93D]">hành trình luyện nói?</span>
             </h3>
             <p className="text-sm md:text-base text-gray-400 font-medium leading-relaxed">
               Hãy đăng nhập vào GodotXR để quản lý các lớp học, theo dõi kết quả đo âm và phân tích sâu tiến trình cải thiện phát âm của trẻ từ kính VR.

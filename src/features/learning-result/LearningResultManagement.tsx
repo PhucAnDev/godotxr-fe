@@ -14,6 +14,8 @@ import {
   CheckCircle2,
   Calendar,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Activity,
   UserSquare2,
   Sparkles,
@@ -117,47 +119,6 @@ const mapChildRecord = (c: any): Child => ({
   LearningLevel: c.learningLevel || 'Chưa phân cấp',
 });
 
-const mapResultRecord = (r: ResultResponse): LearningResult => ({
-  ResultId: String(r.id),
-  ChildId: String(r.childId),
-  SessionId: r.sessionId || '',
-  LessonId: r.lessonId ? String(r.lessonId) : null,
-  AttemptNumber: r.attemptNumber || 1,
-  CompletionStatus: (r.completionStatus as LearningResult['CompletionStatus']) || 'InProgress',
-  Score: r.score || 0,
-  StartedAt: r.startedAt || '',
-  CompletedAt: r.completedAt || '',
-  DurationSeconds: r.durationSeconds || 0,
-  AudioRecordUrl: r.audioRecordUrl || '',
-  ReplayDataUrl: r.replayDataUrl || '',
-  InteractionLog: r.interactionLog || '',
-  FeedbackText: r.feedbackText || '',
-  CreatedAt: r.completedAt || r.startedAt || '',
-  ErrorCount: r.errorCount || 0,
-  CorrectCount: r.correctCount || 0,
-});
-
-async function loadAllPages<T>(
-  apiMethod: (page: number, size: number) => Promise<any>
-): Promise<T[]> {
-  let page = 1;
-  let allItems: T[] = [];
-  let hasMore = true;
-
-  while (hasMore) {
-    const res = await apiMethod(page, API_PAGE_SIZE);
-    if (res.success && res.data) {
-      const items = res.data.items || [];
-      allItems = [...allItems, ...items];
-      hasMore = items.length === API_PAGE_SIZE && page < 10;
-      page++;
-    } else {
-      hasMore = false;
-    }
-  }
-  return allItems;
-}
-
 export interface ParsedEvent {
   timeSeconds: number;
   text: string;
@@ -239,6 +200,70 @@ export function parseInteractionLog(log: string): ParsedEvent[] {
   return events;
 }
 
+export function getResultCounts(res: { CorrectCount?: number; ErrorCount?: number; InteractionLog?: string }) {
+  let correct = res.CorrectCount ?? 0;
+  let wrong = res.ErrorCount ?? 0;
+  if (correct === 0 && wrong === 0 && res.InteractionLog) {
+    const events = parseInteractionLog(res.InteractionLog);
+    correct = events.filter(e => e.isCorrect === true).length;
+    wrong = events.filter(e => e.isCorrect === false).length;
+  }
+  return { correct, wrong };
+}
+
+const mapResultRecord = (r: ResultResponse): LearningResult => {
+  let parsedCorrect = 0;
+  let parsedWrong = 0;
+  if (r.interactionLog) {
+    const events = parseInteractionLog(r.interactionLog);
+    parsedCorrect = events.filter(e => e.isCorrect === true).length;
+    parsedWrong = events.filter(e => e.isCorrect === false).length;
+  }
+  const correctCount = Math.max(r.correctCount ?? 0, parsedCorrect);
+  const errorCount = Math.max(r.errorCount ?? 0, parsedWrong);
+
+  return {
+    ResultId: String(r.id),
+    ChildId: String(r.childId),
+    SessionId: r.sessionId || '',
+    LessonId: r.lessonId ? String(r.lessonId) : null,
+    AttemptNumber: r.attemptNumber || 1,
+    CompletionStatus: (r.completionStatus as LearningResult['CompletionStatus']) || 'InProgress',
+    Score: r.score || 0,
+    StartedAt: r.startedAt || '',
+    CompletedAt: r.completedAt || '',
+    DurationSeconds: r.durationSeconds || 0,
+    AudioRecordUrl: r.audioRecordUrl || '',
+    ReplayDataUrl: r.replayDataUrl || '',
+    InteractionLog: r.interactionLog || '',
+    FeedbackText: r.feedbackText || '',
+    CreatedAt: r.completedAt || r.startedAt || '',
+    ErrorCount: errorCount,
+    CorrectCount: correctCount,
+  };
+};
+
+async function loadAllPages<T>(
+  apiMethod: (page: number, size: number) => Promise<any>
+): Promise<T[]> {
+  let page = 1;
+  let allItems: T[] = [];
+  let hasMore = true;
+
+  while (hasMore) {
+    const res = await apiMethod(page, API_PAGE_SIZE);
+    if (res.success && res.data) {
+      const items = res.data.items || [];
+      allItems = [...allItems, ...items];
+      hasMore = items.length === API_PAGE_SIZE && page < 10;
+      page++;
+    } else {
+      hasMore = false;
+    }
+  }
+  return allItems;
+}
+
 
 export function isSilentOrUnclearSpeech(spokenText?: string): boolean {
   if (!spokenText) return false;
@@ -293,7 +318,7 @@ export default function LearningResultManagement() {
 
   // Left Panel Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(6);
+  const pageSize = 10;
 
   // Detail Right Panel States
   const [selectedResult, setSelectedResult] = useState<LearningResult | null>(null);
@@ -311,6 +336,7 @@ export default function LearningResultManagement() {
   const [chunkSearchQuery, setChunkSearchQuery] = useState('');
 
   const [feedbackInput, setFeedbackInput] = useState('');
+  const [showFeedbackInput, setShowFeedbackInput] = useState(false);
   const [savingFeedback, setSavingFeedback] = useState(false);
   const [scoringChunkIndex, setScoringChunkIndex] = useState<number | null>(null);
   const [manualScores, setManualScores] = useState({
@@ -322,6 +348,19 @@ export default function LearningResultManagement() {
   const [isSavingManualScore, setIsSavingManualScore] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const wordsScrollRef = useRef<HTMLDivElement | null>(null);
+  const wordsSectionRef = useRef<HTMLDivElement | null>(null);
+  const chunksScrollRef = useRef<HTMLDivElement | null>(null);
+  const chunksSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const handleScrollWords = (direction: 'left' | 'right') => {
+    if (!wordsScrollRef.current) return;
+    const scrollAmount = wordsScrollRef.current.clientWidth * 0.9;
+    wordsScrollRef.current.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth'
+    });
+  };
 
   const parsedEvents = useMemo(() => {
     return selectedResult ? parseInteractionLog(selectedResult.InteractionLog) : [];
@@ -658,6 +697,131 @@ export default function LearningResultManagement() {
     ? Math.round((sessionCorrectWords / sessionTotalWords) * 100)
     : 0;
 
+  // Silky-smooth horizontal mouse wheel scrolling with momentum
+  useEffect(() => {
+    const sectionEl = wordsSectionRef.current;
+    const scrollEl = wordsScrollRef.current;
+    if (!sectionEl || !scrollEl) return;
+
+    let targetScrollLeft = scrollEl.scrollLeft;
+    let rafId: number | null = null;
+
+    const onScroll = () => {
+      // Keep target in sync if user drags the scrollbar
+      if (!rafId) {
+        targetScrollLeft = scrollEl.scrollLeft;
+      }
+    };
+
+    const step = () => {
+      const current = scrollEl.scrollLeft;
+      const diff = targetScrollLeft - current;
+
+      if (Math.abs(diff) > 0.5) {
+        scrollEl.scrollLeft = current + diff * 0.22;
+        rafId = requestAnimationFrame(step);
+      } else {
+        scrollEl.scrollLeft = targetScrollLeft;
+        rafId = null;
+      }
+    };
+
+    const handleWheel = (e: WheelEvent) => {
+      if (scrollEl.scrollWidth > scrollEl.clientWidth) {
+        e.preventDefault();
+
+        // Convert lines/pages to pixels if mouse wheel uses DOM_DELTA_LINE
+        let delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+        if (e.deltaMode === 1) {
+          delta *= 28;
+        } else if (e.deltaMode === 2) {
+          delta *= scrollEl.clientWidth;
+        }
+
+        const maxScroll = scrollEl.scrollWidth - scrollEl.clientWidth;
+        targetScrollLeft = Math.max(0, Math.min(maxScroll, targetScrollLeft + delta));
+
+        if (!rafId) {
+          rafId = requestAnimationFrame(step);
+        }
+      }
+    };
+
+    sectionEl.addEventListener('wheel', handleWheel, { passive: false });
+    scrollEl.addEventListener('scroll', onScroll, { passive: true });
+
+    return () => {
+      sectionEl.removeEventListener('wheel', handleWheel);
+      scrollEl.removeEventListener('scroll', onScroll);
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    };
+  }, [selectedResult, sessionWordStats]);
+
+  // Silky-smooth vertical mouse wheel scrolling inside audio chunks section
+  useEffect(() => {
+    const sectionEl = chunksSectionRef.current;
+    const scrollEl = chunksScrollRef.current;
+    if (!sectionEl || !scrollEl) return;
+
+    let targetScrollTop = scrollEl.scrollTop;
+    let rafId: number | null = null;
+
+    const onScroll = () => {
+      if (!rafId) {
+        targetScrollTop = scrollEl.scrollTop;
+      }
+    };
+
+    const step = () => {
+      const current = scrollEl.scrollTop;
+      const diff = targetScrollTop - current;
+
+      if (Math.abs(diff) > 0.5) {
+        scrollEl.scrollTop = current + diff * 0.22;
+        rafId = requestAnimationFrame(step);
+      } else {
+        scrollEl.scrollTop = targetScrollTop;
+        rafId = null;
+      }
+    };
+
+    const handleWheel = (e: WheelEvent) => {
+      if (scrollEl.scrollHeight > scrollEl.clientHeight) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        let delta = e.deltaY;
+        if (e.deltaMode === 1) {
+          delta *= 28;
+        } else if (e.deltaMode === 2) {
+          delta *= scrollEl.clientHeight;
+        }
+
+        const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight;
+        targetScrollTop = Math.max(0, Math.min(maxScroll, targetScrollTop + delta));
+
+        if (!rafId) {
+          rafId = requestAnimationFrame(step);
+        }
+      }
+    };
+
+    sectionEl.addEventListener('wheel', handleWheel, { passive: false });
+    scrollEl.addEventListener('scroll', onScroll, { passive: true });
+
+    return () => {
+      sectionEl.removeEventListener('wheel', handleWheel);
+      scrollEl.removeEventListener('scroll', onScroll);
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    };
+  }, [selectedResult, filteredChunks]);
+
   // Expanded Right Panel selection handler - Optimized with instant metadata load & session cache
   const handleSelectResult = async (res: LearningResult) => {
     if (selectedResult?.ResultId === res.ResultId) {
@@ -672,6 +836,7 @@ export default function LearningResultManagement() {
 
     setSelectedResult(res);
     setFeedbackInput(res.FeedbackText || '');
+    setShowFeedbackInput(false);
     setChunkSearchQuery('');
     setChunkStatusFilter('ALL');
 
@@ -873,6 +1038,7 @@ export default function LearningResultManagement() {
         showToast('Lưu nhận xét và hướng dẫn rèn luyện thành công!', 'success');
         setResults(prev => prev.map(r => r.ResultId === selectedResult.ResultId ? { ...r, FeedbackText: feedbackInput } : r));
         setSelectedResult(prev => prev ? { ...prev, FeedbackText: feedbackInput } : null);
+        setShowFeedbackInput(false);
       } else {
         showToast('Lưu phản hồi thất bại.', 'warn');
       }
@@ -1108,12 +1274,12 @@ export default function LearningResultManagement() {
           </h1>
         </div>
 
-        <div className="bg-white/60 p-4 rounded-3xl border border-white/85 shadow-sm flex items-center gap-3 self-start lg:self-center shrink-0">
-          <div className="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center shrink-0">
-            <UserSquare2 className="w-5 h-5" />
+        <div className="bg-white px-3 py-1.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-2.5 self-start lg:self-center shrink-0">
+          <div className="w-8 h-8 bg-indigo-50 text-indigo-500 rounded-xl flex items-center justify-center shrink-0">
+            <UserSquare2 className="w-4 h-4" />
           </div>
-          <div className="space-y-1">
-            <h4 className="font-medium text-[10px] text-slate-400 uppercase tracking-wider leading-none">Học viên rèn luyện:</h4>
+          <div className="space-y-0.5">
+            <h4 className="font-semibold text-[10px] text-slate-400 uppercase tracking-wider leading-none">Học viên rèn luyện:</h4>
             <CustomSelect
               value={filterChildId}
               onChange={(val) => setFilterChildId(val)}
@@ -1124,61 +1290,61 @@ export default function LearningResultManagement() {
                   label: `👶 ${kd.FullName} (${kd.Age}t) - ${kd.LearningLevel}`
                 }))
               ]}
-              className="min-w-[240px] font-medium"
+              className="min-w-[210px] font-medium text-xs"
             />
           </div>
         </div>
       </div>
 
       {/* Statistics indicators */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
-          <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center shrink-0 border border-teal-100">
-            <Activity className="w-5 h-5 text-[#4EACAF]" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-white rounded-xl px-3.5 py-2.5 border border-slate-100 shadow-xs flex items-center gap-3 transition-transform hover:-translate-y-0.5">
+          <div className="w-9 h-9 bg-teal-50 rounded-lg flex items-center justify-center shrink-0 border border-teal-100">
+            <Activity className="w-4 h-4 text-[#4EACAF]" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-slate-800 leading-none">{totalAttempts}</p>
-            <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mt-1.5">Tổng lượt luyện</p>
+            <p className="text-xl font-bold text-slate-800 leading-none">{totalAttempts}</p>
+            <p className="text-[10.5px] text-slate-400 font-medium uppercase tracking-wider mt-1">Tổng lượt luyện</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
-          <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center shrink-0 border border-rose-100">
-            <Clock className="w-5 h-5 text-[#FF8E8E]" />
+        <div className="bg-white rounded-xl px-3.5 py-2.5 border border-slate-100 shadow-xs flex items-center gap-3 transition-transform hover:-translate-y-0.5">
+          <div className="w-9 h-9 bg-rose-50 rounded-lg flex items-center justify-center shrink-0 border border-rose-100">
+            <Clock className="w-4 h-4 text-[#FF8E8E]" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-slate-800 leading-none">{formattedTotalMinutes} phút</p>
-            <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mt-1.5">Tổng giờ tương tác</p>
+            <p className="text-xl font-bold text-slate-800 leading-none">{formattedTotalMinutes} phút</p>
+            <p className="text-[10.5px] text-slate-400 font-medium uppercase tracking-wider mt-1">Tổng giờ tương tác</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
-          <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0 border border-indigo-100">
-            <ThumbsUp className="w-5 h-5 text-indigo-500" />
+        <div className="bg-white rounded-xl px-3.5 py-2.5 border border-slate-100 shadow-xs flex items-center gap-3 transition-transform hover:-translate-y-0.5">
+          <div className="w-9 h-9 bg-indigo-50 rounded-lg flex items-center justify-center shrink-0 border border-indigo-100">
+            <ThumbsUp className="w-4 h-4 text-indigo-500" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-emerald-600 leading-none">{completionRate}%</p>
-            <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mt-1.5">Tỷ lệ hoàn thành</p>
+            <p className="text-xl font-bold text-emerald-600 leading-none">{completionRate}%</p>
+            <p className="text-[10.5px] text-slate-400 font-medium uppercase tracking-wider mt-1">Tỷ lệ hoàn thành</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1">
-          <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0 border border-emerald-100">
-            <Sparkles className="w-5 h-5 text-emerald-600" />
+        <div className="bg-white rounded-xl px-3.5 py-2.5 border border-slate-100 shadow-xs flex items-center gap-3 transition-transform hover:-translate-y-0.5">
+          <div className="w-9 h-9 bg-emerald-50 rounded-lg flex items-center justify-center shrink-0 border border-emerald-100">
+            <Sparkles className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="min-w-0">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold text-slate-800 leading-none">
+            <div className="flex items-baseline gap-1">
+              <span className="text-xl font-bold text-slate-800 leading-none">
                 {overallWordTotals.total}
               </span>
-              <span className="text-xs font-normal text-slate-400">từ đã luyện</span>
+              <span className="text-[11px] font-normal text-slate-400">từ đã luyện</span>
             </div>
-            <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mt-1">Tổng từ đúng / sai</p>
-            <div className="text-xs font-medium mt-1.5 flex items-center gap-1.5 flex-wrap">
+            <p className="text-[10.5px] text-slate-400 font-medium uppercase tracking-wider mt-0.5">Tổng từ đúng / sai</p>
+            <div className="text-[11px] font-medium mt-1 flex items-center gap-1.5 flex-wrap leading-none">
               <span className="text-emerald-600 font-medium">✓ {overallWordTotals.correct} đúng</span>
               <span className="text-slate-300">|</span>
               <span className="text-rose-500 font-medium">✕ {overallWordTotals.wrong} sai</span>
-              <span className="text-[10px] bg-emerald-100/70 text-emerald-800 px-1.5 py-0.2 rounded-full font-medium ml-0.5">
+              <span className="text-[9.5px] bg-emerald-100/70 text-emerald-800 px-1.5 py-0.2 rounded-full font-medium ml-0.5">
                 {overallWordTotals.accuracyRate}%
               </span>
             </div>
@@ -1259,67 +1425,76 @@ export default function LearningResultManagement() {
                 <p className="font-normal text-sm">Không tìm thấy lượt luyện tập phù hợp.</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {paginatedResults.map((res) => {
-                  const isSelected = selectedResult?.ResultId === res.ResultId;
-                  const child = getChildDetailInfo(res.ChildId);
-                  const lesson = lessons.find(l => String(l.id) === res.LessonId);
+              <div className="space-y-4">
+                <div className="max-h-[580px] overflow-y-auto pr-1.5 p-0.5 space-y-3">
+                  {paginatedResults.map((res) => {
+                    const isSelected = selectedResult?.ResultId === res.ResultId;
+                    const child = getChildDetailInfo(res.ChildId);
+                    const lesson = lessons.find(l => String(l.id) === res.LessonId);
+                    const counts = getResultCounts(res);
 
-                  return (
-                    <div
-                      key={res.ResultId}
-                      onClick={() => handleSelectResult(res)}
-                      className={cn(
-                        "rounded-2xl border p-4.5 transition-all cursor-pointer space-y-3",
-                        isSelected
-                          ? "border-[#4EACAF] bg-[#4EACAF]/5 shadow-sm"
-                          : "border-slate-100 hover:border-slate-200 bg-white"
-                      )}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1">
-                          <h4 className="font-semibold text-slate-800 text-sm font-mono">
-                            Session #{res.SessionId || res.ResultId}
-                          </h4>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-500 font-normal">
-                            <span className="font-medium text-slate-700">{child?.FullName || `Bé (ID: ${res.ChildId})`}</span>
-                            <span className="text-slate-300">•</span>
-                            <span className="text-slate-400 truncate">{lesson?.lessonName || 'Bài tập tự do'}</span>
+                    return (
+                      <div
+                        key={res.ResultId}
+                        onClick={() => handleSelectResult(res)}
+                        className={cn(
+                          "rounded-2xl border p-4.5 transition-all cursor-pointer space-y-3",
+                          isSelected
+                            ? "border-[#4EACAF] bg-[#4EACAF]/5 shadow-sm"
+                            : "border-slate-100 hover:border-slate-200 bg-white"
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1">
+                            <h4 className="font-semibold text-slate-800 text-sm font-mono">
+                              Session #{res.SessionId || res.ResultId}
+                            </h4>
+                            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-normal">
+                              <span className="font-medium text-slate-700">{child?.FullName || `Bé (ID: ${res.ChildId})`}</span>
+                              <span className="text-slate-300">•</span>
+                              <span className="text-slate-400 truncate">{lesson?.lessonName || 'Bài tập tự do'}</span>
+                            </div>
                           </div>
+                          <span className={cn(
+                            "text-[9px] px-2 py-0.5 rounded font-medium uppercase shrink-0 tracking-wider",
+                            res.CompletionStatus === 'Completed'
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                              : "bg-amber-50 text-amber-700 border border-amber-100"
+                          )}>
+                            {res.CompletionStatus === 'Completed' ? 'Đã hoàn thành' : 'Chưa hoàn thành'}
+                          </span>
                         </div>
-                        <span className={cn(
-                          "text-[9px] px-2 py-0.5 rounded font-medium uppercase shrink-0 tracking-wider",
-                          res.CompletionStatus === 'Completed'
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                            : "bg-amber-50 text-amber-700 border border-amber-100"
-                        )}>
-                          {res.CompletionStatus === 'Completed' ? 'Đạt' : 'Chưa hoàn thành'}
-                        </span>
-                      </div>
 
-                      <div className="flex items-center justify-between border-t border-slate-100/60 pt-3 text-[11px] font-medium text-slate-500">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{res.DurationSeconds}s</span>
-                          <span className="text-slate-300">|</span>
-                          <span className="text-[#4EACAF]">Điểm: {res.Score}/{lessons.find(l => String(l.id) === res.LessonId)?.maxScore ?? 95}</span>
+                        <div className="flex items-center justify-between border-t border-slate-100/60 pt-3 text-[11px] font-medium text-slate-500 gap-2 flex-wrap">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{res.DurationSeconds}s</span>
+                            </span>
+                            <span className="text-slate-300">|</span>
+                            <span className="text-[#4EACAF]">Điểm: {res.Score}/{lessons.find(l => String(l.id) === res.LessonId)?.maxScore ?? 95}</span>
+                            <span className="text-slate-300">|</span>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60 whitespace-nowrap">
+                              {counts.correct} đúng
+                            </span>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-medium bg-rose-50 text-rose-700 border border-rose-200/60 whitespace-nowrap">
+                              {counts.wrong} sai
+                            </span>
+                          </div>
+                          <span className="text-slate-400 shrink-0">{formatDateDMY(res.CompletedAt)}</span>
                         </div>
-                        <span className="text-slate-400">{formatDateDMY(res.CompletedAt)}</span>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
 
                 <Pagination
                   currentPage={currentPage}
                   totalItems={filteredResults.length}
                   pageSize={pageSize}
                   onPageChange={setCurrentPage}
-                  onPageSizeChange={(size) => {
-                    setPageSize(size);
-                    setCurrentPage(1);
-                  }}
                   itemLabel="lượt luyện"
+                  compact
                 />
               </div>
             )}
@@ -1329,10 +1504,10 @@ export default function LearningResultManagement() {
         {/* Right Side: Detailed session assessment & Chunks */}
         <div className="lg:col-span-7">
           {selectedResult ? (
-            <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-6 animate-in fade-in duration-300">
+            <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-2 animate-in fade-in duration-300">
 
               {/* Header Info */}
-              <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-start justify-between border-b border-slate-100 pb-2">
                 <div>
                   <h3 className="text-lg font-bold text-slate-800 font-mono">
                     Session #{selectedResult.SessionId || selectedResult.ResultId}
@@ -1356,7 +1531,7 @@ export default function LearningResultManagement() {
               </div>
 
               {/* Statistics Quick Info */}
-              <div className="grid grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
                 <div className="text-center">
                   <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Thời lượng</span>
                   <span className="text-base font-bold text-slate-800 mt-1 block">{selectedResult.DurationSeconds} giây</span>
@@ -1381,7 +1556,10 @@ export default function LearningResultManagement() {
               </div>
 
               {/* Thống kê chi tiết theo từng từ trong phiên */}
-              <div className="space-y-3 bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs">
+              <div
+                ref={wordsSectionRef}
+                className="space-y-2 bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs"
+              >
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-[#4EACAF]" />
@@ -1390,116 +1568,144 @@ export default function LearningResultManagement() {
                       {sessionWordStats.length} từ
                     </span>
                   </h4>
-                  <div className="text-xs font-medium flex items-center gap-1.5">
-                    <span className="text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md font-medium">
-                      ✓ Đúng: {sessionCorrectWords}
-                    </span>
-                    <span className="text-rose-700 bg-rose-50 border border-rose-200/60 px-2 py-0.5 rounded-md font-medium">
-                      ✕ Sai: {sessionWrongWords}
-                    </span>
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs font-medium flex items-center gap-1.5">
+                      <span className="text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md font-medium">
+                        ✓ Đúng: {sessionCorrectWords} lần
+                      </span>
+                      <span className="text-rose-700 bg-rose-50 border border-rose-200/60 px-2 py-0.5 rounded-md font-medium">
+                        ✕ Sai: {sessionWrongWords} lần
+                      </span>
+                    </div>
+
+                    {sessionWordStats.length > 2 && (
+                      <div className="flex items-center gap-1 shrink-0 ml-1">
+                        <button
+                          type="button"
+                          onClick={() => handleScrollWords('left')}
+                          className="p-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                          title="Cuộn sang trái"
+                        >
+                          <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleScrollWords('right')}
+                          className="p-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                          title="Cuộn sang phải"
+                        >
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {sessionWordStats.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                    {sessionWordStats.map((item) => {
-                      const isAllCorrect = item.wrongCount === 0;
-                      const isAllWrong = item.correctCount === 0;
+                  <div
+                    ref={wordsScrollRef}
+                    className="overflow-x-auto pb-2 pt-1 px-0.5"
+                  >
+                    <div className="flex gap-2 min-w-full items-stretch">
+                      {sessionWordStats.map((item) => {
+                        const isAllCorrect = item.wrongCount === 0;
+                        const isAllWrong = item.correctCount === 0;
 
-                      return (
-                        <div
-                          key={item.word}
-                          className={cn(
-                            "p-3.5 rounded-2xl border transition-all flex flex-col gap-2.5",
-                            isAllCorrect
-                              ? "bg-emerald-50/30 border-emerald-200/80 hover:border-emerald-300"
-                              : isAllWrong
-                              ? "bg-rose-50/30 border-rose-200/80 hover:border-rose-300"
-                              : "bg-slate-50/80 border-slate-200 hover:border-slate-300"
-                          )}
-                        >
-                          <div className="flex items-start justify-between gap-2 min-h-[44px]">
-                            <div>
-                              <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Từ vựng</span>
-                              <span className="text-sm font-semibold text-slate-800 capitalize leading-snug line-clamp-2">
-                                {item.word}
+                        return (
+                          <div
+                            key={item.word}
+                            className={cn(
+                              "w-full sm:w-[calc(50%-4px)] min-w-[280px] shrink-0 p-2 rounded-xl border transition-all flex flex-col gap-2",
+                              isAllCorrect
+                                ? "bg-emerald-50/30 border-emerald-200/80 hover:border-emerald-300"
+                                : isAllWrong
+                                  ? "bg-rose-50/30 border-rose-200/80 hover:border-rose-300"
+                                  : "bg-slate-50/80 border-slate-200 hover:border-slate-300"
+                            )}
+                          >
+                            <div className="flex items-start justify-between gap-2 min-h-[44px]">
+                              <div>
+                                <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Từ vựng</span>
+                                <span className="text-sm font-semibold text-slate-800 capitalize leading-snug line-clamp-2">
+                                  {item.word}
+                                </span>
+                              </div>
+                              <span className={cn(
+                                "text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0",
+                                item.accuracyRate >= 80 ? "bg-emerald-100 text-emerald-800" :
+                                  item.accuracyRate >= 50 ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800"
+                              )}>
+                                {item.accuracyRate}% đúng
                               </span>
                             </div>
-                            <span className={cn(
-                              "text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0",
-                              item.accuracyRate >= 80 ? "bg-emerald-100 text-emerald-800" :
-                              item.accuracyRate >= 50 ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800"
-                            )}>
-                              {item.accuracyRate}% đúng
-                            </span>
-                          </div>
 
-                          {/* Chi tiết đúng bao nhiêu lần, sai bao nhiêu lần */}
-                          <div className="flex items-center gap-1.5 text-xs flex-wrap">
-                            <div className="flex items-center gap-1 bg-emerald-100/80 text-emerald-900 px-2 py-0.5 rounded-md font-medium">
-                              <span>✓ Đúng:</span>
-                              <span>{item.correctCount} lần</span>
+                            {/* Chi tiết đúng bao nhiêu lần, sai bao nhiêu lần */}
+                            <div className="flex items-center gap-1.5 text-xs flex-wrap">
+                              <div className="flex items-center gap-1 bg-emerald-100/80 text-emerald-900 px-2 py-0.5 rounded-md font-medium">
+                                <span>✓ Đúng:</span>
+                                <span>{item.correctCount} lần</span>
+                              </div>
+                              <div className="flex items-center gap-1 bg-rose-100/80 text-rose-900 px-2 py-0.5 rounded-md font-medium">
+                                <span>✕ Sai:</span>
+                                <span>{item.wrongCount} lần</span>
+                              </div>
+                              <span className="text-[11px] text-slate-400 font-normal ml-auto">
+                                Tổng: {item.totalCount} lần
+                              </span>
                             </div>
-                            <div className="flex items-center gap-1 bg-rose-100/80 text-rose-900 px-2 py-0.5 rounded-md font-medium">
-                              <span>✕ Sai:</span>
-                              <span>{item.wrongCount} lần</span>
+
+                            {/* Stacked visual progress bar */}
+                            <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden flex">
+                              <div
+                                className="bg-emerald-500 h-full transition-all duration-500"
+                                style={{ width: `${item.accuracyRate}%` }}
+                              />
+                              <div
+                                className="bg-rose-500 h-full transition-all duration-500"
+                                style={{ width: `${100 - item.accuracyRate}%` }}
+                              />
                             </div>
-                            <span className="text-[11px] text-slate-400 font-normal ml-auto">
-                              Tổng: {item.totalCount} lần
-                            </span>
-                          </div>
 
-                          {/* Stacked visual progress bar */}
-                          <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden flex">
-                            <div
-                              className="bg-emerald-500 h-full transition-all duration-500"
-                              style={{ width: `${item.accuracyRate}%` }}
-                            />
-                            <div
-                              className="bg-rose-500 h-full transition-all duration-500"
-                              style={{ width: `${100 - item.accuracyRate}%` }}
-                            />
-                          </div>
-
-                          {/* Khu vực chi tiết phát âm: ngang bằng nhau trên cùng một hàng */}
-                          <div className="space-y-2 pt-1 flex-1 flex flex-col justify-start">
-                            {/* Ghi chú khi trẻ phát âm đúng */}
-                            {item.correctCount > 0 ? (
-                              <div className="text-[11px] text-emerald-700 bg-white/90 p-2 rounded-lg border border-emerald-200 leading-snug">
-                                <span className="font-medium">Lúc nói đúng: </span>
-                                {item.attempts.some(a => a.isCorrect)
-                                  ? item.attempts
+                            {/* Khu vực chi tiết phát âm: ngang bằng nhau trên cùng một hàng */}
+                            <div className="space-y-2 pt-1 flex-1 flex flex-col justify-start">
+                              {/* Ghi chú khi trẻ phát âm đúng */}
+                              {item.correctCount > 0 ? (
+                                <div className="text-[11px] text-emerald-700 bg-white/90 p-2 rounded-lg border border-emerald-200 leading-snug">
+                                  <span className="font-medium">Lúc nói đúng: </span>
+                                  {item.attempts.some(a => a.isCorrect)
+                                    ? item.attempts
                                       .filter(a => a.isCorrect)
                                       .map((a) => `[${a.timeSeconds}s] Trẻ nói "${a.spokenText || item.word}"`)
                                       .join(', ')
-                                  : `Phát âm chính xác ${item.correctCount} lần`}
-                              </div>
-                            ) : (
-                              <div className="text-[11px] text-slate-400 bg-slate-50/70 p-2 rounded-lg border border-dashed border-slate-200 leading-snug">
-                                <span className="font-medium text-slate-500">Lúc nói đúng: </span>Chưa có lần nào đúng
-                              </div>
-                            )}
+                                    : `Phát âm chính xác ${item.correctCount} lần`}
+                                </div>
+                              ) : (
+                                <div className="text-[11px] text-slate-400 bg-slate-50/70 p-2 rounded-lg border border-dashed border-slate-200 leading-snug">
+                                  <span className="font-medium text-slate-500">Lúc nói đúng: </span>Chưa có lần nào đúng
+                                </div>
+                              )}
 
-                            {/* Ghi chú khi trẻ phát âm sai */}
-                            {item.wrongCount > 0 ? (
-                              <div className="text-[11px] text-rose-700 bg-white/90 p-2 rounded-lg border border-rose-200 leading-snug">
-                                <span className="font-medium">Lúc nói sai: </span>
-                                {item.attempts.some(a => !a.isCorrect && a.spokenText)
-                                  ? item.attempts
+                              {/* Ghi chú khi trẻ phát âm sai */}
+                              {item.wrongCount > 0 ? (
+                                <div className="text-[11px] text-rose-700 bg-white/90 p-2 rounded-lg border border-rose-200 leading-snug">
+                                  <span className="font-medium">Lúc nói sai: </span>
+                                  {item.attempts.some(a => !a.isCorrect && a.spokenText)
+                                    ? item.attempts
                                       .filter(a => !a.isCorrect && a.spokenText)
                                       .map((a) => `[${a.timeSeconds}s] Trẻ nói "${a.spokenText}"`)
                                       .join(', ')
-                                  : `Phát âm chưa đúng ${item.wrongCount} lần`}
-                              </div>
-                            ) : (
-                              <div className="text-[11px] text-emerald-700 bg-emerald-50/50 p-2 rounded-lg border border-dashed border-emerald-200/80 leading-snug">
-                                <span className="font-medium text-emerald-800">Lúc nói sai: </span>Không có lần nào sai (Bé nói chuẩn 100%)
-                              </div>
-                            )}
+                                    : `Phát âm chưa đúng ${item.wrongCount} lần`}
+                                </div>
+                              ) : (
+                                <div className="text-[11px] text-emerald-700 bg-emerald-50/50 p-2 rounded-lg border border-dashed border-emerald-200/80 leading-snug">
+                                  <span className="font-medium text-emerald-800">Lúc nói sai: </span>Không có lần nào sai (Bé nói chuẩn 100%)
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 ) : (
                   <div className="p-4 bg-slate-50 rounded-xl text-center text-xs text-slate-400 italic border border-slate-100">
@@ -1510,43 +1716,111 @@ export default function LearningResultManagement() {
 
               {/* Comments feedback text section */}
               {canEditFeedback && (
-                <div className="space-y-3 bg-[#FFFDF5] p-4.5 rounded-2xl border border-yellow-100">
-                  <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
-                    <MessageCircle className="w-4 h-4 text-amber-500" />
-                    Nhận xét & Hướng dẫn từ giáo viên
-                  </h4>
-                  <textarea
-                    rows={3}
-                    placeholder="Viết hướng dẫn khẩu hình, các từ bé cần luyện thêm ở nhà hoặc nhận xét chung..."
-                    value={feedbackInput}
-                    onChange={(e) => setFeedbackInput(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-slate-200 outline-none text-sm font-normal placeholder-slate-400 bg-white focus:border-[#4EACAF] transition-colors resize-none"
-                  />
-                  <div className="flex justify-end">
-                    <button
-                      disabled={savingFeedback}
-                      onClick={handleSaveFeedback}
-                      className="px-5 py-2.5 bg-[#4EACAF] hover:bg-[#3D8C8F] text-white rounded-xl text-xs font-medium transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
-                    >
-                      {savingFeedback ? (
-                        <Activity className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <CheckCircle className="w-3.5 h-3.5" />
-                      )}
-                      Lưu nhận xét
-                    </button>
+                showFeedbackInput ? (
+                  <div className="space-y-2 bg-[#FFFDF5] p-2 rounded-xl border border-amber-200 shadow-xs">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                        <MessageCircle className="w-3.5 h-3.5 text-amber-500" />
+                        Nhận xét & Hướng dẫn từ giáo viên
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFeedbackInput(selectedResult.FeedbackText || '');
+                          setShowFeedbackInput(false);
+                        }}
+                        className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
+                        title="Đóng khung nhập"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <textarea
+                      rows={2}
+                      autoFocus
+                      placeholder="Viết hướng dẫn khẩu hình, các từ bé cần luyện thêm ở nhà hoặc nhận xét chung..."
+                      value={feedbackInput}
+                      onChange={(e) => setFeedbackInput(e.target.value)}
+                      className="w-full p-2 rounded-lg border border-slate-200 outline-none text-xs font-normal placeholder-slate-400 bg-white focus:border-[#4EACAF] transition-colors resize-none"
+                    />
+                    <div className="flex justify-end items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFeedbackInput(selectedResult.FeedbackText || '');
+                          setShowFeedbackInput(false);
+                        }}
+                        className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        disabled={savingFeedback}
+                        onClick={handleSaveFeedback}
+                        className="px-3 py-1.5 bg-[#4EACAF] hover:bg-[#3D8C8F] text-white rounded-lg text-xs font-medium transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      >
+                        {savingFeedback ? (
+                          <Activity className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <CheckCircle className="w-3.5 h-3.5" />
+                        )}
+                        Lưu nhận xét
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ) : selectedResult.FeedbackText ? (
+                  <div className="space-y-1.5 bg-[#FFFDF5] p-2 rounded-xl border border-yellow-100">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                        <MessageCircle className="w-3.5 h-3.5 text-amber-500" />
+                        Nhận xét & Hướng dẫn từ giáo viên
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFeedbackInput(selectedResult.FeedbackText || '');
+                          setShowFeedbackInput(true);
+                        }}
+                        className="text-xs text-[#4EACAF] hover:text-[#3D8C8F] font-medium flex items-center gap-1 cursor-pointer hover:underline"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        Chỉnh sửa
+                      </button>
+                    </div>
+                    <div className="p-2 bg-white rounded-lg border border-slate-200/60 text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
+                      {selectedResult.FeedbackText}
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFeedbackInput('');
+                      setShowFeedbackInput(true);
+                    }}
+                    className="w-full flex items-center justify-between p-2 bg-[#FFFDF5] hover:bg-amber-50/70 rounded-xl border border-dashed border-amber-300/80 text-slate-700 transition-all cursor-pointer group shadow-xs"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <MessageCircle className="w-3.5 h-3.5 text-amber-500 group-hover:scale-110 transition-transform" />
+                      <span className="text-xs font-medium text-slate-700 group-hover:text-amber-900">
+                        Nhận xét & Hướng dẫn từ giáo viên
+                      </span>
+                    </div>
+                    <span className="text-xs font-medium text-[#4EACAF] group-hover:text-[#3D8C8F] flex items-center gap-1 group-hover:underline">
+                      + Viết nhận xét
+                    </span>
+                  </button>
+                )
               )}
 
               {/* Display feedback text to parent */}
               {currentRoleView === 'PARENT' && (
-                <div className="space-y-3 bg-[#FFFDF5] p-4.5 rounded-2xl border border-yellow-100">
+                <div className="space-y-2 bg-[#FFFDF5] p-2 rounded-xl border border-yellow-100">
                   <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
                     <MessageCircle className="w-4 h-4 text-amber-500" />
                     Nhận xét & Hướng dẫn từ giáo viên
                   </h4>
-                  <div className="p-3 bg-white rounded-xl border border-slate-200/60 text-sm font-normal text-slate-700 leading-relaxed min-h-[60px] whitespace-pre-wrap">
+                  <div className="p-2 bg-white rounded-lg border border-slate-200/60 text-sm font-normal text-slate-700 leading-relaxed min-h-[50px] whitespace-pre-wrap">
                     {selectedResult.FeedbackText ? (
                       selectedResult.FeedbackText
                     ) : (
@@ -1557,12 +1831,12 @@ export default function LearningResultManagement() {
               )}
 
               {/* Interaction Log Section */}
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
                   <FileText className="w-4 h-4 text-[#4EACAF]" />
                   Nhật ký tương tác (Interaction Log)
                 </h4>
-                <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl font-mono text-xs whitespace-pre-line leading-relaxed shadow-inner border border-slate-850 max-h-48 overflow-y-auto space-y-1">
+                <div className="p-2 bg-slate-900 text-slate-100 rounded-xl font-mono text-xs whitespace-pre-line leading-relaxed shadow-inner border border-slate-850 max-h-48 overflow-y-auto space-y-1">
                   {selectedResult.InteractionLog ? (
                     selectedResult.InteractionLog
                       .split(/\s*\|\s*/)
@@ -1578,7 +1852,7 @@ export default function LearningResultManagement() {
               </div>
 
               {/* Chunk audio listing section */}
-              <div className="space-y-4 pt-4 border-t border-slate-100">
+              <div ref={chunksSectionRef} className="space-y-2 pt-2 border-t border-slate-100">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wider flex items-center gap-2">
@@ -1603,7 +1877,7 @@ export default function LearningResultManagement() {
 
                 {/* Filter and Search Toolbar */}
                 {chunks.length > 0 && !loadingChunks && (
-                  <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-200/60 space-y-2.5">
+                  <div className="bg-slate-50/90 p-2 rounded-xl border border-slate-200/60 space-y-2">
                     {/* Search Input */}
                     <div className="relative">
                       <input
@@ -1611,7 +1885,7 @@ export default function LearningResultManagement() {
                         value={chunkSearchQuery}
                         onChange={(e) => setChunkSearchQuery(e.target.value)}
                         placeholder="Tìm theo từ chuẩn, từ trẻ nói, mốc giây [..s] hoặc số thứ tự đoạn..."
-                        className="w-full px-3.5 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-xs font-normal placeholder:text-slate-400 focus:outline-none focus:border-[#4EACAF] focus:ring-2 focus:ring-[#4EACAF]/15 transition-all text-slate-800"
+                        className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-normal placeholder:text-slate-400 focus:outline-none focus:border-[#4EACAF] focus:ring-2 focus:ring-[#4EACAF]/15 transition-all text-slate-800"
                       />
                       {chunkSearchQuery && (
                         <button
@@ -1715,7 +1989,7 @@ export default function LearningResultManagement() {
                         )}
                       >
                         <Sparkles className="w-3 h-3" />
-                        <span>Đã đánh giá AI</span>
+                        <span>Đã đánh giá</span>
                         <span className={cn(
                           "text-[10px] px-1.5 py-0.2 rounded-full font-medium",
                           chunkStatusFilter === 'ASSESSED' ? "bg-white/20 text-white" : "bg-[#4EACAF]/15 text-[#3D8C8F]"
@@ -1750,7 +2024,10 @@ export default function LearningResultManagement() {
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div
+                    ref={chunksScrollRef}
+                    className="max-h-[580px] overflow-y-auto pr-1.5 p-0.5 space-y-2 overscroll-contain"
+                  >
                     {filteredChunks.map((chunk) => {
                       const cIndex = chunk.chunkIndex;
                       const assessment = chunkAssessments[cIndex];
@@ -1761,9 +2038,9 @@ export default function LearningResultManagement() {
                       return (
                         <div
                           key={cIndex}
-                          className="bg-slate-50 border border-slate-100 rounded-2xl p-4.5 space-y-4 transition-all hover:bg-slate-50/80"
+                          className="bg-slate-50 border border-slate-100 rounded-xl p-2 space-y-2 transition-all hover:bg-slate-50/80"
                         >
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/50 pb-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/50 pb-2">
                             <div className="flex items-center gap-2 flex-wrap">
                               <div className="p-2 bg-[#4EACAF]/10 text-[#4EACAF] rounded-lg">
                                 <FileAudio className="w-4 h-4" />
@@ -1950,12 +2227,12 @@ export default function LearningResultManagement() {
                                 assessment.PronunciationAssessment?.CompletenessScore ?? 0;
 
                               return (
-                                <div className="p-4 bg-white border border-slate-200/85 rounded-xl space-y-3 animate-in fade-in duration-300">
+                                <div className="p-2 bg-white border border-slate-200/85 rounded-lg space-y-2 animate-in fade-in duration-300">
                                   {currentRoleView !== 'PARENT' && (
                                     <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                                       <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 flex items-center gap-1">
                                         <Activity className="w-3.5 h-3.5 text-[#4EACAF]" />
-                                        4 Thông số thẩm âm:
+                                        4 Thông số đánh giá:
                                       </span>
                                       <button
                                         type="button"
@@ -1967,7 +2244,7 @@ export default function LearningResultManagement() {
                                       </button>
                                     </div>
                                   )}
-                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                                     <div
                                       onClick={currentRoleView !== 'PARENT' ? () => handleOpenManualScore(cIndex) : undefined}
                                       className={cn(

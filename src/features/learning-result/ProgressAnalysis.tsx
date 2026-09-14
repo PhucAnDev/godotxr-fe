@@ -1392,55 +1392,31 @@ export default function ProgressAnalysis() {
         tfMastery = tfRate >= 80 ? 'MASTERED' : tfRate >= 50 ? 'PRACTICING' : 'NEEDS_HELP';
       }
 
-      const hasTf = entry.tfAttempts > 0;
-
-      if (vocabTimeScope === 'ALL_TIME') {
-        return {
-          word: entry.word,
-          lessonId: entry.lessonId,
-          lessonName: entry.lessonName,
-          totalAttempts: entry.allAttempts,
-          correctCount: entry.allCorrect,
-          wrongCount: entry.allWrong,
-          accuracyRate: allRate,
-          avgSpeechScore: allScore,
-          masteryStatus: allMastery,
-          lastPracticed: entry.lastPracticed,
-          correctExamples: entry.allCorrectEx,
-          wrongExamples: entry.allWrongEx,
-          allTimeAttempts: entry.allAttempts,
-          allTimeAccuracyRate: allRate,
-          allTimeMasteryStatus: allMastery,
-          allTimeLastPracticed: entry.lastPracticed,
-          hasTimeframeData: true
-        };
-      } else {
-        return {
-          word: entry.word,
-          lessonId: entry.lessonId,
-          lessonName: entry.lessonName,
-          totalAttempts: entry.tfAttempts,
-          correctCount: entry.tfCorrect,
-          wrongCount: entry.tfWrong,
-          accuracyRate: tfRate,
-          avgSpeechScore: tfScore,
-          masteryStatus: tfMastery,
-          lastPracticed: entry.lastPracticed,
-          correctExamples: entry.tfCorrectEx,
-          wrongExamples: entry.tfWrongEx,
-          allTimeAttempts: entry.allAttempts,
-          allTimeAccuracyRate: allRate,
-          allTimeMasteryStatus: allMastery,
-          allTimeLastPracticed: entry.lastPracticed,
-          hasTimeframeData: hasTf
-        };
-      }
+      return {
+        word: entry.word,
+        lessonId: entry.lessonId,
+        lessonName: entry.lessonName,
+        totalAttempts: entry.allAttempts,
+        correctCount: entry.allCorrect,
+        wrongCount: entry.allWrong,
+        accuracyRate: allRate,
+        avgSpeechScore: allScore,
+        masteryStatus: allMastery,
+        lastPracticed: entry.lastPracticed,
+        correctExamples: entry.allCorrectEx,
+        wrongExamples: entry.allWrongEx,
+        allTimeAttempts: entry.allAttempts,
+        allTimeAccuracyRate: allRate,
+        allTimeMasteryStatus: allMastery,
+        allTimeLastPracticed: entry.lastPracticed,
+        hasTimeframeData: true
+      };
     });
 
     const totalWords = allItems.length;
-    const timeframePracticedWords = allItems.filter(i => i.hasTimeframeData && i.totalAttempts > 0).length;
+    const timeframePracticedWords = allItems.filter(i => i.totalAttempts > 0).length;
 
-    const activeItems = vocabTimeScope === 'ALL_TIME' ? allItems : allItems.filter(i => i.hasTimeframeData && i.totalAttempts > 0);
+    const activeItems = allItems;
     const masteredCount = activeItems.filter(i => i.masteryStatus === 'MASTERED').length;
     const practicingCount = activeItems.filter(i => i.masteryStatus === 'PRACTICING').length;
     const needsHelpCount = activeItems.filter(i => i.masteryStatus === 'NEEDS_HELP').length;
@@ -1994,41 +1970,6 @@ export default function ProgressAnalysis() {
               </p>
             </div>
           </div>
-
-          {/* Time Scope Toggle and Quick Spoken Accuracy - strictly on 1 row */}
-          <div className="flex items-center gap-2 shrink-0 flex-nowrap">
-            <div className="flex items-center bg-slate-100/80 p-1 rounded-xl border border-slate-200/60 shrink-0">
-              <button
-                type="button"
-                onClick={() => setVocabTimeScope('ALL_TIME')}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap text-center",
-                  vocabTimeScope === 'ALL_TIME'
-                    ? "bg-white text-slate-800 shadow-xs font-semibold"
-                    : "text-slate-500 hover:text-slate-800"
-                )}
-              >
-                Toàn bộ từ đã học ({vocabularyAnalysis.totalWords})
-              </button>
-              <button
-                type="button"
-                onClick={() => setVocabTimeScope('FILTERED')}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap text-center",
-                  vocabTimeScope === 'FILTERED'
-                    ? "bg-white text-slate-800 shadow-xs font-semibold"
-                    : "text-slate-500 hover:text-slate-800"
-                )}
-              >
-                Theo bộ lọc biểu đồ
-              </button>
-            </div>
-
-            <div className="flex items-center gap-1.5 text-xs font-medium bg-cyan-50/70 text-cyan-800 px-3 py-1.5 rounded-xl border border-cyan-100 shrink-0 whitespace-nowrap">
-              <Mic className="w-3.5 h-3.5 text-[#20D0D4] shrink-0" />
-              <span>Chính xác TB: <span className="font-semibold text-cyan-900">{vocabularyAnalysis.overallSpokenAccuracy}%</span> ({vocabularyAnalysis.totalCorrect} đúng / {vocabularyAnalysis.totalWrong} sai)</span>
-            </div>
-          </div>
         </div>
 
         {/* Filter Categories Chips (Clickable) */}
@@ -2049,11 +1990,6 @@ export default function ProgressAnalysis() {
               </p>
               <div className="flex items-baseline gap-1.5 mt-0.5 whitespace-nowrap">
                 <span className="text-lg font-bold leading-tight">{vocabularyAnalysis.totalWords}</span>
-                {vocabTimeScope === 'FILTERED' && (
-                  <span className={cn("text-[10px] font-medium whitespace-nowrap", vocabStatusFilter === 'ALL' ? "text-slate-300" : "text-slate-400")}>
-                    ({vocabularyAnalysis.timeframePracticedWords} có lượt)
-                  </span>
-                )}
               </div>
             </div>
             <BookOpen className={cn("w-4 h-4 shrink-0 ml-1", vocabStatusFilter === 'ALL' ? "text-slate-300" : "text-slate-400")} />
@@ -2168,8 +2104,9 @@ export default function ProgressAnalysis() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            {filteredVocabularyItems.map((item) => {
+          <div className="max-h-[580px] overflow-y-auto pr-2 p-1">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              {filteredVocabularyItems.map((item) => {
               const isNotPracticed = item.totalAttempts === 0;
               const isMastered = !isNotPracticed && item.masteryStatus === 'MASTERED';
               const isNeedsHelp = !isNotPracticed && item.masteryStatus === 'NEEDS_HELP';
@@ -2184,20 +2121,18 @@ export default function ProgressAnalysis() {
                 >
                   {/* Top: Word & Status Badges */}
                   <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 shrink-0">
-                          <Volume2 className="w-4 h-4 text-slate-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-slate-900 text-base leading-tight tracking-tight capitalize">
-                            {item.word}
-                          </h4>
-                          <span className="inline-flex items-center gap-1 text-[11px] font-normal text-slate-500 mt-0.5">
-                            <BookOpen className="w-3 h-3 text-teal-600" />
-                            {item.lessonName}
-                          </span>
-                        </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 shrink-0">
+                        <Volume2 className="w-4 h-4 text-slate-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-slate-900 text-base leading-tight tracking-tight capitalize">
+                          {item.word}
+                        </h4>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-normal text-slate-500 mt-0.5">
+                          <BookOpen className="w-3 h-3 text-teal-600" />
+                          {item.lessonName}
+                        </span>
                       </div>
                     </div>
 
@@ -2240,11 +2175,6 @@ export default function ProgressAnalysis() {
                         <span className={cn("px-1.5 py-0.5 rounded whitespace-nowrap", isNotPracticed ? "text-slate-400 bg-slate-100" : "text-rose-700 bg-rose-100/70 font-medium")}>
                           {item.wrongCount} sai
                         </span>
-                        {item.avgSpeechScore !== undefined && (
-                          <span className="text-indigo-700 bg-indigo-100/70 px-1.5 py-0.5 rounded whitespace-nowrap font-medium">
-                            AI: {item.avgSpeechScore}đ
-                          </span>
-                        )}
                       </div>
                     </div>
 
@@ -2360,22 +2290,14 @@ export default function ProgressAnalysis() {
                     </div>
                   </div>
 
-                  {/* Card Footer: Timestamp and Teacher Advice */}
+                  {/* Card Footer: Timestamp */}
                   <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
                     <span>Lần tập: <span className="text-slate-600 font-medium">{isNotPracticed ? `Toàn kỳ: ${formatVocabDate(item.allTimeLastPracticed)}` : formatVocabDate(item.lastPracticed)}</span></span>
-                    <span className={cn("font-medium", isNotPracticed ? "text-slate-400" : isMastered ? "text-emerald-600" : isNeedsHelp ? "text-rose-500" : "text-cyan-600")}>
-                      {isNotPracticed
-                        ? "Chưa rèn luyện mốc này"
-                        : isMastered
-                          ? "⭐ Bé đã ghi nhớ tốt"
-                          : isNeedsHelp
-                            ? "⚠️ Nhắc bé phát âm chậm và rõ từ"
-                            : "🔄 Đang quen dần, cần duy trì"}
-                    </span>
                   </div>
                 </div>
               );
             })}
+            </div>
           </div>
         )}
       </div>
@@ -2519,20 +2441,6 @@ export default function ProgressAnalysis() {
                       )}
                     </div>
                   </th>
-                  <th
-                    onClick={() => handleSort('ProgressLevel')}
-                    className="py-5 px-6 cursor-pointer hover:bg-slate-100/50 transition-colors select-none"
-                    title="Sắp xếp theo Mức độ tiến bộ"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      Mức độ tiến bộ
-                      {sortColumn === 'ProgressLevel' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
-                      ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
-                      )}
-                    </div>
-                  </th>
                   <th className="py-5 px-10 text-right select-none">Tùy chọn</th>
                 </tr>
               </thead>
@@ -2604,11 +2512,6 @@ export default function ProgressAnalysis() {
                         ) : (
                           <span className="text-xs font-normal text-gray-400">--</span>
                         )}
-                      </td>
-
-                      {/* State status badge */}
-                      <td className="py-5 px-6">
-                        {renderProgressLevelBadge(anItem.ProgressLevel)}
                       </td>
 
                       {/* Action buttons */}
@@ -2706,10 +2609,6 @@ export default function ProgressAnalysis() {
                         Tuổi: {getChildDetails(selectedAnalysis.ChildId).Age} | Cấp học: {getChildDetails(selectedAnalysis.ChildId).LearningLevel}
                       </p>
                     </div>
-                  </div>
-
-                  <div className="self-start sm:self-center">
-                    {renderProgressLevelBadge(selectedAnalysis.ProgressLevel)}
                   </div>
                 </div>
 
