@@ -122,6 +122,21 @@ function formatDateDMY(value: string | null | undefined): string {
   return value;
 }
 
+// Trả về khóa ngày theo GIỜ ĐỊA PHƯƠNG (yyyy-MM-dd), KHÔNG dùng toISOString()
+// vì toISOString() quy đổi sang UTC, lệch múi giờ VN (+7) khiến một phiên luyện lúc
+// 0h-7h sáng bị "rơi" nhầm sang ngày hôm trước trên biểu đồ -> đây là nguyên nhân
+// chính khiến số liệu theo ngày trước đây bị sai.
+function toLocalDateKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function formatDDMM(d: Date): string {
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
 const mapChildRecord = (c: any): Child => ({
   ChildId: String(c.id),
   FullName: c.fullName,
@@ -323,6 +338,85 @@ export default function LearningResultManagement() {
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [filterDateRange, setFilterDateRange] = useState<string>('ALL');
   const [filterChildId, setFilterChildId] = useState<string>('ALL');
+
+  // Bộ tìm kiếm khoảng ngày thông minh riêng cho biểu đồ "Xu hướng kết quả luyện tập"
+  // (độc lập với filterDateRange của danh sách bên trái, để không đổi ý nghĩa các số liệu khác)
+  type DateRangePreset = '7D' | '30D' | 'THIS_MONTH' | 'LAST_MONTH' | 'ALL' | 'CUSTOM';
+  const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('30D');
+  const [customStartDate, setCustomStartDate] = useState<string>(''); // yyyy-MM-dd (input type=date)
+  const [customEndDate, setCustomEndDate] = useState<string>('');
+  const [isDateSearchOpen, setIsDateSearchOpen] = useState(false);
+  const dateSearchRef = useRef<HTMLDivElement | null>(null);
+
+  // Đóng popover khi click ra ngoài
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dateSearchRef.current && !dateSearchRef.current.contains(e.target as Node)) {
+        setIsDateSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Quy đổi lựa chọn hiện tại (preset hoặc tùy chỉnh) thành khoảng ngày thực tế theo GIỜ ĐỊA PHƯƠNG
+  const resolvedDateRange = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (dateRangePreset === '7D') {
+      const end = new Date(today);
+      const start = new Date(today);
+      start.setDate(start.getDate() - 6);
+      return { start, end, isAll: false, label: `7 ngày qua · ${formatDDMM(start)} - ${formatDDMM(end)}` };
+    }
+
+    if (dateRangePreset === '30D') {
+      const end = new Date(today);
+      const start = new Date(today);
+      start.setDate(start.getDate() - 29);
+      return { start, end, isAll: false, label: `30 ngày qua · ${formatDDMM(start)} - ${formatDDMM(end)}` };
+    }
+
+    if (dateRangePreset === 'THIS_MONTH') {
+      const start = new Date(today.getFullYear(), today.getMonth(), 1);
+      const end = new Date(today);
+      return { start, end, isAll: false, label: `Tháng này · ${formatDDMM(start)} - ${formatDDMM(end)}` };
+    }
+
+    if (dateRangePreset === 'LAST_MONTH') {
+      const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const end = new Date(today.getFullYear(), today.getMonth(), 0);
+      return { start, end, isAll: false, label: `Tháng trước · ${formatDDMM(start)} - ${formatDDMM(end)}` };
+    }
+
+    if (dateRangePreset === 'CUSTOM') {
+      if (customStartDate && customEndDate) {
+        const start = new Date(`${customStartDate}T00:00:00`);
+        const end = new Date(`${customEndDate}T00:00:00`);
+        if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && start.getTime() <= end.getTime()) {
+          return { start, end, isAll: false, label: `Tùy chỉnh · ${formatDDMM(start)} - ${formatDDMM(end)}` };
+        }
+      }
+      // Chưa chọn đủ / chọn sai khoảng tùy chỉnh -> tạm dùng 30 ngày qua để biểu đồ không bị trống
+      const end = new Date(today);
+      const start = new Date(today);
+      start.setDate(start.getDate() - 29);
+      return { start, end, isAll: false, label: `30 ngày qua · ${formatDDMM(start)} - ${formatDDMM(end)}` };
+    }
+
+    // 'ALL'
+    return { start: null as Date | null, end: null as Date | null, isAll: true, label: 'Toàn bộ thời gian' };
+  }, [dateRangePreset, customStartDate, customEndDate]);
+
+  const DATE_RANGE_PRESET_OPTIONS: { value: DateRangePreset; label: string }[] = [
+    { value: '7D', label: '7 ngày qua' },
+    { value: '30D', label: '30 ngày qua' },
+    { value: 'THIS_MONTH', label: 'Tháng này' },
+    { value: 'LAST_MONTH', label: 'Tháng trước' },
+    { value: 'ALL', label: 'Toàn bộ thời gian' },
+    { value: 'CUSTOM', label: 'Tùy chỉnh khoảng ngày...' },
+  ];
 
   const canEditFeedback = currentRoleView === 'ADMIN' || currentRoleView === 'TEACHER';
 
@@ -639,17 +733,22 @@ export default function LearningResultManagement() {
     return { correct, wrong, total, accuracyRate };
   }, [filteredResultsForStats]);
 
-  // Biểu đồ xu hướng kết quả luyện tập: gộp các lượt luyện theo ngày,
-  // lấy tối đa 14 ngày gần nhất có dữ liệu để biểu đồ không bị rối
+  // Biểu đồ xu hướng kết quả luyện tập: gộp các lượt luyện theo ngày (theo GIỜ ĐỊA PHƯƠNG).
+  // - Khi chọn "Toàn bộ thời gian": chỉ hiện các ngày thực sự có dữ liệu.
+  // - Khi chọn một khoảng ngày cụ thể (7 ngày qua / 30 ngày qua / tháng này / tháng trước /
+  //   tùy chỉnh): luôn render ĐỦ số cột theo đúng lịch trong khoảng đó (ngày không luyện vẫn
+  //   có cột giá trị 0), lấy từ bộ tìm kiếm khoảng ngày thông minh phía trên biểu đồ.
   const practiceChartData = useMemo(() => {
-    const byDate = new Map<string, {
+    type DayEntry = {
       dateKey: string;
       label: string;
       attempts: number;
       scoreSum: number;
       correct: number;
       wrong: number;
-    }>();
+    };
+
+    const byDate = new Map<string, DayEntry>();
 
     filteredResultsForStats.forEach((res) => {
       const raw = res.CompletedAt || res.StartedAt;
@@ -657,8 +756,8 @@ export default function LearningResultManagement() {
       const d = new Date(raw);
       if (Number.isNaN(d.getTime())) return;
 
-      const dateKey = d.toISOString().slice(0, 10);
-      const label = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const dateKey = toLocalDateKey(d);
+      const label = formatDDMM(d);
       const counts = getResultCounts(res);
 
       const entry = byDate.get(dateKey) || { dateKey, label, attempts: 0, scoreSum: 0, correct: 0, wrong: 0 };
@@ -669,19 +768,41 @@ export default function LearningResultManagement() {
       byDate.set(dateKey, entry);
     });
 
-    return Array.from(byDate.values())
-      .sort((a, b) => a.dateKey.localeCompare(b.dateKey))
-      .slice(-14)
-      .map((entry) => {
-        const totalWords = entry.correct + entry.wrong;
-        return {
-          label: entry.label,
-          attempts: entry.attempts,
-          avgScore: entry.attempts > 0 ? Math.round(entry.scoreSum / entry.attempts) : 0,
-          accuracyRate: totalWords > 0 ? Math.round((entry.correct / totalWords) * 100) : 0,
-        };
-      });
-  }, [filteredResultsForStats]);
+    const toChartPoint = (entry: DayEntry) => {
+      const totalWords = entry.correct + entry.wrong;
+      return {
+        dateKey: entry.dateKey,
+        label: entry.label,
+        attempts: entry.attempts,
+        avgScore: entry.attempts > 0 ? Math.round(entry.scoreSum / entry.attempts) : 0,
+        accuracyRate: totalWords > 0 ? Math.round((entry.correct / totalWords) * 100) : 0,
+      };
+    };
+
+    // "Toàn bộ": không phân kỳ, chỉ hiện các ngày có dữ liệu, sắp xếp theo thời gian
+    if (resolvedDateRange.isAll || !resolvedDateRange.start || !resolvedDateRange.end) {
+      return Array.from(byDate.values())
+        .sort((a, b) => a.dateKey.localeCompare(b.dateKey))
+        .map(toChartPoint);
+    }
+
+    // Khoảng ngày cụ thể: luôn tạo đủ các ngày liên tiếp theo lịch thật trong khoảng đã chọn
+    const days: DayEntry[] = [];
+    const cursor = new Date(resolvedDateRange.start);
+    while (cursor.getTime() <= resolvedDateRange.end.getTime()) {
+      const dateKey = toLocalDateKey(cursor);
+      const label = formatDDMM(cursor);
+      days.push(byDate.get(dateKey) || { dateKey, label, attempts: 0, scoreSum: 0, correct: 0, wrong: 0 });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return days.map(toChartPoint);
+  }, [filteredResultsForStats, resolvedDateRange]);
+
+  // Bề rộng khả dụng của chart: khi có nhiều ngày (khoảng dài / "Toàn bộ"), thay vì nén hết
+  // cột lại cho vừa khung, cho phép cuộn ngang để từng cột vẫn đủ rộng, dễ đọc và bấm vào xem.
+  const practiceChartMinWidth = Math.max(practiceChartData.length * 56, 480);
+
 
   // Session-level stats for the currently selected session
   const sessionWordStats = useMemo(() => {
@@ -1417,7 +1538,9 @@ export default function LearningResultManagement() {
               <div>
                 <h3 className="font-bold text-slate-800 text-base leading-tight">Xu hướng kết quả luyện tập</h3>
                 <p className="text-xs text-slate-400 font-normal">
-                  Số lượt luyện & độ chính xác phát âm theo ngày ({practiceChartData.length} ngày gần nhất)
+                  {resolvedDateRange.isAll
+                    ? `Số lượt luyện & độ chính xác phát âm theo ngày (${practiceChartData.length} ngày có dữ liệu · toàn bộ)`
+                    : `Số lượt luyện & độ chính xác phát âm theo ngày · ${resolvedDateRange.label}`}
                 </p>
               </div>
             </div>
@@ -1433,49 +1556,137 @@ export default function LearningResultManagement() {
             </div>
           </div>
 
-          <div className="h-64 w-full pt-1">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={practiceChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12, fontWeight: 500 }} />
-                <YAxis
-                  yAxisId="left"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#94A3B8', fontSize: 12 }}
-                  allowDecimals={false}
-                />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#94A3B8', fontSize: 12 }}
-                  domain={[0, 100]}
-                  tickFormatter={(val) => `${val}%`}
-                />
-                <RechartsTooltip
-                  contentStyle={{ backgroundColor: '#1E293B', borderRadius: '12px', color: '#fff', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2)' }}
-                  labelStyle={{ fontWeight: 600, color: '#94A3B8' }}
-                  formatter={(val: any, name: any) => {
-                    if (name === 'attempts') return [`${val} lượt`, 'Số lượt luyện'];
-                    if (name === 'accuracyRate') return [`${val}%`, 'Độ chính xác phát âm'];
-                    return [val, name];
-                  }}
-                />
-                <Bar yAxisId="left" dataKey="attempts" name="attempts" fill="#4EACAF" radius={[6, 6, 0, 0]} maxBarSize={28} />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="accuracyRate"
-                  name="accuracyRate"
-                  stroke="#FF8E8E"
-                  strokeWidth={3}
-                  dot={{ r: 4, fill: '#FF8E8E', strokeWidth: 2, stroke: '#FFFFFF' }}
-                  activeDot={{ r: 6, fill: '#FF8E8E', strokeWidth: 2, stroke: '#FFFFFF' }}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
+          {/* Tìm kiếm khoảng ngày thông minh cho biểu đồ này */}
+          <div className="relative inline-block" ref={dateSearchRef}>
+            <button
+              type="button"
+              onClick={() => setIsDateSearchOpen((o) => !o)}
+              className={cn(
+                "flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-medium transition-colors shadow-xs cursor-pointer",
+                isDateSearchOpen
+                  ? "border-[#4EACAF] text-[#3D8C8F] bg-[#4EACAF]/5"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-[#4EACAF]/50"
+              )}
+            >
+              <Calendar className="w-3.5 h-3.5 text-[#4EACAF] shrink-0" />
+              <span>{resolvedDateRange.label}</span>
+              <ChevronDown className={cn("w-3.5 h-3.5 text-slate-400 transition-transform shrink-0", isDateSearchOpen && "rotate-180")} />
+            </button>
+
+            <AnimatePresence>
+              {isDateSearchOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute left-0 top-full mt-2 z-20 bg-white rounded-2xl border border-slate-200 shadow-xl w-[280px] p-2 space-y-0.5"
+                >
+                  {DATE_RANGE_PRESET_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        setDateRangePreset(opt.value);
+                        if (opt.value !== 'CUSTOM') setIsDateSearchOpen(false);
+                      }}
+                      className={cn(
+                        "w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer",
+                        dateRangePreset === opt.value
+                          ? "bg-[#4EACAF]/10 text-[#3D8C8F]"
+                          : "text-slate-600 hover:bg-slate-50"
+                      )}
+                    >
+                      <span>{opt.label}</span>
+                      {dateRangePreset === opt.value && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
+                    </button>
+                  ))}
+
+                  {dateRangePreset === 'CUSTOM' && (
+                    <div className="pt-2 mt-1 border-t border-slate-100 space-y-2 px-1 pb-1">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Từ ngày</label>
+                          <input
+                            type="date"
+                            value={customStartDate}
+                            max={customEndDate || undefined}
+                            onChange={(e) => setCustomStartDate(e.target.value)}
+                            className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:border-[#4EACAF] outline-none"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Đến ngày</label>
+                          <input
+                            type="date"
+                            value={customEndDate}
+                            min={customStartDate || undefined}
+                            onChange={(e) => setCustomEndDate(e.target.value)}
+                            className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:border-[#4EACAF] outline-none"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={!customStartDate || !customEndDate}
+                        onClick={() => setIsDateSearchOpen(false)}
+                        className="w-full px-3 py-1.5 rounded-lg text-xs font-medium bg-[#4EACAF] hover:bg-[#3D8C8F] text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                      >
+                        Áp dụng
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Khi khoảng thời gian dài (nhiều cột), cho cuộn ngang thay vì nén cột lại cho vừa khung */}
+          <div className="w-full overflow-x-auto pb-1">
+            <div className="h-64" style={{ minWidth: practiceChartMinWidth }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={practiceChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12, fontWeight: 500 }} />
+                  <YAxis
+                    yAxisId="left"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#94A3B8', fontSize: 12 }}
+                    allowDecimals={false}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#94A3B8', fontSize: 12 }}
+                    domain={[0, 100]}
+                    tickFormatter={(val) => `${val}%`}
+                  />
+                  <RechartsTooltip
+                    contentStyle={{ backgroundColor: '#1E293B', borderRadius: '12px', color: '#fff', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2)' }}
+                    labelStyle={{ fontWeight: 600, color: '#94A3B8' }}
+                    formatter={(val: any, name: any) => {
+                      if (name === 'attempts') return [`${val} lượt`, 'Số lượt luyện'];
+                      if (name === 'accuracyRate') return [`${val}%`, 'Độ chính xác phát âm'];
+                      return [val, name];
+                    }}
+                  />
+                  <Bar yAxisId="left" dataKey="attempts" name="attempts" fill="#4EACAF" radius={[6, 6, 0, 0]} maxBarSize={28} />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="accuracyRate"
+                    name="accuracyRate"
+                    stroke="#FF8E8E"
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: '#FF8E8E', strokeWidth: 2, stroke: '#FFFFFF' }}
+                    activeDot={{ r: 6, fill: '#FF8E8E', strokeWidth: 2, stroke: '#FFFFFF' }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       )}
