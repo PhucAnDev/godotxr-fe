@@ -30,6 +30,16 @@ import {
   Filter,
   BarChart2
 } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+} from 'recharts';
 import { cn } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
 import CustomSelect from '../../components/common/CustomSelect';
@@ -627,6 +637,50 @@ export default function LearningResultManagement() {
     const total = correct + wrong;
     const accuracyRate = total > 0 ? Math.round((correct / total) * 100) : 0;
     return { correct, wrong, total, accuracyRate };
+  }, [filteredResultsForStats]);
+
+  // Biểu đồ xu hướng kết quả luyện tập: gộp các lượt luyện theo ngày,
+  // lấy tối đa 14 ngày gần nhất có dữ liệu để biểu đồ không bị rối
+  const practiceChartData = useMemo(() => {
+    const byDate = new Map<string, {
+      dateKey: string;
+      label: string;
+      attempts: number;
+      scoreSum: number;
+      correct: number;
+      wrong: number;
+    }>();
+
+    filteredResultsForStats.forEach((res) => {
+      const raw = res.CompletedAt || res.StartedAt;
+      if (!raw) return;
+      const d = new Date(raw);
+      if (Number.isNaN(d.getTime())) return;
+
+      const dateKey = d.toISOString().slice(0, 10);
+      const label = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const counts = getResultCounts(res);
+
+      const entry = byDate.get(dateKey) || { dateKey, label, attempts: 0, scoreSum: 0, correct: 0, wrong: 0 };
+      entry.attempts += 1;
+      entry.scoreSum += res.Score || 0;
+      entry.correct += counts.correct;
+      entry.wrong += counts.wrong;
+      byDate.set(dateKey, entry);
+    });
+
+    return Array.from(byDate.values())
+      .sort((a, b) => a.dateKey.localeCompare(b.dateKey))
+      .slice(-14)
+      .map((entry) => {
+        const totalWords = entry.correct + entry.wrong;
+        return {
+          label: entry.label,
+          attempts: entry.attempts,
+          avgScore: entry.attempts > 0 ? Math.round(entry.scoreSum / entry.attempts) : 0,
+          accuracyRate: totalWords > 0 ? Math.round((entry.correct / totalWords) * 100) : 0,
+        };
+      });
   }, [filteredResultsForStats]);
 
   // Session-level stats for the currently selected session
@@ -1351,6 +1405,80 @@ export default function LearningResultManagement() {
           </div>
         </div>
       </div>
+
+      {/* Biểu đồ xu hướng kết quả luyện tập */}
+      {practiceChartData.length > 0 && (
+        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-[#4EACAF]/10 rounded-xl flex items-center justify-center text-[#4EACAF] shrink-0">
+                <BarChart2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-base leading-tight">Xu hướng kết quả luyện tập</h3>
+                <p className="text-xs text-slate-400 font-normal">
+                  Số lượt luyện & độ chính xác phát âm theo ngày ({practiceChartData.length} ngày gần nhất)
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 text-xs font-medium">
+              <div className="flex items-center gap-1.5 text-[#4EACAF]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#4EACAF] inline-block" />
+                <span>Số lượt luyện</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[#FF8E8E]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#FF8E8E] inline-block" />
+                <span>Độ chính xác (%)</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="h-64 w-full pt-1">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={practiceChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12, fontWeight: 500 }} />
+                <YAxis
+                  yAxisId="left"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#94A3B8', fontSize: 12 }}
+                  allowDecimals={false}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#94A3B8', fontSize: 12 }}
+                  domain={[0, 100]}
+                  tickFormatter={(val) => `${val}%`}
+                />
+                <RechartsTooltip
+                  contentStyle={{ backgroundColor: '#1E293B', borderRadius: '12px', color: '#fff', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2)' }}
+                  labelStyle={{ fontWeight: 600, color: '#94A3B8' }}
+                  formatter={(val: any, name: any) => {
+                    if (name === 'attempts') return [`${val} lượt`, 'Số lượt luyện'];
+                    if (name === 'accuracyRate') return [`${val}%`, 'Độ chính xác phát âm'];
+                    return [val, name];
+                  }}
+                />
+                <Bar yAxisId="left" dataKey="attempts" name="attempts" fill="#4EACAF" radius={[6, 6, 0, 0]} maxBarSize={28} />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="accuracyRate"
+                  name="accuracyRate"
+                  stroke="#FF8E8E"
+                  strokeWidth={3}
+                  dot={{ r: 4, fill: '#FF8E8E', strokeWidth: 2, stroke: '#FFFFFF' }}
+                  activeDot={{ r: 6, fill: '#FF8E8E', strokeWidth: 2, stroke: '#FFFFFF' }}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {apiError && (
         <div className="p-4 rounded-2xl bg-rose-50 border border-rose-100 text-sm font-medium text-rose-700">
