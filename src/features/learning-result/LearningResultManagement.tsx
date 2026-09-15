@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   Calendar,
   ChevronDown,
+  ChevronUp,
   ChevronLeft,
   ChevronRight,
   Activity,
@@ -348,6 +349,25 @@ export default function LearningResultManagement() {
   const [isDateSearchOpen, setIsDateSearchOpen] = useState(false);
   const dateSearchRef = useRef<HTMLDivElement | null>(null);
 
+  // Trạng thái thu gọn / mở rộng biểu đồ xu hướng (lưu vào localStorage)
+  const [isChartCollapsed, setIsChartCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('godotxr_result_chart_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleChartCollapsed = () => {
+    setIsChartCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('godotxr_result_chart_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   // Đóng popover khi click ra ngoài
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -452,10 +472,93 @@ export default function LearningResultManagement() {
   const [isSavingManualScore, setIsSavingManualScore] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const sessionPanelRef = useRef<HTMLDivElement | null>(null);
+  const leftPanelRef = useRef<HTMLDivElement | null>(null);
+  const leftResultsScrollRef = useRef<HTMLDivElement | null>(null);
+  const sessionDetailsScrollRef = useRef<HTMLDivElement | null>(null);
   const wordsScrollRef = useRef<HTMLDivElement | null>(null);
   const wordsSectionRef = useRef<HTMLDivElement | null>(null);
   const chunksScrollRef = useRef<HTMLDivElement | null>(null);
   const chunksSectionRef = useRef<HTMLDivElement | null>(null);
+  const interactionLogScrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Smart Sub-Scroll Routing cho khung Session chi tiết
+  useEffect(() => {
+    const sessionEl = sessionPanelRef.current;
+    if (!sessionEl) return;
+
+    const handleSessionWheel = (e: WheelEvent) => {
+      // 1. Luôn khóa 100% không cho trang tổng bên ngoài cuộn khi chuột nằm trong phạm vi Session card
+      e.preventDefault();
+      e.stopPropagation();
+
+      const targetNode = e.target as Node;
+
+      // 2. Nếu chuột nằm trong khung "Thống kê theo từng từ trong phiên" -> Cuộn ngang danh sách từ vựng
+      if (
+        wordsScrollRef.current &&
+        (wordsScrollRef.current.contains(targetNode) ||
+         (wordsSectionRef.current && wordsSectionRef.current.contains(targetNode)))
+      ) {
+        wordsScrollRef.current.scrollLeft += e.deltaY;
+        return;
+      }
+
+      // 3. Nếu chuột nằm trong khung "Nhật ký tương tác (Interaction Log)" -> Cuộn dọc nhật ký log
+      if (
+        interactionLogScrollRef.current &&
+        interactionLogScrollRef.current.contains(targetNode)
+      ) {
+        interactionLogScrollRef.current.scrollTop += e.deltaY;
+        return;
+      }
+
+      // 4. Nếu chuột nằm trong khung "Danh sách các file âm thanh ghi âm" -> Cuộn dọc danh sách audio chunks
+      if (
+        chunksScrollRef.current &&
+        (chunksScrollRef.current.contains(targetNode) ||
+         (chunksSectionRef.current && chunksSectionRef.current.contains(targetNode)))
+      ) {
+        chunksScrollRef.current.scrollTop += e.deltaY;
+        return;
+      }
+
+      // 5. Mặc định (Header, Quick stats, hoặc các khoảng trắng khác trong Session) -> Cuộn toàn bộ khung Session chi tiết chính
+      if (sessionDetailsScrollRef.current) {
+        sessionDetailsScrollRef.current.scrollTop += e.deltaY;
+      }
+    };
+
+    sessionEl.addEventListener('wheel', handleSessionWheel, { passive: false });
+
+    return () => {
+      sessionEl.removeEventListener('wheel', handleSessionWheel);
+    };
+  }, [selectedResult]);
+
+  // Khóa cuộn trang ngoài 100% và điều hướng cuộn cho nội dung Lịch sử khi chuột ở trong phạm vi Lịch sử
+  useEffect(() => {
+    const leftEl = leftPanelRef.current;
+    if (!leftEl) return;
+
+    const handleLeftWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const scrollTarget = leftResultsScrollRef.current;
+      if (scrollTarget) {
+        scrollTarget.scrollTop += e.deltaY;
+      }
+    };
+
+    leftEl.addEventListener('wheel', handleLeftWheel, { passive: false });
+
+    return () => {
+      leftEl.removeEventListener('wheel', handleLeftWheel);
+    };
+  }, []);
+
+
 
   const handleScrollWords = (direction: 'left' | 'right') => {
     if (!wordsScrollRef.current) return;
@@ -1410,7 +1513,7 @@ export default function LearningResultManagement() {
   };
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-700 pb-2 relative" id="results-split-page-wrapper">
+    <div className="min-h-full flex flex-col gap-3 pb-6 relative" id="results-split-page-wrapper">
       {/* Toast notifications */}
       <AnimatePresence>
         {toastMessage && (
@@ -1442,19 +1545,20 @@ export default function LearningResultManagement() {
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-1">
-        <div className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight leading-tight">
+      {/* Page Header Bar - Compact single row */}
+      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-0.5">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl md:text-2xl font-bold text-slate-800 tracking-tight leading-none">
             Kết Quả <span className="text-[#FF8E8E]">Luyện Tập</span>
           </h1>
         </div>
 
-        <div className="bg-white px-3 py-1.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-2.5 self-start lg:self-center shrink-0">
-          <div className="w-8 h-8 bg-indigo-50 text-indigo-500 rounded-xl flex items-center justify-center shrink-0">
-            <UserSquare2 className="w-4 h-4" />
+        <div className="bg-white px-3 py-1 rounded-xl border border-slate-200/80 shadow-2xs flex items-center gap-2 self-start sm:self-center shrink-0">
+          <div className="w-6 h-6 bg-indigo-50 text-indigo-500 rounded-lg flex items-center justify-center shrink-0">
+            <UserSquare2 className="w-3.5 h-3.5" />
           </div>
-          <div className="space-y-0.5">
-            <h4 className="font-semibold text-[10px] text-slate-400 uppercase tracking-wider leading-none">Học viên rèn luyện:</h4>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-[10px] text-slate-400 uppercase tracking-wider whitespace-nowrap">Học viên:</span>
             <CustomSelect
               value={filterChildId}
               onChange={(val) => setFilterChildId(val)}
@@ -1465,229 +1569,214 @@ export default function LearningResultManagement() {
                   label: `👶 ${kd.FullName} (${kd.Age}t) - ${kd.LearningLevel}`
                 }))
               ]}
-              className="min-w-[210px] font-medium text-xs"
+              className="min-w-[190px] sm:min-w-[220px] font-medium text-xs"
             />
           </div>
         </div>
       </div>
 
-      {/* Statistics indicators */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl px-3.5 py-2.5 border border-slate-100 shadow-xs flex items-center gap-3 transition-transform hover:-translate-y-0.5">
-          <div className="w-9 h-9 bg-teal-50 rounded-lg flex items-center justify-center shrink-0 border border-teal-100">
-            <Activity className="w-4 h-4 text-[#4EACAF]" />
-          </div>
-          <div>
-            <p className="text-xl font-bold text-slate-800 leading-none">{totalAttempts}</p>
-            <p className="text-[10.5px] text-slate-400 font-medium uppercase tracking-wider mt-1">Tổng lượt luyện</p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl px-3.5 py-2.5 border border-slate-100 shadow-xs flex items-center gap-3 transition-transform hover:-translate-y-0.5">
-          <div className="w-9 h-9 bg-rose-50 rounded-lg flex items-center justify-center shrink-0 border border-rose-100">
-            <Clock className="w-4 h-4 text-[#FF8E8E]" />
-          </div>
-          <div>
-            <p className="text-xl font-bold text-slate-800 leading-none">{formattedTotalMinutes} phút</p>
-            <p className="text-[10.5px] text-slate-400 font-medium uppercase tracking-wider mt-1">Tổng giờ tương tác</p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl px-3.5 py-2.5 border border-slate-100 shadow-xs flex items-center gap-3 transition-transform hover:-translate-y-0.5">
-          <div className="w-9 h-9 bg-indigo-50 rounded-lg flex items-center justify-center shrink-0 border border-indigo-100">
-            <ThumbsUp className="w-4 h-4 text-indigo-500" />
-          </div>
-          <div>
-            <p className="text-xl font-bold text-emerald-600 leading-none">{completionRate}%</p>
-            <p className="text-[10.5px] text-slate-400 font-medium uppercase tracking-wider mt-1">Tỷ lệ hoàn thành</p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl px-3.5 py-2.5 border border-slate-100 shadow-xs flex items-center gap-3 transition-transform hover:-translate-y-0.5">
-          <div className="w-9 h-9 bg-emerald-50 rounded-lg flex items-center justify-center shrink-0 border border-emerald-100">
-            <Sparkles className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-baseline gap-1">
-              <span className="text-xl font-bold text-slate-800 leading-none">
-                {overallWordTotals.total}
-              </span>
-              <span className="text-[11px] font-normal text-slate-400">từ đã luyện</span>
-            </div>
-            <p className="text-[10.5px] text-slate-400 font-medium uppercase tracking-wider mt-0.5">Tổng từ đúng / sai</p>
-            <div className="text-[11px] font-medium mt-1 flex items-center gap-1.5 flex-wrap leading-none">
-              <span className="text-emerald-600 font-medium">✓ {overallWordTotals.correct} đúng</span>
-              <span className="text-slate-300">|</span>
-              <span className="text-rose-500 font-medium">✕ {overallWordTotals.wrong} sai</span>
-              <span className="text-[9.5px] bg-emerald-100/70 text-emerald-800 px-1.5 py-0.2 rounded-full font-medium ml-0.5">
-                {overallWordTotals.accuracyRate}%
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Biểu đồ xu hướng kết quả luyện tập */}
+      {/* Biểu đồ xu hướng kết quả luyện tập (Có nút thu gọn / mở rộng) */}
       {practiceChartData.length > 0 && (
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#4EACAF]/10 rounded-xl flex items-center justify-center text-[#4EACAF] shrink-0">
-                <BarChart2 className="w-5 h-5" />
+        <div className="shrink-0 bg-white rounded-xl border border-slate-100 shadow-2xs transition-all overflow-hidden">
+          {/* Header row - gom tất cả control vào 1 hàng duy nhất */}
+          <div className="px-3.5 py-2 flex items-center justify-between flex-wrap gap-2 border-b border-slate-100/60 bg-slate-50/40">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 bg-[#4EACAF]/10 rounded-lg flex items-center justify-center text-[#4EACAF] shrink-0">
+                <BarChart2 className="w-3.5 h-3.5" />
               </div>
-              <div>
-                <h3 className="font-bold text-slate-800 text-base leading-tight">Xu hướng kết quả luyện tập</h3>
-                <p className="text-xs text-slate-400 font-normal">
-                  {resolvedDateRange.isAll
-                    ? `Số lượt luyện & độ chính xác phát âm theo ngày (${practiceChartData.length} ngày có dữ liệu · toàn bộ)`
-                    : `Số lượt luyện & độ chính xác phát âm theo ngày · ${resolvedDateRange.label}`}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 text-xs font-medium">
-              <div className="flex items-center gap-1.5 text-[#4EACAF]">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#4EACAF] inline-block" />
-                <span>Số lượt luyện</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-[#FF8E8E]">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#FF8E8E] inline-block" />
-                <span>Độ chính xác (%)</span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-slate-800 text-xs sm:text-sm leading-tight truncate">Xu hướng kết quả luyện tập</h3>
+                  <span className="text-[10px] px-2 py-0.2 rounded-full font-medium bg-[#4EACAF]/10 text-[#3D8C8F] shrink-0 hidden sm:inline-block">
+                    {resolvedDateRange.label}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Tìm kiếm khoảng ngày thông minh cho biểu đồ này */}
-          <div className="relative inline-block" ref={dateSearchRef}>
-            <button
-              type="button"
-              onClick={() => setIsDateSearchOpen((o) => !o)}
-              className={cn(
-                "flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-medium transition-colors shadow-xs cursor-pointer",
-                isDateSearchOpen
-                  ? "border-[#4EACAF] text-[#3D8C8F] bg-[#4EACAF]/5"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-[#4EACAF]/50"
+            <div className="flex items-center gap-2 shrink-0">
+              {/* Legend - chỉ hiển thị khi mở rộng */}
+              {!isChartCollapsed && (
+                <div className="hidden sm:flex items-center gap-2.5 text-[11px] font-medium mr-1">
+                  <div className="flex items-center gap-1 text-[#4EACAF]">
+                    <span className="w-2 h-2 rounded-full bg-[#4EACAF] inline-block" />
+                    <span>Số lượt</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-[#FF8E8E]">
+                    <span className="w-2 h-2 rounded-full bg-[#FF8E8E] inline-block" />
+                    <span>Độ chính xác</span>
+                  </div>
+                </div>
               )}
-            >
-              <Calendar className="w-3.5 h-3.5 text-[#4EACAF] shrink-0" />
-              <span>{resolvedDateRange.label}</span>
-              <ChevronDown className={cn("w-3.5 h-3.5 text-slate-400 transition-transform shrink-0", isDateSearchOpen && "rotate-180")} />
-            </button>
 
-            <AnimatePresence>
-              {isDateSearchOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute left-0 top-full mt-2 z-20 bg-white rounded-2xl border border-slate-200 shadow-xl w-[280px] p-2 space-y-0.5"
-                >
-                  {DATE_RANGE_PRESET_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => {
-                        setDateRangePreset(opt.value);
-                        if (opt.value !== 'CUSTOM') setIsDateSearchOpen(false);
-                      }}
-                      className={cn(
-                        "w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer",
-                        dateRangePreset === opt.value
-                          ? "bg-[#4EACAF]/10 text-[#3D8C8F]"
-                          : "text-slate-600 hover:bg-slate-50"
-                      )}
-                    >
-                      <span>{opt.label}</span>
-                      {dateRangePreset === opt.value && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
-                    </button>
-                  ))}
-
-                  {dateRangePreset === 'CUSTOM' && (
-                    <div className="pt-2 mt-1 border-t border-slate-100 space-y-2 px-1 pb-1">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Từ ngày</label>
-                          <input
-                            type="date"
-                            value={customStartDate}
-                            max={customEndDate || undefined}
-                            onChange={(e) => setCustomStartDate(e.target.value)}
-                            className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:border-[#4EACAF] outline-none"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Đến ngày</label>
-                          <input
-                            type="date"
-                            value={customEndDate}
-                            min={customStartDate || undefined}
-                            onChange={(e) => setCustomEndDate(e.target.value)}
-                            className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:border-[#4EACAF] outline-none"
-                          />
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        disabled={!customStartDate || !customEndDate}
-                        onClick={() => setIsDateSearchOpen(false)}
-                        className="w-full px-3 py-1.5 rounded-lg text-xs font-medium bg-[#4EACAF] hover:bg-[#3D8C8F] text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                      >
-                        Áp dụng
-                      </button>
-                    </div>
+              {/* Date range picker button */}
+              <div className="relative inline-block" ref={dateSearchRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsDateSearchOpen((o) => !o)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-colors shadow-2xs cursor-pointer",
+                    isDateSearchOpen
+                      ? "border-[#4EACAF] text-[#3D8C8F] bg-[#4EACAF]/5"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-[#4EACAF]/50"
                   )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                >
+                  <Calendar className="w-3 h-3 text-[#4EACAF] shrink-0" />
+                  <span className="truncate max-w-[120px]">{resolvedDateRange.label}</span>
+                  <ChevronDown className={cn("w-3 h-3 text-slate-400 transition-transform shrink-0", isDateSearchOpen && "rotate-180")} />
+                </button>
 
-          {/* Khi khoảng thời gian dài (nhiều cột), cho cuộn ngang thay vì nén cột lại cho vừa khung */}
-          <div className="w-full overflow-x-auto pb-1">
-            <div className="h-64" style={{ minWidth: practiceChartMinWidth }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={practiceChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12, fontWeight: 500 }} />
-                  <YAxis
-                    yAxisId="left"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#94A3B8', fontSize: 12 }}
-                    allowDecimals={false}
-                  />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#94A3B8', fontSize: 12 }}
-                    domain={[0, 100]}
-                    tickFormatter={(val) => `${val}%`}
-                  />
-                  <RechartsTooltip
-                    contentStyle={{ backgroundColor: '#1E293B', borderRadius: '12px', color: '#fff', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2)' }}
-                    labelStyle={{ fontWeight: 600, color: '#94A3B8' }}
-                    formatter={(val: any, name: any) => {
-                      if (name === 'attempts') return [`${val} lượt`, 'Số lượt luyện'];
-                      if (name === 'accuracyRate') return [`${val}%`, 'Độ chính xác phát âm'];
-                      return [val, name];
-                    }}
-                  />
-                  <Bar yAxisId="left" dataKey="attempts" name="attempts" fill="#4EACAF" radius={[6, 6, 0, 0]} maxBarSize={28} />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="accuracyRate"
-                    name="accuracyRate"
-                    stroke="#FF8E8E"
-                    strokeWidth={3}
-                    dot={{ r: 4, fill: '#FF8E8E', strokeWidth: 2, stroke: '#FFFFFF' }}
-                    activeDot={{ r: 6, fill: '#FF8E8E', strokeWidth: 2, stroke: '#FFFFFF' }}
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
+                <AnimatePresence>
+                  {isDateSearchOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full mt-1.5 z-30 bg-white rounded-xl border border-slate-200 shadow-xl w-[270px] p-2 space-y-0.5"
+                    >
+                      {DATE_RANGE_PRESET_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => {
+                            setDateRangePreset(opt.value);
+                            if (opt.value !== 'CUSTOM') setIsDateSearchOpen(false);
+                          }}
+                          className={cn(
+                            "w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer",
+                            dateRangePreset === opt.value
+                              ? "bg-[#4EACAF]/10 text-[#3D8C8F]"
+                              : "text-slate-600 hover:bg-slate-50"
+                          )}
+                        >
+                          <span>{opt.label}</span>
+                          {dateRangePreset === opt.value && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
+                        </button>
+                      ))}
+
+                      {dateRangePreset === 'CUSTOM' && (
+                        <div className="pt-2 mt-1 border-t border-slate-100 space-y-2 px-1 pb-1">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Từ ngày</label>
+                              <input
+                                type="date"
+                                value={customStartDate}
+                                max={customEndDate || undefined}
+                                onChange={(e) => setCustomStartDate(e.target.value)}
+                                className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:border-[#4EACAF] outline-none"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Đến ngày</label>
+                              <input
+                                type="date"
+                                value={customEndDate}
+                                min={customStartDate || undefined}
+                                onChange={(e) => setCustomEndDate(e.target.value)}
+                                className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:border-[#4EACAF] outline-none"
+                              />
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            disabled={!customStartDate || !customEndDate}
+                            onClick={() => setIsDateSearchOpen(false)}
+                            className="w-full px-3 py-1.5 rounded-lg text-xs font-medium bg-[#4EACAF] hover:bg-[#3D8C8F] text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                          >
+                            Áp dụng
+                          </button>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Collapse / Expand Toggle Button */}
+              <button
+                type="button"
+                onClick={toggleChartCollapsed}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-800 text-[11px] font-medium transition-colors cursor-pointer shadow-2xs"
+                title={isChartCollapsed ? "Mở rộng biểu đồ" : "Thu gọn biểu đồ"}
+              >
+                {isChartCollapsed ? (
+                  <>
+                    <span>Mở biểu đồ</span>
+                    <ChevronDown className="w-3 h-3 text-[#4EACAF]" />
+                  </>
+                ) : (
+                  <>
+                    <span>Thu gọn</span>
+                    <ChevronUp className="w-3 h-3 text-slate-400" />
+                  </>
+                )}
+              </button>
             </div>
           </div>
+
+          {/* Chart visual area (Hiển thị khi không thu gọn) */}
+          <AnimatePresence initial={false}>
+            {!isChartCollapsed && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="p-2 sm:p-2.5">
+                  <div className="w-full overflow-x-auto">
+                    <div className="h-40" style={{ minWidth: practiceChartMinWidth }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={practiceChartData} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                          <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 11, fontWeight: 500 }} />
+                          <YAxis
+                            yAxisId="left"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#94A3B8', fontSize: 11 }}
+                            allowDecimals={false}
+                          />
+                          <YAxis
+                            yAxisId="right"
+                            orientation="right"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#94A3B8', fontSize: 11 }}
+                            domain={[0, 100]}
+                            tickFormatter={(val) => `${val}%`}
+                          />
+                          <RechartsTooltip
+                            contentStyle={{ backgroundColor: '#1E293B', borderRadius: '10px', color: '#fff', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2)', padding: '8px 12px' }}
+                            labelStyle={{ fontWeight: 600, color: '#94A3B8', fontSize: '11px' }}
+                            formatter={(val: any, name: any) => {
+                              if (name === 'attempts') return [`${val} lượt`, 'Số lượt luyện'];
+                              if (name === 'accuracyRate') return [`${val}%`, 'Độ chính xác phát âm'];
+                              return [val, name];
+                            }}
+                          />
+                          <Bar yAxisId="left" dataKey="attempts" name="attempts" fill="#4EACAF" radius={[4, 4, 0, 0]} maxBarSize={22} />
+                          <Line
+                            yAxisId="right"
+                            type="monotone"
+                            dataKey="accuracyRate"
+                            name="accuracyRate"
+                            stroke="#FF8E8E"
+                            strokeWidth={2.5}
+                            dot={{ r: 3.5, fill: '#FF8E8E', strokeWidth: 1.5, stroke: '#FFFFFF' }}
+                            activeDot={{ r: 5, fill: '#FF8E8E', strokeWidth: 2, stroke: '#FFFFFF' }}
+                          />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
 
@@ -1697,14 +1786,14 @@ export default function LearningResultManagement() {
         </div>
       )}
 
-      {/* Split-Panel Content View */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {/* Split-Panel Content View with Contained Viewport Heights */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch lg:h-[700px] min-h-[620px]">
 
         {/* Left Side: Results List */}
-        <div className="lg:col-span-5 space-y-4">
-          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div ref={leftPanelRef} className="lg:col-span-5 h-full min-h-0">
+          <div className="h-full flex flex-col min-h-0 bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm overscroll-contain">
+            {/* Header (Fixed) */}
+            <div className="shrink-0 flex items-center justify-between border-b border-slate-100 pb-2.5">
               <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4 text-[#4EACAF]" />
                 <h3 className="font-semibold text-slate-800 text-sm">Lịch sử luyện tập</h3>
@@ -1714,15 +1803,15 @@ export default function LearningResultManagement() {
               </div>
             </div>
 
-            {/* Filters Subsystem */}
-            <div className="space-y-3">
+            {/* Filters Subsystem (Fixed) */}
+            <div className="shrink-0 space-y-2 pt-2.5 pb-2">
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Tìm theo học sinh, bài tập, Session ID..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-4 pr-4 py-2.5 rounded-xl border border-slate-200 outline-none text-xs font-normal focus:border-[#4EACAF] transition-colors"
+                  className="w-full pl-3 pr-3 py-1.5 rounded-xl border border-slate-200 outline-none text-xs font-normal focus:border-[#4EACAF] transition-colors"
                 />
               </div>
 
@@ -1735,7 +1824,7 @@ export default function LearningResultManagement() {
                     { value: 'Completed', label: 'Đã hoàn thành' },
                     { value: 'InComplete', label: 'Chưa hoàn thành' }
                   ]}
-                  className="w-full"
+                  className="w-full text-xs"
                 />
 
                 <CustomSelect
@@ -1747,25 +1836,25 @@ export default function LearningResultManagement() {
                     { value: 'WEEK', label: '7 ngày qua' },
                     { value: 'MONTH', label: '30 ngày qua' }
                   ]}
-                  className="w-full"
+                  className="w-full text-xs"
                 />
               </div>
             </div>
 
-            {/* Results Items List */}
+            {/* Results Items List (Scrollable Area) */}
             {isApiLoading ? (
-              <div className="py-12 text-center">
-                <Activity className="w-8 h-8 text-[#4EACAF] animate-spin mx-auto mb-2" />
+              <div className="flex-1 flex flex-col items-center justify-center py-12 text-center">
+                <Activity className="w-8 h-8 text-[#4EACAF] animate-spin mb-2" />
                 <p className="text-sm font-normal text-slate-500">Đang tải danh sách kết quả...</p>
               </div>
             ) : filteredResults.length === 0 ? (
-              <div className="py-12 text-center text-slate-400">
-                <VolumeX className="w-12 h-12 mx-auto mb-3 opacity-40" />
+              <div className="flex-1 flex flex-col items-center justify-center py-12 text-center text-slate-400">
+                <VolumeX className="w-12 h-12 mb-3 opacity-40" />
                 <p className="font-normal text-sm">Không tìm thấy lượt luyện tập phù hợp.</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="max-h-[580px] overflow-y-auto pr-1.5 p-0.5 space-y-3">
+              <div className="flex-1 min-h-0 flex flex-col">
+                <div ref={leftResultsScrollRef} className="flex-1 min-h-0 overflow-y-auto pr-1 p-0.5 space-y-2.5 overscroll-contain">
                   {paginatedResults.map((res) => {
                     const isSelected = selectedResult?.ResultId === res.ResultId;
                     const child = getChildDetailInfo(res.ChildId);
@@ -1777,19 +1866,19 @@ export default function LearningResultManagement() {
                         key={res.ResultId}
                         onClick={() => handleSelectResult(res)}
                         className={cn(
-                          "rounded-2xl border p-4.5 transition-all cursor-pointer space-y-3",
+                          "rounded-xl border p-3 transition-all cursor-pointer space-y-2",
                           isSelected
                             ? "border-[#4EACAF] bg-[#4EACAF]/5 shadow-sm"
                             : "border-slate-100 hover:border-slate-200 bg-white"
                         )}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="space-y-1">
-                            <h4 className="font-semibold text-slate-800 text-sm font-mono">
+                        <div className="flex items-start justify-between gap-2.5">
+                          <div className="space-y-0.5 min-w-0">
+                            <h4 className="font-semibold text-slate-800 text-xs font-mono truncate">
                               Session #{res.SessionId || res.ResultId}
                             </h4>
-                            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-normal">
-                              <span className="font-medium text-slate-700">{child?.FullName || `Bé (ID: ${res.ChildId})`}</span>
+                            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-normal truncate">
+                              <span className="font-medium text-slate-700 truncate">{child?.FullName || `Bé (ID: ${res.ChildId})`}</span>
                               <span className="text-slate-300">•</span>
                               <span className="text-slate-400 truncate">{lesson?.lessonName || 'Bài tập tự do'}</span>
                             </div>
@@ -1804,95 +1893,106 @@ export default function LearningResultManagement() {
                           </span>
                         </div>
 
-                        <div className="flex items-center justify-between border-t border-slate-100/60 pt-3 text-[11px] font-medium text-slate-500 gap-2 flex-wrap">
+                        <div className="flex items-center justify-between border-t border-slate-100/60 pt-2 text-[10.5px] font-medium text-slate-500 gap-1.5 flex-wrap">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="flex items-center gap-1">
-                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                              <Clock className="w-3 h-3 text-slate-400" />
                               <span>{res.DurationSeconds}s</span>
                             </span>
                             <span className="text-slate-300">|</span>
                             <span className="text-[#4EACAF]">Điểm: {res.Score}/{lessons.find(l => String(l.id) === res.LessonId)?.maxScore ?? 95}</span>
                             <span className="text-slate-300">|</span>
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60 whitespace-nowrap">
+                            <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60 whitespace-nowrap">
                               {counts.correct} đúng
                             </span>
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-medium bg-rose-50 text-rose-700 border border-rose-200/60 whitespace-nowrap">
+                            <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium bg-rose-50 text-rose-700 border border-rose-200/60 whitespace-nowrap">
                               {counts.wrong} sai
                             </span>
                           </div>
-                          <span className="text-slate-400 shrink-0">{formatDateDMY(res.CompletedAt)}</span>
+                          <span className="text-slate-400 shrink-0 text-[10px]">{formatDateDMY(res.CompletedAt)}</span>
                         </div>
                       </div>
                     );
                   })}
                 </div>
 
-                <Pagination
-                  currentPage={currentPage}
-                  totalItems={filteredResults.length}
-                  pageSize={pageSize}
-                  onPageChange={setCurrentPage}
-                  itemLabel="lượt luyện"
-                  compact
-                />
+                {/* Fixed bottom pagination */}
+                <div className="shrink-0 pt-2 mt-1 border-t border-slate-100">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalItems={filteredResults.length}
+                    pageSize={pageSize}
+                    onPageChange={setCurrentPage}
+                    itemLabel="lượt luyện"
+                    compact
+                  />
+                </div>
               </div>
             )}
           </div>
         </div>
 
         {/* Right Side: Detailed session assessment & Chunks */}
-        <div className="lg:col-span-7">
+        <div ref={sessionPanelRef} className="lg:col-span-7 h-full min-h-0">
           {selectedResult ? (
-            <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-2 animate-in fade-in duration-300">
+            <div className="h-full flex flex-col min-h-0 bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-100 shadow-sm animate-in fade-in duration-300 overscroll-contain">
 
-              {/* Header Info */}
-              <div className="flex items-start justify-between border-b border-slate-100 pb-2">
+              {/* Header Info (Fixed at top of Right Panel) */}
+              <div className="shrink-0 flex items-start justify-between border-b border-slate-100 pb-2">
                 <div>
-                  <h3 className="text-lg font-bold text-slate-800 font-mono">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-800 font-mono leading-tight">
                     Session #{selectedResult.SessionId || selectedResult.ResultId}
                   </h3>
-                  <div className="flex items-center gap-2 text-xs text-slate-500 font-normal mt-1">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-normal mt-0.5">
                     <span className="font-medium text-slate-700">
                       Học sinh: {getChildDetailInfo(selectedResult.ChildId)?.FullName || `Bé (ID: ${selectedResult.ChildId})`}
                     </span>
                     <span className="text-slate-300">•</span>
-                    <span className="text-slate-500">
+                    <span className="text-slate-500 truncate max-w-[280px]">
                       {lessons.find(l => String(l.id) === selectedResult.LessonId)?.lessonName || 'Bài tập tự do'}
                     </span>
                   </div>
                 </div>
                 <button
                   onClick={() => setSelectedResult(null)}
-                  className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 transition-colors cursor-pointer"
+                  className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                  title="Đóng chi tiết"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Statistics Quick Info */}
-              <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
+              {/* Statistics Quick Info (Fixed) */}
+              <div className="shrink-0 grid grid-cols-3 gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100 my-2">
                 <div className="text-center">
                   <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Thời lượng</span>
-                  <span className="text-base font-bold text-slate-800 mt-1 block">{selectedResult.DurationSeconds} giây</span>
+                  <span className="text-sm sm:text-base font-bold text-slate-800 mt-0.5 block">{selectedResult.DurationSeconds} giây</span>
                 </div>
                 <div className="text-center border-x border-slate-200">
                   <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Điểm số</span>
-                  <span className="text-base font-bold text-indigo-600 mt-1 block">
+                  <span className="text-sm sm:text-base font-bold text-indigo-600 mt-0.5 block">
                     {selectedResult.Score}/{lessons.find(l => String(l.id) === selectedResult.LessonId)?.maxScore ?? 95}
                   </span>
                 </div>
                 <div className="text-center">
                   <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Tổng từ đúng / sai</span>
-                  <div className="text-xs font-medium mt-1.5 flex items-center justify-center gap-1.5">
-                    <span className="text-emerald-600 font-medium">Đúng: {sessionCorrectWords} từ</span>
+                  <div className="text-[11px] font-medium mt-1 flex items-center justify-center gap-1">
+                    <span className="text-emerald-600 font-medium">Đúng: {sessionCorrectWords}</span>
                     <span className="text-slate-300">|</span>
-                    <span className="text-rose-500 font-medium">Sai: {sessionWrongWords} từ</span>
+                    <span className="text-rose-500 font-medium">Sai: {sessionWrongWords}</span>
                   </div>
-                  <span className="text-[10px] font-normal text-slate-400 block mt-0.5">
+                  <span className="text-[9.5px] font-normal text-slate-400 block mt-0.5 truncate">
                     (Tổng {sessionTotalWords} từ · {sessionAccuracy}% chuẩn)
                   </span>
                 </div>
               </div>
+
+              {/* Scrollable details container (The ONLY part that scrolls on the right) */}
+              <div
+                ref={sessionDetailsScrollRef}
+                className="flex-1 min-h-0 overflow-y-auto pr-1 sm:pr-1.5 space-y-2.5 overscroll-contain"
+                onWheel={(e) => e.stopPropagation()}
+              >
 
               {/* Thống kê chi tiết theo từng từ trong phiên */}
               <div
@@ -1943,7 +2043,8 @@ export default function LearningResultManagement() {
                 {sessionWordStats.length > 0 ? (
                   <div
                     ref={wordsScrollRef}
-                    className="overflow-x-auto pb-2 pt-1 px-0.5"
+                    className="overflow-x-auto pb-2 pt-1 px-0.5 overscroll-contain"
+                    onWheel={(e) => e.stopPropagation()}
                   >
                     <div className="flex gap-2 min-w-full items-stretch">
                       {sessionWordStats.map((item) => {
@@ -2175,7 +2276,10 @@ export default function LearningResultManagement() {
                   <FileText className="w-4 h-4 text-[#4EACAF]" />
                   Nhật ký tương tác (Interaction Log)
                 </h4>
-                <div className="p-2 bg-slate-900 text-slate-100 rounded-xl font-mono text-xs whitespace-pre-line leading-relaxed shadow-inner border border-slate-850 max-h-48 overflow-y-auto space-y-1">
+                <div
+                  ref={interactionLogScrollRef}
+                  className="p-2 bg-slate-900 text-slate-100 rounded-xl font-mono text-xs whitespace-pre-line leading-relaxed shadow-inner border border-slate-850 max-h-48 overflow-y-auto space-y-1 overscroll-contain"
+                >
                   {selectedResult.InteractionLog ? (
                     selectedResult.InteractionLog
                       .split(/\s*\|\s*/)
@@ -2366,6 +2470,7 @@ export default function LearningResultManagement() {
                   <div
                     ref={chunksScrollRef}
                     className="max-h-[580px] overflow-y-auto pr-1.5 p-0.5 space-y-2 overscroll-contain"
+                    onWheel={(e) => e.stopPropagation()}
                   >
                     {filteredChunks.map((chunk) => {
                       const cIndex = chunk.chunkIndex;
@@ -2680,18 +2785,19 @@ export default function LearningResultManagement() {
                   </div>
                 )}
               </div>
+              {/* End of chunksSectionRef */}
             </div>
+            {/* End of scrollable details container */}
+          </div>
           ) : (
-            <div className="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm text-center py-24 space-y-4">
-              <div className="w-16 h-16 bg-slate-50 border border-slate-100 rounded-full flex items-center justify-center mx-auto text-[#4EACAF]">
+            <div className="h-full flex flex-col items-center justify-center bg-white rounded-2xl p-6 border border-slate-100 shadow-sm text-center">
+              <div className="w-14 h-14 bg-slate-50 border border-slate-100 rounded-full flex items-center justify-center text-[#4EACAF] mb-3">
                 <Activity className="w-6 h-6 animate-pulse" />
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-700">Chưa có lượt luyện tập nào được chọn</h3>
-                <p className="text-sm text-slate-400 max-w-sm mx-auto mt-1">
-                  Vui lòng click chọn một lượt luyện tập ở danh sách bên trái để xem các file âm thanh ghi âm cụ thể của bé và thực hiện đánh giá phát âm AI.
-                </p>
-              </div>
+              <h3 className="text-base font-bold text-slate-700">Chưa có lượt luyện tập nào được chọn</h3>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 leading-relaxed">
+                Vui lòng click chọn một lượt luyện tập ở danh sách bên trái để xem các file âm thanh ghi âm cụ thể của bé và thực hiện đánh giá phát âm AI.
+              </p>
             </div>
           )}
         </div>
