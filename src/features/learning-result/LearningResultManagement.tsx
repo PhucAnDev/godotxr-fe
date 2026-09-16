@@ -187,12 +187,15 @@ export function parseInteractionLog(log: string): ParsedEvent[] {
 
   for (const segment of segments) {
     // 1. Wrong answer with child speech: [12s] Wrong Answer: từ đúng 'cần câu', trẻ nói: 'cần' -10 điểm
-    const wrongWithSpoken = segment.match(/\[(\d+)s?\]\s*Wrong\s+Answer:\s*(?:từ\s+đúng\s*)?['"]?([^,'"\n]+?)['"]?,?\s*trẻ\s+nói:\s*['"]?([^'"\n]+?)['"]?(?:\s*-\s*\d+\s*điểm)?.*$/i);
+    // or [38s] Wrong Answer: từ đúng 'gói xúc xích', trẻ nói: '[Không nghe rõ/ Im lặng]'
+    const wrongWithSpoken = segment.match(
+      /\[(\d+)s?\]\s*Wrong\s+Answer:\s*(?:từ\s+đúng\s*)?['"]?([^,'"\n]+?)['"]?,?\s*trẻ\s+nói:\s*(?:['"](.*?)['"]|([^'"\n\-]+?))(?:\s*-\s*\d+\s*điểm)?.*$/i
+    );
     if (wrongWithSpoken) {
       events.push({
         timeSeconds: parseInt(wrongWithSpoken[1], 10),
         text: cleanSpeechText(wrongWithSpoken[2]),
-        spokenText: cleanSpeechText(wrongWithSpoken[3]),
+        spokenText: cleanSpeechText(wrongWithSpoken[3] || wrongWithSpoken[4]),
         isCorrect: false,
       });
       continue;
@@ -295,10 +298,21 @@ export function isSilentOrUnclearSpeech(spokenText?: string): boolean {
   if (!spokenText) return false;
   const text = spokenText.toLowerCase().trim();
   return (
+    text === '?' ||
+    text === '[?]' ||
+    text === '??' ||
+    text === '???' ||
     text.includes('không nghe rõ') ||
     text.includes('im lặng') ||
     text.includes('khong nghe ro') ||
-    text.includes('im lang')
+    text.includes('im lang') ||
+    text.includes('chưa đủ từ') ||
+    text.includes('chua du tu') ||
+    text.includes('không rõ') ||
+    text.includes('khong ro') ||
+    text.includes('unclear') ||
+    text.includes('silent') ||
+    text.includes('no speech')
   );
 }
 
@@ -582,7 +596,9 @@ export default function LearningResultManagement() {
     chunks.forEach((chunk) => {
       const cIndex = chunk.chunkIndex;
       const event = parsedEvents[cIndex];
-      const isSilent = isSilentOrUnclearSpeech(event?.spokenText);
+      const assessment = chunkAssessments[cIndex];
+      const recognized = assessment?.recognizedText || assessment?.RecognizedText || assessment?.display || assessment?.Display;
+      const isSilent = isSilentOrUnclearSpeech(event?.spokenText) || isSilentOrUnclearSpeech(recognized);
       const isAssessed = Boolean(chunkAssessments[cIndex]);
 
       if (isSilent) {
@@ -611,12 +627,12 @@ export default function LearningResultManagement() {
     return chunks.filter((chunk) => {
       const cIndex = chunk.chunkIndex;
       const event = parsedEvents[cIndex];
-      const isSilent = isSilentOrUnclearSpeech(event?.spokenText);
+      const assessment = chunkAssessments[cIndex];
+      const recognized = assessment?.recognizedText || assessment?.RecognizedText || assessment?.display || assessment?.Display || '';
+      const isSilent = isSilentOrUnclearSpeech(event?.spokenText) || isSilentOrUnclearSpeech(recognized);
       const isAssessed = Boolean(chunkAssessments[cIndex]);
       const refText = referenceTexts[cIndex] || event?.text || '';
       const spoken = event?.spokenText || '';
-      const assessment = chunkAssessments[cIndex];
-      const recognized = assessment?.recognizedText || assessment?.RecognizedText || assessment?.display || assessment?.Display || '';
 
       // Status filter
       if (chunkStatusFilter === 'CORRECT' && (event?.isCorrect !== true || isSilent)) return false;
@@ -1231,7 +1247,9 @@ export default function LearningResultManagement() {
   // Audio Play handler - On-demand lazy download and in-memory cache
   const handlePlayChunk = async (rawUrl: string, index: number) => {
     const event = parsedEvents[index];
-    if (isSilentOrUnclearSpeech(event?.spokenText)) {
+    const assessment = chunkAssessments[index];
+    const recognized = assessment?.recognizedText || assessment?.RecognizedText || assessment?.display || assessment?.Display;
+    if (isSilentOrUnclearSpeech(event?.spokenText) || isSilentOrUnclearSpeech(recognized)) {
       showToast("Không có file âm thanh khả dụng do trẻ im lặng hoặc không nghe rõ.", "warn");
       return;
     }
@@ -1331,7 +1349,9 @@ export default function LearningResultManagement() {
   const handleAssessChunk = async (chunkIndex: number) => {
     if (!selectedResult) return;
     const event = parsedEvents[chunkIndex];
-    if (isSilentOrUnclearSpeech(event?.spokenText)) {
+    const assessment = chunkAssessments[chunkIndex];
+    const recognized = assessment?.recognizedText || assessment?.RecognizedText || assessment?.display || assessment?.Display;
+    if (isSilentOrUnclearSpeech(event?.spokenText) || isSilentOrUnclearSpeech(recognized)) {
       showToast("Không thể đánh giá AI đối với đoạn âm thanh trẻ im lặng hoặc không nghe rõ.", "warn");
       return;
     }
@@ -1374,7 +1394,13 @@ export default function LearningResultManagement() {
 
   // Open manual score modal
   const handleOpenManualScore = (chunkIndex: number) => {
+    const event = parsedEvents[chunkIndex];
     const existing = chunkAssessments[chunkIndex];
+    const recognized = existing?.recognizedText || existing?.RecognizedText || existing?.display || existing?.Display;
+    if (isSilentOrUnclearSpeech(event?.spokenText) || isSilentOrUnclearSpeech(recognized)) {
+      showToast("Không hỗ trợ thao tác hoặc nhập điểm khi trẻ im lặng hoặc không nghe rõ.", "warn");
+      return;
+    }
     if (existing) {
       const acc = existing.accuracyScore ?? existing.AccuracyScore ?? existing.pronunciationAssessment?.accuracyScore ?? existing.PronunciationAssessment?.AccuracyScore ?? 90;
       const pron = existing.pronunciationScore ?? existing.PronunciationScore ?? existing.pronScore ?? existing.PronScore ?? existing.pronunciationAssessment?.pronunciationScore ?? existing.PronunciationAssessment?.PronScore ?? 90;
@@ -1400,6 +1426,13 @@ export default function LearningResultManagement() {
   // Save manual scores
   const handleSaveManualScore = async () => {
     if (scoringChunkIndex === null || !selectedResult) return;
+    const event = parsedEvents[scoringChunkIndex];
+    const existing = chunkAssessments[scoringChunkIndex];
+    const recognized = existing?.recognizedText || existing?.RecognizedText || existing?.display || existing?.Display;
+    if (isSilentOrUnclearSpeech(event?.spokenText) || isSilentOrUnclearSpeech(recognized)) {
+      showToast("Không hỗ trợ lưu điểm đối với đoạn im lặng hoặc không nghe rõ.", "warn");
+      return;
+    }
     setIsSavingManualScore(true);
 
     try {
@@ -2477,7 +2510,8 @@ export default function LearningResultManagement() {
                       const assessment = chunkAssessments[cIndex];
                       const isAssessing = assessingChunkIndex === cIndex;
                       const event = parsedEvents[cIndex];
-                      const isSilentOrUnclear = isSilentOrUnclearSpeech(event?.spokenText);
+                      const recognizedTextFromAssessment = assessment?.recognizedText || assessment?.RecognizedText || assessment?.display || assessment?.Display;
+                      const isSilentOrUnclear = isSilentOrUnclearSpeech(event?.spokenText) || isSilentOrUnclearSpeech(recognizedTextFromAssessment);
 
                       return (
                         <div
@@ -2555,10 +2589,16 @@ export default function LearningResultManagement() {
                                   <span className="text-xs font-medium text-slate-500">Từ/Câu kỳ vọng:</span>
                                   <input
                                     type="text"
+                                    disabled={isSilentOrUnclear}
                                     placeholder="Nhập từ chuẩn bé phải phát âm..."
                                     value={referenceTexts[cIndex] || ''}
                                     onChange={(e) => setReferenceTexts(prev => ({ ...prev, [cIndex]: e.target.value }))}
-                                    className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 outline-none text-xs font-normal placeholder-slate-400 focus:border-[#4EACAF]"
+                                    className={cn(
+                                      "flex-1 px-3 py-1.5 rounded-lg border outline-none text-xs font-normal placeholder-slate-400 transition-all",
+                                      isSilentOrUnclear
+                                        ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-75"
+                                        : "bg-white border-slate-200 focus:border-[#4EACAF]"
+                                    )}
                                   />
                                   <button
                                     type="button"
@@ -2581,9 +2621,15 @@ export default function LearningResultManagement() {
                                   </button>
                                   <button
                                     type="button"
+                                    disabled={isSilentOrUnclear}
                                     onClick={() => handleOpenManualScore(cIndex)}
-                                    title="Giáo viên nhập / điều chỉnh 4 thông số điểm"
-                                    className="px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 cursor-pointer shadow-sm hover:shadow"
+                                    title={isSilentOrUnclear ? "Không thể nhập điểm khi trẻ im lặng hoặc không nghe rõ" : "Giáo viên nhập / điều chỉnh 4 thông số điểm"}
+                                    className={cn(
+                                      "px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 border shadow-sm",
+                                      isSilentOrUnclear
+                                        ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60 shadow-none"
+                                        : "bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-800 cursor-pointer hover:shadow"
+                                    )}
                                   >
                                     <Edit3 className="w-3.5 h-3.5 text-amber-600" />
                                     Nhập điểm
@@ -2599,7 +2645,7 @@ export default function LearningResultManagement() {
                                           ? "bg-amber-50 text-amber-800 border-amber-200"
                                           : event.isCorrect ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
                                       )}>
-                                        "{assessment?.recognizedText || assessment?.RecognizedText || assessment?.display || assessment?.Display || event.spokenText}"
+                                        "{isSilentOrUnclear ? (event.spokenText || '[Không nghe rõ/ Im lặng]') : (assessment?.recognizedText || assessment?.RecognizedText || assessment?.display || assessment?.Display || event.spokenText)}"
                                       </span>
                                     </div>
                                     {isSilentOrUnclear && (
@@ -2631,7 +2677,7 @@ export default function LearningResultManagement() {
                                           ? "bg-amber-50 text-amber-800 border-amber-200"
                                           : event.isCorrect ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
                                       )}>
-                                        "{assessment?.recognizedText || assessment?.RecognizedText || assessment?.display || assessment?.Display || event.spokenText}"
+                                        "{isSilentOrUnclear ? (event.spokenText || '[Không nghe rõ/ Im lặng]') : (assessment?.recognizedText || assessment?.RecognizedText || assessment?.display || assessment?.Display || event.spokenText)}"
                                       </span>
                                     </div>
                                     {isSilentOrUnclear && (
@@ -2680,8 +2726,15 @@ export default function LearningResultManagement() {
                                       </span>
                                       <button
                                         type="button"
+                                        disabled={isSilentOrUnclear}
                                         onClick={() => handleOpenManualScore(cIndex)}
-                                        className="text-xs font-medium text-[#4EACAF] hover:text-[#388285] bg-[#4EACAF]/10 hover:bg-[#4EACAF]/20 border border-[#4EACAF]/25 px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                                        title={isSilentOrUnclear ? "Không thể chỉnh sửa thông số khi trẻ im lặng hoặc không nghe rõ" : undefined}
+                                        className={cn(
+                                          "text-xs font-medium border px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all shadow-sm",
+                                          isSilentOrUnclear
+                                            ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60 shadow-none"
+                                            : "text-[#4EACAF] hover:text-[#388285] bg-[#4EACAF]/10 hover:bg-[#4EACAF]/20 border-[#4EACAF]/25 cursor-pointer"
+                                        )}
                                       >
                                         <Edit3 className="w-3.5 h-3.5" />
                                         Chỉnh sửa 4 thông số
@@ -2690,12 +2743,13 @@ export default function LearningResultManagement() {
                                   )}
                                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                                     <div
-                                      onClick={currentRoleView !== 'PARENT' ? () => handleOpenManualScore(cIndex) : undefined}
+                                      onClick={currentRoleView !== 'PARENT' && !isSilentOrUnclear ? () => handleOpenManualScore(cIndex) : undefined}
                                       className={cn(
                                         "p-2 bg-emerald-50/50 rounded-lg border border-emerald-100/50 transition-all",
-                                        currentRoleView !== 'PARENT' && "cursor-pointer hover:border-emerald-300 hover:shadow-sm"
+                                        currentRoleView !== 'PARENT' && !isSilentOrUnclear && "cursor-pointer hover:border-emerald-300 hover:shadow-sm",
+                                        isSilentOrUnclear && "opacity-75 cursor-not-allowed"
                                       )}
-                                      title={currentRoleView !== 'PARENT' ? "Nhấp để giáo viên điều chỉnh 4 thông số" : undefined}
+                                      title={currentRoleView !== 'PARENT' && !isSilentOrUnclear ? "Nhấp để giáo viên điều chỉnh 4 thông số" : undefined}
                                     >
                                       <div className="text-xs font-medium text-slate-500">Độ chính xác</div>
                                       <div className="text-sm font-semibold text-emerald-600 mt-0.5">
@@ -2703,12 +2757,13 @@ export default function LearningResultManagement() {
                                       </div>
                                     </div>
                                     <div
-                                      onClick={currentRoleView !== 'PARENT' ? () => handleOpenManualScore(cIndex) : undefined}
+                                      onClick={currentRoleView !== 'PARENT' && !isSilentOrUnclear ? () => handleOpenManualScore(cIndex) : undefined}
                                       className={cn(
                                         "p-2 bg-indigo-50/50 rounded-lg border border-indigo-100/50 transition-all",
-                                        currentRoleView !== 'PARENT' && "cursor-pointer hover:border-indigo-300 hover:shadow-sm"
+                                        currentRoleView !== 'PARENT' && !isSilentOrUnclear && "cursor-pointer hover:border-indigo-300 hover:shadow-sm",
+                                        isSilentOrUnclear && "opacity-75 cursor-not-allowed"
                                       )}
-                                      title={currentRoleView !== 'PARENT' ? "Nhấp để giáo viên điều chỉnh 4 thông số" : undefined}
+                                      title={currentRoleView !== 'PARENT' && !isSilentOrUnclear ? "Nhấp để giáo viên điều chỉnh 4 thông số" : undefined}
                                     >
                                       <div className="text-xs font-medium text-slate-500">Phát âm</div>
                                       <div className="text-sm font-semibold text-indigo-600 mt-0.5">
@@ -2716,12 +2771,13 @@ export default function LearningResultManagement() {
                                       </div>
                                     </div>
                                     <div
-                                      onClick={currentRoleView !== 'PARENT' ? () => handleOpenManualScore(cIndex) : undefined}
+                                      onClick={currentRoleView !== 'PARENT' && !isSilentOrUnclear ? () => handleOpenManualScore(cIndex) : undefined}
                                       className={cn(
                                         "p-2 bg-purple-50/50 rounded-lg border border-purple-100/50 transition-all",
-                                        currentRoleView !== 'PARENT' && "cursor-pointer hover:border-purple-300 hover:shadow-sm"
+                                        currentRoleView !== 'PARENT' && !isSilentOrUnclear && "cursor-pointer hover:border-purple-300 hover:shadow-sm",
+                                        isSilentOrUnclear && "opacity-75 cursor-not-allowed"
                                       )}
-                                      title={currentRoleView !== 'PARENT' ? "Nhấp để giáo viên điều chỉnh 4 thông số" : undefined}
+                                      title={currentRoleView !== 'PARENT' && !isSilentOrUnclear ? "Nhấp để giáo viên điều chỉnh 4 thông số" : undefined}
                                     >
                                       <div className="text-xs font-medium text-slate-500">Trôi chảy</div>
                                       <div className="text-sm font-semibold text-purple-600 mt-0.5">
@@ -2729,13 +2785,14 @@ export default function LearningResultManagement() {
                                       </div>
                                     </div>
                                     <div
-                                      onClick={currentRoleView !== 'PARENT' ? () => handleOpenManualScore(cIndex) : undefined}
+                                      onClick={currentRoleView !== 'PARENT' && !isSilentOrUnclear ? () => handleOpenManualScore(cIndex) : undefined}
                                       className={cn(
                                         "p-2 bg-teal-50/50 rounded-lg border border-teal-100/50 transition-all",
-                                        currentRoleView !== 'PARENT' && "cursor-pointer hover:border-teal-300 hover:shadow-sm"
+                                        currentRoleView !== 'PARENT' && !isSilentOrUnclear && "cursor-pointer hover:border-teal-300 hover:shadow-sm",
+                                        isSilentOrUnclear && "opacity-75 cursor-not-allowed"
                                       )}
-                                      title={currentRoleView !== 'PARENT' ? "Nhấp để giáo viên điều chỉnh 4 thông số" : undefined}
-                                    >
+                                      title={currentRoleView !== 'PARENT' && !isSilentOrUnclear ? "Nhấp để giáo viên điều chỉnh 4 thông số" : undefined}
+                                     >
                                       <div className="text-xs font-medium text-slate-500">Hoàn thành</div>
                                       <div className="text-sm font-semibold text-teal-600 mt-0.5">
                                         {completenessVal}%

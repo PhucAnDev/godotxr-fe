@@ -1296,6 +1296,7 @@ export default function ProgressAnalysis() {
 
       events.forEach(evt => {
         if (!evt.text || evt.text.trim().length === 0) return;
+        if (isSilentOrUnclearSpeech(evt.spokenText)) return;
         const entry = getOrCreateMaster(evt.text, r.lessonId || null, sessionDate);
         entry.allAttempts += 1;
         if (inTf) entry.tfAttempts += 1;
