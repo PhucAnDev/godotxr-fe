@@ -481,7 +481,8 @@ export default function LearningResultManagement() {
     accuracy: 90,
     pronunciation: 90,
     fluency: 90,
-    completeness: 100
+    completeness: 100,
+    speechErrorCategory: 'Thay thế âm'
   });
   const [isSavingManualScore, setIsSavingManualScore] = useState(false);
 
@@ -1406,18 +1407,21 @@ export default function LearningResultManagement() {
       const pron = existing.pronunciationScore ?? existing.PronunciationScore ?? existing.pronScore ?? existing.PronScore ?? existing.pronunciationAssessment?.pronunciationScore ?? existing.PronunciationAssessment?.PronScore ?? 90;
       const flu = existing.fluencyScore ?? existing.FluencyScore ?? existing.pronunciationAssessment?.fluencyScore ?? existing.PronunciationAssessment?.FluencyScore ?? 90;
       const comp = existing.completenessScore ?? existing.CompletenessScore ?? existing.pronunciationAssessment?.completenessScore ?? existing.PronunciationAssessment?.CompletenessScore ?? 100;
+      const speechCat = existing.speechErrorCategory || existing.SpeechErrorCategory || 'Thay thế âm';
       setManualScores({
         accuracy: Math.round(Number(acc)),
         pronunciation: Math.round(Number(pron)),
         fluency: Math.round(Number(flu)),
-        completeness: Math.round(Number(comp))
+        completeness: Math.round(Number(comp)),
+        speechErrorCategory: speechCat
       });
     } else {
       setManualScores({
         accuracy: 90,
         pronunciation: 90,
         fluency: 90,
-        completeness: 100
+        completeness: 100,
+        speechErrorCategory: 'Thay thế âm'
       });
     }
     setScoringChunkIndex(chunkIndex);
@@ -1451,6 +1455,7 @@ export default function LearningResultManagement() {
         fluencyScore: Number(manualScores.fluency),
         completenessScore: Number(manualScores.completeness),
         errorType: Number(manualScores.accuracy) < 50 ? 'Mispronunciation' : 'None',
+        speechErrorCategory: manualScores.speechErrorCategory || 'Thay thế âm',
         lessonId: selectedResult.LessonId ? Number(selectedResult.LessonId) : undefined,
         resultId: selectedResult.ResultId ? Number(selectedResult.ResultId) : undefined
       };
@@ -1468,6 +1473,8 @@ export default function LearningResultManagement() {
           fluencyScore: Number(manualScores.fluency),
           CompletenessScore: Number(manualScores.completeness),
           completenessScore: Number(manualScores.completeness),
+          SpeechErrorCategory: manualScores.speechErrorCategory,
+          speechErrorCategory: manualScores.speechErrorCategory,
           recognizedText: cleanWord,
           Words: [
             {
@@ -3016,34 +3023,53 @@ export default function LearningResultManagement() {
                   </div>
                 </div>
 
+                {/* Speech Error Category */}
+                <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                  <div className="flex justify-between text-xs font-medium text-slate-700">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                      Phân loại lỗi phát âm
+                    </span>
+                  </div>
+                  <select
+                    value={manualScores.speechErrorCategory}
+                    onChange={(e) => setManualScores(prev => ({ ...prev, speechErrorCategory: e.target.value }))}
+                    className="w-full px-3 py-1.5 text-xs font-medium border border-slate-200 rounded-lg focus:border-amber-500 outline-none bg-white cursor-pointer"
+                  >
+                    <option value="Thay thế âm">Thay thế âm</option>
+                    <option value="Nuốt âm/Bỏ sót âm">Nuốt âm/Bỏ sót âm</option>
+                    <option value="Méo tiếng/Chưa tròn vành rõ chữ">Méo tiếng/Chưa tròn vành rõ chữ</option>
+                  </select>
+                </div>
+
                 {/* Presets */}
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
                   <span>Mức gợi ý nhanh:</span>
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
-                      onClick={() => setManualScores({ accuracy: 100, pronunciation: 100, fluency: 100, completeness: 100 })}
+                      onClick={() => setManualScores(prev => ({ ...prev, accuracy: 100, pronunciation: 100, fluency: 100, completeness: 100 }))}
                       className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-medium hover:bg-emerald-100 transition-colors cursor-pointer"
                     >
                       100%
                     </button>
                     <button
                       type="button"
-                      onClick={() => setManualScores({ accuracy: 90, pronunciation: 90, fluency: 85, completeness: 100 })}
+                      onClick={() => setManualScores(prev => ({ ...prev, accuracy: 90, pronunciation: 90, fluency: 85, completeness: 100 }))}
                       className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-medium hover:bg-indigo-100 transition-colors cursor-pointer"
                     >
                       90%
                     </button>
                     <button
                       type="button"
-                      onClick={() => setManualScores({ accuracy: 75, pronunciation: 70, fluency: 70, completeness: 80 })}
+                      onClick={() => setManualScores(prev => ({ ...prev, accuracy: 75, pronunciation: 70, fluency: 70, completeness: 80 }))}
                       className="px-2 py-0.5 rounded bg-amber-50 text-amber-700 font-medium hover:bg-amber-100 transition-colors cursor-pointer"
                     >
                       75%
                     </button>
                     <button
                       type="button"
-                      onClick={() => setManualScores({ accuracy: 50, pronunciation: 50, fluency: 40, completeness: 50 })}
+                      onClick={() => setManualScores(prev => ({ ...prev, accuracy: 50, pronunciation: 50, fluency: 40, completeness: 50 }))}
                       className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 font-medium hover:bg-rose-100 transition-colors cursor-pointer"
                     >
                       50%
