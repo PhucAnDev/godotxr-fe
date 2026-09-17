@@ -14,6 +14,7 @@ export interface ChildSpeechAccuracyResponse {
   pronunciationScore?: number | null;
   completenessScore?: number | null;
   errorType?: string | null;
+  speechErrorCategory: string;
   audioChunkIndex?: number | null;
   createdAt: string;
 }
@@ -30,6 +31,7 @@ export interface CreateChildSpeechAccuracyPayload {
   pronunciationScore?: number | null;
   completenessScore?: number | null;
   errorType?: string | null;
+  speechErrorCategory?: string | null;
   audioChunkIndex?: number | null;
 }
 
