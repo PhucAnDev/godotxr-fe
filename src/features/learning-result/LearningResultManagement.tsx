@@ -26,6 +26,7 @@ import {
   VolumeX,
   FileAudio,
   CheckCircle,
+  Check,
   FileText,
   Edit3,
   Filter,
@@ -313,6 +314,143 @@ export function isSilentOrUnclearSpeech(spokenText?: string): boolean {
     text.includes('unclear') ||
     text.includes('silent') ||
     text.includes('no speech')
+  );
+}
+
+const SPEECH_ERROR_CATEGORIES = [
+  { value: 'Thay thế âm', label: 'Thay thế âm' },
+  { value: 'Nuốt âm/Bỏ sót âm', label: 'Nuốt âm/Bỏ sót âm' },
+  { value: 'Méo tiếng/Chưa tròn vành rõ chữ', label: 'Méo tiếng/Chưa tròn vành rõ chữ' },
+  { value: 'Lệch thanh điệu (Hỏi/Ngã)', label: 'Lệch thanh điệu (Hỏi/Ngã)' },
+];
+
+interface SpeechErrorCategoryDropdownProps {
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  className?: string;
+  placement?: 'bottom' | 'top' | 'auto';
+}
+
+function SpeechErrorCategoryDropdown({
+  value,
+  onChange,
+  disabled = false,
+  className,
+  placement = 'auto'
+}: SpeechErrorCategoryDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [dropdownPlacement, setDropdownPlacement] = useState<'bottom' | 'top'>('bottom');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const selectedItem = useMemo(() => {
+    if (!value) return SPEECH_ERROR_CATEGORIES[0];
+    const trimmed = value.trim().toLowerCase();
+    return (
+      SPEECH_ERROR_CATEGORIES.find(
+        cat => cat.value.toLowerCase() === trimmed || cat.label.toLowerCase() === trimmed
+      ) || { value, label: value }
+    );
+  }, [value]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (placement === 'auto' && dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < 200 && rect.top > 200) {
+        setDropdownPlacement('top');
+      } else {
+        setDropdownPlacement('bottom');
+      }
+    } else {
+      setDropdownPlacement(placement === 'top' ? 'top' : 'bottom');
+    }
+  }, [isOpen, placement]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen]);
+
+  return (
+    <div ref={dropdownRef} className={cn("relative", className)}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => !disabled && setIsOpen(prev => !prev)}
+        className={cn(
+          "w-full flex items-center justify-between gap-2 px-3 py-1.5 text-xs font-medium rounded-xl border outline-none transition-all text-left",
+          disabled
+            ? "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed shadow-none"
+            : isOpen
+              ? "bg-white text-slate-800 border-amber-400 ring-2 ring-amber-400/20 shadow-xs cursor-pointer"
+              : "bg-white text-slate-700 border-slate-200 hover:border-amber-300 focus:border-amber-400 shadow-2xs cursor-pointer"
+        )}
+      >
+        <span className="truncate">{selectedItem.label}</span>
+        <ChevronDown
+          className={cn(
+            "w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200",
+            isOpen && "rotate-180 text-amber-500"
+          )}
+        />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: dropdownPlacement === 'top' ? -4 : 4, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: dropdownPlacement === 'top' ? -4 : 4, scale: 0.98 }}
+            transition={{ duration: 0.12 }}
+            className={cn(
+              "absolute z-50 w-full min-w-[220px] bg-white border border-slate-200/90 rounded-2xl shadow-xl p-1.5 space-y-0.5",
+              dropdownPlacement === 'top' ? "bottom-full mb-1.5" : "top-full mt-1.5"
+            )}
+          >
+            {SPEECH_ERROR_CATEGORIES.map((cat) => {
+              const isSelected = selectedItem.value.toLowerCase() === cat.value.toLowerCase();
+              return (
+                <button
+                  key={cat.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(cat.value);
+                    setIsOpen(false);
+                  }}
+                  className={cn(
+                    "w-full text-left px-3 py-2 rounded-xl text-xs transition-all flex items-center justify-between gap-2 cursor-pointer",
+                    isSelected
+                      ? "bg-amber-50 text-amber-900 font-semibold border border-amber-200/70"
+                      : "text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium"
+                  )}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <span className={cn(
+                      "w-1.5 h-1.5 rounded-full shrink-0",
+                      isSelected ? "bg-amber-500" : "bg-slate-300"
+                    )} />
+                    <span className="truncate">{cat.label}</span>
+                  </div>
+                  {isSelected && (
+                    <Check className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  )}
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -2869,70 +3007,80 @@ export default function LearningResultManagement() {
                                       </div>
                                     </div>
 
-                                    <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                                      <div className="text-xs font-medium text-slate-400">Chi tiết phát âm cụm từ của AI:</div>
-                                      <div className="flex flex-wrap gap-2">
-                                        {(assessment.words || assessment.Words || []).map((wObj: any, wIdx: number) => {
-                                          const wordText = wObj.word || wObj.Word;
-                                          const score = wObj.accuracyScore ??
-                                            wObj.AccuracyScore ??
-                                            wObj.pronunciationAssessment?.accuracyScore ??
-                                            wObj.PronunciationAssessment?.AccuracyScore ??
-                                            accuracyVal;
-                                          const isCorrect = score >= 80;
-                                          const isMedium = score >= 50 && score < 80;
+                                    <div className="pt-2.5 border-t border-slate-100 flex flex-wrap items-start gap-x-8 gap-y-3">
+                                      {/* Chi tiết phát âm cụm từ của AI */}
+                                      <div className="space-y-1.5">
+                                        <div className="text-xs font-medium text-slate-400">Chi tiết phát âm cụm từ của AI:</div>
+                                        <div className="flex flex-wrap gap-2">
+                                          {(assessment.words || assessment.Words || []).map((wObj: any, wIdx: number) => {
+                                            const wordText = wObj.word || wObj.Word;
+                                            const score = wObj.accuracyScore ??
+                                              wObj.AccuracyScore ??
+                                              wObj.pronunciationAssessment?.accuracyScore ??
+                                              wObj.PronunciationAssessment?.AccuracyScore ??
+                                              accuracyVal;
+                                            const isCorrect = score >= 80;
+                                            const isMedium = score >= 50 && score < 80;
 
-                                          return (
-                                            <div
-                                              key={wIdx}
-                                              className={cn(
-                                                "px-2.5 py-1 rounded-lg border font-medium text-xs flex items-center gap-1.5 shadow-sm",
-                                                isCorrect
-                                                  ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                                                  : isMedium
-                                                    ? "bg-amber-50 text-amber-700 border-amber-100"
-                                                    : "bg-rose-50 text-rose-700 border-rose-100"
-                                              )}
-                                            >
-                                              <span>{wordText}</span>
-                                              <span className="text-[10px] opacity-70">({score})</span>
+                                            return (
+                                              <div
+                                                key={wIdx}
+                                                className={cn(
+                                                  "px-2.5 py-1 rounded-lg border font-medium text-xs flex items-center gap-1.5 shadow-sm",
+                                                  isCorrect
+                                                    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                                    : isMedium
+                                                      ? "bg-amber-50 text-amber-700 border-amber-100"
+                                                      : "bg-rose-50 text-rose-700 border-rose-100"
+                                                )}
+                                              >
+                                                <span>{wordText}</span>
+                                                <span className="text-[10px] opacity-70">({score})</span>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+
+                                      {/* Lỗi phát âm nằm ngang hàng bên phải */}
+                                      {(() => {
+                                        const speechCat =
+                                          assessment?.speechErrorCategory ||
+                                          assessment?.SpeechErrorCategory ||
+                                          chunkAssessments[cIndex]?.speechErrorCategory ||
+                                          chunkAssessments[cIndex]?.SpeechErrorCategory ||
+                                          'Thay thế âm';
+
+                                        const isParent =
+                                          currentRoleView === 'PARENT' ||
+                                          (typeof window !== 'undefined' &&
+                                            (window.location.hash.includes('/parent') ||
+                                              window.location.pathname.includes('/parent')));
+
+                                        return (
+                                          <div className="space-y-1.5 shrink-0">
+                                            <div className="flex items-center gap-1.5 text-xs font-medium text-slate-400">
+                                              <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 inline-block" />
+                                              <span>Lỗi phát âm:</span>
                                             </div>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-
-                                    {/* Phân loại lỗi phát âm (Image 2 style) */}
-                                    <div className="space-y-1.5 pt-2.5 border-t border-slate-100">
-                                      <div className="flex items-center gap-2 text-xs font-normal text-slate-700">
-                                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0 inline-block" />
-                                        <span>Lỗi phát âm</span>
-                                      </div>
-                                      <div className="relative">
-                                        <select
-                                          value={
-                                            assessment?.speechErrorCategory ||
-                                            assessment?.SpeechErrorCategory ||
-                                            chunkAssessments[cIndex]?.speechErrorCategory ||
-                                            chunkAssessments[cIndex]?.SpeechErrorCategory ||
-                                            'Thay thế âm'
-                                          }
-                                          disabled={isSilentOrUnclear || currentRoleView === 'PARENT'}
-                                          onChange={(e) => handleDirectCategoryChange(cIndex, e.target.value)}
-                                          className={cn(
-                                            "w-full appearance-none px-3.5 py-2.5 text-xs font-medium rounded-2xl border outline-none transition-all shadow-2xs pr-9 uppercase tracking-wide",
-                                            isSilentOrUnclear || currentRoleView === 'PARENT'
-                                              ? "bg-slate-50 text-slate-500 border-slate-200 cursor-not-allowed"
-                                              : "bg-white text-slate-700 border-slate-200 hover:border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 cursor-pointer"
-                                          )}
-                                        >
-                                          <option value="Thay thế âm">THAY THẾ ÂM</option>
-                                          <option value="Nuốt âm/Bỏ sót âm">NUỐT ÂM/BỎ SÓT ÂM</option>
-                                          <option value="Méo tiếng/Chưa tròn vành rõ chữ">MÉO TIẾNG/CHƯA TRÒN VÀNH RÕ CHỮ</option>
-                                          <option value="Lệch thanh điệu (Hỏi/Ngã)">LỆCH THANH ĐIỆU (HỎI/NGÃ)</option>
-                                        </select>
-                                        <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                                      </div>
+                                            {isParent ? (
+                                              <div className="flex items-center">
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg border border-amber-200/80 bg-amber-50 text-amber-800 font-semibold text-xs shadow-xs">
+                                                  {speechCat}
+                                                </span>
+                                              </div>
+                                            ) : (
+                                              <div className="min-w-[190px]">
+                                                <SpeechErrorCategoryDropdown
+                                                  value={speechCat}
+                                                  disabled={isSilentOrUnclear}
+                                                  onChange={(val) => handleDirectCategoryChange(cIndex, val)}
+                                                />
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      })()}
                                     </div>
                                   </div>
                                 );
@@ -2970,10 +3118,10 @@ export default function LearningResultManagement() {
               initial={{ scale: 0.95, opacity: 0, y: 10 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 10 }}
-              className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden"
+              className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md"
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70 rounded-t-3xl">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 bg-[#4EACAF]/10 text-[#4EACAF] rounded-xl">
                     <Edit3 className="w-4 h-4" />
@@ -3126,17 +3274,10 @@ export default function LearningResultManagement() {
                       Lỗi phát âm
                     </span>
                   </div>
-                  <select
+                  <SpeechErrorCategoryDropdown
                     value={manualScores.speechErrorCategory}
-                    onChange={(e) => setManualScores(prev => ({ ...prev, speechErrorCategory: e.target.value }))}
-                    className="w-full px-3 py-1.5 text-xs font-medium border border-slate-200 rounded-lg focus:border-amber-500 outline-none bg-white cursor-pointer"
-                  >
-                    <option value="Thay thế âm">Thay thế âm</option>
-                    <option value="Nuốt âm/Bỏ sót âm">Nuốt âm/Bỏ sót âm</option>
-                    <option value="Méo tiếng/Chưa tròn vành rõ chữ">Méo tiếng/Chưa tròn vành rõ chữ</option>
-                    <option value="Lệch thanh điệu (Hỏi/Ngã)">Lệch thanh điệu (Hỏi/Ngã)</option>
-
-                  </select>
+                    onChange={(val) => setManualScores(prev => ({ ...prev, speechErrorCategory: val }))}
+                  />
                 </div>
 
                 {/* Presets */}
@@ -3176,7 +3317,7 @@ export default function LearningResultManagement() {
               </div>
 
               {/* Modal Footer */}
-              <div className="flex items-center justify-end gap-2.5 px-6 py-4 bg-slate-50/80 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2.5 px-6 py-4 bg-slate-50/80 border-t border-slate-100 rounded-b-3xl">
                 <button
                   type="button"
                   onClick={() => setScoringChunkIndex(null)}
