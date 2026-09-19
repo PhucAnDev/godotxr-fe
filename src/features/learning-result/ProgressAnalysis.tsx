@@ -81,7 +81,10 @@ export interface AnalyzedVocabularyItem {
   masteryStatus: 'MASTERED' | 'PRACTICING' | 'NEEDS_HELP' | 'NOT_PRACTICED';
   lastPracticed: string;
   correctExamples: Array<{ spokenText: string; timeSeconds: number; dateStr?: string }>;
-  wrongExamples: Array<{ spokenText: string; timeSeconds: number; dateStr?: string; errorType?: string }>;
+  wrongExamples: Array<{ spokenText: string; timeSeconds: number; dateStr?: string; errorType?: string; speechErrorCategory?: string }>;
+  speechErrorCategory?: string;
+  speechErrorCategories?: string[];
+  speechErrorCategoryCounts?: Record<string, number>;
   allTimeAttempts: number;
   allTimeAccuracyRate: number;
   allTimeMasteryStatus: 'MASTERED' | 'PRACTICING' | 'NEEDS_HELP';
@@ -1231,15 +1234,30 @@ export default function ProgressAnalysis() {
       allCorrect: number;
       allWrong: number;
       allCorrectEx: Array<{ spokenText: string; timeSeconds: number; dateStr?: string }>;
-      allWrongEx: Array<{ spokenText: string; timeSeconds: number; dateStr?: string; errorType?: string }>;
+      allWrongEx: Array<{ spokenText: string; timeSeconds: number; dateStr?: string; errorType?: string; speechErrorCategory?: string }>;
       allSpeechScores: number[];
+      speechErrorCategoryCounts: Record<string, number>;
+      seenSpeechRecordKeys: Set<string>;
+      lastSpeechErrorCategory?: string;
       tfAttempts: number;
       tfCorrect: number;
       tfWrong: number;
       tfCorrectEx: Array<{ spokenText: string; timeSeconds: number; dateStr?: string }>;
-      tfWrongEx: Array<{ spokenText: string; timeSeconds: number; dateStr?: string; errorType?: string }>;
+      tfWrongEx: Array<{ spokenText: string; timeSeconds: number; dateStr?: string; errorType?: string; speechErrorCategory?: string }>;
       tfSpeechScores: number[];
     }
+
+    const normalizeSpeechErrorCat = (rawCategory?: string, errorType?: string): string | undefined => {
+      if (rawCategory && typeof rawCategory === 'string' && rawCategory.trim()) {
+        return rawCategory.trim();
+      }
+      if (!errorType || errorType === 'None') return undefined;
+      if (errorType === 'Mispronunciation') return 'Thay thế âm';
+      if (errorType === 'Omission') return 'Nuốt âm/Bỏ sót âm';
+      if (errorType === 'Distortion') return 'Méo tiếng/Chưa tròn vành rõ chữ';
+      if (errorType === 'Tone') return 'Lệch thanh điệu (Hỏi/Ngã)';
+      return 'Thay thế âm';
+    };
 
     const masterMap = new Map<string, WordStatAggregator>();
 
@@ -1273,6 +1291,9 @@ export default function ProgressAnalysis() {
         allCorrectEx: [],
         allWrongEx: [],
         allSpeechScores: [],
+        speechErrorCategoryCounts: {},
+        seenSpeechRecordKeys: new Set<string>(),
+        lastSpeechErrorCategory: undefined,
         tfAttempts: 0,
         tfCorrect: 0,
         tfWrong: 0,
@@ -1287,6 +1308,22 @@ export default function ProgressAnalysis() {
     const isTfResult = (r: ResultResponse) => timeframeResultsPool.includes(r);
     const isTfSpeech = (s: ChildSpeechAccuracyResponse) => timeframeSpeechPool.includes(s);
 
+    // Build fast lookup for speech accuracy details (speechErrorCategory)
+    const speechAccuracyLookup = new Map<string, ChildSpeechAccuracyResponse>();
+    allSpeechPool.forEach(sp => {
+      if (sp.sessionId) {
+        if (sp.audioChunkIndex !== undefined && sp.audioChunkIndex !== null) {
+          speechAccuracyLookup.set(`${sp.sessionId}_idx_${sp.audioChunkIndex}`, sp);
+        }
+        if (sp.word) {
+          const wKey = `${sp.sessionId}_word_${cleanSpeechText(sp.word).toLowerCase()}`;
+          if (!speechAccuracyLookup.has(wKey)) {
+            speechAccuracyLookup.set(wKey, sp);
+          }
+        }
+      }
+    });
+
     // 1. Process all results
     allResultsPool.forEach(r => {
       if (!r.interactionLog) return;
@@ -1294,7 +1331,7 @@ export default function ProgressAnalysis() {
       const sessionDate = r.completedAt || r.startedAt;
       const inTf = isTfResult(r);
 
-      events.forEach(evt => {
+      events.forEach((evt, evtIdx) => {
         if (!evt.text || evt.text.trim().length === 0) return;
         if (isSilentOrUnclearSpeech(evt.spokenText)) return;
         const entry = getOrCreateMaster(evt.text, r.lessonId || null, sessionDate);
@@ -1316,13 +1353,27 @@ export default function ProgressAnalysis() {
         } else {
           entry.allWrong += 1;
           const spoken = cleanSpeechText(evt.spokenText) || 'chưa đủ từ';
+          const matchedSp =
+            speechAccuracyLookup.get(`${r.sessionId}_idx_${evtIdx}`) ||
+            speechAccuracyLookup.get(`${r.sessionId}_word_${cleanSpeechText(evt.text).toLowerCase()}`);
+          const cat = normalizeSpeechErrorCat(
+            matchedSp?.speechErrorCategory || (matchedSp as any)?.SpeechErrorCategory,
+            matchedSp?.errorType
+          );
+          if (cat) {
+            const recKey = matchedSp?.id ? `id_${matchedSp.id}` : matchedSp ? `${matchedSp.sessionId}_idx_${matchedSp.audioChunkIndex}` : undefined;
+            if (recKey) entry.seenSpeechRecordKeys.add(recKey);
+            entry.speechErrorCategoryCounts[cat] = (entry.speechErrorCategoryCounts[cat] || 0) + 1;
+            entry.lastSpeechErrorCategory = cat;
+          }
+          const wrongObj = { spokenText: spoken, timeSeconds: evt.timeSeconds, dateStr: sessionDate, speechErrorCategory: cat };
           if (entry.allWrongEx.length < 5) {
-            entry.allWrongEx.push({ spokenText: spoken, timeSeconds: evt.timeSeconds, dateStr: sessionDate });
+            entry.allWrongEx.push(wrongObj);
           }
           if (inTf) {
             entry.tfWrong += 1;
             if (entry.tfWrongEx.length < 5) {
-              entry.tfWrongEx.push({ spokenText: spoken, timeSeconds: evt.timeSeconds, dateStr: sessionDate });
+              entry.tfWrongEx.push(wrongObj);
             }
           }
         }
@@ -1342,6 +1393,19 @@ export default function ProgressAnalysis() {
         if (inTf) entry.tfSpeechScores.push(sp.accuracyScore);
       }
 
+      const cat = normalizeSpeechErrorCat(
+        sp.speechErrorCategory || (sp as any)?.SpeechErrorCategory,
+        sp.errorType
+      );
+      if (cat) {
+        const recKey = sp.id ? `id_${sp.id}` : sp.sessionId ? `${sp.sessionId}_idx_${sp.audioChunkIndex}` : undefined;
+        if (!recKey || !entry.seenSpeechRecordKeys.has(recKey)) {
+          if (recKey) entry.seenSpeechRecordKeys.add(recKey);
+          entry.speechErrorCategoryCounts[cat] = (entry.speechErrorCategoryCounts[cat] || 0) + 1;
+          entry.lastSpeechErrorCategory = cat;
+        }
+      }
+
       if (entry.allAttempts === 0) {
         entry.allAttempts += 1;
         const isGood = (sp.accuracyScore || 0) >= 75 && sp.errorType === 'None';
@@ -1351,7 +1415,7 @@ export default function ProgressAnalysis() {
         } else {
           entry.allWrong += 1;
           const errDesc = sp.errorType === 'Mispronunciation' ? 'Sai âm' : sp.errorType === 'Omission' ? 'Đọc thiếu âm' : (sp.errorType || 'Phát âm chưa chuẩn');
-          entry.allWrongEx.push({ spokenText: errDesc, timeSeconds: 0, dateStr: sp.createdAt, errorType: sp.errorType || undefined });
+          entry.allWrongEx.push({ spokenText: errDesc, timeSeconds: 0, dateStr: sp.createdAt, errorType: sp.errorType || undefined, speechErrorCategory: cat });
         }
 
         if (inTf) {
@@ -1362,7 +1426,7 @@ export default function ProgressAnalysis() {
           } else {
             entry.tfWrong += 1;
             const errDesc = sp.errorType === 'Mispronunciation' ? 'Sai âm' : sp.errorType === 'Omission' ? 'Đọc thiếu âm' : (sp.errorType || 'Phát âm chưa chuẩn');
-            entry.tfWrongEx.push({ spokenText: errDesc, timeSeconds: 0, dateStr: sp.createdAt, errorType: sp.errorType || undefined });
+            entry.tfWrongEx.push({ spokenText: errDesc, timeSeconds: 0, dateStr: sp.createdAt, errorType: sp.errorType || undefined, speechErrorCategory: cat });
           }
         }
       }
@@ -1393,6 +1457,19 @@ export default function ProgressAnalysis() {
         tfMastery = tfRate >= 80 ? 'MASTERED' : tfRate >= 50 ? 'PRACTICING' : 'NEEDS_HELP';
       }
 
+      // Collect all distinct error categories sorted by occurrence frequency descending
+      let sortedCategories: string[] = Object.entries(entry.speechErrorCategoryCounts)
+        .sort((a, b) => b[1] - a[1])
+        .map(([c]) => c);
+
+      if (sortedCategories.length === 0 && entry.lastSpeechErrorCategory) {
+        sortedCategories = [entry.lastSpeechErrorCategory];
+      } else if (sortedCategories.length === 0 && entry.allWrong > 0) {
+        sortedCategories = ['Thay thế âm'];
+      }
+
+      const primaryErrorCategory = sortedCategories[0] || undefined;
+
       return {
         word: entry.word,
         lessonId: entry.lessonId,
@@ -1406,6 +1483,9 @@ export default function ProgressAnalysis() {
         lastPracticed: entry.lastPracticed,
         correctExamples: entry.allCorrectEx,
         wrongExamples: entry.allWrongEx,
+        speechErrorCategory: primaryErrorCategory,
+        speechErrorCategories: sortedCategories,
+        speechErrorCategoryCounts: entry.speechErrorCategoryCounts,
         allTimeAttempts: entry.allAttempts,
         allTimeAccuracyRate: allRate,
         allTimeMasteryStatus: allMastery,
@@ -2188,6 +2268,53 @@ export default function ProgressAnalysis() {
                         style={{ width: `${isNotPracticed ? 0 : Math.min(100, Math.max(5, item.accuracyRate))}%` }}
                       />
                     </div>
+
+                    {/* Speech Error Category (Lỗi phát âm) */}
+                    <div className="pt-2 border-t border-slate-200/60 flex items-start sm:items-center justify-between gap-2 text-xs flex-wrap sm:flex-nowrap">
+                      <span className="flex items-center gap-1.5 text-slate-500 font-medium shrink-0 pt-0.5 sm:pt-0">
+                        <span
+                          className={cn(
+                            "w-2 h-2 rounded-full shrink-0 inline-block",
+                            isNotPracticed ? "bg-slate-300" : item.wrongCount > 0 ? "bg-amber-500" : "bg-emerald-500"
+                          )}
+                        />
+                        Lỗi phát âm{item.wrongCount > 0 && item.speechErrorCategories && item.speechErrorCategories.length > 1 ? ` (${item.speechErrorCategories.length})` : ''}:
+                      </span>
+                      {isNotPracticed ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-lg border border-slate-200 bg-slate-100/70 text-slate-400 italic text-[11px]">
+                          Chưa có dữ liệu
+                        </span>
+                      ) : item.wrongCount > 0 ? (
+                        <div className="flex flex-wrap items-center justify-end gap-1.5 max-w-full sm:max-w-[70%]">
+                          {(item.speechErrorCategories && item.speechErrorCategories.length > 0
+                            ? item.speechErrorCategories
+                            : [item.speechErrorCategory || 'Thay thế âm']
+                          ).map((cat, catIdx) => {
+                            const count = item.speechErrorCategoryCounts?.[cat];
+                            return (
+                              <span
+                                key={catIdx}
+                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg border border-amber-200/80 bg-amber-50 text-amber-800 font-semibold text-[11px] shadow-2xs whitespace-nowrap"
+                                title={count ? `Lỗi: ${cat} (${count} lần đánh giá)` : cat}
+                              >
+                                <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
+                                <span>{cat}</span>
+                                {count && count > 1 ? (
+                                  <span className="text-[10px] bg-amber-200/80 text-amber-900 rounded-full px-1.5 py-0.2 font-bold ml-0.5">
+                                    {count}
+                                  </span>
+                                ) : null}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg border border-emerald-200/70 bg-emerald-50 text-emerald-700 font-medium text-[11px]">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                          Chuẩn - Không có lỗi
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Balanced Side-by-side Comparison Slots: Lúc nói đúng vs Lúc nói sai */}
@@ -2254,23 +2381,16 @@ export default function ProgressAnalysis() {
                               {item.wrongExamples.slice(0, 2).map((ex, exIdx) => (
                                 <div
                                   key={exIdx}
-                                  className="bg-white/95 px-2.5 py-1.5 rounded-lg border border-rose-200/70 text-xs flex items-center justify-between shadow-2xs"
+                                  className="bg-white/95 px-2.5 py-1.5 rounded-lg border border-rose-200/70 text-xs flex items-center justify-between shadow-2xs gap-2"
                                 >
                                   <span className="text-slate-700 font-normal truncate mr-1">
                                     trẻ nói: <span className="text-rose-700 font-medium">&ldquo;{ex.spokenText}&rdquo;</span>
                                   </span>
-                                  <div className="flex items-center gap-1 shrink-0">
-                                    {ex.errorType && (
-                                      <span className="text-[9px] font-medium bg-amber-50 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200">
-                                        {ex.errorType === 'Mispronunciation' ? 'Sai âm' : ex.errorType === 'Omission' ? 'Thiếu âm' : ex.errorType}
-                                      </span>
-                                    )}
-                                    {ex.timeSeconds > 0 && (
-                                      <span className="text-[10px] text-slate-400 font-normal">
-                                        [{ex.timeSeconds}s]
-                                      </span>
-                                    )}
-                                  </div>
+                                  {ex.timeSeconds > 0 && (
+                                    <span className="text-[10px] text-slate-400 font-normal shrink-0 whitespace-nowrap">
+                                      [{ex.timeSeconds}s]
+                                    </span>
+                                  )}
                                 </div>
                               ))}
                             </div>
