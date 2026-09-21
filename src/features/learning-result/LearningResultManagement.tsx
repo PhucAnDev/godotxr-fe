@@ -318,6 +318,7 @@ export function isSilentOrUnclearSpeech(spokenText?: string): boolean {
 }
 
 const SPEECH_ERROR_CATEGORIES = [
+  { value: 'Không', label: 'Không' },
   { value: 'Thay thế âm', label: 'Thay thế âm' },
   { value: 'Nuốt âm/Bỏ sót âm', label: 'Nuốt âm/Bỏ sót âm' },
   { value: 'Méo tiếng/Chưa tròn vành rõ chữ', label: 'Méo tiếng/Chưa tròn vành rõ chữ' },
@@ -620,7 +621,7 @@ export default function LearningResultManagement() {
     pronunciation: 90,
     fluency: 90,
     completeness: 100,
-    speechErrorCategory: 'Thay thế âm'
+    speechErrorCategory: 'Không'
   });
   const [isSavingManualScore, setIsSavingManualScore] = useState(false);
 
@@ -1321,7 +1322,7 @@ export default function LearningResultManagement() {
           accuracyRes.data.forEach((item: any) => {
             const cIndex = item.audioChunkIndex ?? 0;
             if (!groupedByChunk[cIndex]) {
-              const speechCat = item.speechErrorCategory || item.SpeechErrorCategory || 'Thay thế âm';
+              const speechCat = item.speechErrorCategory || item.SpeechErrorCategory || 'Không';
               groupedByChunk[cIndex] = {
                 accuracyScore: item.accuracyScore,
                 AccuracyScore: item.accuracyScore,
@@ -1548,7 +1549,7 @@ export default function LearningResultManagement() {
       const pron = existing.pronunciationScore ?? existing.PronunciationScore ?? existing.pronScore ?? existing.PronScore ?? existing.pronunciationAssessment?.pronunciationScore ?? existing.PronunciationAssessment?.PronScore ?? 90;
       const flu = existing.fluencyScore ?? existing.FluencyScore ?? existing.pronunciationAssessment?.fluencyScore ?? existing.PronunciationAssessment?.FluencyScore ?? 90;
       const comp = existing.completenessScore ?? existing.CompletenessScore ?? existing.pronunciationAssessment?.completenessScore ?? existing.PronunciationAssessment?.CompletenessScore ?? 100;
-      const speechCat = existing.speechErrorCategory || existing.SpeechErrorCategory || 'Thay thế âm';
+      const speechCat = existing.speechErrorCategory || existing.SpeechErrorCategory || 'Không';
       setManualScores({
         accuracy: Math.round(Number(acc)),
         pronunciation: Math.round(Number(pron)),
@@ -1562,7 +1563,7 @@ export default function LearningResultManagement() {
         pronunciation: 90,
         fluency: 90,
         completeness: 100,
-        speechErrorCategory: 'Thay thế âm'
+        speechErrorCategory: 'Không'
       });
     }
     setScoringChunkIndex(chunkIndex);
@@ -1596,7 +1597,7 @@ export default function LearningResultManagement() {
         fluencyScore: Number(manualScores.fluency),
         completenessScore: Number(manualScores.completeness),
         errorType: Number(manualScores.accuracy) < 50 ? 'Mispronunciation' : 'None',
-        speechErrorCategory: manualScores.speechErrorCategory || 'Thay thế âm',
+        speechErrorCategory: manualScores.speechErrorCategory || 'Không',
         lessonId: selectedResult.LessonId ? Number(selectedResult.LessonId) : undefined,
         resultId: selectedResult.ResultId ? Number(selectedResult.ResultId) : undefined
       };
@@ -3049,7 +3050,7 @@ export default function LearningResultManagement() {
                                           assessment?.SpeechErrorCategory ||
                                           chunkAssessments[cIndex]?.speechErrorCategory ||
                                           chunkAssessments[cIndex]?.SpeechErrorCategory ||
-                                          'Thay thế âm';
+                                          'Không';
 
                                         const isParent =
                                           currentRoleView === 'PARENT' ||
@@ -3057,15 +3058,24 @@ export default function LearningResultManagement() {
                                             (window.location.hash.includes('/parent') ||
                                               window.location.pathname.includes('/parent')));
 
+                                        const hasError = speechCat && speechCat !== 'Không' && speechCat !== 'None';
+
                                         return (
                                           <div className="space-y-1.5 shrink-0">
                                             <div className="flex items-center gap-1.5 text-xs font-medium text-slate-400">
-                                              <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 inline-block" />
+                                              <span className={cn("w-2 h-2 rounded-full shrink-0 inline-block", hasError ? "bg-amber-500" : "bg-emerald-500")} />
                                               <span>Lỗi phát âm:</span>
                                             </div>
                                             {isParent ? (
                                               <div className="flex items-center">
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg border border-amber-200/80 bg-amber-50 text-amber-800 font-semibold text-xs shadow-xs">
+                                                <span
+                                                  className={cn(
+                                                    "inline-flex items-center px-2.5 py-1 rounded-lg font-semibold text-xs shadow-xs",
+                                                    hasError
+                                                      ? "border border-amber-200/80 bg-amber-50 text-amber-800"
+                                                      : "border border-emerald-200/80 bg-emerald-50 text-emerald-700"
+                                                  )}
+                                                >
                                                   {speechCat}
                                                 </span>
                                               </div>
