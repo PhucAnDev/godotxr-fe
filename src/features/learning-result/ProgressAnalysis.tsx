@@ -1249,14 +1249,18 @@ export default function ProgressAnalysis() {
 
     const normalizeSpeechErrorCat = (rawCategory?: string, errorType?: string): string | undefined => {
       if (rawCategory && typeof rawCategory === 'string' && rawCategory.trim()) {
-        return rawCategory.trim();
+        const trimmed = rawCategory.trim();
+        if (trimmed === 'Không' || trimmed.toLowerCase() === 'không' || trimmed === 'None') {
+          return undefined;
+        }
+        return trimmed;
       }
       if (!errorType || errorType === 'None') return undefined;
       if (errorType === 'Mispronunciation') return 'Thay thế âm';
       if (errorType === 'Omission') return 'Nuốt âm/Bỏ sót âm';
       if (errorType === 'Distortion') return 'Méo tiếng/Chưa tròn vành rõ chữ';
       if (errorType === 'Tone') return 'Lệch thanh điệu (Hỏi/Ngã)';
-      return 'Thay thế âm';
+      return undefined;
     };
 
     const masterMap = new Map<string, WordStatAggregator>();
@@ -1459,13 +1463,12 @@ export default function ProgressAnalysis() {
 
       // Collect all distinct error categories sorted by occurrence frequency descending
       let sortedCategories: string[] = Object.entries(entry.speechErrorCategoryCounts)
+        .filter(([c]) => c !== 'Không' && c.toLowerCase() !== 'không')
         .sort((a, b) => b[1] - a[1])
         .map(([c]) => c);
 
-      if (sortedCategories.length === 0 && entry.lastSpeechErrorCategory) {
+      if (sortedCategories.length === 0 && entry.lastSpeechErrorCategory && entry.lastSpeechErrorCategory !== 'Không') {
         sortedCategories = [entry.lastSpeechErrorCategory];
-      } else if (sortedCategories.length === 0 && entry.allWrong > 0) {
-        sortedCategories = ['Thay thế âm'];
       }
 
       const primaryErrorCategory = sortedCategories[0] || undefined;
@@ -2275,21 +2278,22 @@ export default function ProgressAnalysis() {
                         <span
                           className={cn(
                             "w-2 h-2 rounded-full shrink-0 inline-block",
-                            isNotPracticed ? "bg-slate-300" : item.wrongCount > 0 ? "bg-amber-500" : "bg-emerald-500"
+                            isNotPracticed
+                              ? "bg-slate-300"
+                              : item.speechErrorCategories && item.speechErrorCategories.length > 0
+                              ? "bg-amber-500"
+                              : "bg-emerald-500"
                           )}
                         />
-                        Lỗi phát âm{item.wrongCount > 0 && item.speechErrorCategories && item.speechErrorCategories.length > 1 ? ` (${item.speechErrorCategories.length})` : ''}:
+                        Lỗi phát âm{item.speechErrorCategories && item.speechErrorCategories.length > 1 ? ` (${item.speechErrorCategories.length})` : ''}:
                       </span>
                       {isNotPracticed ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-lg border border-slate-200 bg-slate-100/70 text-slate-400 italic text-[11px]">
                           Chưa có dữ liệu
                         </span>
-                      ) : item.wrongCount > 0 ? (
+                      ) : item.speechErrorCategories && item.speechErrorCategories.length > 0 ? (
                         <div className="flex flex-wrap items-center justify-end gap-1.5 max-w-full sm:max-w-[70%]">
-                          {(item.speechErrorCategories && item.speechErrorCategories.length > 0
-                            ? item.speechErrorCategories
-                            : [item.speechErrorCategory || 'Thay thế âm']
-                          ).map((cat, catIdx) => {
+                          {item.speechErrorCategories.map((cat, catIdx) => {
                             const count = item.speechErrorCategoryCounts?.[cat];
                             return (
                               <span

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, GraduationCap, ArrowUpRight, Play, Smile, Shield, Layers } from 'lucide-react';
+import { Users, GraduationCap, ArrowUpRight, Play, Smile, Shield, Layers, BookOpen } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getUsers } from '../../services/userService';
 import { getChildProfiles } from '../../services/childProfileService';
 import { getResultsByChild } from '../../services/resultService';
+import { getLessons } from '../../services/lessonService';
 
 function formatDateTime(value: string | null | undefined): string {
   if (!value) return '';
@@ -36,8 +37,12 @@ export default function AdminDashboard() {
     async function loadStats() {
       try {
         setIsLoading(true);
-        // 1. Fetch total users & filter teachers
-        const userRes = await getUsers(1, 1000);
+        // 1. Fetch total users, children and lessons in parallel
+        const [userRes, childRes, lessonRes] = await Promise.all([
+          getUsers(1, 1000),
+          getChildProfiles(1, 1000),
+          getLessons(1, 1000)
+        ]);
         if (cancelled) return;
 
         if (userRes.success && userRes.data) {
@@ -56,9 +61,13 @@ export default function AdminDashboard() {
           setNewUsersThisWeek(`+${thisWeekCount} tài khoản mới tuần này`);
         }
 
-        // 2. Fetch children and results
-        const childRes = await getChildProfiles(1, 1000);
-        if (cancelled) return;
+        // Build lesson map id -> lessonName
+        const lessonMap = new Map<number, string>();
+        if (lessonRes.success && lessonRes.data?.items) {
+          lessonRes.data.items.forEach(l => {
+            lessonMap.set(l.id, l.lessonName);
+          });
+        }
 
         if (childRes.success && childRes.data?.items) {
           const childrenList = childRes.data.items;
@@ -88,12 +97,16 @@ export default function AdminDashboard() {
               // Map to activities
               res.data.forEach(r => {
                 const activeTimeStr = r.completedAt || r.startedAt || '';
+                const lessonName = r.lessonId
+                  ? (lessonMap.get(r.lessonId) || `Bài học #${r.lessonId}`)
+                  : (r.exerciseId ? (lessonMap.get(r.exerciseId) || `Bài tập #${r.exerciseId}`) : 'Bài rèn luyện');
+
                 combinedResults.push({
                   time: activeTimeStr ? formatDateTime(activeTimeStr).slice(11, 16) : '00:00',
                   rawTime: activeTimeStr,
                   user: `Bé ${child.fullName}`,
-                  action: `đã rèn luyện ${r.exerciseId ? 'bài tập' : 'bài học'}`,
-                  target: r.exerciseId ? `Mã bài tập: ${r.exerciseId}` : `Mã bài học: ${r.lessonId}`
+                  action: `đã rèn luyện bài học`,
+                  target: lessonName
                 });
               });
             }
@@ -220,8 +233,9 @@ export default function AdminDashboard() {
                     </td>
                     {/* Target details */}
                     <td className="py-4 px-6">
-                      <span className="font-mono text-xs text-slate-500 bg-slate-50 p-1 px-2 rounded-lg border border-slate-200">
-                        {act.target}
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 bg-slate-50 py-1 px-2.5 rounded-lg border border-slate-200 shadow-2xs">
+                        <BookOpen className="w-3.5 h-3.5 text-[#4EACAF] shrink-0" />
+                        <span className="truncate max-w-[280px]">{act.target}</span>
                       </span>
                     </td>
                     {/* Status badge */}

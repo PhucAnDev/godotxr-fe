@@ -191,7 +191,7 @@ export default function ParentChildClass() {
   const displayEnrollmentStatus = enrollment?.status ?? '—';
 
   return (
-    <div className="space-y-4 pb-20 text-left" id="parent-child-classroom-container">
+    <div className="space-y-4 pb-6 text-left" id="parent-child-classroom-container">
 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-1">
@@ -486,9 +486,11 @@ export default function ParentChildClass() {
                   </div>
                 </div>
 
-                <p className="text-xs text-gray-600 leading-relaxed font-normal italic bg-slate-50/70 p-4 rounded-2xl border border-slate-100/50 whitespace-pre-line">
-                  {programDetail?.description || 'Chương trình rèn luyện uốn âm đơn kết hợp cột hơi cho trẻ nhỏ.'}
-                </p>
+                <div className="max-h-44 sm:max-h-48 overflow-y-auto overscroll-contain pr-2.5 p-4 rounded-2xl bg-slate-50/70 border border-slate-100/50 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent] focus-within:border-[#4EACAF]/40 transition-colors">
+                  <p className="text-xs text-gray-600 leading-relaxed font-normal italic whitespace-pre-line select-text">
+                    {programDetail?.description || 'Chương trình rèn luyện uốn âm đơn kết hợp cột hơi cho trẻ nhỏ.'}
+                  </p>
+                </div>
 
                 <div className="space-y-3 pt-1 text-xs font-normal text-gray-600 border-t border-gray-100">
                   <div className="flex items-center justify-between">

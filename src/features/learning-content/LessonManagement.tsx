@@ -32,7 +32,9 @@ import {
   Boxes,
   Image as ImageIcon,
   Camera,
-  Layout
+  Layout,
+  RotateCcw,
+  SlidersHorizontal
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import ActionButton from '../../components/common/ActionButton';
@@ -246,6 +248,177 @@ export default function LessonManagement() {
   const [userRole] = useState<'ADMIN' | 'TEACHER' | 'PARENT' | null>(() => getSessionRole());
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
+
+  // Resizable columns configuration (Excel/Spreadsheet style)
+  type LessonTableColumnKey =
+    | 'LessonId'
+    | 'LessonOrder'
+    | 'LessonName'
+    | 'ProgramId'
+    | 'TargetSkill'
+    | 'EstimatedDuration'
+    | 'MaxScore'
+    | 'Status'
+    | 'Actions';
+
+  const DEFAULT_COLUMN_WIDTHS: Record<LessonTableColumnKey, number> = useMemo(() => ({
+    LessonId: 85,
+    LessonOrder: 75,
+    LessonName: 280,
+    ProgramId: 320,
+    TargetSkill: 170,
+    EstimatedDuration: 130,
+    MaxScore: 110,
+    Status: 130,
+    Actions: 130
+  }), []);
+
+  const MIN_COLUMN_WIDTHS: Record<LessonTableColumnKey, number> = useMemo(() => ({
+    LessonId: 60,
+    LessonOrder: 50,
+    LessonName: 140,
+    ProgramId: 140,
+    TargetSkill: 110,
+    EstimatedDuration: 90,
+    MaxScore: 80,
+    Status: 90,
+    Actions: 110
+  }), []);
+
+  const [columnWidths, setColumnWidths] = useState<Record<LessonTableColumnKey, number>>(() => {
+    try {
+      const saved = localStorage.getItem('godotxr_lesson_table_col_widths');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          LessonId: 85,
+          LessonOrder: 75,
+          LessonName: 280,
+          ProgramId: 320,
+          TargetSkill: 170,
+          EstimatedDuration: 130,
+          MaxScore: 110,
+          Status: 130,
+          Actions: 130,
+          ...parsed
+        };
+      }
+    } catch {
+      // ignore
+    }
+    return {
+      LessonId: 85,
+      LessonOrder: 75,
+      LessonName: 280,
+      ProgramId: 320,
+      TargetSkill: 170,
+      EstimatedDuration: 130,
+      MaxScore: 110,
+      Status: 130,
+      Actions: 130
+    };
+  });
+
+  const [resizingCol, setResizingCol] = useState<LessonTableColumnKey | null>(null);
+  const resizeStateRef = useRef<{
+    colKey: LessonTableColumnKey;
+    startX: number;
+    startWidth: number;
+  } | null>(null);
+
+  const isColumnsModified = useMemo(() => {
+    return (Object.keys(DEFAULT_COLUMN_WIDTHS) as LessonTableColumnKey[]).some(
+      key => Math.abs(columnWidths[key] - DEFAULT_COLUMN_WIDTHS[key]) > 2
+    );
+  }, [columnWidths, DEFAULT_COLUMN_WIDTHS]);
+
+  const handleStartResize = (e: React.MouseEvent, colKey: LessonTableColumnKey) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setResizingCol(colKey);
+    resizeStateRef.current = {
+      colKey,
+      startX: e.clientX,
+      startWidth: columnWidths[colKey]
+    };
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!resizeStateRef.current) return;
+      const { colKey, startX, startWidth } = resizeStateRef.current;
+      const deltaX = moveEvent.clientX - startX;
+      const minW = MIN_COLUMN_WIDTHS[colKey] || 60;
+      const newWidth = Math.max(minW, Math.round(startWidth + deltaX));
+
+      setColumnWidths(prev => {
+        const updated = { ...prev, [colKey]: newWidth };
+        try {
+          localStorage.setItem('godotxr_lesson_table_col_widths', JSON.stringify(updated));
+        } catch {
+          // ignore
+        }
+        return updated;
+      });
+    };
+
+    const handleMouseUp = () => {
+      setResizingCol(null);
+      resizeStateRef.current = null;
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleResetColumnWidth = (e: React.MouseEvent, colKey: LessonTableColumnKey) => {
+    e.stopPropagation();
+    setColumnWidths(prev => {
+      const updated = { ...prev, [colKey]: DEFAULT_COLUMN_WIDTHS[colKey] };
+      try {
+        localStorage.setItem('godotxr_lesson_table_col_widths', JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      return updated;
+    });
+  };
+
+  const handleResetAllColumns = () => {
+    setColumnWidths(DEFAULT_COLUMN_WIDTHS);
+    try {
+      localStorage.removeItem('godotxr_lesson_table_col_widths');
+    } catch {
+      // ignore
+    }
+  };
+
+  const totalTableWidth = useMemo(() => {
+    return Object.values(columnWidths).reduce((sum, w) => sum + w, 0);
+  }, [columnWidths]);
+
+  const renderResizeHandle = (colKey: LessonTableColumnKey) => (
+    <div
+      className="absolute right-0 top-0 bottom-0 w-3.5 cursor-col-resize select-none flex items-center justify-center group/resizer z-20 hover:bg-slate-200/50 transition-colors"
+      onMouseDown={(e) => handleStartResize(e, colKey)}
+      onDoubleClick={(e) => handleResetColumnWidth(e, colKey)}
+      onClick={(e) => e.stopPropagation()}
+      title="Kéo thả để chỉnh chiều rộng cột (Double-click để khôi phục mặc định)"
+    >
+      <div
+        className={cn(
+          "w-[2px] rounded-full transition-all",
+          resizingCol === colKey
+            ? "bg-[#4EACAF] h-full w-[3px]"
+            : "bg-slate-200/90 h-3/5 group-hover/resizer:bg-[#4EACAF] group-hover/resizer:h-4/5 group-hover/resizer:w-[2px]"
+        )}
+      />
+    </div>
+  );
   // VR Configuration states
   const [lessonImages, setLessonImages] = useState<any[]>([]);
   const [lessonSlots, setLessonSlots] = useState<any[]>([]);
@@ -1044,112 +1217,173 @@ export default function LessonManagement() {
           </div>
         ) : (
           <>
+            {/* Table resizing & adjustment control hint bar */}
+            <div className="px-6 py-3 border-b border-slate-100 flex items-center justify-between gap-3 text-xs bg-slate-50/50 flex-wrap">
+              <div className="flex items-center gap-2 text-slate-500 font-medium">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-[#4EACAF] shrink-0" />
+                <span>Kéo thả vạch chia cột ở tiêu đề bảng để chỉnh độ rộng cột (như Excel/Sheet).</span>
+              </div>
+              {isColumnsModified && (
+                <button
+                  type="button"
+                  onClick={handleResetAllColumns}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-[#4EACAF] hover:bg-[#4EACAF]/10 transition-colors cursor-pointer border border-[#4EACAF]/20"
+                  title="Khôi phục tất cả cột về độ rộng mặc định ban đầu"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Khôi phục độ rộng cột</span>
+                </button>
+              )}
+            </div>
+
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse" id="lessons-table-body">
+              <table
+                className="w-full text-left border-collapse"
+                id="lessons-table-body"
+                style={{ tableLayout: 'fixed', minWidth: totalTableWidth }}
+              >
+                <colgroup>
+                  <col style={{ width: columnWidths.LessonId }} />
+                  <col style={{ width: columnWidths.LessonOrder }} />
+                  <col style={{ width: columnWidths.LessonName }} />
+                  <col style={{ width: columnWidths.ProgramId }} />
+                  <col style={{ width: columnWidths.TargetSkill }} />
+                  <col style={{ width: columnWidths.EstimatedDuration }} />
+                  <col style={{ width: columnWidths.MaxScore }} />
+                  <col style={{ width: columnWidths.Status }} />
+                  <col style={{ width: columnWidths.Actions }} />
+                </colgroup>
                 <thead>
-                  <tr className="bg-[#FDFCF5]/55 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest whitespace-nowrap">
+                  <tr className="bg-[#FDFCF5]/55 border-b border-gray-100 text-[#555] font-extrabold text-xs uppercase tracking-widest">
+                    {/* Mã Số */}
                     <th
                       onClick={() => handleSort('LessonId')}
-                      className="w-[6%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none whitespace-nowrap"
+                      className="relative py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none group"
                       title="Sắp xếp theo Mã Số"
                     >
-                      <div className="flex items-center gap-1">
-                        Mã Số
+                      <div className="flex items-center gap-1 truncate pr-2">
+                        <span>Mã Số</span>
                         {sortColumn === 'LessonId' ? (
-                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF] shrink-0" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF] shrink-0" />
                         ) : (
-                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity shrink-0" />
                         )}
                       </div>
+                      {renderResizeHandle('LessonId')}
                     </th>
+
+                    {/* STT */}
                     <th
                       onClick={() => handleSort('LessonOrder')}
-                      className="w-[6%] py-5 px-2 cursor-pointer hover:bg-slate-100/50 transition-colors select-none whitespace-nowrap"
+                      className="relative py-5 px-2 cursor-pointer hover:bg-slate-100/50 transition-colors select-none group"
                       title="Sắp xếp theo Thứ tự"
                     >
-                      <div className="flex items-center gap-1">
-                        STT
+                      <div className="flex items-center gap-1 truncate pr-2">
+                        <span>STT</span>
                         {sortColumn === 'LessonOrder' ? (
-                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF] shrink-0" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF] shrink-0" />
                         ) : (
-                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity shrink-0" />
                         )}
                       </div>
+                      {renderResizeHandle('LessonOrder')}
                     </th>
+
+                    {/* Tên bài học */}
                     <th
                       onClick={() => handleSort('LessonName')}
-                      className="w-[20%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none whitespace-nowrap"
+                      className="relative py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none group"
                       title="Sắp xếp theo tên bài học"
                     >
-                      <div className="flex items-center gap-1">
-                        Tên bài học
+                      <div className="flex items-center gap-1 truncate pr-2">
+                        <span>Tên bài học</span>
                         {sortColumn === 'LessonName' ? (
-                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF] shrink-0" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF] shrink-0" />
                         ) : (
-                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity shrink-0" />
                         )}
                       </div>
+                      {renderResizeHandle('LessonName')}
                     </th>
+
+                    {/* Chương trình học */}
                     <th
                       onClick={() => handleSort('ProgramId')}
-                      className="w-[18%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none whitespace-nowrap"
+                      className="relative py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none group"
                       title="Sắp xếp theo Chương trình"
                     >
-                      <div className="flex items-center gap-1">
-                        Chương trình học
+                      <div className="flex items-center gap-1 truncate pr-2">
+                        <span>Chương trình học</span>
                         {sortColumn === 'ProgramId' ? (
-                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF] shrink-0" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF] shrink-0" />
                         ) : (
-                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity shrink-0" />
                         )}
                       </div>
+                      {renderResizeHandle('ProgramId')}
                     </th>
+
+                    {/* Mục Tiêu Kỹ Năng */}
                     <th
                       onClick={() => handleSort('TargetSkill')}
-                      className="w-[14%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none whitespace-nowrap"
+                      className="relative py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none group"
                       title="Sắp xếp theo Mục tiêu kỹ năng"
                     >
-                      <div className="flex items-center gap-1">
-                        Mục Tiêu Kỹ Năng
+                      <div className="flex items-center gap-1 truncate pr-2">
+                        <span>Mục Tiêu Kỹ Năng</span>
                         {sortColumn === 'TargetSkill' ? (
-                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF] shrink-0" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF] shrink-0" />
                         ) : (
-                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity shrink-0" />
                         )}
                       </div>
+                      {renderResizeHandle('TargetSkill')}
                     </th>
+
+                    {/* Thời Lượng */}
                     <th
                       onClick={() => handleSort('EstimatedDuration')}
-                      className="w-[10%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none whitespace-nowrap"
+                      className="relative py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none group"
                       title="Sắp xếp theo Thời lượng"
                     >
-                      <div className="flex items-center gap-1">
-                        Thời Lượng
+                      <div className="flex items-center gap-1 truncate pr-2">
+                        <span>Thời Lượng</span>
                         {sortColumn === 'EstimatedDuration' ? (
-                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF] shrink-0" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF] shrink-0" />
                         ) : (
-                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity shrink-0" />
                         )}
                       </div>
+                      {renderResizeHandle('EstimatedDuration')}
                     </th>
+
+                    {/* Điểm tối đa */}
                     <th
                       onClick={() => handleSort('MaxScore')}
-                      className="w-[10%] py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none whitespace-nowrap"
+                      className="relative py-5 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none group"
                       title="Sắp xếp theo Điểm tối đa"
                     >
-                      <div className="flex items-center gap-1">
-                        Điểm tối đa
+                      <div className="flex items-center gap-1 truncate pr-2">
+                        <span>Điểm tối đa</span>
                         {sortColumn === 'MaxScore' ? (
-                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF]" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF]" />
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-[#4EACAF] shrink-0" /> : <ArrowDown className="h-3.5 w-3.5 text-[#4EACAF] shrink-0" />
                         ) : (
-                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity shrink-0" />
                         )}
                       </div>
+                      {renderResizeHandle('MaxScore')}
                     </th>
-                    <th className="w-[8%] py-5 px-4 select-none whitespace-nowrap">
-                      Trạng Thái
+
+                    {/* Trạng Thái */}
+                    <th className="relative py-5 px-4 select-none group">
+                      <div className="truncate pr-2">Trạng Thái</div>
+                      {renderResizeHandle('Status')}
                     </th>
-                    <th className="w-[8%] py-5 px-4 text-right select-none whitespace-nowrap">Tùy chọn</th>
+
+                    {/* Tùy chọn */}
+                    <th className="py-5 px-4 text-right select-none whitespace-nowrap">
+                      Tùy chọn
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 font-normal text-sm text-slate-650">
@@ -1165,16 +1399,16 @@ export default function LessonManagement() {
                           {lesson.LessonOrder}
                         </td>
                         <td className="py-5 px-4">
-                          <p className="font-medium text-slate-800 leading-snug line-clamp-1 max-w-md font-bold">{lesson.LessonName}</p>
+                          <p className="font-bold text-slate-800 leading-snug break-words" title={lesson.LessonName}>{lesson.LessonName}</p>
                           {lesson.Note && (
-                            <p className="text-[11px] text-amber-700 font-medium italic line-clamp-1 mt-0.5" title={lesson.Note}>
+                            <p className="text-[11px] text-amber-700 font-medium italic mt-0.5 break-words" title={lesson.Note}>
                               📝 {lesson.Note}
                             </p>
                           )}
                         </td>
                         <td className="py-5 px-4">
                           {program ? (
-                            <p className="text-gray-800 font-extrabold max-w-sm line-clamp-1">{program.ProgramName}</p>
+                            <p className="text-gray-800 font-extrabold break-words text-sm leading-snug" title={program.ProgramName}>{program.ProgramName}</p>
                           ) : (
                             <span className="text-red-500 font-bold italic text-xs">Chương trình bị xóa</span>
                           )}
@@ -1184,7 +1418,7 @@ export default function LessonManagement() {
                         </td>
                         <td className="py-5 px-4 font-normal text-slate-650 whitespace-nowrap">
                           <div className="flex items-center gap-1.5 font-bold">
-                            <Clock className="w-4 h-4 text-gray-400" />
+                            <Clock className="w-4 h-4 text-gray-400 shrink-0" />
                             <span>{lesson.EstimatedDuration} phút</span>
                           </div>
                         </td>
