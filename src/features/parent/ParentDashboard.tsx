@@ -1,10 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Flame, Play, RefreshCw, AlertTriangle } from 'lucide-react';
+import {
+  Flame,
+  Play,
+  RefreshCw,
+  AlertTriangle,
+  Award,
+  TrendingUp,
+  ArrowUp,
+  ArrowDown,
+  Info,
+  ChevronRight
+} from 'lucide-react';
 import CustomSelect from '../../components/common/CustomSelect';
 import { cn, resolveAvatarUrl } from '../../lib/utils';
 import { useChildManagementApi } from '../../hooks/useChildManagementApi';
 import { getResultsByChild } from '../../services/resultService';
+import { getLessons, type LessonResponse } from '../../services/lessonService';
+import { parseInteractionLog } from '../learning-result/LearningResultManagement';
 import type { ChildProfileResponse } from '../../services/childProfileService';
 import type { ResultResponse } from '../../services/resultService';
 
@@ -13,16 +26,176 @@ interface ChartDataPoint {
   mins: number;
 }
 
+export interface LessonProgress {
+  lessonId: string;
+  lessonName: string;
+  totalAttempts: number;
+  firstAttempt: {
+    score: number;
+    maxScore: number;
+    durationSeconds: number;
+    correctCount: number;
+    errorCount: number;
+    date: string;
+  };
+  latestAttempt: {
+    score: number;
+    maxScore: number;
+    durationSeconds: number;
+    correctCount: number;
+    errorCount: number;
+    date: string;
+  };
+  metrics: {
+    scoreDiff: number;
+    durationDiff: number;
+    correctDiff: number;
+    errorDiff: number;
+  };
+  status: 'improving' | 'speed_up' | 'accuracy_up' | 'stable' | 'needs_practice';
+  description: string;
+}
+
+function computeLessonProgress(results: ResultResponse[], lessons: LessonResponse[]): LessonProgress[] {
+  const grouped: Record<string, ResultResponse[]> = {};
+  results.forEach(res => {
+    if (!res.lessonId) return;
+    const lId = String(res.lessonId);
+    if (!grouped[lId]) grouped[lId] = [];
+    grouped[lId].push(res);
+  });
+
+  const progressList: LessonProgress[] = [];
+
+  Object.entries(grouped).forEach(([lId, attempts]) => {
+    const sorted = [...attempts].sort((a, b) => {
+      const aTime = a.startedAt || a.completedAt || '';
+      const bTime = b.startedAt || b.completedAt || '';
+      return aTime.localeCompare(bTime);
+    });
+
+    if (sorted.length < 2) return;
+
+    const first = sorted[0];
+    const latest = sorted[sorted.length - 1];
+
+    const lessonObj = lessons.find(l => String(l.id) === lId);
+    const lessonName = lessonObj?.lessonName || first.lessonName || latest.lessonName || 'Bài tập tự do';
+    const maxScore = lessonObj?.maxScore || 95;
+
+    const firstScore = first.score ?? 0;
+    const latestScore = latest.score ?? 0;
+    const firstDuration = first.durationSeconds ?? 0;
+    const latestDuration = latest.durationSeconds ?? 0;
+
+    const firstEvents = first.interactionLog ? parseInteractionLog(first.interactionLog) : [];
+    const latestEvents = latest.interactionLog ? parseInteractionLog(latest.interactionLog) : [];
+    const firstCorrect = Math.max(first.correctCount ?? 0, firstEvents.filter(e => e.isCorrect === true).length);
+    const latestCorrect = Math.max(latest.correctCount ?? 0, latestEvents.filter(e => e.isCorrect === true).length);
+    const firstError = Math.max(first.errorCount ?? 0, firstEvents.filter(e => e.isCorrect === false).length);
+    const latestError = Math.max(latest.errorCount ?? 0, latestEvents.filter(e => e.isCorrect === false).length);
+
+    const scoreDiff = Math.round(latestScore - firstScore);
+    const durationDiff = firstDuration - latestDuration; // positive = faster
+    const correctDiff = latestCorrect - firstCorrect;
+    const errorDiff = firstError - latestError; // positive = fewer errors
+
+    let status: LessonProgress['status'] = 'stable';
+    let description = '';
+
+    const scorePctDiff = maxScore > 0 ? (scoreDiff / maxScore) * 100 : 0;
+    const durationPctDiff = firstDuration > 0 ? (durationDiff / firstDuration) * 100 : 0;
+
+    if (scorePctDiff >= 15 && durationPctDiff >= 10) {
+      status = 'improving';
+      description = `Bé tiến bộ vượt bậc! Vừa tăng chính xác phát âm (+${scoreDiff} điểm), vừa phản xạ nhanh hơn (+${durationDiff} giây).`;
+    } else if (scoreDiff > 0 || errorDiff > 0) {
+      status = 'accuracy_up';
+      const scorePart = scoreDiff > 0
+        ? `Điểm số tăng (+${scoreDiff} điểm)`
+        : scoreDiff < 0
+          ? `Điểm số giảm (${scoreDiff} điểm)`
+          : 'Điểm số duy trì ổn định';
+      const errorPart = errorDiff > 0
+        ? `giảm ${errorDiff} lỗi phát âm sai`
+        : errorDiff < 0
+          ? `tăng ${Math.abs(errorDiff)} lỗi phát âm`
+          : 'giữ vững độ chính xác';
+      description = `Bé cải thiện rõ rệt về độ chính xác phát âm. ${scorePart} và ${errorPart}.`;
+    } else if (durationPctDiff >= 15 && scoreDiff >= 0) {
+      status = 'speed_up';
+      description = `Bé phản xạ nhanh nhạy hơn hẳn! Rút ngắn thời gian làm bài đến ${durationDiff} giây mà vẫn giữ vững độ chính xác.`;
+    } else if (scoreDiff < -10 || errorDiff < -3) {
+      status = 'needs_practice';
+      description = `Bé có dấu hiệu phát âm sai nhiều hơn hoặc giảm điểm số so với lần đầu. Cần ôn tập và hướng dẫn kỹ lưỡng hơn.`;
+    } else {
+      status = 'stable';
+      description = `Bé duy trì năng lực ổn định ở bài học này qua các lần thực hành.`;
+    }
+
+    progressList.push({
+      lessonId: lId,
+      lessonName,
+      totalAttempts: sorted.length,
+      firstAttempt: {
+        score: firstScore,
+        maxScore,
+        durationSeconds: firstDuration,
+        correctCount: firstCorrect,
+        errorCount: firstError,
+        date: first.completedAt || first.startedAt || '',
+      },
+      latestAttempt: {
+        score: latestScore,
+        maxScore,
+        durationSeconds: latestDuration,
+        correctCount: latestCorrect,
+        errorCount: latestError,
+        date: latest.completedAt || latest.startedAt || '',
+      },
+      metrics: {
+        scoreDiff,
+        durationDiff,
+        correctDiff,
+        errorDiff,
+      },
+      status,
+      description,
+    });
+  });
+
+  return progressList;
+}
+
 export default function ParentDashboard() {
   const { getMyChildProfiles } = useChildManagementApi();
 
   const [children, setChildren] = useState<ChildProfileResponse[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<number | null>(null);
   const [results, setResults] = useState<ResultResponse[]>([]);
+  const [allLessons, setAllLessons] = useState<LessonResponse[]>([]);
   
   const [isLoading, setIsLoading] = useState(false);
   const [isResultsLoading, setIsResultsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    async function loadLessons() {
+      try {
+        const res = await getLessons(1, 100);
+        if (res.success && res.data?.items) {
+          setAllLessons(res.data.items);
+        }
+      } catch (err) {
+        console.error('Failed to load lessons for dashboard:', err);
+      }
+    }
+    void loadLessons();
+  }, []);
+
+  const lessonProgressList = useMemo(() => {
+    return computeLessonProgress(results, allLessons);
+  }, [results, allLessons]);
 
   const fetchChildren = useCallback(async () => {
     setIsLoading(true);
@@ -406,6 +579,180 @@ export default function ParentDashboard() {
                 </ResponsiveContainer>
               </div>
             </div>
+          </div>
+
+          {/* Section: Phân tích tiến bộ chi tiết theo bài học */}
+          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-50 pb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#4EACAF]/10 text-[#4EACAF] flex items-center justify-center shrink-0">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800 leading-snug">
+                    Phân tích tiến bộ chi tiết theo bài học
+                  </h3>
+                  <p className="text-xs text-gray-400 font-normal mt-0.5">
+                    So sánh kết quả giữa lần đầu tiên và lần thực hành gần nhất của bé qua từng bài học VR
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 self-start sm:self-auto">
+                {lessonProgressList.length > 0 && (
+                  <span className="text-xs bg-[#4EACAF]/10 text-[#4EACAF] px-3.5 py-1 rounded-full font-semibold">
+                    {lessonProgressList.length} bài học có dữ liệu tiến bộ
+                  </span>
+                )}
+                <a
+                  href="#/parent/progress"
+                  className="text-xs font-semibold text-[#4EACAF] hover:text-[#3d8c8e] transition-colors flex items-center gap-1 hover:underline"
+                >
+                  Xem phân tích đầy đủ <ChevronRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
+
+            {isResultsLoading ? (
+              <div className="py-12 flex flex-col items-center justify-center gap-3 text-gray-400">
+                <RefreshCw className="w-6 h-6 animate-spin text-[#4EACAF]" />
+                <span className="text-xs font-normal">Đang phân tích tiến bộ bài học của bé...</span>
+              </div>
+            ) : lessonProgressList.length === 0 ? (
+              <div className="py-12 text-center text-gray-400 space-y-2 bg-slate-50/50 rounded-2xl border border-slate-100/80 p-8">
+                <Award className="w-10 h-10 text-gray-300 mx-auto stroke-1" />
+                <p className="text-sm font-semibold text-gray-700">Chưa có bài học nào được luyện tập từ 2 lần trở lên</p>
+                <p className="text-xs font-normal text-gray-400 max-w-md mx-auto leading-relaxed">
+                  Hệ thống cần ít nhất 2 lượt thực hành của cùng một bài học để tiến hành đánh giá và đo lường sự tiến bộ của bé. Hãy tiếp tục khuyến khích bé rèn luyện nhé!
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {lessonProgressList.map((progress, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-slate-50 border border-slate-200/60 rounded-3xl p-5 space-y-4 text-left animate-in fade-in duration-350"
+                  >
+                    {/* Card Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/50 pb-3">
+                      <div className="space-y-1">
+                        <h5 className="font-bold text-sm text-slate-800 flex items-center gap-1.5">
+                          <Award className="w-4 h-4 text-[#4EACAF]" />
+                          {progress.lessonName}
+                        </h5>
+                        <span className="text-[11px] font-normal text-slate-400 block">
+                          Tổng số: {progress.totalAttempts} lượt thực hành
+                        </span>
+                      </div>
+
+                      {/* Progress status tag */}
+                      <div className="self-start sm:self-auto">
+                        {progress.status === 'improving' && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full text-xs font-semibold uppercase tracking-wider">
+                            🚀 Tiến bộ vượt bậc
+                          </span>
+                        )}
+                        {progress.status === 'accuracy_up' && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-full text-xs font-semibold uppercase tracking-wider">
+                            📈 Tăng chính xác
+                          </span>
+                        )}
+                        {progress.status === 'speed_up' && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 border border-amber-100 rounded-full text-xs font-semibold uppercase tracking-wider">
+                            ⚡ Tăng tốc độ
+                          </span>
+                        )}
+                        {progress.status === 'needs_practice' && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 text-rose-700 border border-rose-100 rounded-full text-xs font-semibold uppercase tracking-wider">
+                            ⚠️ Cần ôn tập thêm
+                          </span>
+                        )}
+                        {progress.status === 'stable' && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded-full text-xs font-semibold uppercase tracking-wider">
+                            🟢 Duy trì ổn định
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Comparison Metrics Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {/* Score Comparison */}
+                      <div className="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Điểm số</span>
+                          <div className="text-xs font-bold text-slate-800">
+                            {progress.firstAttempt.score}đ → {progress.latestAttempt.score}đ
+                          </div>
+                        </div>
+                        <span className={cn(
+                          "text-xs font-medium flex items-center gap-0.5 px-2 py-0.5 rounded-lg",
+                          progress.metrics.scoreDiff > 0
+                            ? "bg-emerald-50 text-emerald-600"
+                            : progress.metrics.scoreDiff < 0
+                              ? "bg-rose-50 text-rose-600"
+                              : "bg-slate-50 text-slate-500"
+                        )}>
+                          {progress.metrics.scoreDiff > 0 && <ArrowUp className="w-3 h-3" />}
+                          {progress.metrics.scoreDiff < 0 && <ArrowDown className="w-3 h-3" />}
+                          {progress.metrics.scoreDiff === 0 ? '0' : `${progress.metrics.scoreDiff > 0 ? '+' : ''}${progress.metrics.scoreDiff}`}
+                        </span>
+                      </div>
+
+                      {/* Duration Comparison */}
+                      <div className="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Thời lượng</span>
+                          <div className="text-xs font-bold text-slate-800">
+                            {progress.firstAttempt.durationSeconds}s → {progress.latestAttempt.durationSeconds}s
+                          </div>
+                        </div>
+                        <span className={cn(
+                          "text-xs font-medium flex items-center gap-0.5 px-2 py-0.5 rounded-lg",
+                          progress.metrics.durationDiff > 0
+                            ? "bg-emerald-50 text-emerald-600"
+                            : progress.metrics.durationDiff < 0
+                              ? "bg-rose-50 text-rose-600"
+                              : "bg-slate-50 text-slate-500"
+                        )}>
+                          {progress.metrics.durationDiff > 0 && <ArrowDown className="w-3 h-3 text-emerald-600" />}
+                          {progress.metrics.durationDiff < 0 && <ArrowUp className="w-3 h-3 text-rose-600" />}
+                          {progress.metrics.durationDiff === 0 ? '0s' : `${progress.metrics.durationDiff > 0 ? '-' : '+'}${Math.abs(progress.metrics.durationDiff)}s`}
+                        </span>
+                      </div>
+
+                      {/* Errors Comparison */}
+                      <div className="bg-white p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Lỗi phát âm</span>
+                          <div className="text-xs font-bold text-slate-800">
+                            {progress.firstAttempt.errorCount} lỗi → {progress.latestAttempt.errorCount} lỗi
+                          </div>
+                        </div>
+                        <span className={cn(
+                          "text-xs font-medium flex items-center gap-0.5 px-2 py-0.5 rounded-lg",
+                          progress.metrics.errorDiff > 0
+                            ? "bg-emerald-50 text-emerald-600"
+                            : progress.metrics.errorDiff < 0
+                              ? "bg-rose-50 text-rose-600"
+                              : "bg-slate-50 text-slate-500"
+                        )}>
+                          {progress.metrics.errorDiff > 0 && <ArrowDown className="w-3 h-3 text-emerald-600" />}
+                          {progress.metrics.errorDiff < 0 && <ArrowUp className="w-3 h-3 text-rose-600" />}
+                          {progress.metrics.errorDiff === 0 ? '0' : `${progress.metrics.errorDiff > 0 ? '-' : '+'}${Math.abs(progress.metrics.errorDiff)}`}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Educational Explanation Box */}
+                    <div className="bg-white/80 p-3.5 rounded-2xl border border-slate-200/50 text-xs text-slate-600 leading-relaxed font-normal flex items-start gap-2.5">
+                      <Info className="w-4 h-4 text-[#4EACAF] shrink-0 mt-0.5" />
+                      <span>{progress.description}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </>
       )}

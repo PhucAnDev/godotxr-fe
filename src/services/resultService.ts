@@ -26,6 +26,7 @@ export interface ResultResponse {
   childId: number;
   exerciseId: number | null;
   lessonId: number | null;
+  lessonName?: string | null;
   attemptNumber: number;
   completionStatus: string;
   score: number;
