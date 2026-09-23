@@ -50,7 +50,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts';
-import { cn, resolveAvatarUrl } from '../../lib/utils';
+import { cn, resolveAvatarUrl, formatVietnamDateTime } from '../../lib/utils';
 import CustomSelect from '../../components/common/CustomSelect';
 import ActionButton from '../../components/common/ActionButton';
 import { getSessionUser } from '../../lib/authSession';
@@ -259,17 +259,8 @@ export default function ProgressAnalysis() {
   };
 
   const formatDateStr = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr);
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      const h = String(date.getHours()).padStart(2, '0');
-      const min = String(date.getMinutes()).padStart(2, '0');
-      return `${y}-${m}-${d} ${h}:${min}`;
-    } catch {
-      return dateStr;
-    }
+    if (!dateStr) return '';
+    return formatVietnamDateTime(dateStr, true);
   };
 
   const [loadingProgressDetails, setLoadingProgressDetails] = useState(false);

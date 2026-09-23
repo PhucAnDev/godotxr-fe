@@ -42,7 +42,7 @@ import {
   CartesianGrid,
   Tooltip as RechartsTooltip,
 } from 'recharts';
-import { cn } from '../../lib/utils';
+import { cn, parseUtcDate, formatVietnamDateTime } from '../../lib/utils';
 import Pagination from '../../components/common/Pagination';
 import CustomSelect from '../../components/common/CustomSelect';
 import { useLearningResultApi } from '../../hooks/useLearningResultApi';
@@ -110,34 +110,57 @@ function getStoredRoleView(): RoleView {
   return 'ADMIN';
 }
 
-function formatDateDMY(value: string | null | undefined): string {
-  if (!value) return '';
-  const dateTimeMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:\s|T)(\d{2}):(\d{2}):(\d{2})/);
-  if (dateTimeMatch) {
-    const [_, y, m, d, hr, min, sec] = dateTimeMatch;
-    return `${d}/${m}/${y} ${hr}:${min}:${sec}`;
+function toVietnamDateParts(d: Date) {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(d);
+    const getPart = (type: string) => parts.find((p) => p.type === type)?.value || '';
+    return {
+      day: getPart('day'),
+      month: getPart('month'),
+      year: getPart('year'),
+      hour: getPart('hour'),
+      minute: getPart('minute'),
+      second: getPart('second'),
+    };
+  } catch {
+    const utcMs = d.getTime();
+    const vnDate = new Date(utcMs + 7 * 60 * 60 * 1000);
+    return {
+      day: String(vnDate.getUTCDate()).padStart(2, '0'),
+      month: String(vnDate.getUTCMonth() + 1).padStart(2, '0'),
+      year: String(vnDate.getUTCFullYear()),
+      hour: String(vnDate.getUTCHours()).padStart(2, '0'),
+      minute: String(vnDate.getUTCMinutes()).padStart(2, '0'),
+      second: String(vnDate.getUTCSeconds()).padStart(2, '0'),
+    };
   }
-  const dateMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (dateMatch) {
-    const [_, y, m, d] = dateMatch;
-    return `${d}/${m}/${y}`;
-  }
-  return value;
 }
 
-// Trả về khóa ngày theo GIỜ ĐỊA PHƯƠNG (yyyy-MM-dd), KHÔNG dùng toISOString()
-// vì toISOString() quy đổi sang UTC, lệch múi giờ VN (+7) khiến một phiên luyện lúc
-// 0h-7h sáng bị "rơi" nhầm sang ngày hôm trước trên biểu đồ -> đây là nguyên nhân
-// chính khiến số liệu theo ngày trước đây bị sai.
+// Định dạng ngày giờ theo GIỜ VIỆT NAM (GMT+7: Asia/Ho_Chi_Minh)
+function formatDateDMY(value: string | null | undefined): string {
+  if (!value) return '';
+  return formatVietnamDateTime(value);
+}
+
+// Trả về khóa ngày theo GIỜ VIỆT NAM (yyyy-MM-dd)
 function toLocalDateKey(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+  const { day, month, year } = toVietnamDateParts(d);
+  return `${year}-${month}-${day}`;
 }
 
 function formatDDMM(d: Date): string {
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const { day, month } = toVietnamDateParts(d);
+  return `${day}/${month}`;
 }
 
 const mapChildRecord = (c: any): Child => ({
@@ -1015,8 +1038,8 @@ export default function LearningResultManagement() {
     filteredResultsForStats.forEach((res) => {
       const raw = res.CompletedAt || res.StartedAt;
       if (!raw) return;
-      const d = new Date(raw);
-      if (Number.isNaN(d.getTime())) return;
+      const d = parseUtcDate(raw);
+      if (!d) return;
 
       const dateKey = toLocalDateKey(d);
       const label = formatDDMM(d);
@@ -1737,7 +1760,8 @@ export default function LearningResultManagement() {
       // Date Range Filter
       if (filterDateRange !== 'ALL') {
         const now = new Date();
-        const completedDate = res.CompletedAt ? new Date(res.CompletedAt) : new Date(res.StartedAt);
+        const rawDate = res.CompletedAt || res.StartedAt || res.CreatedAt;
+        const completedDate = parseUtcDate(rawDate) || new Date();
         const diffTime = Math.abs(now.getTime() - completedDate.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -2210,7 +2234,7 @@ export default function LearningResultManagement() {
                               {counts.wrong} sai
                             </span>
                           </div>
-                          <span className="text-slate-400 shrink-0 text-[10px]">{formatDateDMY(res.CompletedAt)}</span>
+                          <span className="text-slate-400 shrink-0 text-[10px]">{formatDateDMY(res.CompletedAt || res.StartedAt || res.CreatedAt)}</span>
                         </div>
                       </div>
                     );
@@ -2263,6 +2287,14 @@ export default function LearningResultManagement() {
                     <span className="text-slate-500 truncate max-w-[280px]">
                       {lessons.find(l => String(l.id) === selectedResult.LessonId)?.lessonName || (selectedResult.IsExercise ? 'Rèn luyện bài tập' : 'Bài tập tự do')}
                     </span>
+                    {(selectedResult.CompletedAt || selectedResult.StartedAt || selectedResult.CreatedAt) && (
+                      <>
+                        <span className="text-slate-300">•</span>
+                        <span className="text-slate-400">
+                          {formatDateDMY(selectedResult.CompletedAt || selectedResult.StartedAt || selectedResult.CreatedAt)}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <button
