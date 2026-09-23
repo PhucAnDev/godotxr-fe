@@ -27,6 +27,7 @@ export interface ResultResponse {
   exerciseId: number | null;
   lessonId: number | null;
   lessonName?: string | null;
+  isExercise?: boolean;
   attemptNumber: number;
   completionStatus: string;
   score: number;
@@ -65,7 +66,9 @@ export interface SubmitEventLogPayload {
 export interface SubmitResultPayload {
   sessionId: string;
   childId: number;
-  exerciseId: number;
+  exerciseId?: number | null;
+  lessonId?: number | null;
+  isExercise?: boolean;
   completionStatus: 'Completed' | 'Incomplete';
   score: number;
   errorCount?: number;

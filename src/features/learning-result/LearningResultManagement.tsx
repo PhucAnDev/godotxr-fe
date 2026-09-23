@@ -65,6 +65,7 @@ interface LearningResult {
   ResultId: string;
   ChildId: string;
   LessonId: string | null;
+  IsExercise: boolean;
   AttemptNumber: number;
   CompletionStatus: 'Completed' | 'InProgress' | 'Failed' | 'NeedReview';
   Score: number;
@@ -257,6 +258,7 @@ const mapResultRecord = (r: ResultResponse): LearningResult => {
     ChildId: String(r.childId),
     SessionId: r.sessionId || '',
     LessonId: r.lessonId ? String(r.lessonId) : null,
+    IsExercise: Boolean(r.isExercise),
     AttemptNumber: r.attemptNumber || 1,
     CompletionStatus: (r.completionStatus as LearningResult['CompletionStatus']) || 'InProgress',
     Score: r.score || 0,
@@ -489,6 +491,7 @@ export default function LearningResultManagement() {
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<'ALL' | 'LESSON' | 'EXERCISE'>('ALL');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [filterDateRange, setFilterDateRange] = useState<string>('ALL');
   const [filterChildId, setFilterChildId] = useState<string>('ALL');
@@ -1717,6 +1720,10 @@ export default function LearningResultManagement() {
         if (!matchChild && !matchLesson && !matchSession) return false;
       }
 
+      // Type Filter (Bài học vs Bài tập)
+      if (filterType === 'LESSON' && res.IsExercise) return false;
+      if (filterType === 'EXERCISE' && !res.IsExercise) return false;
+
       // Status Filter
       if (filterStatus !== 'ALL') {
         if (filterStatus === 'Completed' && res.CompletionStatus !== 'Completed') return false;
@@ -1741,7 +1748,7 @@ export default function LearningResultManagement() {
 
       return true;
     });
-  }, [results, children, lessons, searchQuery, filterStatus, filterChildId, filterDateRange]);
+  }, [results, children, lessons, searchQuery, filterType, filterStatus, filterChildId, filterDateRange]);
 
   // Paginated list
   const paginatedResults = useMemo(() => {
@@ -2051,15 +2058,55 @@ export default function LearningResultManagement() {
                   type="text"
                   placeholder="Tìm theo học sinh, bài tập, Session ID..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                   className="w-full pl-3 pr-3 py-1.5 rounded-xl border border-slate-200 outline-none text-xs font-normal focus:border-[#4EACAF] transition-colors"
                 />
+              </div>
+
+              {/* Segmented Filter: Tất cả | Bài học | Bài tập */}
+              <div className="flex items-center gap-1 p-1 bg-slate-100/90 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => { setFilterType('ALL'); setCurrentPage(1); }}
+                  className={cn(
+                    "flex-1 py-1 px-2 rounded-lg text-xs font-medium transition-all text-center cursor-pointer",
+                    filterType === 'ALL'
+                      ? "bg-white text-slate-800 shadow-2xs font-semibold"
+                      : "text-slate-500 hover:text-slate-700"
+                  )}
+                >
+                  Tất cả
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setFilterType('LESSON'); setCurrentPage(1); }}
+                  className={cn(
+                    "flex-1 py-1 px-2 rounded-lg text-xs font-medium transition-all text-center flex items-center justify-center gap-1 cursor-pointer",
+                    filterType === 'LESSON'
+                      ? "bg-white text-teal-700 shadow-2xs font-semibold border-b-2 border-teal-500"
+                      : "text-slate-500 hover:text-teal-600"
+                  )}
+                >
+                  <span>📖</span> Bài học
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setFilterType('EXERCISE'); setCurrentPage(1); }}
+                  className={cn(
+                    "flex-1 py-1 px-2 rounded-lg text-xs font-medium transition-all text-center flex items-center justify-center gap-1 cursor-pointer",
+                    filterType === 'EXERCISE'
+                      ? "bg-white text-indigo-700 shadow-2xs font-semibold border-b-2 border-indigo-500"
+                      : "text-slate-500 hover:text-indigo-600"
+                  )}
+                >
+                  <span>📝</span> Bài tập
+                </button>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <CustomSelect
                   value={filterStatus}
-                  onChange={setFilterStatus}
+                  onChange={(val) => { setFilterStatus(val); setCurrentPage(1); }}
                   options={[
                     { value: 'ALL', label: 'Tất cả trạng thái' },
                     { value: 'Completed', label: 'Đã hoàn thành' },
@@ -2070,7 +2117,7 @@ export default function LearningResultManagement() {
 
                 <CustomSelect
                   value={filterDateRange}
-                  onChange={setFilterDateRange}
+                  onChange={(val) => { setFilterDateRange(val); setCurrentPage(1); }}
                   options={[
                     { value: 'ALL', label: 'Tất cả thời gian' },
                     { value: 'TODAY', label: 'Hôm nay' },
@@ -2115,13 +2162,26 @@ export default function LearningResultManagement() {
                       >
                         <div className="flex items-start justify-between gap-2.5">
                           <div className="space-y-0.5 min-w-0">
-                            <h4 className="font-semibold text-slate-800 text-xs font-mono truncate">
-                              Session #{res.SessionId || res.ResultId}
-                            </h4>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h4 className="font-semibold text-slate-800 text-xs font-mono truncate">
+                                Session #{res.SessionId || res.ResultId}
+                              </h4>
+                              {res.IsExercise ? (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9.5px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/70 shrink-0">
+                                  <span>📝</span> Bài tập
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9.5px] font-semibold bg-teal-50 text-teal-700 border border-teal-200/70 shrink-0">
+                                  <span>📖</span> Bài học
+                                </span>
+                              )}
+                            </div>
                             <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-normal truncate">
                               <span className="font-medium text-slate-700 truncate">{child?.FullName || `Bé (ID: ${res.ChildId})`}</span>
                               <span className="text-slate-300">•</span>
-                              <span className="text-slate-400 truncate">{lesson?.lessonName || 'Bài tập tự do'}</span>
+                              <span className="text-slate-400 truncate">
+                                {lesson?.lessonName || (res.IsExercise ? 'Rèn luyện bài tập' : 'Bài tập tự do')}
+                              </span>
                             </div>
                           </div>
                           <span className={cn(
@@ -2181,16 +2241,27 @@ export default function LearningResultManagement() {
               {/* Header Info (Fixed at top of Right Panel) */}
               <div className="shrink-0 flex items-start justify-between border-b border-slate-100 pb-2">
                 <div>
-                  <h3 className="text-base sm:text-lg font-bold text-slate-800 font-mono leading-tight">
-                    Session #{selectedResult.SessionId || selectedResult.ResultId}
-                  </h3>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-800 font-mono leading-tight">
+                      Session #{selectedResult.SessionId || selectedResult.ResultId}
+                    </h3>
+                    {selectedResult.IsExercise ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs">
+                        <span>📝</span> Kết quả Bài tập
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200 shadow-2xs">
+                        <span>📖</span> Kết quả Bài học
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-500 font-normal mt-0.5">
                     <span className="font-medium text-slate-700">
                       Học sinh: {getChildDetailInfo(selectedResult.ChildId)?.FullName || `Bé (ID: ${selectedResult.ChildId})`}
                     </span>
                     <span className="text-slate-300">•</span>
                     <span className="text-slate-500 truncate max-w-[280px]">
-                      {lessons.find(l => String(l.id) === selectedResult.LessonId)?.lessonName || 'Bài tập tự do'}
+                      {lessons.find(l => String(l.id) === selectedResult.LessonId)?.lessonName || (selectedResult.IsExercise ? 'Rèn luyện bài tập' : 'Bài tập tự do')}
                     </span>
                   </div>
                 </div>
