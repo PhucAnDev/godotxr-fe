@@ -30,7 +30,11 @@ import {
   FileText,
   Edit3,
   Filter,
-  BarChart2
+  BarChart2,
+  MonitorPlay,
+  ExternalLink,
+  Copy,
+  Download
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -650,6 +654,21 @@ export default function LearningResultManagement() {
     speechErrorCategory: 'Không'
   });
   const [isSavingManualScore, setIsSavingManualScore] = useState(false);
+
+  // Replay Launch Modal State
+  const [replayModalSession, setReplayModalSession] = useState<LearningResult | null>(null);
+  const [copiedSessionId, setCopiedSessionId] = useState(false);
+  const [isLaunchingApp, setIsLaunchingApp] = useState(false);
+  const [showReplayHelp, setShowReplayHelp] = useState(false);
+  const [appExecutablePath, setAppExecutablePath] = useState<string>(() => {
+    try {
+      return localStorage.getItem('godotxr_replay_client_path') || 'D:\\do an\\FE and BE\\Godot_Replay_Client.exe';
+    } catch {
+      return 'D:\\do an\\FE and BE\\Godot_Replay_Client.exe';
+    }
+  });
+  const [isEditingPath, setIsEditingPath] = useState<boolean>(false);
+  const [tempPathInput, setTempPathInput] = useState<string>('');
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sessionPanelRef = useRef<HTMLDivElement | null>(null);
@@ -1784,6 +1803,81 @@ export default function LearningResultManagement() {
     return children.find((c) => c.ChildId === childId);
   };
 
+  const handleCopySessionId = (sessionId: string) => {
+    if (!sessionId) return;
+    navigator.clipboard.writeText(sessionId).then(() => {
+      setCopiedSessionId(true);
+      setTimeout(() => setCopiedSessionId(false), 2500);
+      showToast('Đã sao chép Session ID vào bộ nhớ tạm!', 'success');
+    }).catch(() => {
+      showToast('Không thể sao chép Session ID.', 'warn');
+    });
+  };
+
+  const handleSaveAppPath = (newPath: string) => {
+    const trimmed = newPath.trim();
+    const finalPath = trimmed || 'Godot_Replay_Client.exe';
+    setAppExecutablePath(finalPath);
+    try {
+      localStorage.setItem('godotxr_replay_client_path', finalPath);
+    } catch {}
+    setIsEditingPath(false);
+    showToast('Đã lưu đường dẫn ứng dụng cho máy tính này!', 'success');
+  };
+
+  const handleDownloadRegFile = () => {
+    const cleanPath = appExecutablePath.replace(/"/g, '');
+    const escapedPath = cleanPath.replace(/\\/g, '\\\\');
+    const regContent = `Windows Registry Editor Version 5.00\r\n\r\n[HKEY_CURRENT_USER\\Software\\Classes\\godotxr]\r\n@="URL:GodotXR Protocol"\r\n"URL Protocol"=""\r\n\r\n[HKEY_CURRENT_USER\\Software\\Classes\\godotxr\\shell]\r\n\r\n[HKEY_CURRENT_USER\\Software\\Classes\\godotxr\\shell\\open]\r\n\r\n[HKEY_CURRENT_USER\\Software\\Classes\\godotxr\\shell\\open\\command]\r\n@="\\"${escapedPath}\\" \\"%1\\""\r\n`;
+    const blob = new Blob([regContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'register_godotxr_protocol.reg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Đã tải file đăng ký registry (.reg)!', 'info');
+  };
+
+  const handleDownloadBatFile = () => {
+    const cleanPath = appExecutablePath.replace(/"/g, '');
+    const batContent = `@echo off\r\nsetlocal\r\ncd /d "%~dp0"\r\nif exist "%~dp0Godot_Replay_Client.exe" (\r\n    set "APP_PATH=%~dp0Godot_Replay_Client.exe"\r\n) else (\r\n    set "APP_PATH=${cleanPath}"\r\n)\r\n\r\necho ========================================================\r\necho Dang dang ky giao thuc godotxr:// cho Godot Replay Client\r\necho Duong dan ung dung: "%APP_PATH%"\r\necho ========================================================\r\n\r\nreg add "HKCU\\Software\\Classes\\godotxr" /ve /t REG_SZ /d "URL:GodotXR Protocol" /f >nul\r\nreg add "HKCU\\Software\\Classes\\godotxr\\v "URL Protocol" /t REG_SZ /d "" /f >nul\r\nreg add "HKCU\\Software\\Classes\\godotxr\\shell\\open\\command" /ve /t REG_SZ /d "\\"%APP_PATH%\\" \\"%%1\\"" /f >nul\r\n\r\nif %ERRORLEVEL% EQU 0 (\r\n    echo.\r\n    echo [OK] Dang ky thanh cong giao thuc godotxr://!\r\n    echo Tu bay gio, khi bam 'Xem Replay' tren Web, trinh duyet se tu dong mo ung dung.\r\n) else (\r\n    echo.\r\n    echo [LOI] Khong the ghi vao Registry. Vui long kiem tra quyen han.\r\n)\r\necho.\r\npause\r\n`;
+    const blob = new Blob([batContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'register_godotxr_protocol.bat';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Đã tải script tự động nhận diện (.bat)!', 'success');
+  };
+
+  const handleLaunchReplayApp = (session: LearningResult) => {
+    const targetSessionId = session.SessionId || session.ResultId;
+    if (!targetSessionId) {
+      showToast('Không tìm thấy Session ID của lượt luyện này.', 'warn');
+      return;
+    }
+
+    setIsLaunchingApp(true);
+    try {
+      navigator.clipboard.writeText(targetSessionId);
+    } catch {}
+
+    const protocolUrl = `godotxr://replay?sessionId=${encodeURIComponent(targetSessionId)}&childId=${encodeURIComponent(session.ChildId)}`;
+    window.location.href = protocolUrl;
+
+    showToast(`Đang gửi lệnh mở App Replay cho Session #${targetSessionId}...`, 'info');
+
+    setTimeout(() => {
+      setIsLaunchingApp(false);
+    }, 2000);
+  };
+
   return (
     <div className="min-h-full flex flex-col gap-3 pb-6 relative" id="results-split-page-wrapper">
       {/* Toast notifications */}
@@ -2234,7 +2328,22 @@ export default function LearningResultManagement() {
                               {counts.wrong} sai
                             </span>
                           </div>
-                          <span className="text-slate-400 shrink-0 text-[10px]">{formatDateDMY(res.CompletedAt || res.StartedAt || res.CreatedAt)}</span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedResult(res);
+                                setReplayModalSession(res);
+                              }}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold text-teal-700 hover:text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200/70 transition-colors cursor-pointer"
+                              title="Mở ứng dụng Replay 3D"
+                            >
+                              <MonitorPlay className="w-3 h-3 text-teal-600" />
+                              <span>Replay</span>
+                            </button>
+                            <span className="text-slate-400 text-[10px]">{formatDateDMY(res.CompletedAt || res.StartedAt || res.CreatedAt)}</span>
+                          </div>
                         </div>
                       </div>
                     );
@@ -2297,13 +2406,24 @@ export default function LearningResultManagement() {
                     )}
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelectedResult(null)}
-                  className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
-                  title="Đóng chi tiết"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setReplayModalSession(selectedResult)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-500 via-teal-600 to-indigo-600 hover:from-teal-600 hover:to-indigo-700 shadow-sm hover:shadow transition-all duration-200 cursor-pointer active:scale-95"
+                    title="Mở ứng dụng Replay 3D cho phiên này"
+                  >
+                    <MonitorPlay className="w-3.5 h-3.5" />
+                    <span>Xem Replay</span>
+                  </button>
+                  <button
+                    onClick={() => setSelectedResult(null)}
+                    className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                    title="Đóng chi tiết"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               {/* Statistics Quick Info (Fixed) */}
@@ -3450,6 +3570,283 @@ export default function LearningResultManagement() {
                     <CheckCircle className="w-3.5 h-3.5" />
                   )}
                   Lưu điểm
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Modal Xác nhận chuyển để mở ứng dụng Replay */}
+        {replayModalSession && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              className="bg-white rounded-3xl shadow-xl border border-slate-100 max-w-lg w-full overflow-hidden flex flex-col"
+            >
+              {/* Modal Header (Hài hòa với phong cách chung của Web) */}
+              <div className="flex items-start justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/70 rounded-t-3xl">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-2xl bg-[#4EACAF]/10 text-[#4EACAF] flex items-center justify-center ring-1 ring-[#4EACAF]/20 shadow-xs">
+                    <MonitorPlay className="w-5 h-5 text-[#4EACAF]" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10.5px] font-semibold uppercase tracking-wider text-[#4EACAF] bg-[#4EACAF]/10 px-2.5 py-0.5 rounded-full border border-[#4EACAF]/20">
+                        GodotXR Replay
+                      </span>
+                      <span className="text-[11px] text-slate-500 font-mono bg-slate-100 px-2 py-0.5 rounded-md">
+                        Session #{replayModalSession.SessionId || replayModalSession.ResultId}
+                      </span>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-bold text-slate-800 mt-1">
+                      Xác nhận mở ứng dụng Replay
+                    </h3>
+                    <p className="text-xs text-slate-500 font-normal mt-0.5 leading-relaxed">
+                      Chuyển hướng đến <span className="font-semibold text-slate-700">Godot Replay Client</span> để xem lại không gian tương tác 3D.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setReplayModalSession(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                  title="Đóng"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
+                {/* Session Details */}
+                <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-100 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Thông tin buổi luyện</span>
+                    <span className="text-xs font-semibold text-[#4EACAF] bg-[#4EACAF]/10 px-2.5 py-0.5 rounded-full border border-[#4EACAF]/20">
+                      {replayModalSession.IsExercise ? '📝 Bài tập' : '📖 Bài học'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <span className="text-slate-400 block text-[11px]">Học sinh</span>
+                      <span className="font-bold text-slate-800 text-sm truncate block">
+                        {getChildDetailInfo(replayModalSession.ChildId)?.FullName || `Bé (ID: ${replayModalSession.ChildId})`}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[11px]">Bài luyện tập</span>
+                      <span className="font-semibold text-slate-700 truncate block">
+                        {lessons.find(l => String(l.id) === replayModalSession.LessonId)?.lessonName || (replayModalSession.IsExercise ? 'Rèn luyện bài tập' : 'Bài tập tự do')}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[11px]">Thời gian ghi nhận</span>
+                      <span className="font-medium text-slate-600">
+                        {formatDateDMY(replayModalSession.CompletedAt || replayModalSession.StartedAt || replayModalSession.CreatedAt)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[11px]">Thời lượng / Điểm số</span>
+                      <span className="font-medium text-slate-600">
+                        <span className="font-bold text-slate-800">{replayModalSession.DurationSeconds}s</span> · <span className="font-bold text-[#4EACAF]">{replayModalSession.Score} điểm</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Copy Session ID Box */}
+                  <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-600 min-w-0">
+                      <span className="text-slate-400 text-[11px] shrink-0">Session ID:</span>
+                      <code className="font-mono font-semibold bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-700 truncate">
+                        {replayModalSession.SessionId || replayModalSession.ResultId}
+                      </code>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopySessionId(replayModalSession.SessionId || replayModalSession.ResultId)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-[#4EACAF] bg-[#4EACAF]/10 hover:bg-[#4EACAF]/20 border border-[#4EACAF]/20 transition-colors shrink-0 cursor-pointer"
+                    >
+                      {copiedSessionId ? (
+                        <>
+                          <Check className="w-3 h-3 text-emerald-600" />
+                          <span className="text-emerald-700">Đã chép</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          <span>Sao chép ID</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* (Khung hình 3 đã được xóa theo yêu cầu) */}
+
+                {/* Troubleshooting / Multi-PC Path Configuration */}
+                <div className="border border-slate-200 rounded-2xl overflow-hidden text-xs bg-white">
+                  <button
+                    type="button"
+                    onClick={() => setShowReplayHelp(prev => !prev)}
+                    className="w-full flex items-center justify-between p-3.5 bg-slate-50/70 hover:bg-slate-100/70 text-slate-700 font-medium transition-colors text-left cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>💡</span> Cấu hình đường dẫn App & Kết nối (dành cho nhiều máy tính)
+                    </span>
+                    {showReplayHelp ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                  </button>
+
+                  {showReplayHelp && (
+                    <div className="p-4 bg-white border-t border-slate-100 space-y-3.5 text-slate-600 text-[11.5px] leading-relaxed">
+                      {/* Dynamic Executable Path Config */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-700 text-xs">
+                            1. Đường dẫn file ứng dụng trên máy này:
+                          </span>
+                          {!isEditingPath ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setTempPathInput(appExecutablePath);
+                                setIsEditingPath(true);
+                              }}
+                              className="text-[11px] text-[#4EACAF] hover:underline font-semibold cursor-pointer"
+                            >
+                              Chỉnh sửa
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setIsEditingPath(false)}
+                              className="text-[11px] text-slate-400 hover:text-slate-600 cursor-pointer"
+                            >
+                              Hủy
+                            </button>
+                          )}
+                        </div>
+
+                        {isEditingPath ? (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <input
+                              type="text"
+                              value={tempPathInput}
+                              onChange={(e) => setTempPathInput(e.target.value)}
+                              placeholder="D:\ThuMuc\Godot_Replay_Client.exe hoặc C:\..."
+                              className="flex-1 px-2.5 py-1.5 text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#4EACAF] focus:ring-1 focus:ring-[#4EACAF]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleSaveAppPath(tempPathInput)}
+                              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-[#4EACAF] hover:bg-[#3D8C8F] cursor-pointer"
+                            >
+                              Lưu
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between gap-2 p-2 bg-slate-50 border border-slate-200/80 rounded-xl">
+                            <code className="text-[11px] font-mono text-slate-700 truncate select-all flex-1">
+                              {appExecutablePath}
+                            </code>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(appExecutablePath);
+                                showToast('Đã sao chép đường dẫn file!', 'success');
+                              }}
+                              className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
+                              title="Sao chép đường dẫn"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                        <p className="text-[10.5px] text-slate-400">
+                          * Đường dẫn này được lưu trên trình duyệt máy này và tự động map vào file Registry (.reg).
+                        </p>
+                      </div>
+
+                      {/* Connection methods */}
+                      <div className="space-y-2 pt-2 border-t border-slate-100">
+                        <p className="text-slate-700 text-xs font-bold">
+                          2. Kết nối trình duyệt với App (Chỉ cần làm 1 lần):
+                        </p>
+                        <ul className="list-disc pl-4 space-y-1 text-[11.5px] text-slate-600">
+                          <li>
+                            <span className="font-semibold text-teal-700">Tự động nhận diện (Tiện lợi nhất):</span> Tải file <code className="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">.bat</code> bỏ chung thư mục với file <code className="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">Godot_Replay_Client.exe</code> rồi nhấp đúp chạy. Script sẽ tự lấy đường dẫn của máy đó mà không cần gõ tay.
+                          </li>
+                          <li>
+                            <span className="font-semibold text-slate-700">Theo đường dẫn bạn nhập:</span> Tải file <code className="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">.reg</code> để đăng ký chính xác đường dẫn máy này.
+                          </li>
+                        </ul>
+
+                        <div className="flex items-center gap-2 pt-2 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={handleDownloadBatFile}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#4EACAF] bg-[#4EACAF]/10 hover:bg-[#4EACAF]/20 border border-[#4EACAF]/20 transition-colors cursor-pointer"
+                            title="Tự động nhận diện thư mục trên bất kỳ máy tính nào"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Tải Script tự động (.bat)</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleDownloadRegFile}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors cursor-pointer"
+                            title="Đăng ký theo đường dẫn máy này"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Tải file Registry (.reg)</span>
+                          </button>
+                          {replayModalSession.ReplayDataUrl && (
+                            <a
+                              href={replayModalSession.ReplayDataUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>Xem file Replay JSON</span>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="px-6 py-4 bg-slate-50/80 border-t border-slate-100 rounded-b-3xl flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setReplayModalSession(null)}
+                  className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  Để sau
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleLaunchReplayApp(replayModalSession)}
+                  disabled={isLaunchingApp}
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#4EACAF] hover:bg-[#3D8C8F] shadow-md shadow-[#4EACAF]/20 hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-70 active:scale-95"
+                >
+                  {isLaunchingApp ? (
+                    <>
+                      <Activity className="w-4 h-4 animate-spin" />
+                      <span>Đang mở ứng dụng...</span>
+                    </>
+                  ) : (
+                    <>
+                      <MonitorPlay className="w-4 h-4" />
+                      <span>Xác nhận mở App Replay</span>
+                    </>
+                  )}
                 </button>
               </div>
             </motion.div>
