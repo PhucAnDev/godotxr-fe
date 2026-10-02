@@ -33,8 +33,7 @@ import {
   BarChart2,
   MonitorPlay,
   ExternalLink,
-  Copy,
-  Download
+  Copy
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -1823,37 +1822,6 @@ export default function LearningResultManagement() {
     } catch {}
     setIsEditingPath(false);
     showToast('Đã lưu đường dẫn ứng dụng cho máy tính này!', 'success');
-  };
-
-  const handleDownloadRegFile = () => {
-    const cleanPath = appExecutablePath.replace(/"/g, '');
-    const escapedPath = cleanPath.replace(/\\/g, '\\\\');
-    const regContent = `Windows Registry Editor Version 5.00\r\n\r\n[HKEY_CURRENT_USER\\Software\\Classes\\godotxr]\r\n@="URL:GodotXR Protocol"\r\n"URL Protocol"=""\r\n\r\n[HKEY_CURRENT_USER\\Software\\Classes\\godotxr\\shell]\r\n\r\n[HKEY_CURRENT_USER\\Software\\Classes\\godotxr\\shell\\open]\r\n\r\n[HKEY_CURRENT_USER\\Software\\Classes\\godotxr\\shell\\open\\command]\r\n@="\\"${escapedPath}\\" \\"%1\\""\r\n`;
-    const blob = new Blob([regContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'register_godotxr_protocol.reg';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast('Đã tải file đăng ký registry (.reg)!', 'info');
-  };
-
-  const handleDownloadBatFile = () => {
-    const cleanPath = appExecutablePath.replace(/"/g, '');
-    const batContent = `@echo off\r\nsetlocal\r\ncd /d "%~dp0"\r\nif exist "%~dp0Godot_Replay_Client.exe" (\r\n    set "APP_PATH=%~dp0Godot_Replay_Client.exe"\r\n) else (\r\n    set "APP_PATH=${cleanPath}"\r\n)\r\n\r\necho ========================================================\r\necho Dang dang ky giao thuc godotxr:// cho Godot Replay Client\r\necho Duong dan ung dung: "%APP_PATH%"\r\necho ========================================================\r\n\r\nreg add "HKCU\\Software\\Classes\\godotxr" /ve /t REG_SZ /d "URL:GodotXR Protocol" /f >nul\r\nreg add "HKCU\\Software\\Classes\\godotxr\\v "URL Protocol" /t REG_SZ /d "" /f >nul\r\nreg add "HKCU\\Software\\Classes\\godotxr\\shell\\open\\command" /ve /t REG_SZ /d "\\"%APP_PATH%\\" \\"%%1\\"" /f >nul\r\n\r\nif %ERRORLEVEL% EQU 0 (\r\n    echo.\r\n    echo [OK] Dang ky thanh cong giao thuc godotxr://!\r\n    echo Tu bay gio, khi bam 'Xem Replay' tren Web, trinh duyet se tu dong mo ung dung.\r\n) else (\r\n    echo.\r\n    echo [LOI] Khong the ghi vao Registry. Vui long kiem tra quyen han.\r\n)\r\necho.\r\npause\r\n`;
-    const blob = new Blob([batContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'register_godotxr_protocol.bat';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast('Đã tải script tự động nhận diện (.bat)!', 'success');
   };
 
   const handleLaunchReplayApp = (session: LearningResult) => {
@@ -3705,7 +3673,7 @@ export default function LearningResultManagement() {
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-slate-700 text-xs">
-                            1. Đường dẫn file ứng dụng trên máy này:
+                            Đường dẫn file ứng dụng trên máy này:
                           </span>
                           {!isEditingPath ? (
                             <button
@@ -3765,55 +3733,8 @@ export default function LearningResultManagement() {
                           </div>
                         )}
                         <p className="text-[10.5px] text-slate-400">
-                          * Đường dẫn này được lưu trên trình duyệt máy này và tự động map vào file Registry (.reg).
+                          * Đường dẫn này được lưu trên trình duyệt máy này.
                         </p>
-                      </div>
-
-                      {/* Connection methods */}
-                      <div className="space-y-2 pt-2 border-t border-slate-100">
-                        <p className="text-slate-700 text-xs font-bold">
-                          2. Kết nối trình duyệt với App (Chỉ cần làm 1 lần):
-                        </p>
-                        <ul className="list-disc pl-4 space-y-1 text-[11.5px] text-slate-600">
-                          <li>
-                            <span className="font-semibold text-teal-700">Tự động nhận diện (Tiện lợi nhất):</span> Tải file <code className="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">.bat</code> bỏ chung thư mục với file <code className="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">Godot_Replay_Client.exe</code> rồi nhấp đúp chạy. Script sẽ tự lấy đường dẫn của máy đó mà không cần gõ tay.
-                          </li>
-                          <li>
-                            <span className="font-semibold text-slate-700">Theo đường dẫn bạn nhập:</span> Tải file <code className="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">.reg</code> để đăng ký chính xác đường dẫn máy này.
-                          </li>
-                        </ul>
-
-                        <div className="flex items-center gap-2 pt-2 flex-wrap">
-                          <button
-                            type="button"
-                            onClick={handleDownloadBatFile}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#4EACAF] bg-[#4EACAF]/10 hover:bg-[#4EACAF]/20 border border-[#4EACAF]/20 transition-colors cursor-pointer"
-                            title="Tự động nhận diện thư mục trên bất kỳ máy tính nào"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>Tải Script tự động (.bat)</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleDownloadRegFile}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors cursor-pointer"
-                            title="Đăng ký theo đường dẫn máy này"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>Tải file Registry (.reg)</span>
-                          </button>
-                          {replayModalSession.ReplayDataUrl && (
-                            <a
-                              href={replayModalSession.ReplayDataUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors"
-                            >
-                              <FileText className="w-3.5 h-3.5" />
-                              <span>Xem file Replay JSON</span>
-                            </a>
-                          )}
-                        </div>
                       </div>
                     </div>
                   )}
