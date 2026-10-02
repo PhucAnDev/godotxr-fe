@@ -25,7 +25,10 @@ import {
   TrendingUp,
   Activity,
   CheckCircle2,
-  Info
+  Info,
+  Download,
+  ExternalLink,
+  MonitorPlay
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '../../lib/utils';
@@ -68,7 +71,7 @@ export default function HomeView({
   const scrollToId = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -151,6 +154,15 @@ export default function HomeView({
                 className="group px-8 py-4 bg-[#4EACAF] hover:bg-[#3d8a8c] text-white text-base font-black rounded-full shadow-lg shadow-[#4EACAF]/20 transition-all cursor-pointer flex items-center gap-2"
               >
                 Bắt đầu ngay <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => scrollToId('downloads')}
+                className="px-6 py-4 bg-white hover:bg-slate-50 text-slate-800 text-base font-black rounded-full border-2 border-[#E5DFCA] shadow-xs transition-all cursor-pointer flex items-center gap-2"
+              >
+                <Download className="w-5 h-5 text-[#4EACAF]" /> Tải ứng dụng
               </motion.button>
             </div>
 
@@ -534,7 +546,158 @@ export default function HomeView({
         </motion.div>
       </section>
 
-      {/* SECTION 7: CTA cuối trang (Premium Dark Background) */}
+      {/* SECTION 7: Tải ứng dụng (VR App & Replay Client) */}
+      <section id="downloads" className="py-6 md:py-8 lg:py-10 px-6 max-w-6xl mx-auto z-10 relative scroll-mt-6 lg:min-h-[calc(100vh-3rem)] flex flex-col justify-center">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.5 }}
+          className="text-center space-y-1.5 mb-5 md:mb-6"
+        >
+          <span className="font-extrabold text-[11px] text-[#4EACAF] uppercase tracking-widest bg-[#4EACAF]/10 px-3 py-0.5 rounded-full border border-[#4EACAF]/20 inline-flex items-center gap-1.5 shadow-2xs">
+            <Download className="w-3.5 h-3.5" /> Hệ Sinh Thái Ứng Dụng
+          </span>
+          <h2 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
+            Tải Ứng Dụng GodotXR
+          </h2>
+          <p className="text-xs md:text-sm text-gray-500 max-w-xl mx-auto font-semibold leading-relaxed">
+            Cài đặt ứng dụng thực tế ảo trên kính Meta Quest và phần mềm xem Replay 3D trên máy tính để bắt đầu trải nghiệm toàn diện.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-6 items-stretch">
+          
+          {/* Card 1: VR App on SideQuest */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.4 }}
+            whileHover={{ y: -4 }}
+            className="bg-white border-2 border-[#E5DFCA]/70 hover:border-[#4EACAF] rounded-3xl p-5 md:p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between relative overflow-hidden group"
+          >
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-teal-50 rounded-full blur-2xl group-hover:scale-125 transition-transform pointer-events-none -z-0" />
+
+            <div className="relative z-10 space-y-3.5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#4EACAF] to-teal-400 flex items-center justify-center text-white shadow-md shadow-[#4EACAF]/25">
+                  <Rocket className="w-6 h-6" />
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-teal-50 text-[#4EACAF] border border-teal-100">
+                  Meta Quest VR
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight group-hover:text-[#4EACAF] transition-colors">
+                  GodotXR Speech Learning VR
+                </h3>
+                <p className="text-xs font-semibold text-gray-400 mt-0.5">
+                  Dành cho kính thực tế ảo Meta Quest 2, 3 và Pro
+                </p>
+              </div>
+
+              <p className="text-xs md:text-[13px] text-gray-600 font-medium leading-relaxed">
+                Ứng dụng thực tế ảo chuyên sâu giúp trẻ 7–11 tuổi thực hành phát âm, luyện tập khẩu hình và phản xạ ngôn ngữ trong không gian trò chơi 3D sinh động.
+              </p>
+
+              <div className="space-y-1.5 pt-2.5 border-t border-gray-100">
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#4EACAF] shrink-0" />
+                  <span>Phát hành chính thức trên nền tảng SideQuest VR</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#4EACAF] shrink-0" />
+                  <span>Tự động mã hóa và đồng bộ kết quả lên Web Dashboard</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#4EACAF] shrink-0" />
+                  <span>Cài đặt nhanh chóng qua cáp Type-C hoặc trình duyệt kính</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative z-10 pt-4 mt-3 border-t border-gray-100">
+              <a
+                href="https://sidequestvr.com/app/61871/godotxr-speech-learning-vr"
+                target="_blank"
+                rel="noreferrer"
+                className="w-full py-3 px-5 rounded-xl font-black text-xs md:text-sm text-white bg-[#4EACAF] hover:bg-[#3d8a8c] shadow-md shadow-[#4EACAF]/25 transition-all flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider group-hover:scale-[1.01]"
+              >
+                <span>Tải App VR trên SideQuest</span>
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
+          </motion.div>
+
+          {/* Card 2: Godot Replay Client on Google Drive */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            whileHover={{ y: -4 }}
+            className="bg-white border-2 border-[#E5DFCA]/70 hover:border-indigo-400 rounded-3xl p-5 md:p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between relative overflow-hidden group"
+          >
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-indigo-50 rounded-full blur-2xl group-hover:scale-125 transition-transform pointer-events-none -z-0" />
+
+            <div className="relative z-10 space-y-3.5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/25">
+                  <MonitorPlay className="w-6 h-6" />
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-600 border border-indigo-100">
+                  Windows PC / Laptop
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight group-hover:text-indigo-600 transition-colors">
+                  Godot Replay Client
+                </h3>
+                <p className="text-xs font-semibold text-gray-400 mt-0.5">
+                  Dành cho máy tính Windows 10 & 11 (64-bit)
+                </p>
+              </div>
+
+              <p className="text-xs md:text-sm text-gray-600 font-medium leading-relaxed">
+                Phần mềm phát lại không gian 3D, tọa độ chuyển động và âm thanh giọng đọc của trẻ giúp phụ huynh và giáo viên quan sát trực quan từng khoảnh khắc luyện tập.
+              </p>
+
+              <div className="space-y-1.5 pt-2.5 border-t border-gray-100">
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                  <span>Tải trọn bộ file chạy trực tiếp từ Google Drive</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                  <span>Tích hợp mở 1-click trực tiếp từ Web Dashboard qua Session ID</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                  <span>Tua dòng thời gian, đổi góc nhìn 3D linh hoạt</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative z-10 pt-4 mt-3 border-t border-gray-100">
+              <a
+                href="https://drive.google.com/drive/u/2/folders/1F-EgbMUNYL9b3c7GmX2BkeF7hPYqx4Hn"
+                target="_blank"
+                rel="noreferrer"
+                className="w-full py-3 px-5 rounded-xl font-black text-xs md:text-sm text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider group-hover:scale-[1.01]"
+              >
+                <span>Tải App Replay (Google Drive)</span>
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
+          </motion.div>
+
+        </div>
+      </section>
+
+      {/* SECTION 8: CTA cuối trang (Premium Dark Background) */}
       <section className="py-16 px-6 max-w-7xl mx-auto z-10 relative">
         <div className="bg-[#1C1C1E] rounded-[48px] p-8 md:p-16 text-white text-center relative overflow-hidden shadow-2xl">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_#4EACAF1a_0%,_transparent_60%)] pointer-events-none" />
@@ -582,7 +745,8 @@ export default function HomeView({
             <FooterCol title="Đường dẫn nhanh" links={[
               { name: "Cách hoạt động", id: "how-it-works" },
               { name: "Tính năng", id: "features" },
-              { name: "Phân loại", id: "roles" }
+              { name: "Phân loại", id: "roles" },
+              { name: "Tải ứng dụng", id: "downloads" }
             ]} scrollToId={scrollToId} />
             <FooterCol title="Tính năng" links={[
               { name: "Soi đồ tiến độ", id: "analytics" },
@@ -753,7 +917,8 @@ function Header({ onLogin, onGetStarted, scrollToId }: { onLogin: () => void, on
     { name: "Tính năng", id: "features" },
     { name: "Phân loại", id: "roles" },
     { name: "Chỉ số", id: "analytics" },
-    { name: "Giáo dưỡng", id: "education" }
+    { name: "Giáo dưỡng", id: "education" },
+    { name: "Tải ứng dụng", id: "downloads" }
   ];
 
   return (
@@ -764,7 +929,7 @@ function Header({ onLogin, onGetStarted, scrollToId }: { onLogin: () => void, on
     >
       <Logo onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
 
-      <nav className="hidden xl:flex items-center space-x-1">
+      <nav className="hidden lg:flex items-center space-x-0.5 xl:space-x-1">
         {menu.map(item => (
           <button 
             key={item.name} 
@@ -772,7 +937,12 @@ function Header({ onLogin, onGetStarted, scrollToId }: { onLogin: () => void, on
               scrollToId(item.id);
               setIsOpen(false);
             }}
-            className="px-4 py-2 rounded-full text-xs font-extrabold text-slate-500 hover:text-slate-900 hover:bg-slate-50/50 transition-all uppercase tracking-wider"
+            className={cn(
+              "px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all uppercase tracking-wider",
+              item.id === 'downloads'
+                ? "text-[#4EACAF] hover:text-[#3d8a8c] bg-[#4EACAF]/10 hover:bg-[#4EACAF]/20 border border-[#4EACAF]/20"
+                : "text-slate-500 hover:text-slate-900 hover:bg-slate-50/50"
+            )}
           >
             {item.name}
           </button>
