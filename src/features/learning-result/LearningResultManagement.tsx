@@ -33,7 +33,8 @@ import {
   BarChart2,
   MonitorPlay,
   ExternalLink,
-  Copy
+  Copy,
+  Download
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -1822,6 +1823,71 @@ export default function LearningResultManagement() {
     } catch {}
     setIsEditingPath(false);
     showToast('Đã lưu đường dẫn ứng dụng cho máy tính này!', 'success');
+  };
+
+  const handleDownloadBatFile = () => {
+    const cleanPath = appExecutablePath.replace(/"/g, '').trim();
+    const batContent = `@echo off
+chcp 65001 >nul
+setlocal
+cd /d "%~dp0"
+
+echo ========================================================
+echo DANG KY GIAO THUC GODOTXR DE MO APP REPLAY TU WEB
+echo ========================================================
+
+REM 1. Uu tien: Kiem tra file Godot_Replay_Client.exe nam chung thu muc voi script nay
+if exist "%~dp0Godot_Replay_Client.exe" (
+    set "APP_PATH=%~dp0Godot_Replay_Client.exe"
+    goto REGISTER
+)
+
+REM 2. Kiem tra theo duong dan nguoi dung da luu tren Web
+if exist "${cleanPath}" (
+    set "APP_PATH=${cleanPath}"
+    goto REGISTER
+)
+
+REM 3. Kiem tra neu duong dan tren web la thu muc
+if exist "${cleanPath}\\Godot_Replay_Client.exe" (
+    set "APP_PATH=${cleanPath}\\Godot_Replay_Client.exe"
+    goto REGISTER
+)
+
+REM 4. Mac dinh dung duong dan tren web
+set "APP_PATH=${cleanPath}"
+
+:REGISTER
+echo.
+echo [1] Duong dan file ung dung se duoc dang ky:
+echo "%APP_PATH%"
+echo.
+
+reg add "HKCU\\Software\\Classes\\godotxr" /ve /t REG_SZ /d "URL:GodotXR Protocol" /f >nul
+reg add "HKCU\\Software\\Classes\\godotxr" /v "URL Protocol" /t REG_SZ /d "" /f >nul
+reg add "HKCU\\Software\\Classes\\godotxr\\shell\\open\\command" /ve /t REG_SZ /d "\\"%APP_PATH%\\" \\"%%1\\"" /f >nul
+
+if %ERRORLEVEL% EQU 0 (
+    echo [OK] DANG KY THANH CONG!
+    echo Tu bay gio, khi bam "Xac nhan mo App Replay" tren Web, ung dung se tu dong mo.
+) else (
+    echo [LOI] Khong the ghi vao Registry. Vui long nhap chuot phai chon "Run as administrator".
+)
+
+echo.
+echo Nhan phim bat ky de hoan tat...
+pause >nul
+`;
+    const blob = new Blob([batContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Dang_Ky_Replay.bat';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Đã tải file Dang_Ky_Replay.bat! Hãy nhấp đúp file để kích hoạt kết nối.', 'success');
   };
 
   const handleLaunchReplayApp = (session: LearningResult) => {
@@ -3669,8 +3735,32 @@ export default function LearningResultManagement() {
 
                   {showReplayHelp && (
                     <div className="p-4 bg-white border-t border-slate-100 space-y-3.5 text-slate-600 text-[11.5px] leading-relaxed">
-                      {/* Dynamic Executable Path Config */}
-                      <div className="space-y-1.5">
+                      {/* Step 1: Kích hoạt kết nối máy tính mới */}
+                      <div className="p-3 bg-teal-50/70 border border-teal-100 rounded-xl space-y-2">
+                        <div className="space-y-0.5">
+                          <p className="font-bold text-teal-900 text-xs flex items-center gap-1.5">
+                            <span>⚡</span> Kích hoạt kết nối máy tính (Chỉ làm 1 lần trên máy mới):
+                          </p>
+                          <p className="text-[11px] text-teal-700/90 leading-relaxed">
+                            Để trình duyệt có quyền mở App trên máy này, hãy tải file <code className="bg-white/90 px-1 py-0.5 rounded font-mono text-teal-800 font-semibold">.bat</code> bỏ chung thư mục với file <code className="bg-white/90 px-1 py-0.5 rounded font-mono text-teal-800 font-semibold">Godot_Replay_Client.exe</code> rồi nhấp đúp chạy.
+                          </p>
+                        </div>
+
+                        <div className="pt-0.5">
+                          <button
+                            type="button"
+                            onClick={handleDownloadBatFile}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#4EACAF] hover:bg-[#3D8C8F] shadow-xs hover:shadow transition-all cursor-pointer"
+                            title="Tải script tự động nhận diện và đăng ký giao thức godotxr:// cho máy này"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Tải file kích hoạt kết nối (Dang_Ky_Replay.bat)</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Step 2: Dynamic Executable Path Config */}
+                      <div className="space-y-1.5 pt-1 border-t border-slate-100">
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-slate-700 text-xs">
                             Đường dẫn file ứng dụng trên máy này:
@@ -3733,7 +3823,7 @@ export default function LearningResultManagement() {
                           </div>
                         )}
                         <p className="text-[10.5px] text-slate-400">
-                          * Đường dẫn này được lưu trên trình duyệt máy này.
+                          * Đường dẫn này lưu trên trình duyệt và tự động nạp vào file script .bat khi tải về.
                         </p>
                       </div>
                     </div>
@@ -3742,33 +3832,44 @@ export default function LearningResultManagement() {
               </div>
 
               {/* Modal Actions */}
-              <div className="px-6 py-4 bg-slate-50/80 border-t border-slate-100 rounded-b-3xl flex items-center justify-end gap-3">
+              <div className="px-6 py-4 bg-slate-50/80 border-t border-slate-100 rounded-b-3xl flex items-center justify-between gap-3">
                 <button
                   type="button"
-                  onClick={() => setReplayModalSession(null)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                  onClick={() => setShowReplayHelp(true)}
+                  className="text-[11px] text-slate-400 hover:text-teal-700 transition-colors inline-flex items-center gap-1 cursor-pointer"
                 >
-                  Để sau
+                  <span>Chưa mở được app?</span>
+                  <span className="underline font-semibold text-[#4EACAF]">Xem trợ giúp kết nối</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => handleLaunchReplayApp(replayModalSession)}
-                  disabled={isLaunchingApp}
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#4EACAF] hover:bg-[#3D8C8F] shadow-md shadow-[#4EACAF]/20 hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-70 active:scale-95"
-                >
-                  {isLaunchingApp ? (
-                    <>
-                      <Activity className="w-4 h-4 animate-spin" />
-                      <span>Đang mở ứng dụng...</span>
-                    </>
-                  ) : (
-                    <>
-                      <MonitorPlay className="w-4 h-4" />
-                      <span>Xác nhận mở App Replay</span>
-                    </>
-                  )}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setReplayModalSession(null)}
+                    className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                  >
+                    Để sau
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleLaunchReplayApp(replayModalSession)}
+                    disabled={isLaunchingApp}
+                    className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#4EACAF] hover:bg-[#3D8C8F] shadow-md shadow-[#4EACAF]/20 hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-70 active:scale-95"
+                  >
+                    {isLaunchingApp ? (
+                      <>
+                        <Activity className="w-4 h-4 animate-spin" />
+                        <span>Đang mở ứng dụng...</span>
+                      </>
+                    ) : (
+                      <>
+                        <MonitorPlay className="w-4 h-4" />
+                        <span>Xác nhận mở App Replay</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>
