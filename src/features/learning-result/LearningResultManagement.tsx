@@ -167,6 +167,56 @@ function formatDDMM(d: Date): string {
   return `${day}/${month}`;
 }
 
+const REPLAY_CLIENT_PATH_KEY = 'godotxr_replay_client_path';
+const DEFAULT_REPLAY_CLIENT_PATH = 'D:\\do an\\FE and BE\\Godot_Replay_Client.exe';
+
+function getReplayCookie(name: string): string | null {
+  try {
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? decodeURIComponent(match[2]) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setReplayCookie(name: string, value: string, days = 365) {
+  try {
+    const expires = new Date(Date.now() + days * 864e5).toUTCString();
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+  } catch {}
+}
+
+function getStoredReplayAppPath(): string {
+  try {
+    const fromLocal = localStorage.getItem(REPLAY_CLIENT_PATH_KEY);
+    if (fromLocal && fromLocal.trim()) return fromLocal.trim();
+  } catch {}
+  try {
+    const fromSession = sessionStorage.getItem(REPLAY_CLIENT_PATH_KEY);
+    if (fromSession && fromSession.trim()) return fromSession.trim();
+  } catch {}
+  try {
+    const fromCookie = getReplayCookie(REPLAY_CLIENT_PATH_KEY);
+    if (fromCookie && fromCookie.trim()) return fromCookie.trim();
+  } catch {}
+  return DEFAULT_REPLAY_CLIENT_PATH;
+}
+
+function persistReplayAppPath(rawPath: string): string {
+  const trimmed = rawPath.trim();
+  const finalPath = trimmed || DEFAULT_REPLAY_CLIENT_PATH;
+  try {
+    localStorage.setItem(REPLAY_CLIENT_PATH_KEY, finalPath);
+  } catch {}
+  try {
+    sessionStorage.setItem(REPLAY_CLIENT_PATH_KEY, finalPath);
+  } catch {}
+  try {
+    setReplayCookie(REPLAY_CLIENT_PATH_KEY, finalPath);
+  } catch {}
+  return finalPath;
+}
+
 const mapChildRecord = (c: any): Child => ({
   ChildId: String(c.id),
   FullName: c.fullName,
@@ -633,7 +683,7 @@ export default function LearningResultManagement() {
   const [loadingChunks, setLoadingChunks] = useState<boolean>(false);
   const [playingChunkIndex, setPlayingChunkIndex] = useState<number | null>(null);
   const [loadingAudioIndex, setLoadingAudioIndex] = useState<number | null>(null);
-  const [audioBlobUrls, setAudioBlobUrls] = useState<Record<number, string>>({});
+  const [audioBlobUrls, setAudioBlobUrls] = useState<Record<string, string>>({});
   const [assessingChunkIndex, setAssessingChunkIndex] = useState<number | null>(null);
   const [chunkAssessments, setChunkAssessments] = useState<Record<number, any>>({});
   const [referenceTexts, setReferenceTexts] = useState<Record<number, string>>({});
@@ -660,15 +710,18 @@ export default function LearningResultManagement() {
   const [copiedSessionId, setCopiedSessionId] = useState(false);
   const [isLaunchingApp, setIsLaunchingApp] = useState(false);
   const [showReplayHelp, setShowReplayHelp] = useState(false);
-  const [appExecutablePath, setAppExecutablePath] = useState<string>(() => {
-    try {
-      return localStorage.getItem('godotxr_replay_client_path') || 'D:\\do an\\FE and BE\\Godot_Replay_Client.exe';
-    } catch {
-      return 'D:\\do an\\FE and BE\\Godot_Replay_Client.exe';
-    }
-  });
+  const [appExecutablePath, setAppExecutablePath] = useState<string>(() => getStoredReplayAppPath());
   const [isEditingPath, setIsEditingPath] = useState<boolean>(false);
-  const [tempPathInput, setTempPathInput] = useState<string>('');
+  const [tempPathInput, setTempPathInput] = useState<string>(() => getStoredReplayAppPath());
+
+  // Luôn đồng bộ lại đường dẫn mới nhất từ bộ nhớ khi mở Modal Replay
+  useEffect(() => {
+    if (replayModalSession) {
+      const stored = getStoredReplayAppPath();
+      setAppExecutablePath(stored);
+      setTempPathInput(stored);
+    }
+  }, [replayModalSession]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sessionPanelRef = useRef<HTMLDivElement | null>(null);
@@ -1307,11 +1360,14 @@ export default function LearningResultManagement() {
       return;
     }
 
-    // Stop currently playing audio
+    // Stop currently playing audio and reset playback state
     if (audioRef.current) {
       audioRef.current.pause();
-      setPlayingChunkIndex(null);
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
     }
+    setPlayingChunkIndex(null);
+    setLoadingAudioIndex(null);
 
     setSelectedResult(res);
     setFeedbackInput(res.FeedbackText || '');
@@ -1443,18 +1499,26 @@ export default function LearningResultManagement() {
     }
 
     if (playingChunkIndex === index) {
-      if (audioRef.current) audioRef.current.pause();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
       setPlayingChunkIndex(null);
       return;
     }
 
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.currentTime = 0;
       setPlayingChunkIndex(null);
     }
 
-    const audioKey = `${selectedResult?.SessionId}_${index}`;
-    let playUrl = audioBlobUrls[index] || audioBlobCache.get(audioKey);
+    const currentSessionId = selectedResult?.SessionId || selectedResult?.ResultId;
+    if (!currentSessionId) return;
+
+    // Khóa cache duy nhất theo CẶP (SessionId + ChunkIndex) để tránh ghi đè âm thanh giữa các session!
+    const audioKey = `${currentSessionId}_${index}`;
+    let playUrl = audioBlobCache.get(audioKey) || audioBlobUrls[audioKey];
 
     // If not cached yet, download this single audio chunk on-demand
     if (!playUrl) {
@@ -1464,11 +1528,11 @@ export default function LearningResultManagement() {
 
       setLoadingAudioIndex(index);
       try {
-        const blobRes = await downloadAudioChunk(childIdVal, selectedResult.SessionId, index);
+        const blobRes = await downloadAudioChunk(childIdVal, currentSessionId, index);
         if (blobRes.success && blobRes.data) {
           playUrl = URL.createObjectURL(blobRes.data);
           audioBlobCache.set(audioKey, playUrl);
-          setAudioBlobUrls(prev => ({ ...prev, [index]: playUrl! }));
+          setAudioBlobUrls(prev => ({ ...prev, [audioKey]: playUrl! }));
         } else {
           playUrl = rawUrl?.replace('http://minio:9000', 'https://minio.103-162-30-111.sslip.io');
         }
@@ -1500,12 +1564,18 @@ export default function LearningResultManagement() {
     };
   };
 
-  // Cleanup audio play on unmount
+  // Dừng phát âm thanh ngay lập tức khi chuyển đổi session hoặc unmount
   useEffect(() => {
     return () => {
-      if (audioRef.current) audioRef.current.pause();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current = null;
+      }
+      setPlayingChunkIndex(null);
+      setLoadingAudioIndex(null);
     };
-  }, [selectedResult]);
+  }, [selectedResult?.SessionId]);
 
   // Save feedback remarks
   const handleSaveFeedback = async () => {
@@ -1814,19 +1884,27 @@ export default function LearningResultManagement() {
     });
   };
 
-  const handleSaveAppPath = (newPath: string) => {
-    const trimmed = newPath.trim();
-    const finalPath = trimmed || 'Godot_Replay_Client.exe';
+  const handleSaveAppPath = (newPath: string, notify = true) => {
+    const finalPath = persistReplayAppPath(newPath);
     setAppExecutablePath(finalPath);
-    try {
-      localStorage.setItem('godotxr_replay_client_path', finalPath);
-    } catch {}
+    setTempPathInput(finalPath);
     setIsEditingPath(false);
-    showToast('Đã lưu đường dẫn ứng dụng cho máy tính này!', 'success');
+    if (notify) {
+      showToast('Đã lưu đường dẫn ứng dụng vĩnh viễn trên máy này!', 'success');
+    }
+    return finalPath;
+  };
+
+  const handleResetAppPath = () => {
+    handleSaveAppPath(DEFAULT_REPLAY_CLIENT_PATH, true);
   };
 
   const handleDownloadBatFile = () => {
-    const cleanPath = appExecutablePath.replace(/"/g, '').trim();
+    let targetPath = appExecutablePath;
+    if (isEditingPath && tempPathInput.trim()) {
+      targetPath = handleSaveAppPath(tempPathInput, false);
+    }
+    const cleanPath = targetPath.replace(/"/g, '').trim();
     const batContent = `@echo off
 chcp 65001 >nul
 setlocal
@@ -1891,6 +1969,9 @@ pause >nul
   };
 
   const handleLaunchReplayApp = (session: LearningResult) => {
+    if (isEditingPath && tempPathInput.trim()) {
+      handleSaveAppPath(tempPathInput, false);
+    }
     const targetSessionId = session.SessionId || session.ResultId;
     if (!targetSessionId) {
       showToast('Không tìm thấy Session ID của lượt luyện này.', 'warn');
@@ -3788,21 +3869,58 @@ pause >nul
                         </div>
 
                         {isEditingPath ? (
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <input
-                              type="text"
-                              value={tempPathInput}
-                              onChange={(e) => setTempPathInput(e.target.value)}
-                              placeholder="D:\ThuMuc\Godot_Replay_Client.exe hoặc C:\..."
-                              className="flex-1 px-2.5 py-1.5 text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#4EACAF] focus:ring-1 focus:ring-[#4EACAF]"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleSaveAppPath(tempPathInput)}
-                              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-[#4EACAF] hover:bg-[#3D8C8F] cursor-pointer"
-                            >
-                              Lưu
-                            </button>
+                          <div className="space-y-1.5 mt-1">
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="text"
+                                value={tempPathInput}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setTempPathInput(val);
+                                  // Tự động lưu vĩnh viễn ngay lập tức vào LocalStorage, SessionStorage & Cookie
+                                  if (val.trim()) {
+                                    persistReplayAppPath(val);
+                                    setAppExecutablePath(val.trim());
+                                  }
+                                }}
+                                onBlur={() => {
+                                  if (tempPathInput.trim()) {
+                                    handleSaveAppPath(tempPathInput, false);
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleSaveAppPath(tempPathInput, true);
+                                  }
+                                }}
+                                placeholder="D:\ThuMuc\Godot_Replay_Client.exe hoặc C:\..."
+                                className="flex-1 px-2.5 py-1.5 text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-[#4EACAF] focus:ring-1 focus:ring-[#4EACAF]"
+                                autoFocus
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleSaveAppPath(tempPathInput, true)}
+                                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-[#4EACAF] hover:bg-[#3D8C8F] cursor-pointer"
+                              >
+                                Lưu
+                              </button>
+                            </div>
+
+                            <div className="flex items-center justify-between text-[10.5px]">
+                              <span className="text-emerald-600 font-medium flex items-center gap-1">
+                                <Check className="w-3 h-3 text-emerald-500" />
+                                Tự động lưu tức thì (không mất khi F5 / tải lại trang)
+                              </span>
+                              <button
+                                type="button"
+                                onClick={handleResetAppPath}
+                                className="text-slate-400 hover:text-slate-600 underline cursor-pointer"
+                                title="Đặt lại về đường dẫn mặc định ban đầu"
+                              >
+                                Đặt lại mặc định
+                              </button>
+                            </div>
                           </div>
                         ) : (
                           <div className="flex items-center justify-between gap-2 p-2 bg-slate-50 border border-slate-200/80 rounded-xl">
@@ -3823,7 +3941,7 @@ pause >nul
                           </div>
                         )}
                         <p className="text-[10.5px] text-slate-400">
-                          * Đường dẫn này lưu trên trình duyệt và tự động nạp vào file script .bat khi tải về.
+                          * Đường dẫn này được lưu vĩnh viễn trên trình duyệt máy này (LocalStorage & Cookie) và tự động nạp vào file script .bat.
                         </p>
                       </div>
                     </div>
