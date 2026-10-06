@@ -34,7 +34,9 @@ import {
   Camera,
   Layout,
   RotateCcw,
-  SlidersHorizontal
+  SlidersHorizontal,
+  CheckCircle,
+  Target
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import ActionButton from '../../components/common/ActionButton';
@@ -865,10 +867,61 @@ export default function LessonManagement() {
     }
   };
 
+  // Computed VR Points & Balance Validation
+  const currentTargetMaxScore = useMemo(() => {
+    if (!selectedLesson) return 100;
+    return Number(selectedLesson.MaxScore) || Number(vrMaxScore) || 100;
+  }, [selectedLesson, vrMaxScore]);
+
+  const totalSlotCorrectPoints = useMemo(() => {
+    return lessonSlots.reduce((sum, slot) => sum + (Number(slot.correctPoints) || 0), 0);
+  }, [lessonSlots]);
+
+  const isScoreBalanced = lessonSlots.length > 0 && totalSlotCorrectPoints === currentTargetMaxScore;
+  const isScoreDeficit = lessonSlots.length > 0 && totalSlotCorrectPoints < currentTargetMaxScore;
+  const isScoreExceeded = lessonSlots.length > 0 && totalSlotCorrectPoints > currentTargetMaxScore;
+
+  const validateVrPointsBeforeClose = (): boolean => {
+    if (modalType !== 'exercises') return true;
+    if (!selectedLesson) return true;
+
+    // If there are no slots registered yet, allow closing (e.g. initial setup or uploading angles only)
+    if (lessonSlots.length === 0) return true;
+
+    const targetMax = currentTargetMaxScore;
+    const currentTotal = totalSlotCorrectPoints;
+
+    if (currentTotal < targetMax) {
+      const diff = targetMax - currentTotal;
+      triggerToast(
+        `Tổng điểm các vị trí (${currentTotal}đ) nhỏ hơn điểm tối đa của bài học (${targetMax}đ). Còn thiếu ${diff}đ! Vui lòng nhập lại điểm cho các vị trí trước khi đóng cấu hình.`,
+        'warning'
+      );
+      return false;
+    }
+
+    if (currentTotal > targetMax) {
+      const diff = currentTotal - targetMax;
+      triggerToast(
+        `Tổng điểm các vị trí (${currentTotal}đ) vượt quá điểm tối đa của bài học (${targetMax}đ). Vượt quá ${diff}đ! Vui lòng điều chỉnh lại điểm các vị trí trước khi đóng cấu hình.`,
+        'warning'
+      );
+      return false;
+    }
+
+    return true;
+  };
+
   const handleCloseModal = () => {
+    if (modalType === 'exercises') {
+      if (!validateVrPointsBeforeClose()) {
+        return;
+      }
+    }
     setModalType(null);
     setSelectedLesson(null);
     setEditingSlotId(null);
+    setEditingSlotPointsId(null);
     setNewSlotName('');
     setNewSlotImageId(null);
     if (audioRef.current) {
@@ -1534,53 +1587,115 @@ export default function LessonManagement() {
                     ) : (
                       <div className="space-y-4 animate-in fade-in duration-300">
                         {/* Header Score summary banner for selected lesson with live editing */}
-                        <div className="bg-gradient-to-r from-teal-50 via-emerald-50 to-teal-50 border border-teal-200/70 p-2.5 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-sm">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-700 flex items-center justify-center font-extrabold shrink-0">
-                              <Award className="w-4.5 h-4.5 text-teal-600" />
+                        <div className="bg-gradient-to-r from-teal-50 via-emerald-50 to-teal-50 border border-teal-200/70 p-3 rounded-2xl space-y-2.5 shadow-sm">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-700 flex items-center justify-center font-extrabold shrink-0">
+                                <Award className="w-4.5 h-4.5 text-teal-600" />
+                              </div>
+                              <div>
+                                <h4 className="font-extrabold text-slate-850 text-sm">{selectedLesson.LessonName}</h4>
+                                <p className="text-[11px] text-slate-500 font-medium">Chỉ số điểm bài học & Phân cảnh tương tác 3D VR</p>
+                              </div>
                             </div>
-                            <div>
-                              <h4 className="font-extrabold text-slate-850 text-sm">{selectedLesson.LessonName}</h4>
-                              <p className="text-[11px] text-slate-500 font-medium">Chỉ số điểm bài học & Phân cảnh tương tác 3D VR</p>
+
+                            <div className="flex items-center gap-2 flex-wrap text-xs font-bold">
+                              <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-xs" title="Điểm tối đa bài học (MaxScore)">
+                                <span className="text-teal-800 font-extrabold">🎯 Điểm tối đa:</span>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={1000}
+                                  value={vrMaxScore}
+                                  onChange={(e) => setVrMaxScore(e.target.value === '' ? '' : Number(e.target.value))}
+                                  className="w-14 bg-teal-50/60 border border-teal-200 rounded px-1.5 py-0.5 text-center font-black text-teal-900 outline-none focus:border-teal-500 text-xs"
+                                />
+                                <span className="text-teal-800">đ</span>
+                              </div>
+
+                              <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 shadow-xs" title="Điểm thưởng khi hoàn thành bài (CompletionBonusPoints)">
+                                <span className="text-emerald-800 font-extrabold">🎁 Thưởng hoàn thành:</span>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={500}
+                                  value={vrBonusPoints}
+                                  onChange={(e) => setVrBonusPoints(e.target.value === '' ? '' : Number(e.target.value))}
+                                  className="w-14 bg-emerald-50/60 border border-emerald-200 rounded px-1.5 py-0.5 text-center font-black text-emerald-900 outline-none focus:border-emerald-500 text-xs"
+                                />
+                                <span className="text-emerald-800">đ</span>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateLessonScores(Number(vrMaxScore) || 100, Number(vrBonusPoints) || 0)}
+                                className="bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black px-3 py-1 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer text-xs flex items-center gap-1 shrink-0"
+                                title="Lưu thay đổi điểm tối đa và điểm thưởng"
+                              >
+                                💾 Lưu điểm bài
+                              </button>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 flex-wrap text-xs font-bold">
-                            <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-xs" title="Điểm tối đa bài học (MaxScore)">
-                              <span className="text-teal-800 font-extrabold">🎯 Điểm tối đa:</span>
-                              <input
-                                type="number"
-                                min={0}
-                                max={1000}
-                                value={vrMaxScore}
-                                onChange={(e) => setVrMaxScore(e.target.value === '' ? '' : Number(e.target.value))}
-                                className="w-14 bg-teal-50/60 border border-teal-200 rounded px-1.5 py-0.5 text-center font-black text-teal-900 outline-none focus:border-teal-500 text-xs"
-                              />
-                              <span className="text-teal-800">đ</span>
+                          {/* Live Balance Row */}
+                          <div className="pt-2 border-t border-teal-150 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-slate-700">Tổng điểm các vị trí:</span>
+                              <span className={cn(
+                                "px-2.5 py-0.5 rounded-lg font-black text-xs border inline-flex items-center gap-1",
+                                isScoreBalanced
+                                  ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                  : isScoreDeficit
+                                    ? "bg-amber-100 text-amber-800 border-amber-300"
+                                    : "bg-rose-100 text-rose-800 border-rose-300"
+                              )}>
+                                {totalSlotCorrectPoints} / {currentTargetMaxScore}đ ({lessonSlots.length} vị trí)
+                              </span>
                             </div>
-
-                            <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 shadow-xs" title="Điểm thưởng khi hoàn thành bài (CompletionBonusPoints)">
-                              <span className="text-emerald-800 font-extrabold">🎁 Thưởng hoàn thành:</span>
-                              <input
-                                type="number"
-                                min={0}
-                                max={500}
-                                value={vrBonusPoints}
-                                onChange={(e) => setVrBonusPoints(e.target.value === '' ? '' : Number(e.target.value))}
-                                className="w-14 bg-emerald-50/60 border border-emerald-200 rounded px-1.5 py-0.5 text-center font-black text-emerald-900 outline-none focus:border-emerald-500 text-xs"
-                              />
-                              <span className="text-emerald-800">đ</span>
+                            <div className="font-bold">
+                              {lessonSlots.length === 0 ? (
+                                <span className="text-slate-400 italic">Chưa có vị trí nào</span>
+                              ) : isScoreBalanced ? (
+                                <span className="text-emerald-700 flex items-center gap-1">
+                                  <CheckCircle className="w-4 h-4 text-emerald-600 inline shrink-0" />
+                                  Hợp lệ, sẵn sàng đóng
+                                </span>
+                              ) : isScoreDeficit ? (
+                                <span className="text-amber-700 flex items-center gap-1">
+                                  <AlertTriangle className="w-4 h-4 text-amber-600 inline shrink-0" />
+                                  Còn thiếu {currentTargetMaxScore - totalSlotCorrectPoints}đ
+                                </span>
+                              ) : (
+                                <span className="text-rose-700 flex items-center gap-1">
+                                  <AlertTriangle className="w-4 h-4 text-rose-600 inline shrink-0" />
+                                  Vượt quá {totalSlotCorrectPoints - currentTargetMaxScore}đ
+                                </span>
+                              )}
                             </div>
-
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateLessonScores(Number(vrMaxScore) || 100, Number(vrBonusPoints) || 0)}
-                              className="bg-[#4EACAF] hover:bg-[#4EACAF]/90 text-white font-black px-3 py-1 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer text-xs flex items-center gap-1 shrink-0"
-                              title="Lưu thay đổi điểm tối đa và điểm thưởng"
-                            >
-                              💾 Lưu điểm bài
-                            </button>
                           </div>
+
+                          {/* Alert message if unbalanced */}
+                          {lessonSlots.length > 0 && !isScoreBalanced && (
+                            <div className={cn(
+                              "p-2.5 rounded-xl text-xs font-bold flex items-start gap-2 border",
+                              isScoreDeficit
+                                ? "bg-amber-50 text-amber-900 border-amber-200"
+                                : "bg-rose-50 text-rose-900 border-rose-200"
+                            )}>
+                              <AlertTriangle className={cn("w-4 h-4 shrink-0 mt-0.5", isScoreDeficit ? "text-amber-600" : "text-rose-600")} />
+                              <div>
+                                {isScoreDeficit ? (
+                                  <p>
+                                    Tổng điểm các vị trí ({totalSlotCorrectPoints}đ) nhỏ hơn điểm tối đa bài học ({currentTargetMaxScore}đ), còn thiếu {currentTargetMaxScore - totalSlotCorrectPoints}đ. Vui lòng điều chỉnh lại điểm trước khi đóng!
+                                  </p>
+                                ) : (
+                                  <p>
+                                    Tổng điểm các vị trí ({totalSlotCorrectPoints}đ) lớn hơn điểm tối đa bài học ({currentTargetMaxScore}đ), vượt quá {totalSlotCorrectPoints - currentTargetMaxScore}đ. Vui lòng điều chỉnh lại điểm trước khi đóng!
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         <div className="bg-teal-50/60 text-teal-850 border border-teal-150 p-2.5 rounded-xl text-xs font-semibold">
@@ -1895,6 +2010,113 @@ export default function LessonManagement() {
                   ) : (
                     /* --- ADMIN/ORIGINAL EXERCISES MODAL VIEW --- */
                     <>
+                      {/* Score summary & Validation banner for Admin */}
+                      <div className="bg-gradient-to-r from-blue-50/80 via-indigo-50/50 to-blue-50/80 border border-indigo-150 p-4 rounded-3xl space-y-3 shadow-xs">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-700 flex items-center justify-center font-extrabold shrink-0">
+                              <Target className="w-5 h-5 text-indigo-600" />
+                            </div>
+                            <div>
+                              <h4 className="font-extrabold text-slate-850 text-sm flex items-center gap-2">
+                                {selectedLesson.LessonName}
+                                <span className="text-[11px] font-semibold text-slate-400 font-mono">#{selectedLesson.LessonId}</span>
+                              </h4>
+                              <p className="text-xs text-slate-500 font-medium">Cấu hình điểm bài học & Vị trí phân cảnh tương tác 3D VR</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2.5 flex-wrap text-xs font-bold">
+                            {/* MaxScore live input/display */}
+                            <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-indigo-200 shadow-xs" title="Điểm tối đa của bài học (MaxScore)">
+                              <span className="text-indigo-900 font-extrabold">🎯 Điểm tối đa bài học:</span>
+                              <input
+                                type="number"
+                                min={1}
+                                max={1000}
+                                value={vrMaxScore}
+                                onChange={(e) => setVrMaxScore(e.target.value === '' ? '' : Number(e.target.value))}
+                                className="w-16 bg-indigo-50/60 border border-indigo-200 rounded-lg px-2 py-0.5 text-center font-black text-indigo-900 outline-none focus:border-indigo-500 text-xs"
+                              />
+                              <span className="text-indigo-800 font-bold">đ</span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateLessonScores(Number(vrMaxScore) || 100, Number(vrBonusPoints) || 0)}
+                              className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold px-3.5 py-1.5 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer text-xs flex items-center gap-1 shrink-0"
+                              title="Lưu thay đổi điểm tối đa bài học"
+                            >
+                              💾 Lưu điểm bài
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Real-time score balance status badge */}
+                        <div className="pt-2 border-t border-indigo-100/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                          <div className="flex items-center gap-2 flex-wrap text-xs">
+                            <span className="font-extrabold text-slate-650">
+                              Tổng điểm các vị trí hiện có:
+                            </span>
+                            <span className={cn(
+                              "px-2.5 py-0.5 rounded-lg font-black text-xs border inline-flex items-center gap-1",
+                              isScoreBalanced
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                : isScoreDeficit
+                                  ? "bg-amber-100 text-amber-800 border-amber-300"
+                                  : "bg-rose-100 text-rose-800 border-rose-300"
+                            )}>
+                              {totalSlotCorrectPoints} / {currentTargetMaxScore}đ ({lessonSlots.length} vị trí)
+                            </span>
+                          </div>
+
+                          {/* Status note */}
+                          <div className="text-xs font-bold">
+                            {lessonSlots.length === 0 ? (
+                              <span className="text-slate-500 italic">Chưa tạo vị trí nào.</span>
+                            ) : isScoreBalanced ? (
+                              <span className="text-emerald-700 flex items-center gap-1">
+                                <CheckCircle className="w-4 h-4 text-emerald-600 inline shrink-0" />
+                                Tổng điểm hợp lệ, sẵn sàng đóng cấu hình
+                              </span>
+                            ) : isScoreDeficit ? (
+                              <span className="text-amber-700 flex items-center gap-1">
+                                <AlertTriangle className="w-4 h-4 text-amber-600 inline shrink-0" />
+                                Còn thiếu {currentTargetMaxScore - totalSlotCorrectPoints}đ để đủ điểm bài học
+                              </span>
+                            ) : (
+                              <span className="text-rose-700 flex items-center gap-1">
+                                <AlertTriangle className="w-4 h-4 text-rose-600 inline shrink-0" />
+                                Đang vượt quá {totalSlotCorrectPoints - currentTargetMaxScore}đ so với điểm bài học
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Alert banner if unbalanced and has slots */}
+                        {lessonSlots.length > 0 && !isScoreBalanced && (
+                          <div className={cn(
+                            "p-3 rounded-2xl text-xs font-bold flex items-start gap-2.5 border",
+                            isScoreDeficit
+                              ? "bg-amber-50 text-amber-850 border-amber-200"
+                              : "bg-rose-50 text-rose-850 border-rose-200"
+                          )}>
+                            <AlertTriangle className={cn("w-4 h-4 shrink-0 mt-0.5", isScoreDeficit ? "text-amber-600" : "text-rose-600")} />
+                            <div>
+                              {isScoreDeficit ? (
+                                <p>
+                                  <strong>Cảnh báo chưa đủ điểm:</strong> Tổng điểm các vị trí hiện tại là <strong>{totalSlotCorrectPoints}đ</strong>, nhỏ hơn điểm tối đa bài học là <strong>{currentTargetMaxScore}đ</strong> (còn thiếu <strong>{currentTargetMaxScore - totalSlotCorrectPoints}đ</strong>). Vui lòng điều chỉnh lại điểm các vị trí trước khi đóng!
+                                </p>
+                              ) : (
+                                <p>
+                                  <strong>Cảnh báo vượt điểm:</strong> Tổng điểm các vị trí hiện tại là <strong>{totalSlotCorrectPoints}đ</strong>, lớn hơn điểm tối đa bài học là <strong>{currentTargetMaxScore}đ</strong> (vượt quá <strong>{totalSlotCorrectPoints - currentTargetMaxScore}đ</strong>). Vui lòng giảm bớt điểm các vị trí trước khi đóng!
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                       {/* Tab Selectors */}
                       <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200/50">
                         <button
@@ -2117,7 +2339,29 @@ export default function LessonManagement() {
 
                           {/* List of Registered Slots */}
                           <div className="space-y-3">
-                            <h4 className="font-extrabold text-slate-700 text-sm uppercase tracking-wider">Danh sách vị trí & Gán mô hình 3D</h4>
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <h4 className="font-extrabold text-slate-700 text-sm uppercase tracking-wider">
+                                Danh sách vị trí & Gán mô hình 3D ({lessonSlots.length})
+                              </h4>
+                              {lessonSlots.length > 0 && (
+                                <div className={cn(
+                                  "text-xs font-black px-3 py-1 rounded-xl border flex items-center gap-1.5 shadow-2xs",
+                                  isScoreBalanced
+                                    ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                                    : isScoreDeficit
+                                      ? "bg-amber-50 text-amber-800 border-amber-300 animate-pulse"
+                                      : "bg-rose-50 text-rose-800 border-rose-300 animate-pulse"
+                                )}>
+                                  <span>{isScoreBalanced ? '✅ Điểm cân bằng:' : isScoreDeficit ? '⚠️ Còn thiếu:' : '❌ Vượt quá:'}</span>
+                                  <span>{totalSlotCorrectPoints} / {currentTargetMaxScore}đ</span>
+                                  {!isScoreBalanced && (
+                                    <span className="text-[11px] font-bold">
+                                      ({isScoreDeficit ? `-${currentTargetMaxScore - totalSlotCorrectPoints}đ` : `+${totalSlotCorrectPoints - currentTargetMaxScore}đ`})
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                             {lessonSlots.length === 0 ? (
                               <div className="text-center py-10 text-slate-400 font-bold italic text-sm">
                                 Chưa cấu hình vị trí đặt vật phẩm nào cho bài học này.
@@ -2129,15 +2373,70 @@ export default function LessonManagement() {
                                   return (
                                     <div key={slot.id} className="bg-[#FDFCF5] p-4 rounded-2xl border border-slate-200/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                                       <div className="space-y-1.5 flex-1 min-w-0">
-                                        <div className="flex items-center flex-wrap gap-2">
-                                          <strong className="text-sm text-slate-850">Tên vị trí: {slot.slotName}</strong>
-                                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200/60" title="Điểm cộng khi chọn đúng">
-                                            🎯 Đúng: +{slot.correctPoints ?? 10}đ
-                                          </span>
-                                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-lg border border-rose-200/60" title="Điểm trừ khi chọn sai">
-                                            ⚠️ Sai: -{slot.wrongPoints ?? 10}đ
-                                          </span>
-                                        </div>
+                                        {editingSlotPointsId === slot.id ? (
+                                          <div className="flex items-center gap-2 bg-amber-50 p-1.5 rounded-xl border border-amber-200/80 animate-in fade-in duration-200">
+                                            <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-800">
+                                              <span>🎯 Đúng:</span>
+                                              <input
+                                                type="number"
+                                                min={0}
+                                                max={100}
+                                                value={tempCorrectPoints}
+                                                onChange={(e) => setTempCorrectPoints(e.target.value === '' ? '' : Number(e.target.value))}
+                                                className="w-14 bg-white border border-emerald-300 rounded px-1.5 py-0.5 text-center font-bold outline-none text-xs text-emerald-900"
+                                              />
+                                              <span>đ</span>
+                                            </div>
+                                            <div className="flex items-center gap-1 text-[11px] font-bold text-rose-800">
+                                              <span>⚠️ Sai:</span>
+                                              <input
+                                                type="number"
+                                                min={0}
+                                                max={100}
+                                                value={tempWrongPoints}
+                                                onChange={(e) => setTempWrongPoints(e.target.value === '' ? '' : Number(e.target.value))}
+                                                className="w-14 bg-white border border-rose-300 rounded px-1.5 py-0.5 text-center font-bold outline-none text-xs text-rose-900"
+                                              />
+                                              <span>đ</span>
+                                            </div>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleSaveSlotPoints(slot)}
+                                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-2.5 py-0.5 rounded-lg shadow-xs cursor-pointer"
+                                            >
+                                              Lưu
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => setEditingSlotPointsId(null)}
+                                              className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-[11px] px-2 py-0.5 rounded-lg cursor-pointer"
+                                            >
+                                              Hủy
+                                            </button>
+                                          </div>
+                                        ) : (
+                                          <div className="flex items-center flex-wrap gap-2">
+                                            <strong className="text-sm text-slate-850">Tên vị trí: {slot.slotName}</strong>
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200/60" title="Điểm cộng khi chọn đúng">
+                                              🎯 Đúng: +{slot.correctPoints ?? 10}đ
+                                            </span>
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-lg border border-rose-200/60" title="Điểm trừ khi chọn sai">
+                                              ⚠️ Sai: -{slot.wrongPoints ?? 10}đ
+                                            </span>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setEditingSlotPointsId(slot.id);
+                                                setTempCorrectPoints(slot.correctPoints ?? 10);
+                                                setTempWrongPoints(slot.wrongPoints ?? 10);
+                                              }}
+                                              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-1.5 py-0.5 rounded text-[10px] font-bold underline transition-colors cursor-pointer"
+                                              title="Sửa nhanh điểm cho vị trí này"
+                                            >
+                                              ✏️ Sửa điểm
+                                            </button>
+                                          </div>
+                                        )}
 
                                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400 font-medium">
                                           {assignedImg ? (
@@ -2205,10 +2504,50 @@ export default function LessonManagement() {
                     </>
                   )}
 
-                  <div className="flex justify-end pt-4 border-t border-gray-100">
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-100 flex-wrap gap-3">
+                    {/* Live score balance pill in footer */}
+                    {lessonSlots.length > 0 && (
+                      <div className={cn(
+                        "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all",
+                        isScoreBalanced
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : isScoreDeficit
+                            ? "bg-amber-50 text-amber-700 border border-amber-200 animate-pulse"
+                            : "bg-rose-50 text-rose-700 border border-rose-200 animate-pulse"
+                      )}>
+                        {isScoreBalanced ? (
+                          <>
+                            <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>Điểm cân bằng: <strong>{totalSlotCorrectPoints}/{currentTargetMaxScore}đ</strong> (Đủ điều kiện đóng)</span>
+                          </>
+                        ) : isScoreDeficit ? (
+                          <>
+                            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                            <span>Chưa đủ điểm: <strong>{totalSlotCorrectPoints}/{currentTargetMaxScore}đ</strong> (Còn thiếu {currentTargetMaxScore - totalSlotCorrectPoints}đ) - Không thể đóng</span>
+                          </>
+                        ) : (
+                          <>
+                            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                            <span>Vượt quá điểm: <strong>{totalSlotCorrectPoints}/{currentTargetMaxScore}đ</strong> (Vượt {totalSlotCorrectPoints - currentTargetMaxScore}đ) - Không thể đóng</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+
                     <button
+                      type="button"
                       onClick={handleCloseModal}
-                      className="py-3 px-6 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl transition-all text-xs uppercase tracking-wider cursor-pointer"
+                      className={cn(
+                        "py-3 px-6 font-extrabold rounded-xl transition-all text-xs uppercase tracking-wider cursor-pointer ml-auto",
+                        lessonSlots.length > 0 && !isScoreBalanced
+                          ? "bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-200 shadow-xs"
+                          : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                      )}
+                      title={
+                        lessonSlots.length > 0 && !isScoreBalanced
+                          ? "Tổng điểm chưa bằng điểm bài học, vui lòng điều chỉnh trước khi đóng"
+                          : "Đóng cấu hình"
+                      }
                     >
                       Đóng cấu hình
                     </button>
